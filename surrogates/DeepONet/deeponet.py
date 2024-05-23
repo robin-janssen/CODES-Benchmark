@@ -8,10 +8,10 @@ from tqdm import tqdm
 from typing import Tuple, Optional, TypeVar
 import yaml
 
-from models.surrogate import AbstractSurrogateModel
+from surrogates.surrogate import AbstractSurrogateModel
 
 # Use the below import to adjust the config class to the specific model
-from models.DeepONet.config_classes import OChemicalTrainConfig as MultiONetConfig
+from surrogates.DeepONet.config_classes import OChemicalTrainConfig as MultiONetConfig
 
 from utils import time_execution, create_model_dir
 from .train_utils import mass_conservation_loss

@@ -12,8 +12,8 @@ import os
 import numpy as np
 import yaml
 
-from models.DeepONet.dataloader import create_dataloader_chemicals
-from models.DeepONet.deeponet import MultiONet  # Import your model class here
+from surrogates.DeepONet.dataloader import create_dataloader_chemicals
+from surrogates.DeepONet.deeponet import MultiONet  # Import your model class here
 
 # Load configuration from YAML
 with open("config.yaml", "r") as file:
