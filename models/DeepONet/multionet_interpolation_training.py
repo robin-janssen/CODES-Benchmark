@@ -4,12 +4,12 @@
 
 import numpy as np
 
-from DeepONet.dataloader import (
+from .dataloader import (
     create_dataloader_chemicals,
 )
 
-from DeepONet.config_classes import OChemicalTrainConfig
-from DeepONet.train_multionet import (
+from .config_classes import OChemicalTrainConfig
+from .train_multionet import (
     train_multionet_chemical,
     test_deeponet,
     load_multionet,

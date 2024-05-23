@@ -1,36 +1,20 @@
-from typing import TypeVar
-
+import dataclasses
+import os
 import torch
 import torch.nn as nn
+import numpy as np
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+from typing import Tuple, Optional, TypeVar
+import yaml
 
+from models.surrogate import AbstractSurrogateModel
 
-class OperatorNetwork(nn.Module):
-    def __init__(self):
-        super(OperatorNetwork, self).__init__()
+# Use the below import to adjust the config class to the specific model
+from models.DeepONet.config_classes import OChemicalTrainConfig as MultiONetConfig
 
-    def post_init_check(self):
-        if not hasattr(self, "branch_net") or not hasattr(self, "trunk_net"):
-            raise NotImplementedError(
-                "Child classes must initialize a branch_net and trunk_net."
-            )
-        if not hasattr(self, "forward") or not callable(self.forward):
-            raise NotImplementedError("Child classes must implement a forward method.")
-
-    def forward(self, branch_input, trunk_input):
-        # Define a generic forward pass or raise an error to enforce child class implementation
-        raise NotImplementedError("Forward method must be implemented by subclasses.")
-
-    @staticmethod
-    def _calculate_split_sizes(total_neurons, num_splits):
-        """Helper function to calculate split sizes for even distribution"""
-        base_size = total_neurons // num_splits
-        remainder = total_neurons % num_splits
-        return [
-            base_size + 1 if i < remainder else base_size for i in range(num_splits)
-        ]
-
-
-OperatorNetworkType = TypeVar("OperatorNetworkType", bound=OperatorNetwork)
+from utils import time_execution, create_model_dir
+from .train_utils import mass_conservation_loss
 
 
 class BranchNet(nn.Module):
@@ -59,48 +43,84 @@ class TrunkNet(nn.Module):
         return self.network(x)
 
 
-class DeepONet(OperatorNetwork):
-    def __init__(
-        self,
-        inputs_b,
-        hidden_b,
-        layers_b,
-        inputs_t,
-        hidden_t,
-        layers_t,
-        outputs,
-        device,
-    ):
-        super(DeepONet, self).__init__()
-        self.branch_net = BranchNet(inputs_b, hidden_b, outputs, layers_b).to(device)
-        self.trunk_net = TrunkNet(inputs_t, hidden_t, outputs, layers_t).to(device)
+class OperatorNetwork(AbstractSurrogateModel):
+    def __init__(self):
+        super(OperatorNetwork, self).__init__()
+
+    def post_init_check(self):
+        if not hasattr(self, "branch_net") or not hasattr(self, "trunk_net"):
+            raise NotImplementedError(
+                "Child classes must initialize a branch_net and trunk_net."
+            )
+        if not hasattr(self, "forward") or not callable(self.forward):
+            raise NotImplementedError("Child classes must implement a forward method.")
 
     def forward(self, branch_input, trunk_input):
-        branch_output = self.branch_net(branch_input)
-        trunk_output = self.trunk_net(trunk_input)
-        return torch.sum(branch_output * trunk_output, dim=1)
+        # Define a generic forward pass or raise an error to enforce child class implementation
+        raise NotImplementedError("Forward method must be implemented by subclasses.")
+
+    @staticmethod
+    def _calculate_split_sizes(total_neurons, num_splits):
+        """Helper function to calculate split sizes for even distribution"""
+        base_size = total_neurons // num_splits
+        remainder = total_neurons % num_splits
+        return [
+            base_size + 1 if i < remainder else base_size for i in range(num_splits)
+        ]
+
+
+OperatorNetworkType = TypeVar("OperatorNetworkType", bound=OperatorNetwork)
 
 
 class MultiONet(OperatorNetwork):
-    def __init__(
-        self,
-        inputs_b,
-        hidden_b,
-        layers_b,
-        inputs_t,
-        hidden_t,
-        layers_t,
-        outputs,
-        N,
-        device,
-    ):
-        super(MultiONet, self).__init__()
-        self.N = N  # Number of outputs
-        self.outputs = outputs  # Number of neurons in the last layer
-        self.branch_net = BranchNet(inputs_b, hidden_b, outputs, layers_b).to(device)
-        self.trunk_net = TrunkNet(inputs_t, hidden_t, outputs, layers_t).to(device)
+    def __init__(self):
+        """
+        Initialize the MultiONet model with a configuration.
 
-    def forward(self, branch_input, trunk_input):
+        The configuration must provide the following information:
+
+        - branch_input_size (int): The input size for the branch network.
+        - trunk_input_size (int): The input size for the trunk network.
+        - hidden_size (int): The number of hidden units in each layer of the branch and trunk networks.
+        - branch_hidden_layers (int): The number of hidden layers in the branch network.
+        - trunk_hidden_layers (int): The number of hidden layers in the trunk network.
+        - output_neurons (int): The number of neurons in the last layer of both branch and trunk networks.
+        - N_outputs (int): The number of outputs of the model.
+        - device (str): The device to use for training (e.g., 'cpu', 'cuda:0').
+        """
+        config = MultiONetConfig()  # Load the specific config for DeepONet
+        super(MultiONet, self).__init__()
+
+        self.config = config
+        self.N = config.N_outputs  # Number of outputs
+        self.outputs = config.output_neurons  # Number of neurons in the last layer
+        self.branch_net = BranchNet(
+            config.branch_input_size,
+            config.hidden_size,
+            config.output_neurons,
+            config.branch_hidden_layers,
+        ).to(config.device)
+        self.trunk_net = TrunkNet(
+            config.trunk_input_size,
+            config.hidden_size,
+            config.output_neurons,
+            config.trunk_hidden_layers,
+        ).to(config.device)
+        self.device = config.device
+
+    def forward(
+        self, branch_input: torch.Tensor, trunk_input: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        Forward pass for the MultiONet model.
+
+        Args:
+            branch_input (torch.Tensor): Input tensor for the branch network.
+            trunk_input (torch.Tensor): Input tensor for the trunk network.
+
+        Returns:
+            torch.Tensor: Output tensor of the model.
+        """
         branch_output = self.branch_net(branch_input)
         trunk_output = self.trunk_net(trunk_input)
 
@@ -115,86 +135,237 @@ class MultiONet(OperatorNetwork):
 
         return torch.cat(result, dim=1)
 
-
-class MultiONetB(OperatorNetwork):
-    def __init__(
+    @time_execution
+    def fit(
         self,
-        inputs_b,
-        hidden_b,
-        layers_b,
-        inputs_t,
-        hidden_t,
-        layers_t,
-        outputs,
-        N,
-        device,
-    ):
-        super(MultiONetB, self).__init__()
-        self.N = N  # Number of outputs
-        self.outputs = outputs  # Number of neurons in the last layer
-        trunk_outputs = outputs // N
+        data_loader: DataLoader,
+        test_loader: Optional[DataLoader] = None,
+    ) -> None:
+        """
+        Train the MultiONet model.
 
-        # Initialize branch and trunk networks
-        self.branch_net = BranchNet(inputs_b, hidden_b, outputs, layers_b).to(device)
-        self.trunk_net = TrunkNet(inputs_t, hidden_t, trunk_outputs, layers_t).to(
-            device
+        Args:
+            data_loader (DataLoader): The DataLoader object containing the training data.
+            test_loader (DataLoader, optional): The DataLoader object containing the test data.
+
+        Returns:
+            None
+        """
+        criterion = self.setup_criterion()
+        optimizer, scheduler = self.setup_optimizer_and_scheduler()
+
+        train_loss_hist, test_loss_hist = self.setup_losses(
+            prev_train_loss=None, prev_test_loss=None
         )
 
-    def forward(self, branch_input, trunk_input):
-        branch_output = self.branch_net(branch_input)
-        trunk_output = self.trunk_net(trunk_input)
+        progress_bar = tqdm(range(self.config.num_epochs), desc="Training Progress")
+        for epoch in progress_bar:
+            train_loss_hist[epoch] = self.epoch(data_loader, criterion, optimizer)
 
-        # Splitting the outputs for multiple output values
-        split_sizes = self._calculate_split_sizes(self.outputs, self.N)
-        branch_splits = torch.split(branch_output, split_sizes, dim=1)
+            clr = optimizer.param_groups[0]["lr"]
+            progress_bar.set_postfix({"loss": train_loss_hist[epoch], "lr": clr})
+            scheduler.step()
 
-        result = []
-        for b_split in branch_splits:
-            result.append(torch.sum(b_split * trunk_output, dim=1, keepdim=True))
+            if test_loader is not None:
+                test_loss_hist[epoch], _, _ = self.predict(
+                    test_loader,
+                    criterion,
+                    self.config.N_timesteps,
+                    reshape=True,
+                    transpose=True,
+                )
 
-        return torch.cat(result, dim=1)
+        self.train_loss = train_loss_hist
+        self.test_loss = test_loss_hist
 
-
-class MultiONetT(OperatorNetwork):
-    def __init__(
+    def predict(
         self,
-        inputs_b,
-        hidden_b,
-        layers_b,
-        inputs_t,
-        hidden_t,
-        layers_t,
-        outputs,
-        N,
-        device,
-    ):
-        super(MultiONetT, self).__init__()
-        self.N = N  # Number of outputs
-        self.outputs = outputs  # Number of neurons in the last layer
-        branch_outputs = outputs // N
+        data_loader: DataLoader,
+        criterion: nn.Module,
+        N_timesteps: int,
+        reshape: bool = True,
+        transpose: bool = True,
+    ) -> Tuple[float, np.ndarray, np.ndarray]:
+        """
+        Evaluate the model on the test data.
 
-        # Initialize branch and trunk networks
-        self.branch_net = BranchNet(inputs_b, hidden_b, branch_outputs, layers_b).to(
-            device
+        Args:
+            data_loader (DataLoader): The DataLoader object containing the test data.
+            criterion (nn.Module): The loss function.
+            N_timesteps (int): The number of timesteps.
+            reshape (bool, optional): Whether to reshape the outputs.
+            transpose (bool, optional): Whether to transpose the outputs.
+
+        Returns:
+            tuple: The total loss, outputs, and targets.
+        """
+        self.eval()
+        total_loss = 0
+        outputs_list = []
+        targets_list = []
+        with torch.no_grad():
+            for batch in data_loader:
+                branch_input, trunk_input, targets = batch
+                branch_input, trunk_input, targets = (
+                    branch_input.to(self.device),
+                    trunk_input.to(self.device),
+                    targets.to(self.device),
+                )
+                outputs = self.forward(branch_input, trunk_input)
+                loss = criterion(outputs, targets)
+                total_loss += loss.item()
+                outputs_list.append(outputs.cpu().numpy())
+                targets_list.append(targets.cpu().numpy())
+        outputs = np.concatenate(outputs_list, axis=0)
+        targets = np.concatenate(targets_list, axis=0)
+        return total_loss / len(data_loader), outputs, targets
+
+    def save(
+        self,
+        model_name: str,
+        subfolder: str = "trained_models",
+        unique_id: str = "run_1",
+    ) -> None:
+        """
+        Save the trained model and hyperparameters.
+
+        Args:
+            model_name (str): The name of the model.
+            subfolder (str): The subfolder to save the model in.
+            unique_id (str): A unique identifier to include in the directory name.
+        """
+        base_dir = os.getcwd()
+        model_dir = create_model_dir(base_dir, subfolder, unique_id)
+
+        # Save the model state dict
+        model_path = os.path.join(model_dir, f"{model_name}.pth")
+        torch.save(self.state_dict(), model_path)
+
+        # Create the hyperparameters dictionary from the config dataclass
+        hyperparameters = dataclasses.asdict(self.config)
+
+        # Append the train time to the hyperparameters
+        hyperparameters["train_duration"] = self.fit.duration
+
+        # Save hyperparameters as a YAML file
+        hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
+        with open(hyperparameters_path, "w") as file:
+            yaml.dump(hyperparameters, file)
+
+        if self.train_loss is not None and self.test_loss is not None:
+            # Save the losses as a numpy file
+            losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
+            np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
+
+        print(f"Model, losses and hyperparameters saved to {model_dir}")
+
+    def setup_criterion(self) -> callable:
+        """
+        Utility function to set up the loss function for training.
+
+        Returns:
+            callable: The loss function.
+        """
+        crit = nn.MSELoss(reduction="sum")
+        if hasattr(self.config, "masses") and self.config.masses is not None:
+            weights = (1.0, self.config.massloss_factor)
+            crit = mass_conservation_loss(
+                self.config.masses, crit, weights, self.config.device
+            )
+        return crit
+
+    def setup_optimizer_and_scheduler(
+        self,
+    ) -> Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
+        """
+        Utility function to set up the optimizer and scheduler for training.
+
+        Args:
+            conf (dataclasses.dataclass): The configuration dataclass.
+            deeponet (OperatorNetworkType): The model to train.
+
+        Returns:
+            tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler): The optimizer and scheduler.
+        """
+        optimizer = torch.optim.Adam(
+            self.parameters(),
+            lr=self.config.learning_rate,
+            weight_decay=self.config.regularization_factor,
         )
-        self.trunk_net = TrunkNet(inputs_t, hidden_t, outputs, layers_t).to(device)
+        if self.config.schedule:
+            scheduler = torch.optim.lr_scheduler.LinearLR(
+                optimizer,
+                start_factor=1,
+                end_factor=0.3,
+                total_iters=self.config.num_epochs,
+            )
+        else:
+            scheduler = torch.optim.lr_scheduler.LinearLR(
+                optimizer,
+                start_factor=1,
+                end_factor=1,
+                total_iters=self.config.num_epochs,
+            )
+        return optimizer, scheduler
 
-    def forward(self, branch_input, trunk_input):
-        branch_output = self.branch_net(branch_input)
-        trunk_output = self.trunk_net(trunk_input)
+    def setup_losses(
+        self,
+        prev_train_loss: Optional[np.ndarray] = None,
+        prev_test_loss: Optional[np.ndarray] = None,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Set up the loss history arrays for training.
 
-        # Splitting the outputs for multiple output values
-        split_sizes = self._calculate_split_sizes(self.outputs, self.N)
-        trunk_splits = torch.split(trunk_output, split_sizes, dim=1)
+        Args:
+            prev_train_loss (np.ndarray): Previous training loss history.
+            prev_test_loss (np.ndarray): Previous test loss history.
 
-        result = []
-        for t_split in trunk_splits:
-            result.append(torch.sum(branch_output * t_split, dim=1, keepdim=True))
+        Returns:
+            tuple: The training and testing loss history arrays (both np.ndarrays).
+        """
+        if self.config.pretrained_model_path is None:
+            train_loss_hist = np.zeros(self.config.num_epochs)
+            test_loss_hist = np.zeros(self.config.num_epochs)
+        else:
+            train_loss_hist = np.concatenate(
+                (prev_train_loss, np.zeros(self.config.num_epochs))
+            )
+            test_loss_hist = np.concatenate(
+                (prev_test_loss, np.zeros(self.config.num_epochs))
+            )
 
-        return torch.cat(result, dim=1)
+        return train_loss_hist, test_loss_hist
 
+    def epoch(
+        self,
+        data_loader: DataLoader,
+        criterion: nn.Module,
+        optimizer: torch.optim.Optimizer,
+    ) -> float:
+        """
+        Perform a single training step on the model.
 
-def initialize_weights(m):
-    if isinstance(m, nn.Linear):
-        nn.init.xavier_uniform_(m.weight.data)
-        nn.init.zeros_(m.bias.data)
+        Args:
+            data_loader (DataLoader): The DataLoader object containing the training data.
+            criterion (nn.Module): The loss function.
+            optimizer (torch.optim.Optimizer): The optimizer.
+
+        Returns:
+            float: The total loss for the training step.
+        """
+        self.train()
+        total_loss = 0
+        for batch in data_loader:
+            branch_input, trunk_input, targets = batch
+            branch_input, trunk_input, targets = (
+                branch_input.to(self.device),
+                trunk_input.to(self.device),
+                targets.to(self.device),
+            )
+            optimizer.zero_grad()
+            outputs = self.forward(branch_input, trunk_input)
+            loss = criterion(outputs, targets)
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+        return total_loss / len(data_loader)

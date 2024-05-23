@@ -1,163 +1,159 @@
-# This is the main training script for the models. It trains the models and saves them.
+# This is the main training script for the models. It trains all required models and saves them.
 # The structure of the file should be something like this:
 
 # 1. Import the necessary libraries
-# 2. Import the train functions for DeepONet and NeuralODE
-# 3. Load the data
-# 4. Train and save the models for the different purposes
-
+# 2. Define helper functions
+# 3. Define the main training logic
+# 4. Run the main function if executed as a script
 
 # 1. Import the necessary libraries
 
 import os
 import numpy as np
+import yaml
+
+from models.DeepONet.dataloader import create_dataloader_chemicals
+from models.DeepONet.deeponet import MultiONet  # Import your model class here
+
+# Load configuration from YAML
+with open("config.yaml", "r") as file:
+    config = yaml.safe_load(file)
+
+# Define surrogate classes
+surrogate_classes = {
+    "DeepONet": MultiONet,
+    # Add other surrogate classes here
+}
+
+# 2. Define helper functions
 
 
-# 2. Import the train functions for DeepONet and NeuralODE
-
-from DeepONet.config_classes import OChemicalTrainConfig
-from DeepONet.dataloader import create_dataloader_chemicals
-from DeepONet.train_utils import save_model
-from DeepONet.train_multionet import (
-    train_multionet_chemical,
-)
-
-
-# 3. Load the data
-
-data_path = "data/osu_data"
-full_train_data = np.load(os.path.join(data_path, "train_data.npy"))
-full_test_data = np.load(os.path.join(data_path, "test_data.npy"))
-osu_timesteps = np.linspace(0, 99, 100)
-
-print(f"Loaded data with shape: {full_train_data.shape}/{full_test_data.shape}")
-
-# 4. Train and save the models for the different purposes
-
-config = OChemicalTrainConfig()
-
-# Main model for timing and accuracy
-
-mod_train_data = full_train_data[:10]
-mod_test_data = full_test_data[:10]
-
-dataloader_train_full = create_dataloader_chemicals(
-    mod_train_data, osu_timesteps, batch_size=config.batch_size, shuffle=True
-)
-dataloader_test_full = create_dataloader_chemicals(
-    mod_test_data, osu_timesteps, batch_size=config.batch_size, shuffle=False
-)
-main_model, train_loss, test_loss = train_multionet_chemical(
-    config, dataloader_train_full, dataloader_test_full
-)
-
-save_model(
-    main_model,
-    "main_deeponet.pth",
-    config,
-    train_loss,
-    test_loss,
-    train_multionet_chemical.duration,
-)
-
-# Models for interpolation testing
-
-intervals = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-
-for interval in intervals:
-
-    # Modify the data for interpolation testing
-    train_data = full_train_data[:, ::interval]
-    test_data = full_test_data[:, ::interval]
+def train_and_save_model(
+    model_name, train_data, test_data, timesteps, surrogate_class, training_id
+):
+    # Instantiate the model to access its internal configuration
+    model = surrogate_class()
+    batch_size = model.config.batch_size
 
     dataloader_train = create_dataloader_chemicals(
-        train_data,
-        osu_timesteps[::interval],
-        batch_size=config.batch_size,
-        shuffle=True,
+        train_data, timesteps, batch_size=batch_size, shuffle=True
     )
     dataloader_test = create_dataloader_chemicals(
-        test_data,
-        osu_timesteps[::interval],
-        batch_size=config.batch_size,
-        shuffle=False,
+        test_data, timesteps, batch_size=batch_size, shuffle=False
     )
 
-    model, train_loss, test_loss = train_multionet_chemical(
-        config, dataloader_train, dataloader_test
+    model.fit(dataloader_train, dataloader_test)
+
+    model.save(
+        model_name=model_name,
+        subfolder="models/DeepONet/trained",
+        unique_id=training_id,
     )
 
-    save_model(
-        model,
-        f"deeponet_interpolation_{interval}.pth",
-        config,
-        train_loss,
-        test_loss,
-        train_multionet_chemical.duration,
-    )
 
-# Models for extrapolation testing
+def train_model(config, surrogate_class):
+    """
+    Train and save models for different purposes based on the config settings.
 
-cutoffs = (50, 60, 70, 80, 90)
+    Args:
+        config (dict): The configuration dictionary.
+        surrogate_class: The class of the surrogate model to train.
+    """
 
-for cutoff in cutoffs:
+    # Load data
+    data_path = "data/osu_data"
+    full_train_data = np.load(os.path.join(data_path, "train_data.npy"))
+    full_test_data = np.load(os.path.join(data_path, "test_data.npy"))
+    osu_timesteps = np.linspace(0, 99, 100)
 
-    # Modify the data for extrapolation testing
-    train_data = full_train_data[:, :cutoff]
-    test_data = full_test_data[:, :cutoff]
+    # Just for testing purposes
+    # full_train_data = full_train_data[:32]
+    # full_test_data = full_test_data[:32]
 
-    dataloader_train = create_dataloader_chemicals(
-        train_data, osu_timesteps[:cutoff], batch_size=config.batch_size, shuffle=True
-    )
-    dataloader_test = create_dataloader_chemicals(
-        test_data, osu_timesteps[:cutoff], batch_size=config.batch_size, shuffle=False
-    )
+    print(f"Loaded data with shape: {full_train_data.shape}/{full_test_data.shape}")
 
-    model, train_loss, test_loss = train_multionet_chemical(
-        config, dataloader_train, dataloader_test
-    )
+    training_id = config["training_ID"]
 
-    save_model(
-        model,
-        f"deeponet_extrapolation_{cutoff}.pth",
-        config,
-        train_loss,
-        test_loss,
-        train_multionet_chemical.duration,
-    )
+    # Main model for timing and accuracy
+    if config["accuracy"]:
+        train_and_save_model(
+            "main_deeponet.pth",
+            full_train_data,
+            full_test_data,
+            osu_timesteps,
+            surrogate_class,
+            training_id,
+        )
 
-# Sparse data performance testing
+    # Models for interpolation testing
+    if config["interpolation"]["enabled"]:
+        for interval in config["interpolation"]["intervals"]:
+            train_data = full_train_data[:, ::interval]
+            test_data = full_test_data[:, ::interval]
+            train_and_save_model(
+                f"deeponet_interpolation_{interval}.pth",
+                train_data,
+                test_data,
+                osu_timesteps[::interval],
+                surrogate_class,
+                training_id,
+            )
 
-factors = (2, 4, 8, 16, 32)
+    # Models for extrapolation testing
+    if config["extrapolation"]["enabled"]:
+        for cutoff in config["extrapolation"]["cutoffs"]:
+            train_data = full_train_data[:, :cutoff]
+            test_data = full_test_data[:, :cutoff]
+            train_and_save_model(
+                f"deeponet_extrapolation_{cutoff}.pth",
+                train_data,
+                test_data,
+                osu_timesteps[:cutoff],
+                surrogate_class,
+                training_id,
+            )
 
-for factor in factors:
+    # Sparse data performance testing
+    if config["sparse"]["enabled"]:
+        for factor in config["sparse"]["factors"]:
+            train_data = full_train_data[::factor]
+            test_data = full_test_data[::factor]
+            train_and_save_model(
+                f"deeponet_sparse_{factor}.pth",
+                train_data,
+                test_data,
+                osu_timesteps[::factor],
+                surrogate_class,
+                training_id,
+            )
 
-    # Modify the data for sparse data testing
-    train_data = full_train_data[::factor]
-    test_data = full_test_data[::factor]
+    # UQ using deep ensemble
+    if config["UQ"]["enabled"]:
+        n_models = config["UQ"]["n_models"]
+        for i in range(n_models):
+            train_and_save_model(
+                f"deeponet_ensemble_{i}.pth",
+                full_train_data,
+                full_test_data,
+                osu_timesteps,
+                surrogate_class,
+                training_id,
+            )
 
-    dataloader_train = create_dataloader_chemicals(
-        train_data,
-        osu_timesteps[::factor],
-        batch_size=config.batch_size,
-        shuffle=True,
-    )
-    dataloader_test = create_dataloader_chemicals(
-        test_data,
-        osu_timesteps[::factor],
-        batch_size=config.batch_size,
-        shuffle=False,
-    )
 
-    model, train_loss, test_loss = train_multionet_chemical(
-        config, dataloader_train, dataloader_test
-    )
+# 3. Define the main function
 
-    save_model(
-        model,
-        f"deeponet_sparse_{factor}.pth",
-        config,
-        train_loss,
-        test_loss,
-        train_multionet_chemical.duration,
-    )
+
+def main():
+    for surrogate_name in config["surrogates"]:
+        if surrogate_name in surrogate_classes:
+            surrogate_class = surrogate_classes[surrogate_name]
+            train_model(config, surrogate_class)
+        else:
+            print(f"Surrogate {surrogate_name} not recognized. Skipping.")
+
+
+# 4. Run the main function if executed as a script
+
+if __name__ == "__main__":
+    main()

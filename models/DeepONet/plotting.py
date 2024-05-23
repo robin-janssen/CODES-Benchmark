@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from typing import Optional
 from itertools import cycle
 import numpy as np
-from DeepONet.utils import create_date_based_directory, save_plot_counter
+from .utils import create_date_based_directory, save_plot_counter
 
 
 def plot_functions_and_antiderivatives(

@@ -3,7 +3,7 @@ from typing import Optional
 
 # from optuna import Trial
 
-from data.osu_chemicals import osu_masses
+from data.osu_data.osu_chemicals import osu_masses
 
 
 @dataclass
@@ -72,7 +72,7 @@ class OChemicalTrainConfig:
     trunk_hidden_layers: int = 5
     output_neurons: int = 290
     N_outputs: int = 29
-    num_epochs: int = 500
+    num_epochs: int = 10
     learning_rate: float = 3e-4
     schedule: bool = False
     N_sensors: int = 29

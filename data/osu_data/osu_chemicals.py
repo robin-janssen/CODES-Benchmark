@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-from DeepONet.utils import get_project_path
+from models.DeepONet.utils import get_project_path
 
 # from DeepONet.data_utils import train_test_split
 

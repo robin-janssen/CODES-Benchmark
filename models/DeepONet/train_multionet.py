@@ -11,9 +11,14 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from DeepONet.deeponet import MultiONet, MultiONetB, MultiONetT, OperatorNetworkType
+from .deeponet import (
+    MultiONet,
+    MultiONetB,
+    MultiONetT,
+    OperatorNetworkType,
+)
 
-from DeepONet.utils import get_project_path
+from .utils import get_project_path
 
 
 from .train_utils import (
@@ -50,6 +55,8 @@ def load_multionet(
         model_path (str): Path to the saved state dictionary. As seen from the parent directory of src.
     Returns:
         deeponet: Loaded DeepONet model.
+        prev_train_loss: Previous training loss.
+        prev_test_loss: Previous test loss.
     """
     # If the conf is a dataclass, convert it to a dictionary
     if dataclasses.is_dataclass(conf):
