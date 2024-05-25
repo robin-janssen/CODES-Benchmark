@@ -8,7 +8,7 @@ from tqdm import tqdm
 from typing import Tuple, Optional, TypeVar
 import yaml
 
-from surrogates.surrogate import AbstractSurrogateModel
+from surrogates.surrogates import AbstractSurrogateModel
 
 # Use the below import to adjust the config class to the specific model
 from surrogates.DeepONet.config_classes import OChemicalTrainConfig as MultiONetConfig
@@ -199,26 +199,44 @@ class MultiONet(OperatorNetwork):
         Returns:
             tuple: The total loss, outputs, and targets.
         """
+        device = self.device
         self.eval()
+        self.to(device)
+
         total_loss = 0
-        outputs_list = []
-        targets_list = []
+        preds_buffer = []
+        targets_buffer = []
         with torch.no_grad():
-            for batch in data_loader:
-                branch_input, trunk_input, targets = batch
-                branch_input, trunk_input, targets = (
-                    branch_input.to(self.device),
-                    trunk_input.to(self.device),
-                    targets.to(self.device),
+            for branch_inputs, trunk_inputs, targets in data_loader:
+                branch_inputs, trunk_inputs, targets = (
+                    branch_inputs.to(device),
+                    trunk_inputs.to(device),
+                    targets.to(device),
                 )
-                outputs = self.forward(branch_input, trunk_input)
+                outputs = self.forward(branch_inputs, trunk_inputs)
                 loss = criterion(outputs, targets)
                 total_loss += loss.item()
-                outputs_list.append(outputs.cpu().numpy())
-                targets_list.append(targets.cpu().numpy())
-        outputs = np.concatenate(outputs_list, axis=0)
-        targets = np.concatenate(targets_list, axis=0)
-        return total_loss / len(data_loader), outputs, targets
+
+                preds_buffer.append(outputs.cpu().numpy())
+                targets_buffer.append(targets.cpu().numpy())
+
+        preds_buffer = np.concatenate(preds_buffer, axis=0)
+        targets_buffer = np.concatenate(targets_buffer, axis=0)
+
+        # Calculate relative error
+        total_loss /= len(data_loader.dataset) * targets_buffer.shape[1]
+
+        if reshape:
+            preds_buffer = preds_buffer.reshape(-1, N_timesteps, preds_buffer.shape[1])
+            targets_buffer = targets_buffer.reshape(
+                -1, N_timesteps, targets_buffer.shape[1]
+            )
+
+        if transpose:
+            preds_buffer = preds_buffer.transpose(0, 2, 1)
+            targets_buffer = targets_buffer.transpose(0, 2, 1)
+
+        return total_loss, preds_buffer, targets_buffer
 
     def save(
         self,
@@ -355,6 +373,9 @@ class MultiONet(OperatorNetwork):
         """
         self.train()
         total_loss = 0
+        dataset_size = len(data_loader.dataset)
+        N_outputs = self.config.N_outputs
+
         for batch in data_loader:
             branch_input, trunk_input, targets = batch
             branch_input, trunk_input, targets = (
@@ -362,10 +383,14 @@ class MultiONet(OperatorNetwork):
                 trunk_input.to(self.device),
                 targets.to(self.device),
             )
+
             optimizer.zero_grad()
             outputs = self.forward(branch_input, trunk_input)
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
+
             total_loss += loss.item()
-        return total_loss / len(data_loader)
+
+        total_loss /= dataset_size * N_outputs
+        return total_loss

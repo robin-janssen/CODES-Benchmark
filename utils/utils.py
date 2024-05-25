@@ -30,7 +30,7 @@ def time_execution(func):
 
 
 def create_model_dir(
-    base_dir: str = ".", subfolder: str = "models", unique_id: str = "run_1"
+    base_dir: str = ".", subfolder: str = "trained", unique_id: str = "run_1"
 ) -> str:
     """
     Create a directory based on a unique identifier inside a specified subfolder of the base directory.
