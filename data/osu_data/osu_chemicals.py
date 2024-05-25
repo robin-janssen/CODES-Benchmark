@@ -1,12 +1,13 @@
 import os
 import numpy as np
+import torch
 
 from surrogates.DeepONet.utils import get_project_path
 
 # from DeepONet.data_utils import train_test_split
 
 
-def load_chemical_data(data_folder, file_extension=".dat", separator=" "):
+def load_chemical_data(data_folder, file_extension=".dat", separator=" ", dtype=np.float64):
     """
     Load chemical data from a directory containing multiple files.
 
@@ -26,7 +27,7 @@ def load_chemical_data(data_folder, file_extension=".dat", separator=" "):
     data_shape = data.shape
 
     # Create an array to store all the data
-    all_data = np.zeros((num_files, *data_shape))
+    all_data = np.zeros((num_files, *data_shape), dtype=dtype)
 
     # Iterate over all the files and load the data
     for i, file in enumerate(files):
@@ -35,6 +36,30 @@ def load_chemical_data(data_folder, file_extension=".dat", separator=" "):
             all_data[i] = data
 
     return all_data
+
+class OSUDataset(torch.utils.data.Dataset):
+    
+    def __init__(self, filepath):
+        self.species = ["C", "C+", "CH", "CH+", "CH2",
+           "CH2+", "CH3", "CH3+", "CH4", "CH4+",
+           "CH5+", "CO", "CO+", "e", "H",
+           "H+", "H2", "H2+", "H2O", "H2O+",
+           "H3+", "H3O+", "HCO+", "O", "O+",
+           "O2", "O2+", "OH", "OH+"]
+        self.data = load_chemical_data(filepath)
+        self.x = self.data[:, :, :29]
+        self.xmin = self.x.min()
+        self.xmax = self.x.max()
+        self.x = 2 * (self.x - self.xmin) / (self.xmax - self.xmin) - 1
+        self.length = self.x.shape[0]
+        if not  self.x.dtype == torch.float64:
+            self.x = torch.tensor(self.x, dtype=torch.float64)
+    
+    def __getitem__(self, index):
+        return self.x[index, :, :]
+
+    def __len__(self):
+        return self.length
 
 
 osu_chemicals = "H, H+, H2, H2+, H3+, O, O+, OH+, OH, O2, O2+, H2O, H2O+, H3O+, C, C+, CH, CH+, CH2, CH2+, CH3, CH3+, CH4, CH4+, CH5+, CO, CO+, HCO+, He, He+, E"
