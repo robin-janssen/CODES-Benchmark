@@ -8,12 +8,10 @@
 
 # 1. Import the necessary libraries
 
-import os
-import numpy as np
 import yaml
 
-from surrogates.DeepONet.dataloader import create_dataloader_chemicals
-from surrogates.surrogates import surrogate_classes
+from surrogates.surrogate_classes import surrogate_classes
+from data import check_and_load_data
 
 # Load configuration from YAML
 with open("config.yaml", "r") as file:
@@ -47,20 +45,16 @@ def train_and_save_model(
     """
     # Instantiate the model to access its internal configuration
     model = surrogate_class()
-    batch_size = model.config.batch_size
 
-    dataloader_train = create_dataloader_chemicals(
-        train_data, timesteps, batch_size=batch_size, shuffle=True
-    )
-    dataloader_test = create_dataloader_chemicals(
-        test_data, timesteps, batch_size=batch_size, shuffle=False
-    )
+    # Train the model
+    model.fit(train_data, test_data, timesteps)
 
-    model.config.N_timesteps = len(timesteps)
+    # Save the model
+    # Make the name all lowercase
 
-    model.train_model(dataloader_train, dataloader_test)
-
-    model_name = f"{mode}_{extra_info}_{surrogate_name}.pth".strip("_")
+    model_name = f"{surrogate_name.lower()}_{mode}_{extra_info}".strip("_")
+    # Remove any double underscores
+    model_name = model_name.replace("__", "_")
     model.save(
         model_name=model_name,
         subfolder=f"trained/{surrogate_name}",
@@ -68,7 +62,7 @@ def train_and_save_model(
     )
 
 
-def train_model(config, surrogate_class, surrogate_name):
+def train_surrogate(config, surrogate_class, surrogate_name):
     """
     Train and save models for different purposes based on the config settings.
 
@@ -79,10 +73,8 @@ def train_model(config, surrogate_class, surrogate_name):
     """
 
     # Load data
-    data_path = "data/osu_data"
-    full_train_data = np.load(os.path.join(data_path, "train_data.npy"))
-    full_test_data = np.load(os.path.join(data_path, "test_data.npy"))
-    osu_timesteps = np.linspace(0, 99, 100)
+    full_train_data, osu_timesteps, _ = check_and_load_data(config["dataset"], "train")
+    full_test_data, _, _ = check_and_load_data(config["dataset"], "test")
 
     # Just for testing purposes
     full_train_data = full_train_data[:32]
@@ -96,7 +88,7 @@ def train_model(config, surrogate_class, surrogate_name):
     if config["accuracy"]:
         print("Training main model...")
         train_and_save_model(
-            "accuracy",
+            "main",
             surrogate_name,
             full_train_data,
             full_test_data,
@@ -160,7 +152,7 @@ def train_model(config, surrogate_class, surrogate_name):
     if config["UQ"]["enabled"]:
         print("Training UQ models...")
         n_models = config["UQ"]["n_models"]
-        for i in range(n_models):
+        for i in range(n_models - 1):
             train_and_save_model(
                 "UQ",
                 surrogate_name,
@@ -169,7 +161,7 @@ def train_model(config, surrogate_class, surrogate_name):
                 osu_timesteps,
                 surrogate_class,
                 training_id,
-                extra_info=str(i),
+                extra_info=str(i + 1),
             )
 
 
@@ -180,7 +172,7 @@ def main():
     for surrogate_name in config["surrogates"]:
         if surrogate_name in surrogate_classes:
             surrogate_class = surrogate_classes[surrogate_name]
-            train_model(config, surrogate_class, surrogate_name)
+            train_surrogate(config, surrogate_class, surrogate_name)
         else:
             print(f"Surrogate {surrogate_name} not recognized. Skipping.")
 

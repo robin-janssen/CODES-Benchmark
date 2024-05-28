@@ -4,7 +4,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 
 from models import ModelWrapper
-from data.lorenzo_data.lorenzo_data_utils import *
+from data import LorenzoDatasetSmall
 from params import DEVICE
 
 latent_dim = 5
@@ -15,19 +15,21 @@ batch_size = 256
 
 t_range = torch.linspace(0, 1, 16).to(DEVICE)
 
-losses_list = ["L2"] #["L2", "id", "deriv", "deriv2"]
+losses_list = ["L2"]  # ["L2", "id", "deriv", "deriv2"]
 loss_weights = torch.tensor(len(losses_list) * [1])
 
-model = ModelWrapper(real_vars=10,
-                     latent_vars=latent_dim,
-                     ode_width = 128,
-                     ode_hidden = 5,
-                     tanh_reg = True,
-                     coder_hidden = 4,
-                     width_list = [32, 16, 8],
-                     coder_activation=torch.nn.ReLU(),
-                     loss_weights=loss_weights,
-                     losses_list=losses_list).to(DEVICE)
+model = ModelWrapper(
+    real_vars=10,
+    latent_vars=latent_dim,
+    ode_width=128,
+    ode_hidden=5,
+    tanh_reg=True,
+    coder_hidden=4,
+    width_list=[32, 16, 8],
+    coder_activation=torch.nn.ReLU(),
+    loss_weights=loss_weights,
+    losses_list=losses_list,
+).to(DEVICE)
 
 
 optimizer = Adam(model.parameters(), lr=learning_rate)

@@ -1,12 +1,5 @@
 from abc import ABC, abstractmethod
 import torch.nn as nn
-from surrogates.DeepONet.deeponet import MultiONet
-
-# Define surrogate classes
-surrogate_classes = {
-    "DeepONet": MultiONet,
-    # Add any additional surrogate classes here
-}
 
 
 # Define abstract base class for surrogate models

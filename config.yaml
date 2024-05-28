@@ -1,6 +1,6 @@
 training_ID: "training1"
-
 surrogates: ["DeepONet", "NeuralODE"]
+dataset: "Osu2008"
 
 training: 
   epochs: 100
@@ -22,3 +22,4 @@ sparse:
 UQ: 
   enabled: True
   n_models: 5  # Number of models for deep ensemble
+compare: True # Whether to compare the surrogates

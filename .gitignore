@@ -1,1 +1,4 @@
 /trained
+*.pyc
+/plots
+**/.DS_Store

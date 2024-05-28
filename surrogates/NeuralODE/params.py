@@ -1,1 +1,1 @@
-DEVICE = 'cuda:1'
+DEVICE = "cuda:1"

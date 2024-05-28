@@ -21,10 +21,10 @@ def create_dataloader_chemicals(
     :param fraction: Fraction of the grid points to sample.
     :param batch_size: Batch size for the DataLoader.
     :param shuffle: Whether to shuffle the data.
+    :param normalize: Whether to normalize the data.
     :return: A DataLoader object.
     """
-    # Create subsampling grid
-
+    # Initialize lists to store the inputs and targets
     branch_inputs = []
     trunk_inputs = []
     targets = []
@@ -67,5 +67,8 @@ def create_dataloader_chemicals(
         np.random.seed(np_seed)
 
     return DataLoader(
-        dataset, batch_size=batch_size, shuffle=shuffle, worker_init_fn=worker_init_fn
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        worker_init_fn=worker_init_fn,
     )

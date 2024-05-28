@@ -12,6 +12,7 @@ from surrogates.surrogates import AbstractSurrogateModel
 
 # Use the below import to adjust the config class to the specific model
 from surrogates.DeepONet.config_classes import OChemicalTrainConfig as MultiONetConfig
+from surrogates.DeepONet.dataloader import create_dataloader_chemicals
 
 from utils import time_execution, create_model_dir
 from .train_utils import mass_conservation_loss
@@ -138,19 +139,38 @@ class MultiONet(OperatorNetwork):
     @time_execution
     def fit(
         self,
-        data_loader: DataLoader,
-        test_loader: Optional[DataLoader] = None,
+        train_data: np.ndarray,
+        test_data: np.ndarray,
+        timesteps: np.ndarray,
     ) -> None:
         """
         Train the MultiONet model.
 
         Args:
-            data_loader (DataLoader): The DataLoader object containing the training data.
-            test_loader (DataLoader, optional): The DataLoader object containing the test data.
+            train_data (np.ndarray): The training data.
+            test_data (np.ndarray): The test data.
+            timesteps (np.ndarray): The timesteps.
 
         Returns:
             None
         """
+        batch_size = self.config.batch_size
+        self.N_timesteps = len(timesteps)
+        self.N_train_samples = train_data.shape[0]
+
+        train_loader = create_dataloader_chemicals(
+            train_data,
+            timesteps,
+            batch_size=batch_size,
+            shuffle=True,
+        )
+        test_loader = create_dataloader_chemicals(
+            test_data,
+            timesteps,
+            batch_size=batch_size,
+            shuffle=False,
+        )
+
         criterion = self.setup_criterion()
         optimizer, scheduler = self.setup_optimizer_and_scheduler()
 
@@ -160,7 +180,7 @@ class MultiONet(OperatorNetwork):
 
         progress_bar = tqdm(range(self.config.num_epochs), desc="Training Progress")
         for epoch in progress_bar:
-            train_loss_hist[epoch] = self.epoch(data_loader, criterion, optimizer)
+            train_loss_hist[epoch] = self.epoch(train_loader, criterion, optimizer)
 
             clr = optimizer.param_groups[0]["lr"]
             progress_bar.set_postfix({"loss": train_loss_hist[epoch], "lr": clr})
@@ -170,7 +190,7 @@ class MultiONet(OperatorNetwork):
                 test_loss_hist[epoch], _, _ = self.predict(
                     test_loader,
                     criterion,
-                    self.config.N_timesteps,
+                    self.N_timesteps,
                     reshape=True,
                     transpose=True,
                 )
@@ -183,8 +203,6 @@ class MultiONet(OperatorNetwork):
         data_loader: DataLoader,
         criterion: nn.Module,
         N_timesteps: int,
-        reshape: bool = True,
-        transpose: bool = True,
     ) -> Tuple[float, np.ndarray, np.ndarray]:
         """
         Evaluate the model on the test data.
@@ -194,7 +212,6 @@ class MultiONet(OperatorNetwork):
             criterion (nn.Module): The loss function.
             N_timesteps (int): The number of timesteps.
             reshape (bool, optional): Whether to reshape the outputs.
-            transpose (bool, optional): Whether to transpose the outputs.
 
         Returns:
             tuple: The total loss, outputs, and targets.
@@ -226,15 +243,15 @@ class MultiONet(OperatorNetwork):
         # Calculate relative error
         total_loss /= len(data_loader.dataset) * targets_buffer.shape[1]
 
-        if reshape:
-            preds_buffer = preds_buffer.reshape(-1, N_timesteps, preds_buffer.shape[1])
-            targets_buffer = targets_buffer.reshape(
-                -1, N_timesteps, targets_buffer.shape[1]
-            )
+        # if reshape:
+        preds_buffer = preds_buffer.reshape(-1, N_timesteps, preds_buffer.shape[1])
+        targets_buffer = targets_buffer.reshape(
+            -1, N_timesteps, targets_buffer.shape[1]
+        )
 
-        if transpose:
-            preds_buffer = preds_buffer.transpose(0, 2, 1)
-            targets_buffer = targets_buffer.transpose(0, 2, 1)
+        # if transpose:
+        #     preds_buffer = preds_buffer.transpose(0, 2, 1)
+        #     targets_buffer = targets_buffer.transpose(0, 2, 1)
 
         return total_loss, preds_buffer, targets_buffer
 

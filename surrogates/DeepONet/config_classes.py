@@ -3,7 +3,7 @@ from typing import Optional
 
 # from optuna import Trial
 
-from data.osu_data.osu_chemicals import osu_masses
+from data.osu2008.osu_chemicals import osu_masses
 
 
 @dataclass

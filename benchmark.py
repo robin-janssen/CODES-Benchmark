@@ -4,7 +4,7 @@ from benchmark.bench_fcts import run_benchmark, compare_models
 from benchmark.bench_utils import check_surrogate
 
 from utils import read_yaml_config
-from surrogates.surrogates import surrogate_classes
+from surrogates.surrogate_classes import surrogate_classes
 
 
 def main(args):
@@ -31,6 +31,8 @@ def main(args):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--config", type=str, default="config.yaml", required=True)
+    parser.add_argument(
+        "--config", default="config.yaml", type=str, help="Path to the config file."
+    )
     args = parser.parse_args()
     main(args)
