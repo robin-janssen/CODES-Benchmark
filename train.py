@@ -9,6 +9,7 @@
 # 1. Import the necessary libraries
 
 import yaml
+import numpy as np
 
 from surrogates.surrogate_classes import surrogate_classes
 from data import check_and_load_data
@@ -23,11 +24,11 @@ with open("config.yaml", "r") as file:
 def train_and_save_model(
     mode: str,
     surrogate_name: str,
-    train_data,
-    test_data,
-    timesteps,
+    train_data: np.ndarray,
+    test_data: np.ndarray,
+    timesteps: np.ndarray,
     surrogate_class,
-    training_id,
+    config,
     extra_info: str = "",
 ):
     """
@@ -40,7 +41,7 @@ def train_and_save_model(
         test_data (np.ndarray): The test data.
         timesteps (np.ndarray): The timesteps.
         surrogate_class: The class of the surrogate model.
-        training_id (str): The unique identifier for the training run.
+        config (dict): The configuration dictionary.
         extra_info (str): Additional information to include in the model name (e.g. interval, cutoff, factor, etc.)
     """
     # Instantiate the model to access its internal configuration
@@ -49,8 +50,7 @@ def train_and_save_model(
     # Train the model
     model.fit(train_data, test_data, timesteps)
 
-    # Save the model
-    # Make the name all lowercase
+    # Save the model (making the name lowercase and removing any underscores)
 
     model_name = f"{surrogate_name.lower()}_{mode}_{extra_info}".strip("_")
     # Remove any double underscores
@@ -58,7 +58,8 @@ def train_and_save_model(
     model.save(
         model_name=model_name,
         subfolder=f"trained/{surrogate_name}",
-        unique_id=training_id,
+        unique_id=config["training_id"],
+        dataset_name=config["dataset"],
     )
 
 
@@ -77,12 +78,10 @@ def train_surrogate(config, surrogate_class, surrogate_name):
     full_test_data, _, _ = check_and_load_data(config["dataset"], "test")
 
     # Just for testing purposes
-    full_train_data = full_train_data[:32]
-    full_test_data = full_test_data[:32]
+    full_train_data = full_train_data[:200]
+    full_test_data = full_test_data[:200]
 
     print(f"Loaded data with shape: {full_train_data.shape}/{full_test_data.shape}")
-
-    training_id = config["training_ID"]
 
     # Main model for timing and accuracy
     if config["accuracy"]:
@@ -94,7 +93,7 @@ def train_surrogate(config, surrogate_class, surrogate_name):
             full_test_data,
             osu_timesteps,
             surrogate_class,
-            training_id,
+            config,
         )
 
     # Models for interpolation testing
@@ -110,7 +109,7 @@ def train_surrogate(config, surrogate_class, surrogate_name):
                 test_data,
                 osu_timesteps[::interval],
                 surrogate_class,
-                training_id,
+                config,
                 extra_info=str(interval),
             )
 
@@ -127,7 +126,7 @@ def train_surrogate(config, surrogate_class, surrogate_name):
                 test_data,
                 osu_timesteps[:cutoff],
                 surrogate_class,
-                training_id,
+                config,
                 extra_info=str(cutoff),
             )
 
@@ -144,7 +143,7 @@ def train_surrogate(config, surrogate_class, surrogate_name):
                 test_data,
                 osu_timesteps,
                 surrogate_class,
-                training_id,
+                config,
                 extra_info=str(factor),
             )
 
@@ -160,7 +159,7 @@ def train_surrogate(config, surrogate_class, surrogate_name):
                 full_test_data,
                 osu_timesteps,
                 surrogate_class,
-                training_id,
+                config,
                 extra_info=str(i + 1),
             )
 

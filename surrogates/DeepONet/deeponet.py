@@ -150,6 +150,7 @@ class MultiONet(OperatorNetwork):
             train_data (np.ndarray): The training data.
             test_data (np.ndarray): The test data.
             timesteps (np.ndarray): The timesteps.
+            dataset_name (str): The name of the dataset.
 
         Returns:
             None
@@ -191,8 +192,6 @@ class MultiONet(OperatorNetwork):
                     test_loader,
                     criterion,
                     self.N_timesteps,
-                    reshape=True,
-                    transpose=True,
                 )
 
         self.train_loss = train_loss_hist
@@ -260,6 +259,7 @@ class MultiONet(OperatorNetwork):
         model_name: str,
         subfolder: str = "trained_models",
         unique_id: str = "run_1",
+        dataset_name: str = "dataset",
     ) -> None:
         """
         Save the trained model and hyperparameters.
@@ -268,9 +268,11 @@ class MultiONet(OperatorNetwork):
             model_name (str): The name of the model.
             subfolder (str): The subfolder to save the model in.
             unique_id (str): A unique identifier to include in the directory name.
+            dataset_name (str): The name of the dataset.
         """
         base_dir = os.getcwd()
         model_dir = create_model_dir(base_dir, subfolder, unique_id)
+        self.dataset_name = dataset_name
 
         # Save the model state dict
         model_path = os.path.join(model_dir, f"{model_name}.pth")
@@ -279,8 +281,14 @@ class MultiONet(OperatorNetwork):
         # Create the hyperparameters dictionary from the config dataclass
         hyperparameters = dataclasses.asdict(self.config)
 
+        # Remove the masses list from the hyperparameters
+        hyperparameters.pop("masses", None)
+
         # Append the train time to the hyperparameters
         hyperparameters["train_duration"] = self.fit.duration
+        hyperparameters["N_train_samples"] = self.N_train_samples
+        hyperparameters["N_timesteps"] = self.N_timesteps
+        hyperparameters["dataset_name"] = self.dataset_name
 
         # Save hyperparameters as a YAML file
         hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")

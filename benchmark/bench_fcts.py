@@ -1,6 +1,6 @@
-import os
 import torch
 import numpy as np
+import time
 from typing import Dict, Any
 from torch.utils.data import DataLoader
 from scipy.stats import pearsonr
@@ -12,8 +12,16 @@ from .bench_plots import (
     plot_dynamic_correlation,
     plot_generalization_errors,
     plot_sparse_errors,
+    plot_average_uncertainty_over_time,
+    plot_example_predictions_with_uncertainty,
+    plot_uncertainty_vs_errors,
 )
-from .bench_utils import load_model
+from .bench_utils import (
+    load_model,
+    count_trainable_parameters,
+    measure_memory_footprint,
+    write_metrics_to_yaml,
+)
 from data import check_and_load_data
 
 
@@ -34,8 +42,6 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
 
     # Placeholder for metrics
     metrics = {}
-    training_id = conf["training_ID"]
-    base_dir = os.path.join("trained", surr_name, training_id)
 
     full_test_data, timesteps, N_train_samples = check_and_load_data(
         conf["dataset"], "test"
@@ -62,6 +68,18 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
             surr, surr_name, test_loader, timesteps, conf
         )
 
+    # Timing benchmark
+    if conf["timing"]:
+        print("Running timing benchmark...")
+        metrics["timing"] = time_inference(
+            surr, surr_name, test_loader, timesteps, conf
+        )
+
+    # Compute (resources) benchmark
+    if conf["compute"]:
+        print("Running compute benchmark...")
+        metrics["compute"] = evaluate_compute(surr, surr_name, test_loader, conf)
+
     # Interpolation benchmark
     if conf["interpolation"]["enabled"]:
         print("Running interpolation benchmark...")
@@ -86,13 +104,10 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
     # Uncertainty Quantification (UQ) benchmark
     if conf["UQ"]["enabled"]:
         print("Running UQ benchmark...")
-        n_models = conf["UQ"]["n_models"]
-        uq_metrics = []
-        for i in range(n_models):
-            statedict_path = os.path.join(base_dir, f"{surr_name.lower()}_UQ_{i}.pth")
-            model = load_model(surr, statedict_path)
-            uq_metrics.append(evaluate_UQ(model, conf))
-        metrics["UQ"] = uq_metrics
+        metrics["UQ"] = evaluate_UQ(surr, surr_name, test_loader, timesteps, conf)
+
+    # Write metrics to yaml
+    write_metrics_to_yaml(surr_name, conf, metrics)
 
     return metrics
 
@@ -112,7 +127,7 @@ def evaluate_accuracy(
     Returns:
         dict: A dictionary containing accuracy metrics.
     """
-    training_id = conf["training_ID"]
+    training_id = conf["training_id"]
 
     # Load the model
     model = load_model(
@@ -174,7 +189,7 @@ def evaluate_dynamic_accuracy(
     Returns:
         dict: A dictionary containing dynamic accuracy metrics.
     """
-    training_id = conf["training_ID"]
+    training_id = conf["training_id"]
 
     # Load the model
     model = load_model(
@@ -226,6 +241,95 @@ def evaluate_dynamic_accuracy(
     return dynamic_accuracy_metrics
 
 
+def time_inference(
+    surr,
+    surr_name: str,
+    test_loader: DataLoader,
+    timesteps: np.ndarray,
+    conf: dict,
+    n_runs: int = 5,
+) -> Dict[str, Any]:
+    """
+    Time the inference of the surrogate model.
+
+    Args:
+        surr: The surrogate model class.
+        surr_name (str): The name of the surrogate model.
+        test_loader (DataLoader): The DataLoader object containing the test data.
+        timesteps (np.ndarray): The timesteps array.
+        conf (dict): The configuration dictionary.
+        n_runs (int, optional): Number of times to run the inference for timing.
+
+    Returns:
+        dict: A dictionary containing timing metrics.
+    """
+    training_id = conf["training_id"]
+    model_identifier = f"{surr_name.lower()}_main"
+    model = load_model(surr, training_id, surr_name, model_identifier=model_identifier)
+
+    criterion = torch.nn.MSELoss(reduction="sum")
+
+    # Run inference multiple times and record the durations
+    inference_times = []
+    for _ in range(n_runs):
+        start_time = time.time()
+        _, _, _ = model.predict(test_loader, criterion, N_timesteps=len(timesteps))
+        end_time = time.time()
+        inference_times.append(end_time - start_time)
+
+    # Calculate metrics
+    mean_inference_time = np.mean(inference_times)
+    std_inference_time = np.std(inference_times)
+    num_predictions = len(test_loader.dataset)
+
+    # Store metrics
+    timing_metrics = {
+        "mean_inference_time_per_run": mean_inference_time,
+        "std_inference_time_per_run": std_inference_time,
+        "num_predictions": num_predictions,
+        "mean_inference_time_per_prediction": mean_inference_time / num_predictions,
+        "std_inference_time_per_prediction": std_inference_time / num_predictions,
+    }
+
+    return timing_metrics
+
+
+def evaluate_compute(
+    surr, surr_name: str, test_loader: DataLoader, conf: Dict
+) -> Dict[str, Any]:
+    """
+    Evaluate the computational resource requirements of the surrogate model.
+
+    Args:
+        surr: The surrogate model class.
+        surr_name (str): The name of the surrogate model.
+        test_loader (DataLoader): The DataLoader object containing the test data.
+        conf (dict): The configuration dictionary.
+
+    Returns:
+        dict: A dictionary containing model complexity metrics.
+    """
+    training_id = conf["training_id"]
+    model_identifier = f"{surr_name.lower()}_main"
+    model = load_model(surr, training_id, surr_name, model_identifier=model_identifier)
+
+    # Count the number of trainable parameters
+    num_params = count_trainable_parameters(model)
+
+    # Get a sample input tensor from the test_loader
+    sample_ICs, sample_times, _ = next(iter(test_loader))
+    # Measure the memory footprint during forward and backward pass
+    memory_footprint = measure_memory_footprint(model, sample_ICs, sample_times)
+
+    # Store complexity metrics
+    complexity_metrics = {
+        "num_trainable_parameters": num_params,
+        "memory_footprint": memory_footprint,
+    }
+
+    return complexity_metrics
+
+
 def evaluate_interpolation(
     surr, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
 ) -> Dict[str, Any]:
@@ -242,7 +346,7 @@ def evaluate_interpolation(
     Returns:
         dict: A dictionary containing interpolation metrics.
     """
-    training_id = conf["training_ID"]
+    training_id = conf["training_id"]
     intervals = conf["interpolation"]["intervals"]
     interpolation_metrics = []
 
@@ -301,19 +405,12 @@ def evaluate_extrapolation(
     Returns:
         dict: A dictionary containing extrapolation metrics.
     """
-    training_id = conf["training_ID"]
+    training_id = conf["training_id"]
     cutoffs = conf["extrapolation"]["cutoffs"]
     extrapolation_metrics = []
 
     # Criterion for prediction loss
     criterion = torch.nn.MSELoss(reduction="sum")
-
-    # Evaluate main model (no cutoff)
-    model = load_model(
-        surr, training_id, surr_name, model_identifier=f"{surr_name.lower()}_main"
-    )
-    total_loss, _, _ = model.predict(test_loader, criterion, N_timesteps=len(timesteps))
-    extrapolation_metrics.append({"cutoff": len(timesteps), "total_loss": total_loss})
 
     # Evaluate models for each cutoff
     for cutoff in cutoffs:
@@ -327,6 +424,13 @@ def evaluate_extrapolation(
             test_loader, criterion, N_timesteps=len(timesteps)
         )
         extrapolation_metrics.append({"cutoff": cutoff, "total_loss": total_loss})
+
+    # Evaluate main model (no cutoff)
+    model = load_model(
+        surr, training_id, surr_name, model_identifier=f"{surr_name.lower()}_main"
+    )
+    total_loss, _, _ = model.predict(test_loader, criterion, N_timesteps=len(timesteps))
+    extrapolation_metrics.append({"cutoff": len(timesteps), "total_loss": total_loss})
 
     # Extract metrics and errors for plotting
     metrics = np.array([metric["cutoff"] for metric in extrapolation_metrics])
@@ -356,7 +460,7 @@ def evaluate_sparse(
     Returns:
         dict: A dictionary containing sparse training metrics.
     """
-    training_id = conf["training_ID"]
+    training_id = conf["training_id"]
     factors = conf["sparse"]["factors"]
     sparse_metrics = []
 
@@ -418,19 +522,68 @@ def evaluate_sparse(
     return sparse_metrics
 
 
-def evaluate_UQ(model, conf: Dict) -> Dict[str, Any]:
+def evaluate_UQ(
+    surr, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
+) -> Dict[str, Any]:
     """
-    Evaluate the uncertainty quantification of the surrogate model.
+    Evaluate the uncertainty quantification (UQ) performance of the surrogate model.
 
     Args:
-        model: The surrogate model to evaluate.
+        surr: The surrogate model class.
+        surr_name (str): The name of the surrogate model.
+        test_loader (DataLoader): The DataLoader object containing the test data.
+        timesteps (np.ndarray): The timesteps array.
         conf (dict): The configuration dictionary.
 
     Returns:
         dict: A dictionary containing UQ metrics.
     """
-    # Placeholder for UQ evaluation logic
-    pass
+    training_id = conf["training_id"]
+    n_models = conf["UQ"]["n_models"]
+    UQ_metrics = []
+
+    # Criterion for prediction loss
+    criterion = torch.nn.MSELoss(reduction="sum")
+
+    # Obtain predictions for each model
+    all_predictions = []
+    for i in range(n_models):
+        model_identifier = (
+            f"{surr_name.lower()}_main" if i == 0 else f"{surr_name.lower()}_UQ_{i}"
+        )
+        model = load_model(
+            surr, training_id, surr_name, model_identifier=model_identifier
+        )
+        _, preds_buffer, targets_buffer = model.predict(
+            test_loader, criterion, N_timesteps=len(timesteps)
+        )
+        all_predictions.append(preds_buffer)
+
+    all_predictions = np.array(all_predictions)
+
+    # Calculate average uncertainty
+    preds_mean = np.mean(all_predictions, axis=0)
+    preds_std = np.std(all_predictions, axis=0)
+    average_uncertainty = np.mean(preds_std)
+
+    # Correlate uncertainty with errors
+    errors = np.abs(preds_mean - targets_buffer)
+    correlation_metrics, _ = pearsonr(errors.flatten(), preds_std.flatten())
+
+    # Plots
+    plot_example_predictions_with_uncertainty(
+        surr_name, conf, preds_mean, preds_std, targets_buffer, timesteps, save=True
+    )
+    plot_average_uncertainty_over_time(surr_name, conf, preds_std, timesteps, save=True)
+    plot_uncertainty_vs_errors(surr_name, conf, preds_std, errors, save=True)
+
+    # Store metrics
+    UQ_metrics = {
+        "average_uncertainty": average_uncertainty,
+        "correlation_metrics": correlation_metrics,
+    }
+
+    return UQ_metrics
 
 
 def compare_models(metrics):

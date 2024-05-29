@@ -72,7 +72,7 @@ class OChemicalTrainConfig:
     trunk_hidden_layers: int = 5
     output_neurons: int = 290
     N_outputs: int = 29
-    num_epochs: int = 10
+    num_epochs: int = 40
     learning_rate: float = 3e-4
     schedule: bool = False
     N_sensors: int = 29
@@ -85,27 +85,3 @@ class OChemicalTrainConfig:
     regularization_factor: float = 0.012
     massloss_factor: float = 0.012
     batch_size: int = 128
-
-
-@dataclass
-class SpectraTrainConfig:
-    """Dataclass for the configuration of a multionet model for the spectral dataset."""
-
-    branch_input_size: int = 92
-    trunk_input_size: int = 2
-    hidden_size: int = 100
-    branch_hidden_layers: int = 3
-    trunk_hidden_layers: int = 3
-    output_neurons: int = 100
-    N_outputs: int = 1
-    num_epochs: int = 10
-    learning_rate: float = 1e-4
-    schedule: bool = False
-    N_sensors: int = 92
-    N_timesteps: int = 11
-    pretrained_model_path: Optional[str] = None
-    device: str = "mps"
-    use_streamlit: bool | None = None
-    # optuna_trial: Trial | None = None
-    regularization_factor: float = 0.0
-    batch_size: int = 256

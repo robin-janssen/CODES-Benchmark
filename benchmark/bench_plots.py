@@ -17,10 +17,10 @@ def save_plot(plt, filename: str, conf: dict, surr_name: str) -> None:
     Raises:
         ValueError: If the configuration dictionary does not contain the required keys.
     """
-    if "training_ID" not in conf:
-        raise ValueError("Configuration dictionary must contain 'training_ID'.")
+    if "training_id" not in conf:
+        raise ValueError("Configuration dictionary must contain 'training_id'.")
 
-    training_id = conf["training_ID"]
+    training_id = conf["training_id"]
     plot_dir = os.path.join("plots", training_id, surr_name)
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
@@ -235,4 +235,152 @@ def plot_sparse_errors(
     if save and conf:
         save_plot(plt, "sparse_errors.png", conf, surr_name)
 
-    plt.show()
+    # plt.show()
+
+
+def plot_example_predictions_with_uncertainty(
+    surr_name: str,
+    conf: dict,
+    preds_mean: np.ndarray,
+    preds_std: np.ndarray,
+    targets: np.ndarray,
+    timesteps: np.ndarray,
+    num_examples: int = 4,
+    num_chemicals: int = 8,
+    save: bool = False,
+) -> None:
+    """
+    Plot example predictions with uncertainty.
+
+    Args:
+        surr_name (str): The name of the surrogate model.
+        conf (dict): The configuration dictionary.
+        preds_mean (np.ndarray): Mean predictions from the ensemble of models.
+        preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
+        targets (np.ndarray): True targets.
+        timesteps (np.ndarray): Timesteps array.
+        num_examples (int, optional): Number of example plots to generate.
+        num_chemicals (int, optional): Number of chemicals to plot.
+        save (bool, optional): Whether to save the plot as a file.
+    """
+    colors = plt.cm.viridis(np.linspace(0, 1, num_chemicals))
+
+    fig, axs = plt.subplots(2, 2, figsize=(15, 10))
+    for example_idx in range(num_examples):
+        ax = axs[example_idx // 2, example_idx % 2]
+        for chem_idx in range(num_chemicals):
+            gt = targets[example_idx, :, chem_idx]
+            mean = preds_mean[example_idx, :, chem_idx]
+            std = preds_std[example_idx, :, chem_idx]
+
+            ax.plot(
+                timesteps,
+                gt,
+                color=colors[chem_idx],
+                label=f"GT Chemical {chem_idx+1}",
+            )
+            ax.plot(
+                timesteps,
+                mean,
+                "--",
+                color=colors[chem_idx],
+                label=f"Pred Chemical {chem_idx+1}",
+            )
+
+            # Plot standard deviations as shaded areas
+            for sigma_multiplier in [1, 2, 3]:  # 1, 2, and 3 standard deviations
+                ax.fill_between(
+                    timesteps,
+                    mean - sigma_multiplier * std,
+                    mean + sigma_multiplier * std,
+                    color=colors[chem_idx],
+                    alpha=0.5 / sigma_multiplier,
+                )
+
+    plt.legend()
+    plt.tight_layout()
+
+    if save and conf:
+        save_plot(plt, "UQ_predictions.png", conf, surr_name)
+
+
+# def save_plot(filename: str, conf: dict, surr_name: str) -> None:
+#     """
+#     Save a plot to the specified directory based on the configuration.
+
+#     Args:
+#         filename (str): The name of the file to save.
+#         conf (Dict): Configuration dictionary.
+#         surr_name (str): The name of the surrogate model.
+#     """
+#     training_id = conf["training_id"]
+#     plot_dir = os.path.join("plots", training_id, surr_name)
+#     if not os.path.exists(plot_dir):
+#         os.makedirs(plot_dir)
+#     filepath = os.path.join(plot_dir, filename)
+#     plt.savefig(filepath)
+#     print(f"Plot saved as: {filepath}")
+
+
+def plot_average_uncertainty_over_time(
+    surr_name: str,
+    conf: dict,
+    preds_std: np.ndarray,
+    timesteps: np.ndarray,
+    save: bool = False,
+) -> None:
+    """
+    Plot the average uncertainty over time.
+
+    Args:
+        surr_name (str): The name of the surrogate model.
+        conf (dict): The configuration dictionary.
+        preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
+        timesteps (np.ndarray): Timesteps array.
+        save (bool, optional): Whether to save the plot as a file.
+    """
+    average_uncertainty_over_time = np.mean(preds_std, axis=(0, 2))
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(timesteps, average_uncertainty_over_time, label="Average Uncertainty")
+    plt.xlabel("Timesteps")
+    plt.ylabel("Average Uncertainty")
+    plt.title("Average Uncertainty Over Time")
+    plt.legend()
+
+    if save and conf:
+        save_plot(plt, "uncertainty_over_time.png", conf, surr_name)
+
+    # plt.show()
+
+
+def plot_uncertainty_vs_errors(
+    surr_name: str,
+    conf: dict,
+    preds_std: np.ndarray,
+    errors: np.ndarray,
+    save: bool = False,
+) -> None:
+    """
+    Plot the correlation between predictive uncertainty and prediction errors.
+
+    Args:
+        surr_name (str): The name of the surrogate model.
+        conf (dict): The configuration dictionary.
+        preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
+        errors (np.ndarray): Prediction errors.
+        save (bool, optional): Whether to save the plot as a file.
+    """
+    # Normalize the errors
+    errors = errors / np.abs(errors).max()
+
+    plt.figure(figsize=(10, 6))
+    plt.scatter(preds_std.flatten(), errors.flatten(), alpha=0.5)
+    plt.xlabel("Predictive Uncertainty")
+    plt.ylabel("Prediction Error (Normalized)")
+    plt.title("Correlation between Predictive Uncertainty and Prediction Errors")
+
+    if save and conf:
+        save_plot(plt, "uncertainty_vs_errors.png", conf, surr_name)
+
+    # plt.show()

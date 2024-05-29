@@ -1,6 +1,8 @@
 import os
+import numpy as np
 import yaml
 import torch
+import psutil
 from typing import Dict
 
 
@@ -15,7 +17,7 @@ def check_surrogate(surrogate: str, conf: Dict) -> None:
     Raises:
         FileNotFoundError: If any required models are missing.
     """
-    training_id = conf["training_ID"]
+    training_id = conf["training_id"]
     base_dir = os.getcwd()
     base_dir = os.path.join(base_dir, "trained", surrogate, training_id)
 
@@ -75,7 +77,7 @@ def get_required_models_list(surrogate: str, conf: Dict) -> list:
     if conf["UQ"]["enabled"]:
         n_models = conf["UQ"]["n_models"]
         required_models.extend(
-            [f"{surrogate.lower()}_UQ_{i}.pth" for i in range(n_models)]
+            [f"{surrogate.lower()}_UQ_{i+1}.pth" for i in range(n_models - 1)]
         )
 
     return required_models
@@ -117,3 +119,107 @@ def load_model(
     model.load_state_dict(torch.load(statedict_path))
     model.eval()
     return model
+
+
+def count_trainable_parameters(model: torch.nn.Module) -> int:
+    """
+    Count the number of trainable parameters in the model.
+
+    Args:
+        model (torch.nn.Module): The PyTorch model.
+
+    Returns:
+        int: The number of trainable parameters.
+    """
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+def measure_memory_footprint(
+    model: torch.nn.Module, initial_conditions: torch.Tensor, times: torch.Tensor
+) -> dict:
+    """
+    Measure the memory footprint of the model during the forward and backward pass.
+
+    Args:
+        model (torch.nn.Module): The PyTorch model.
+        initial_conditions (torch.Tensor): The initial conditions tensor.
+        times (torch.Tensor): The times tensor.
+
+    Returns:
+        dict: A dictionary containing memory footprint measurements.
+    """
+    # model.to(model.device)
+    initial_conditions = initial_conditions.to(model.device)
+    times = times.to(model.device)
+
+    def get_memory_usage():
+        process = psutil.Process(os.getpid())
+        return process.memory_info().rss
+
+    # Measure memory usage before the forward pass
+    before_forward = get_memory_usage()
+
+    # Forward pass
+    output = model(initial_conditions, times)
+    after_forward = get_memory_usage()
+
+    # Measure memory usage before the backward pass
+    loss = output.sum()  # Example loss function
+    loss.backward()
+    after_backward = get_memory_usage()
+
+    return {
+        "before_forward": before_forward,
+        "after_forward": after_forward,
+        "forward_pass_memory": after_forward - before_forward,
+        "after_backward": after_backward,
+        "backward_pass_memory": after_backward - after_forward,
+    }
+
+
+def convert_to_standard_types(data):
+    """
+    Recursively convert data to standard types that can be serialized to YAML.
+
+    Args:
+        data: The data to convert.
+
+    Returns:
+        The converted data.
+    """
+    if isinstance(data, np.ndarray):
+        return data.tolist()
+    elif isinstance(data, np.generic):
+        return data.item()
+    elif isinstance(data, dict):
+        return {k: convert_to_standard_types(v) for k, v in data.items()}
+    elif isinstance(data, (list, tuple)):
+        return [convert_to_standard_types(i) for i in data]
+    elif isinstance(data, (int, float, str, bool, type(None))):
+        return data
+    else:
+        return str(data)
+
+
+def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
+    """
+    Write the benchmark metrics to a YAML file.
+
+    Args:
+        surr_name (str): The name of the surrogate model.
+        conf (dict): The configuration dictionary.
+        metrics (dict): The benchmark metrics.
+    """
+    # Convert metrics to standard types
+    metrics = convert_to_standard_types(metrics)
+
+    # Make results directory
+    try:
+        os.makedirs(f"results/{conf['training_id']}")
+    except FileExistsError:
+        pass
+
+    with open(
+        f"results/{conf['training_id']}/{surr_name.lower()}_metrics.yaml", "w"
+    ) as f:
+        yaml.dump(metrics, f)
