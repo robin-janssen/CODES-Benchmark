@@ -222,4 +222,4 @@ def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
     with open(
         f"results/{conf['training_id']}/{surr_name.lower()}_metrics.yaml", "w"
     ) as f:
-        yaml.dump(metrics, f)
+        yaml.dump(metrics, f, sort_keys=False)

@@ -175,6 +175,7 @@ def evaluate_dynamic_accuracy(
     test_loader: DataLoader,
     timesteps: np.ndarray,
     conf: dict,
+    species_names: list = None,
 ) -> dict:
     """
     Evaluate the dynamic accuracy of the surrogate model.
@@ -231,6 +232,14 @@ def evaluate_dynamic_accuracy(
 
     # Plot correlation for averaged species
     plot_dynamic_correlation(surr_name, conf, avg_gradient, avg_error, save=True)
+
+    # Ensure species names are provided
+    species_names = (
+        species_names
+        if species_names is not None
+        else [f"quantity_{i}" for i in range(targets_buffer.shape[2])]
+    )
+    species_correlations = dict(zip(species_names, species_correlations))
 
     # Store metrics
     dynamic_accuracy_metrics = {
@@ -348,42 +357,36 @@ def evaluate_interpolation(
     """
     training_id = conf["training_id"]
     intervals = conf["interpolation"]["intervals"]
-    interpolation_metrics = []
+    intervals = np.sort(np.array(intervals, dtype=int))
+    intervals = intervals[intervals > 1]
+    intervals = np.insert(intervals, 0, 1)
+    interpolation_metrics = {}
 
     # Criterion for prediction loss
     criterion = torch.nn.MSELoss(reduction="sum")
 
-    # Evaluate main model (interval 1)
-    model = load_model(
-        surr, training_id, surr_name, model_identifier=f"{surr_name.lower()}_main"
-    )
-    total_loss, _, _ = model.predict(
-        test_loader,
-        criterion,
-        N_timesteps=len(timesteps),
-    )
-    interpolation_metrics.append({"interval": 1, "total_loss": total_loss})
-
     # Evaluate models for each interval
     for interval in intervals:
-        model = load_model(
-            surr,
-            training_id,
-            surr_name,
-            model_identifier=f"{surr_name.lower()}_interpolation_{interval}",
+        # Ensure that the main model is loaded for interval 1
+        model_id = (
+            f"{surr_name.lower()}_main"
+            if interval == 1
+            else f"{surr_name.lower()}_interpolation_{interval}"
         )
+        model = load_model(surr, training_id, surr_name, model_id)
         total_loss, _, _ = model.predict(
             test_loader, criterion, N_timesteps=len(timesteps)
         )
-        interpolation_metrics.append({"interval": interval, "total_loss": total_loss})
+        interpolation_metrics[f"interval {interval}"] = {"MSE": total_loss}
 
     # Extract metrics and errors for plotting
-    metrics = np.array([metric["interval"] for metric in interpolation_metrics])
-    model_errors = np.array([metric["total_loss"] for metric in interpolation_metrics])
+    model_errors = np.array(
+        [metric["MSE"] for metric in interpolation_metrics.values()]
+    )
 
     # Plot interpolation errors
     plot_generalization_errors(
-        surr_name, conf, metrics, model_errors, interpolate=True, save=True
+        surr_name, conf, intervals, model_errors, interpolate=True, save=True
     )
 
     return interpolation_metrics
@@ -407,38 +410,37 @@ def evaluate_extrapolation(
     """
     training_id = conf["training_id"]
     cutoffs = conf["extrapolation"]["cutoffs"]
-    extrapolation_metrics = []
+    cutoffs = np.sort(np.array(cutoffs, dtype=int))
+    max_cut = len(timesteps)
+    cutoffs = cutoffs[cutoffs < max_cut]
+    cutoffs = np.insert(cutoffs, -1, max_cut)
+    extrapolation_metrics = {}
 
     # Criterion for prediction loss
     criterion = torch.nn.MSELoss(reduction="sum")
 
     # Evaluate models for each cutoff
     for cutoff in cutoffs:
-        model = load_model(
-            surr,
-            training_id,
-            surr_name,
-            model_identifier=f"{surr_name.lower()}_extrapolation_{cutoff}",
+        # Ensure that the main model is loaded for the last cutoff
+        model_id = (
+            f"{surr_name.lower()}_main"
+            if cutoff == max_cut
+            else f"{surr_name.lower()}_extrapolation_{cutoff}"
         )
+        model = load_model(surr, training_id, surr_name, model_id)
         total_loss, _, _ = model.predict(
             test_loader, criterion, N_timesteps=len(timesteps)
         )
-        extrapolation_metrics.append({"cutoff": cutoff, "total_loss": total_loss})
-
-    # Evaluate main model (no cutoff)
-    model = load_model(
-        surr, training_id, surr_name, model_identifier=f"{surr_name.lower()}_main"
-    )
-    total_loss, _, _ = model.predict(test_loader, criterion, N_timesteps=len(timesteps))
-    extrapolation_metrics.append({"cutoff": len(timesteps), "total_loss": total_loss})
+        extrapolation_metrics[f"cutoff {cutoff}"] = {"MSE": total_loss}
 
     # Extract metrics and errors for plotting
-    metrics = np.array([metric["cutoff"] for metric in extrapolation_metrics])
-    model_errors = np.array([metric["total_loss"] for metric in extrapolation_metrics])
+    model_errors = np.array(
+        [metric["MSE"] for metric in extrapolation_metrics.values()]
+    )
 
     # Plot extrapolation errors
     plot_generalization_errors(
-        surr_name, conf, metrics, model_errors, interpolate=False, save=True
+        surr_name, conf, cutoffs, model_errors, interpolate=False, save=True
     )
 
     return extrapolation_metrics
@@ -462,51 +464,38 @@ def evaluate_sparse(
     """
     training_id = conf["training_id"]
     factors = conf["sparse"]["factors"]
-    sparse_metrics = []
+    factors = np.sort(np.array(factors, dtype=int))
+    factors = factors[factors > 1]
+    factors = np.insert(factors, 0, 1)
+    sparse_metrics = {}
 
     # Criterion for prediction loss
     criterion = torch.nn.MSELoss(reduction="sum")
 
-    # Evaluate main model (factor 1)
-    model = load_model(
-        surr, training_id, surr_name, model_identifier=f"{surr_name.lower()}_main"
-    )
-    total_loss, _, _ = model.predict(
-        test_loader,
-        criterion,
-        N_timesteps=len(test_loader.dataset),
-    )
-    sparse_metrics.append(
-        {"factor": 1, "total_loss": total_loss, "n_train_samples": N_train_samples}
-    )
-
     # Evaluate models for each factor
     for factor in factors:
-        model = load_model(
-            surr,
-            training_id,
-            surr_name,
-            model_identifier=f"{surr_name.lower()}_sparse_{factor}",
+        # Ensure that the main model is loaded for factor 1
+        model_id = (
+            f"{surr_name.lower()}_main"
+            if factor == 1
+            else f"{surr_name.lower()}_sparse_{factor}"
         )
+        model = load_model(surr, training_id, surr_name, model_id)
         total_loss, _, _ = model.predict(
             test_loader,
             criterion,
             N_timesteps=len(test_loader.dataset),
         )
         n_train_samples = N_train_samples // factor
-        sparse_metrics.append(
-            {
-                "factor": factor,
-                "total_loss": total_loss,
-                "n_train_samples": n_train_samples,
-            }
-        )
+        sparse_metrics[f"factor {factor}"] = {
+            "MSE": total_loss,
+            "n_train_samples": n_train_samples,
+        }
 
     # Extract metrics and errors for plotting
-    factors = np.array([metric["factor"] for metric in sparse_metrics])
-    model_errors = np.array([metric["total_loss"] for metric in sparse_metrics])
+    model_errors = np.array([metric["MSE"] for metric in sparse_metrics.values()])
     n_train_samples_array = np.array(
-        [metric["n_train_samples"] for metric in sparse_metrics]
+        [metric["n_train_samples"] for metric in sparse_metrics.values()]
     )
 
     # Plot sparse training errors

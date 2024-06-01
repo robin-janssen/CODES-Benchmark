@@ -237,6 +237,8 @@ def plot_sparse_errors(
 
     # plt.show()
 
+    plt.close()
+
 
 def plot_example_predictions_with_uncertainty(
     surr_name: str,
@@ -303,6 +305,8 @@ def plot_example_predictions_with_uncertainty(
     if save and conf:
         save_plot(plt, "UQ_predictions.png", conf, surr_name)
 
+    plt.close()
+
 
 # def save_plot(filename: str, conf: dict, surr_name: str) -> None:
 #     """
@@ -353,6 +357,8 @@ def plot_average_uncertainty_over_time(
 
     # plt.show()
 
+    plt.close()
+
 
 def plot_uncertainty_vs_errors(
     surr_name: str,
@@ -384,3 +390,5 @@ def plot_uncertainty_vs_errors(
         save_plot(plt, "uncertainty_vs_errors.png", conf, surr_name)
 
     # plt.show()
+
+    plt.close()

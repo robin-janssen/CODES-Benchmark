@@ -1,108 +1,108 @@
+accuracy:
+  total_loss: 0.14975280025087553
+  mean_relative_error: 0.4914456903934479
+  median_relative_error: 0.02724798396229744
+  max_relative_error: 20651.052734375
+  min_relative_error: 8.325834244260477e-08
+dynamic_accuracy:
+  species_correlations:
+    quantity_0: 0.2957889987052642
+    quantity_1: 0.5326377654241958
+    quantity_2: 0.508835657519956
+    quantity_3: 0.38904947500320486
+    quantity_4: 0.3948292624875054
+    quantity_5: 0.5002873880428009
+    quantity_6: 0.3811953344877318
+    quantity_7: 0.3735987911304252
+    quantity_8: 0.42602021951677427
+    quantity_9: 0.481197465958327
+    quantity_10: 0.3205888373984611
+    quantity_11: 0.08027892112620189
+    quantity_12: 0.3577672219619178
+    quantity_13: 0.3007365258825837
+    quantity_14: -0.3596549322720064
+    quantity_15: 0.08884091280708264
+    quantity_16: -0.1251085216557903
+    quantity_17: 0.28705102350009376
+    quantity_18: 0.06381156338273085
+    quantity_19: 0.04909526348930002
+    quantity_20: 0.005266173198551785
+    quantity_21: 0.02934248296445022
+    quantity_22: 0.035304187905178266
+    quantity_23: 0.2752278139716062
+    quantity_24: 0.286233202624858
+    quantity_25: 0.27107459493060426
+    quantity_26: 0.2766631185193378
+    quantity_27: 0.2571800551568958
+    quantity_28: -0.21714804527263482
+  avg_correlation: 0.2534321963153613
+timing:
+  mean_inference_time_per_run: 0.8843002796173096
+  std_inference_time_per_run: 0.01675442411742732
+  num_predictions: 20000
+  mean_inference_time_per_prediction: 4.421501398086548e-05
+  std_inference_time_per_prediction: 8.377212058713659e-07
+compute:
+  num_trainable_parameters: 142580
+  memory_footprint:
+    before_forward: 407076864
+    after_forward: 407273472
+    forward_pass_memory: 196608
+    after_backward: 414547968
+    backward_pass_memory: 7274496
+interpolation:
+  interval 1:
+    MSE: 0.14975280025087553
+  interval 2:
+    MSE: 0.2844674921496161
+  interval 3:
+    MSE: 0.31387139397982894
+  interval 4:
+    MSE: 0.6870995841190732
+  interval 5:
+    MSE: 0.5072995552852236
+  interval 6:
+    MSE: 0.3436364903417127
+  interval 7:
+    MSE: 0.3402032300751785
+  interval 8:
+    MSE: 0.3636887444857893
+  interval 9:
+    MSE: 0.49897826369713094
+  interval 10:
+    MSE: 0.4665959952518858
+extrapolation:
+  cutoff 50:
+    MSE: 4.246088719019396
+  cutoff 60:
+    MSE: 3.1870465912917565
+  cutoff 70:
+    MSE: 2.074306275255927
+  cutoff 80:
+    MSE: 0.7361988112877155
+  cutoff 100:
+    MSE: 0.14975280025087553
+  cutoff 90:
+    MSE: 0.4283756352917901
+sparse:
+  factor 1:
+    MSE: 0.14975280025087553
+    n_train_samples: 800
+  factor 2:
+    MSE: 0.4084475592251482
+    n_train_samples: 400
+  factor 4:
+    MSE: 0.30735597670982623
+    n_train_samples: 200
+  factor 8:
+    MSE: 0.8426464664853852
+    n_train_samples: 100
+  factor 16:
+    MSE: 0.5674620742271687
+    n_train_samples: 50
+  factor 32:
+    MSE: 0.9979651169349407
+    n_train_samples: 25
 UQ:
   average_uncertainty: 0.25529539585113525
   correlation_metrics: 0.48092124534305003
-accuracy:
-  max_relative_error: 20651.052734375
-  mean_relative_error: 0.4914456903934479
-  median_relative_error: 0.02724798396229744
-  min_relative_error: 8.325834244260477e-08
-  total_loss: 0.14975280025087553
-compute:
-  memory_footprint:
-    after_backward: 406568960
-    after_forward: 398934016
-    backward_pass_memory: 7634944
-    before_forward: 398737408
-    forward_pass_memory: 196608
-  num_trainable_parameters: 142580
-dynamic_accuracy:
-  avg_correlation: 0.2534321963153613
-  species_correlations:
-  - 0.2957889987052642
-  - 0.5326377654241958
-  - 0.508835657519956
-  - 0.38904947500320486
-  - 0.3948292624875054
-  - 0.5002873880428009
-  - 0.3811953344877318
-  - 0.3735987911304252
-  - 0.42602021951677427
-  - 0.481197465958327
-  - 0.3205888373984611
-  - 0.08027892112620189
-  - 0.3577672219619178
-  - 0.3007365258825837
-  - -0.3596549322720064
-  - 0.08884091280708264
-  - -0.1251085216557903
-  - 0.28705102350009376
-  - 0.06381156338273085
-  - 0.04909526348930002
-  - 0.005266173198551785
-  - 0.02934248296445022
-  - 0.035304187905178266
-  - 0.2752278139716062
-  - 0.286233202624858
-  - 0.27107459493060426
-  - 0.2766631185193378
-  - 0.2571800551568958
-  - -0.21714804527263482
-extrapolation:
-- cutoff: 50
-  total_loss: 4.246088719019396
-- cutoff: 60
-  total_loss: 3.1870465912917565
-- cutoff: 70
-  total_loss: 2.074306275255927
-- cutoff: 80
-  total_loss: 0.7361988112877155
-- cutoff: 90
-  total_loss: 0.4283756352917901
-- cutoff: 100
-  total_loss: 0.14975280025087553
-interpolation:
-- interval: 1
-  total_loss: 0.14975280025087553
-- interval: 2
-  total_loss: 0.2844674921496161
-- interval: 3
-  total_loss: 0.31387139397982894
-- interval: 4
-  total_loss: 0.6870995841190732
-- interval: 5
-  total_loss: 0.5072995552852236
-- interval: 6
-  total_loss: 0.3436364903417127
-- interval: 7
-  total_loss: 0.3402032300751785
-- interval: 8
-  total_loss: 0.3636887444857893
-- interval: 9
-  total_loss: 0.49897826369713094
-- interval: 10
-  total_loss: 0.4665959952518858
-sparse:
-- factor: 1
-  n_train_samples: 800
-  total_loss: 0.14975280025087553
-- factor: 2
-  n_train_samples: 400
-  total_loss: 0.4084475592251482
-- factor: 4
-  n_train_samples: 200
-  total_loss: 0.30735597670982623
-- factor: 8
-  n_train_samples: 100
-  total_loss: 0.8426464664853852
-- factor: 16
-  n_train_samples: 50
-  total_loss: 0.5674620742271687
-- factor: 32
-  n_train_samples: 25
-  total_loss: 0.9979651169349407
-timing:
-  mean_inference_time_per_prediction: 4.5287251472473144e-05
-  mean_inference_time_per_run: 0.9057450294494629
-  num_predictions: 20000
-  std_inference_time_per_prediction: 4.450388319765553e-07
-  std_inference_time_per_run: 0.008900776639531106
