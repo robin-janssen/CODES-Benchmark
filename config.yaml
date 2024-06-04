@@ -1,7 +1,7 @@
-training_id: "training2"
+training_id: "training3"
 surrogates: ["DeepONet", "NeuralODE"]
 dataset: "Osu2008"
-devices: ["mps"]
+devices: "cuda:3" # ["cuda:3", "cuda:5"] # "cuda:3" 
 
 training: 
   epochs: 100

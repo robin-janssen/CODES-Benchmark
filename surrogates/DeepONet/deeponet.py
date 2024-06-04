@@ -74,7 +74,7 @@ OperatorNetworkType = TypeVar("OperatorNetworkType", bound=OperatorNetwork)
 
 
 class MultiONet(OperatorNetwork):
-    def __init__(self):
+    def __init__(self, device: str = None):
         """
         Initialize the MultiONet model with a configuration.
 
@@ -93,6 +93,9 @@ class MultiONet(OperatorNetwork):
         super(MultiONet, self).__init__()
 
         self.config = config
+        if device is not None:
+            config.device = device
+        self.device = config.device
         self.N = config.N_outputs  # Number of outputs
         self.outputs = config.output_neurons  # Number of neurons in the last layer
         self.branch_net = BranchNet(
@@ -107,7 +110,6 @@ class MultiONet(OperatorNetwork):
             config.output_neurons,
             config.trunk_hidden_layers,
         ).to(config.device)
-        self.device = config.device
 
     def forward(
         self, branch_input: torch.Tensor, trunk_input: torch.Tensor

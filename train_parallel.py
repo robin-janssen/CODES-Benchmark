@@ -159,11 +159,12 @@ def parallel_training(tasks, device_list):
 
         for future in as_completed(future_to_task):
             task = future_to_task[future]
+            print_task = task[:3]
             try:
                 future.result()
-                print(f"Completed training for task: {task}")
+                print(f"Completed training for task: {print_task}")
             except Exception as e:
-                print(f"Exception for task {task}: {e}")
+                print(f"Exception for task {print_task}: {e}")
 
 
 def main():

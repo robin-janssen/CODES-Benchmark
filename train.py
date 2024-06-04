@@ -45,7 +45,7 @@ def train_and_save_model(
         extra_info (str): Additional information to include in the model name (e.g. interval, cutoff, factor, etc.)
     """
     # Instantiate the model to access its internal configuration
-    model = surrogate_class()
+    model = surrogate_class(device=config["devices"])
 
     # Train the model
     model.fit(train_data, test_data, timesteps)
@@ -78,8 +78,8 @@ def train_surrogate(config, surrogate_class, surrogate_name):
     full_test_data, _, _ = check_and_load_data(config["dataset"], "test")
 
     # Just for testing purposes
-    full_train_data = full_train_data[:200]
-    full_test_data = full_test_data[:200]
+    # full_train_data = full_train_data[:200]
+    # full_test_data = full_test_data[:200]
 
     print(f"Loaded data with shape: {full_train_data.shape}/{full_test_data.shape}")
 
