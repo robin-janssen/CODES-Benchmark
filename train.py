@@ -152,10 +152,14 @@ def train_surrogate(config, surrogate_class, surrogate_name):
         print("Training UQ models...")
         n_models = config["UQ"]["n_models"]
         for i in range(n_models - 1):
+            # Shuffle the training data
+            shuffled_indices = np.random.permutation(full_train_data.shape[0])
+            shuffled_train_data = full_train_data[shuffled_indices]
+
             train_and_save_model(
                 "UQ",
                 surrogate_name,
-                full_train_data,
+                shuffled_train_data,
                 full_test_data,
                 osu_timesteps,
                 surrogate_class,

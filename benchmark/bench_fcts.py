@@ -15,6 +15,7 @@ from .bench_plots import (
     plot_average_uncertainty_over_time,
     plot_example_predictions_with_uncertainty,
     plot_uncertainty_vs_errors,
+    plot_surr_losses,
 )
 from .bench_utils import (
     load_model,
@@ -38,7 +39,9 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
         dict: A dictionary containing all relevant metrics for the given model.
     """
     # Instantiate the model
-    surr = surrogate_class()
+    device = conf["devices"]
+    device = device[0] if isinstance(device, list) else device
+    surr = surrogate_class(device=device)
 
     # Placeholder for metrics
     metrics = {}
@@ -52,6 +55,10 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
     test_loader = create_dataloader_chemicals(
         full_test_data, timesteps, batch_size=batch_size, shuffle=False
     )
+
+    # Plot training losses
+    if conf["losses"]:
+        plot_surr_losses(surr_name, conf, timesteps)
 
     # Accuracy benchmark
     if conf["accuracy"]:

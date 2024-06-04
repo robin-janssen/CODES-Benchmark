@@ -1,12 +1,13 @@
 training_id: "training3"
 surrogates: ["DeepONet", "NeuralODE"]
 dataset: "Osu2008"
-devices: "cuda:3" # ["cuda:3", "cuda:5"] # "cuda:3" 
+devices: ["cuda:3", "cuda:6"] # "cuda:3" 
 
 training: 
   epochs: 100
   batch_size: 128
 
+losses: True
 accuracy: True
 dynamic_accuracy: True
 timing: True

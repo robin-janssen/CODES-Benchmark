@@ -1,9 +1,18 @@
 import yaml
 import os
-from concurrent.futures import ProcessPoolExecutor, as_completed
+
+os.environ["TQDM_DISABLE"] = "1"
+
+from queue import Queue
+from threading import Thread
+
+# from tqdm.contrib.concurrent import thread_map
 
 from surrogates.surrogate_classes import surrogate_classes
 from data import check_and_load_data
+
+# from tqdm import tqdm
+# from functools import partialmethod
 
 # Load configuration from YAML
 with open("config.yaml", "r") as file:
@@ -67,12 +76,18 @@ def train_and_save_model(
         device (str): The device to use for training (e.g., 'cuda:0').
     """
     # Set the device for the model
-    os.environ["CUDA_VISIBLE_DEVICES"] = device if "cuda" in device else ""
+    # print(os.environ["CUDA_VISIBLE_DEVICES"])
+    # os.environ["CUDA_VISIBLE_DEVICES"] = device if "cuda" in device else ""
     model = surrogate_class(device=device)
 
     # Load full data
-    full_train_data, osu_timesteps, _ = check_and_load_data(config["dataset"], "train")
-    full_test_data, _, _ = check_and_load_data(config["dataset"], "test")
+    full_train_data, osu_timesteps, _ = check_and_load_data(
+        config["dataset"], "train", info=False
+    )
+    full_test_data, _, _ = check_and_load_data(config["dataset"], "test", info=False)
+
+    full_train_data = full_train_data[:200]
+    full_test_data = full_test_data[:200]
 
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(
@@ -140,6 +155,26 @@ def train_surrogate(config, surrogate_class, surrogate_name):
     return tasks
 
 
+def worker(task_queue: Queue, device: str):
+    """
+    Worker function to process tasks from the task queue on the given device.
+
+    Args:
+        task_queue (Queue): The queue containing tasks to be processed.
+        device (str): The device to use for processing tasks.
+    """
+    while not task_queue.empty():
+        try:
+            task = task_queue.get_nowait()
+            print(f"Starting training for task: {task[:3]} on device {device}")
+            train_and_save_model(*task, device)
+            task_queue.task_done()
+            print(f"Completed training for task: {task[:3]}")
+        except Exception as e:
+            print(f"Exception for task {task[:3]}: {e}")
+            task_queue.task_done()
+
+
 def parallel_training(tasks, device_list):
     """
     Execute the training tasks in parallel across multiple devices.
@@ -148,28 +183,53 @@ def parallel_training(tasks, device_list):
         tasks (list): A list of tasks to execute in parallel.
         device_list (list): A list of devices to use for parallel training.
     """
+    os.environ["TQDM_DISABLE"] = "1"
 
-    with ProcessPoolExecutor(max_workers=len(device_list)) as executor:
-        future_to_task = {
-            executor.submit(
-                train_and_save_model, *task, device_list[i % len(device_list)]
-            ): task
-            for i, task in enumerate(tasks)
-        }
+    task_queue = Queue()
+    for task in tasks:
+        task_queue.put(task)
 
-        for future in as_completed(future_to_task):
-            task = future_to_task[future]
-            print_task = task[:3]
-            try:
-                future.result()
-                print(f"Completed training for task: {print_task}")
-            except Exception as e:
-                print(f"Exception for task {print_task}: {e}")
+    threads = []
+    for device in device_list:
+        thread = Thread(target=worker, args=(task_queue, device))
+        thread.start()
+        threads.append(thread)
+
+    for thread in threads:
+        thread.join()
+
+
+# def parallel_training(tasks, device_list):
+#     """
+#     Execute the training tasks in parallel across multiple devices.
+
+#     Args:
+#         tasks (list): A list of tasks to execute in parallel.
+#         device_list (list): A list of devices to use for parallel training.
+#     """
+
+#     with ProcessPoolExecutor(max_workers=len(device_list)) as executor:
+#         future_to_task = {
+#             executor.submit(
+#                 train_and_save_model, *task, device_list[i % len(device_list)]
+#             ): task
+#             for i, task in enumerate(tasks)
+#         }
+
+#         for future in as_completed(future_to_task):
+#             task = future_to_task[future]
+#             print_task = task[:3]
+#             try:
+#                 future.result()
+#                 print(f"Completed training for task: {print_task}")
+#             except Exception as e:
+#                 print(f"Exception for task {print_task}: {e}")
 
 
 def main():
     tasks = []
     device_list = config["devices"]
+    device_list = [device_list] if isinstance(device_list, str) else device_list
     for surrogate_name in config["surrogates"]:
         if surrogate_name in surrogate_classes:
             surrogate_class = surrogate_classes[surrogate_name]
@@ -177,7 +237,8 @@ def main():
         else:
             print(f"Surrogate {surrogate_name} not recognized. Skipping.")
 
-    if len(device_list) > 1:
+        # if len(device_list) > 1:
+        #     parallel_training(tasks, device_list)    if len(device_list) > 1:
         parallel_training(tasks, device_list)
     else:
         for task in tasks:

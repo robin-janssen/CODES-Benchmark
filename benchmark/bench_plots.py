@@ -392,3 +392,158 @@ def plot_uncertainty_vs_errors(
     # plt.show()
 
     plt.close()
+
+
+def plot_surr_losses(surr_name: str, conf: dict, timesteps: np.ndarray) -> None:
+    """
+    Plot the training and test losses for the surrogate model.
+
+    Args:
+        surr_name (str): The name of the surrogate model.
+        conf (dict): The configuration dictionary.
+        timesteps (np.ndarray): The timesteps array.
+    """
+    training_id = conf["training_id"]
+    base_dir = f"trained/{surr_name}/{training_id}"
+
+    def load_losses(model_identifier: str):
+        loss_path = os.path.join(base_dir, f"{model_identifier}_losses.npz")
+        with np.load(loss_path) as data:
+            train_loss = data["train_loss"]
+            test_loss = data["test_loss"]
+        return train_loss, test_loss
+
+    # Main model losses
+    main_train_loss, main_test_loss = load_losses(f"{surr_name.lower()}_main")
+
+    # Plot main model losses
+    plot_losses(
+        (main_train_loss, main_test_loss),
+        ("Train Loss", "Test Loss"),
+        title="Main Model Losses",
+        save=True,
+        conf=conf,
+        surr_name=surr_name,
+        mode="main",
+    )
+
+    # Interpolation losses
+    if conf["interpolation"]["enabled"]:
+        intervals = conf["interpolation"]["intervals"]
+        interp_train_losses = [main_train_loss]
+        interp_test_losses = [main_test_loss]
+        for interval in intervals:
+            train_loss, test_loss = load_losses(
+                f"{surr_name.lower()}_interpolation_{interval}"
+            )
+            interp_train_losses.append(train_loss)
+            interp_test_losses.append(test_loss)
+        plot_losses(
+            tuple(interp_train_losses),
+            tuple(f"Interval {interval}" for interval in [1] + intervals),
+            title="Interpolation Losses",
+            save=True,
+            conf=conf,
+            surr_name=surr_name,
+            mode="interpolation",
+        )
+
+    # Extrapolation losses
+    if conf["extrapolation"]["enabled"]:
+        cutoffs = conf["extrapolation"]["cutoffs"]
+        extra_train_losses = [main_train_loss]
+        extra_test_losses = [main_test_loss]
+        for cutoff in cutoffs:
+            train_loss, test_loss = load_losses(
+                f"{surr_name.lower()}_extrapolation_{cutoff}"
+            )
+            extra_train_losses.append(train_loss)
+            extra_test_losses.append(test_loss)
+        plot_losses(
+            tuple(extra_train_losses),
+            tuple(f"Cutoff {cutoff}" for cutoff in [len(timesteps)] + cutoffs),
+            title="Extrapolation Losses",
+            save=True,
+            conf=conf,
+            surr_name=surr_name,
+            mode="extrapolation",
+        )
+
+    # Sparse losses
+    if conf["sparse"]["enabled"]:
+        factors = conf["sparse"]["factors"]
+        sparse_train_losses = [main_train_loss]
+        sparse_test_losses = [main_test_loss]
+        for factor in factors:
+            train_loss, test_loss = load_losses(f"{surr_name.lower()}_sparse_{factor}")
+            sparse_train_losses.append(train_loss)
+            sparse_test_losses.append(test_loss)
+        plot_losses(
+            tuple(sparse_train_losses),
+            tuple(f"Factor {factor}" for factor in [1] + factors),
+            title="Sparse Losses",
+            save=True,
+            conf=conf,
+            surr_name=surr_name,
+            mode="sparse",
+        )
+
+    # UQ losses
+    if conf["UQ"]["enabled"]:
+        n_models = conf["UQ"]["n_models"]
+        uq_train_losses = [main_train_loss]
+        uq_test_losses = [main_test_loss]
+        for i in range(1, n_models):
+            train_loss, test_loss = load_losses(f"{surr_name.lower()}_UQ_{i}")
+            uq_train_losses.append(train_loss)
+            uq_test_losses.append(test_loss)
+        plot_losses(
+            tuple(uq_train_losses),
+            tuple(f"Model {i}" for i in range(n_models)),
+            title="UQ Losses",
+            save=True,
+            conf=conf,
+            surr_name=surr_name,
+            mode="UQ",
+        )
+
+
+def plot_losses(
+    loss_histories: tuple[np.array, ...],
+    labels: tuple[str, ...],
+    title: str = "Losses",
+    save: bool = False,
+    conf: Optional[dict] = None,
+    surr_name: Optional[str] = None,
+    mode: str = "main",
+) -> None:
+    """
+    Plot the loss trajectories for the training of multiple models.
+
+    :param loss_histories: List of loss history arrays.
+    :param labels: List of labels for each loss history.
+    :param title: Title of the plot.
+    :param save: Whether to save the plot as an image file.
+    :param conf: The configuration dictionary.
+    :param surr_name: The name of the surrogate model.
+    :param mode: The mode of the training.
+    """
+
+    # Create the figure
+    plt.figure(figsize=(12, 6))
+    if len(loss_histories) != len(labels):
+        plt.plot(loss_histories, label=labels)
+    else:
+        for loss, label in zip(loss_histories, labels):
+            plt.plot(loss, label=label)
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.yscale("log")
+    plt.title(title)
+    plt.legend()
+
+    if save and conf and surr_name:
+        save_plot(plt, "losses_" + mode.lower() + ".png", conf, surr_name)
+
+    # plt.show()
+    plt.close()
