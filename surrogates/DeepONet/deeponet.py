@@ -8,7 +8,7 @@ from tqdm import tqdm
 from typing import Tuple, Optional, TypeVar
 import yaml
 
-from surrogates import AbstractSurrogateModel
+from surrogates.surrogates import AbstractSurrogateModel
 
 # Use the below import to adjust the config class to the specific model
 from surrogates.DeepONet.config_classes import OChemicalTrainConfig as MultiONetConfig
@@ -249,10 +249,6 @@ class MultiONet(OperatorNetwork):
         targets_buffer = targets_buffer.reshape(
             -1, N_timesteps, targets_buffer.shape[1]
         )
-
-        # if transpose:
-        #     preds_buffer = preds_buffer.transpose(0, 2, 1)
-        #     targets_buffer = targets_buffer.transpose(0, 2, 1)
 
         return total_loss, preds_buffer, targets_buffer
 

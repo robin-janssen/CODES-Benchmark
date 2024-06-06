@@ -19,7 +19,7 @@ def check_surrogate(surrogate: str, conf: Dict) -> None:
     """
     training_id = conf["training_id"]
     base_dir = os.getcwd()
-    base_dir = os.path.join(base_dir, "trained", surrogate, training_id)
+    base_dir = os.path.join(base_dir, "trained", training_id, surrogate)
 
     required_models = get_required_models_list(surrogate, conf)
 
@@ -114,7 +114,7 @@ def load_model(
         The loaded surrogate model.
     """
     statedict_path = os.path.join(
-        "trained", surr_name, training_id, f"{model_identifier}.pth"
+        "trained", training_id, surr_name, f"{model_identifier}.pth"
     )
     model.load_state_dict(torch.load(statedict_path))
     model.eval()

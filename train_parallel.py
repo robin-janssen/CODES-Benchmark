@@ -5,14 +5,9 @@ os.environ["TQDM_DISABLE"] = "1"
 from queue import Queue
 from threading import Thread
 
-# from tqdm.contrib.concurrent import thread_map
-
 from surrogates.surrogate_classes import surrogate_classes
-from data import check_and_load_data
 from utils import load_and_save_config
-
-# from tqdm import tqdm
-# from functools import partialmethod
+from data import check_and_load_data
 
 
 def get_data_subset(full_train_data, full_test_data, osu_timesteps, mode, metric):
@@ -78,12 +73,12 @@ def train_and_save_model(
 
     # Load full data
     full_train_data, osu_timesteps, _ = check_and_load_data(
-        config["dataset"], "train", info=False
+        config["dataset"], "train", verbose=False
     )
-    full_test_data, _, _ = check_and_load_data(config["dataset"], "test", info=False)
+    full_test_data, _, _ = check_and_load_data(config["dataset"], "test", verbose=False)
 
-    full_train_data = full_train_data[:200]
-    full_test_data = full_test_data[:200]
+    # full_train_data = full_train_data[:50]
+    # full_test_data = full_test_data[:50]
 
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(
@@ -98,7 +93,6 @@ def train_and_save_model(
     model_name = model_name.replace("__", "_")
     model.save(
         model_name=model_name,
-        subfolder=f"trained/{surrogate_name}",
         unique_id=config["training_id"],
         dataset_name=config["dataset"],
     )
@@ -193,33 +187,6 @@ def parallel_training(tasks, device_list):
 
     for thread in threads:
         thread.join()
-
-
-# def parallel_training(tasks, device_list):
-#     """
-#     Execute the training tasks in parallel across multiple devices.
-
-#     Args:
-#         tasks (list): A list of tasks to execute in parallel.
-#         device_list (list): A list of devices to use for parallel training.
-#     """
-
-#     with ProcessPoolExecutor(max_workers=len(device_list)) as executor:
-#         future_to_task = {
-#             executor.submit(
-#                 train_and_save_model, *task, device_list[i % len(device_list)]
-#             ): task
-#             for i, task in enumerate(tasks)
-#         }
-
-#         for future in as_completed(future_to_task):
-#             task = future_to_task[future]
-#             print_task = task[:3]
-#             try:
-#                 future.result()
-#                 print(f"Completed training for task: {print_task}")
-#             except Exception as e:
-#                 print(f"Exception for task {print_task}: {e}")
 
 
 def main():

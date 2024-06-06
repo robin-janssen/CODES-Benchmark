@@ -404,7 +404,7 @@ def plot_surr_losses(surr_name: str, conf: dict, timesteps: np.ndarray) -> None:
         timesteps (np.ndarray): The timesteps array.
     """
     training_id = conf["training_id"]
-    base_dir = f"trained/{surr_name}/{training_id}"
+    base_dir = f"trained/{training_id}/{surr_name}"
 
     def load_losses(model_identifier: str):
         loss_path = os.path.join(base_dir, f"{model_identifier}_losses.npz")

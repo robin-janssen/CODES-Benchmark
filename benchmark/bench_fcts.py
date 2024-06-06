@@ -211,7 +211,7 @@ def evaluate_dynamic_accuracy(
     _, preds_buffer, targets_buffer = model.predict(
         test_loader,
         criterion,
-        N_timesteps=len(timesteps),
+        N_timesteps=len(timesteps),  # Use timesteps instead of len(timesteps)
     )
 
     # Calculate gradients of the target data w.r.t time

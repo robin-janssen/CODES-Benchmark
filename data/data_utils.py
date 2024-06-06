@@ -3,14 +3,14 @@ import h5py
 import numpy as np
 
 
-def check_and_load_data(dataset_name: str, mode: str, info: bool = True):
+def check_and_load_data(dataset_name: str, mode: str, verbose: bool = True):
     """
     Check the specified dataset and load the data based on the mode (train or test).
 
     Args:
         dataset_name (str): The name of the dataset.
         mode (str): The mode of data to load ('train' or 'test').
-        info (bool): Whether to print information about the loaded data.
+        verbose (bool): Whether to print information about the loaded data.
 
     Returns:
         tuple: Loaded data and timesteps.
@@ -56,7 +56,7 @@ def check_and_load_data(dataset_name: str, mode: str, info: bool = True):
             )
 
         n_samples, n_timesteps, n_chemicals = data.shape
-        if info:
+        if verbose:
             print(
                 f"{mode.capitalize()} data loaded: {n_samples} samples, {n_timesteps} timesteps, {n_chemicals} chemicals."
             )
@@ -64,24 +64,24 @@ def check_and_load_data(dataset_name: str, mode: str, info: bool = True):
         # Load or generate timesteps
         if "timesteps" in f:
             timesteps = f["timesteps"][:]
-            if info:
+            if verbose:
                 print(
                     f"Timesteps loaded from data.hdf5: {timesteps.shape[0]} timesteps."
                 )
         else:
             timesteps = np.linspace(0, n_timesteps - 1, n_timesteps)
-            if info:
+            if verbose:
                 print(
                     f"Timesteps not found in data.hdf5. Generated integer timesteps: {n_timesteps} timesteps."
                 )
 
         if "n_train_samples" in f.attrs:
             n_train_samples = f.attrs["n_train_samples"]
-            if info:
+            if verbose:
                 print(f"Number of training samples: {n_train_samples}")
         else:
             n_train_samples = None
-            if info:
+            if verbose:
                 print("Number of training samples not found in metadata.")
 
     return data, timesteps, n_train_samples
