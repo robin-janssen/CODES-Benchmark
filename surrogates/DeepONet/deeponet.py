@@ -8,14 +8,14 @@ from tqdm import tqdm
 from typing import Tuple, Optional, TypeVar
 import yaml
 
-from surrogates.surrogates import AbstractSurrogateModel
+from surrogates import AbstractSurrogateModel
 
 # Use the below import to adjust the config class to the specific model
 from surrogates.DeepONet.config_classes import OChemicalTrainConfig as MultiONetConfig
-from surrogates.DeepONet.dataloader import create_dataloader_chemicals
+from data import create_dataloader_chemicals
 
 from utils import time_execution, create_model_dir
-from .train_utils import mass_conservation_loss
+from .utils import mass_conservation_loss
 
 
 class BranchNet(nn.Module):
@@ -259,7 +259,7 @@ class MultiONet(OperatorNetwork):
     def save(
         self,
         model_name: str,
-        subfolder: str = "trained_models",
+        subfolder: str = "trained",
         unique_id: str = "run_1",
         dataset_name: str = "dataset",
     ) -> None:
@@ -273,7 +273,8 @@ class MultiONet(OperatorNetwork):
             dataset_name (str): The name of the dataset.
         """
         base_dir = os.getcwd()
-        model_dir = create_model_dir(base_dir, subfolder, unique_id)
+        subfolder = os.path.join(subfolder, unique_id, "DeepONet")
+        model_dir = create_model_dir(base_dir, subfolder)
         self.dataset_name = dataset_name
 
         # Save the model state dict

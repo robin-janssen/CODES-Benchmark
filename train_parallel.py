@@ -1,4 +1,3 @@
-import yaml
 import os
 
 os.environ["TQDM_DISABLE"] = "1"
@@ -10,13 +9,10 @@ from threading import Thread
 
 from surrogates.surrogate_classes import surrogate_classes
 from data import check_and_load_data
+from utils import load_and_save_config
 
 # from tqdm import tqdm
 # from functools import partialmethod
-
-# Load configuration from YAML
-with open("config.yaml", "r") as file:
-    config = yaml.safe_load(file)
 
 
 def get_data_subset(full_train_data, full_test_data, osu_timesteps, mode, metric):
@@ -227,6 +223,7 @@ def parallel_training(tasks, device_list):
 
 
 def main():
+    config = load_and_save_config()
     tasks = []
     device_list = config["devices"]
     device_list = [device_list] if isinstance(device_list, str) else device_list

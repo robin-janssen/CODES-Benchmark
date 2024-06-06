@@ -1,24 +1,11 @@
 # This is the main training script for the models. It trains all required models and saves them.
 # The structure of the file should be something like this:
 
-# 1. Import the necessary libraries
-# 2. Define helper functions
-# 3. Define the main training logic
-# 4. Run the main function if executed as a script
-
-# 1. Import the necessary libraries
-
-import yaml
 import numpy as np
 
 from surrogates.surrogate_classes import surrogate_classes
 from data import check_and_load_data
-
-# Load configuration from YAML
-with open("config.yaml", "r") as file:
-    config = yaml.safe_load(file)
-
-# 2. Define helper functions
+from utils import load_and_save_config
 
 
 def train_and_save_model(
@@ -45,7 +32,12 @@ def train_and_save_model(
         extra_info (str): Additional information to include in the model name (e.g. interval, cutoff, factor, etc.)
     """
     # Instantiate the model to access its internal configuration
-    model = surrogate_class(device=config["devices"])
+    device = (
+        config["devices"][0]
+        if isinstance(config["devices"], list)
+        else config["devices"]
+    )
+    model = surrogate_class(device=device)
 
     # Train the model
     model.fit(train_data, test_data, timesteps)
@@ -57,7 +49,6 @@ def train_and_save_model(
     model_name = model_name.replace("__", "_")
     model.save(
         model_name=model_name,
-        subfolder=f"trained/{surrogate_name}",
         unique_id=config["training_id"],
         dataset_name=config["dataset"],
     )
@@ -172,6 +163,8 @@ def train_surrogate(config, surrogate_class, surrogate_name):
 
 
 def main():
+    # Load configuration from YAML
+    config = load_and_save_config()
     for surrogate_name in config["surrogates"]:
         if surrogate_name in surrogate_classes:
             surrogate_class = surrogate_classes[surrogate_name]

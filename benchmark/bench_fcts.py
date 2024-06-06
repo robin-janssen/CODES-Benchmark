@@ -5,7 +5,7 @@ from typing import Dict, Any
 from torch.utils.data import DataLoader
 from scipy.stats import pearsonr
 
-from surrogates.DeepONet.dataloader import create_dataloader_chemicals
+from data import create_dataloader_chemicals
 
 from .bench_plots import (
     plot_relative_errors_over_time,
