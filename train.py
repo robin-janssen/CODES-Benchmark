@@ -31,16 +31,20 @@ def train_and_save_model(
         config (dict): The configuration dictionary.
         extra_info (str): Additional information to include in the model name (e.g. interval, cutoff, factor, etc.)
     """
-    # Instantiate the model to access its internal configuration
     device = (
         config["devices"][0]
         if isinstance(config["devices"], list)
         else config["devices"]
     )
+
+    # Instantiate the model to access its internal configuration
     model = surrogate_class(device=device)
 
+    train_loader = model.prepare_data(train_data, timesteps, shuffle=True)
+    test_loader = model.prepare_data(test_data, timesteps, shuffle=False)
+
     # Train the model
-    model.fit(train_data, test_data, timesteps)
+    model.fit(train_loader, test_loader, timesteps)
 
     # Save the model (making the name lowercase and removing any underscores)
 
@@ -69,8 +73,8 @@ def train_surrogate(config, surrogate_class, surrogate_name):
     full_test_data, _, _ = check_and_load_data(config["dataset"], "test")
 
     # Just for testing purposes
-    full_train_data = full_train_data[:20]
-    full_test_data = full_test_data[:20]
+    # full_train_data = full_train_data[:20]
+    # full_test_data = full_test_data[:20]
 
     print(f"Loaded data with shape: {full_train_data.shape}/{full_test_data.shape}")
 

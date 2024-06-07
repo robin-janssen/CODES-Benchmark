@@ -138,11 +138,43 @@ class MultiONet(OperatorNetwork):
 
         return torch.cat(result, dim=1)
 
+    def prepare_data(
+        self,
+        dataset: np.ndarray,
+        timesteps: np.ndarray,
+        batch_size: int | None = None,
+        shuffle: bool = True,
+    ) -> DataLoader:
+        """
+        Prepare the data for the predict or fit methods.
+
+        Args:
+            dataset (np.ndarray): The dataset to prepare (should be of shape (n_samples, n_timesteps, n_features)).
+            timesteps (np.ndarray): The timesteps.
+            batch_size (int, optional): The batch size.
+            shuffle (bool, optional): Whether to shuffle the data.
+
+        Returns:
+            dataloader: The DataLoader object containing the prepared data.
+        """
+        # Use batch size from the config if not provided
+        if batch_size is None:
+            batch_size = self.config.batch_size
+
+        # Create the DataLoader object
+        dataloader = create_dataloader_chemicals(
+            dataset,
+            timesteps,
+            batch_size=batch_size,
+            shuffle=shuffle,
+        )
+        return dataloader
+
     @time_execution
     def fit(
         self,
-        train_data: np.ndarray,
-        test_data: np.ndarray,
+        train_loader: DataLoader,
+        test_loader: DataLoader,
         timesteps: np.ndarray,
     ) -> None:
         """
@@ -150,29 +182,15 @@ class MultiONet(OperatorNetwork):
 
         Args:
             train_data (np.ndarray): The training data.
-            test_data (np.ndarray): The test data.
+            test_data (np.ndarray): The test data (to evaluate the model during training).
             timesteps (np.ndarray): The timesteps.
             dataset_name (str): The name of the dataset.
 
         Returns:
             None
         """
-        batch_size = self.config.batch_size
         self.N_timesteps = len(timesteps)
-        self.N_train_samples = train_data.shape[0]
-
-        train_loader = create_dataloader_chemicals(
-            train_data,
-            timesteps,
-            batch_size=batch_size,
-            shuffle=True,
-        )
-        test_loader = create_dataloader_chemicals(
-            test_data,
-            timesteps,
-            batch_size=batch_size,
-            shuffle=False,
-        )
+        self.N_train_samples = int(len(train_loader.dataset) / self.N_timesteps)
 
         criterion = self.setup_criterion()
         optimizer, scheduler = self.setup_optimizer_and_scheduler()
@@ -203,7 +221,7 @@ class MultiONet(OperatorNetwork):
         self,
         data_loader: DataLoader,
         criterion: nn.Module,
-        N_timesteps: int,
+        timesteps: np.ndarray,
     ) -> Tuple[float, np.ndarray, np.ndarray]:
         """
         Evaluate the model on the test data.
@@ -217,6 +235,7 @@ class MultiONet(OperatorNetwork):
         Returns:
             tuple: The total loss, outputs, and targets.
         """
+        N_timesteps = len(timesteps)
         device = self.device
         self.eval()
         self.to(device)
@@ -231,7 +250,7 @@ class MultiONet(OperatorNetwork):
                     trunk_inputs.to(device),
                     targets.to(device),
                 )
-                outputs = self.forward(branch_inputs, trunk_inputs)
+                outputs = self(branch_inputs, trunk_inputs)
                 loss = criterion(outputs, targets)
                 total_loss += loss.item()
 
@@ -300,6 +319,27 @@ class MultiONet(OperatorNetwork):
             np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
 
         print(f"Model, losses and hyperparameters saved to {model_dir}")
+
+    def load(
+        self, training_id: str, surr_name: str, model_identifier: str
+    ) -> torch.nn.Module:
+        """
+        Load a trained surrogate model.
+
+        Args:
+            model: Instance of the surrogate model class.
+            training_id (str): The training identifier.
+            surr_name (str): The name of the surrogate model.
+            model_identifier (str): The identifier of the model (e.g., 'main').
+
+        Returns:
+            The loaded surrogate model.
+        """
+        statedict_path = os.path.join(
+            "trained", training_id, surr_name, f"{model_identifier}.pth"
+        )
+        self.load_state_dict(torch.load(statedict_path))
+        self.eval()
 
     def setup_criterion(self) -> callable:
         """

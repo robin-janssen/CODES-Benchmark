@@ -5,8 +5,6 @@ from typing import Dict, Any
 from torch.utils.data import DataLoader
 from scipy.stats import pearsonr
 
-from data import create_dataloader_chemicals
-
 from .bench_plots import (
     plot_relative_errors_over_time,
     plot_dynamic_correlation,
@@ -18,7 +16,6 @@ from .bench_plots import (
     plot_surr_losses,
 )
 from .bench_utils import (
-    load_model,
     count_trainable_parameters,
     measure_memory_footprint,
     write_metrics_to_yaml,
@@ -41,7 +38,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
     # Instantiate the model
     device = conf["devices"]
     device = device[0] if isinstance(device, list) else device
-    surr = surrogate_class(device=device)
+    model = surrogate_class(device=device)
 
     # Placeholder for metrics
     metrics = {}
@@ -51,10 +48,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
     )
 
     # Create dataloader for the test data
-    batch_size = surr.config.batch_size
-    test_loader = create_dataloader_chemicals(
-        full_test_data, timesteps, batch_size=batch_size, shuffle=False
-    )
+    test_loader = model.prepare_data(full_test_data, timesteps, shuffle=False)
 
     # Plot training losses
     if conf["losses"]:
@@ -64,7 +58,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
     if conf["accuracy"]:
         print("Running accuracy benchmark...")
         metrics["accuracy"] = evaluate_accuracy(
-            surr, surr_name, test_loader, timesteps, conf
+            model, surr_name, test_loader, timesteps, conf
         )
 
     # Dynamic accuracy benchmark
@@ -72,46 +66,46 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
         print("Running dynamic accuracy benchmark...")
         # For this benchmark, we can also use the main model
         metrics["dynamic_accuracy"] = evaluate_dynamic_accuracy(
-            surr, surr_name, test_loader, timesteps, conf
+            model, surr_name, test_loader, timesteps, conf
         )
 
     # Timing benchmark
     if conf["timing"]:
         print("Running timing benchmark...")
         metrics["timing"] = time_inference(
-            surr, surr_name, test_loader, timesteps, conf
+            model, surr_name, test_loader, timesteps, conf
         )
 
     # Compute (resources) benchmark
     if conf["compute"]:
         print("Running compute benchmark...")
-        metrics["compute"] = evaluate_compute(surr, surr_name, test_loader, conf)
+        metrics["compute"] = evaluate_compute(model, surr_name, test_loader, conf)
 
     # Interpolation benchmark
     if conf["interpolation"]["enabled"]:
         print("Running interpolation benchmark...")
         metrics["interpolation"] = evaluate_interpolation(
-            surr, surr_name, test_loader, timesteps, conf
+            model, surr_name, test_loader, timesteps, conf
         )
 
     # Extrapolation benchmark
     if conf["extrapolation"]["enabled"]:
         print("Running extrapolation benchmark...")
         metrics["extrapolation"] = evaluate_extrapolation(
-            surr, surr_name, test_loader, timesteps, conf
+            model, surr_name, test_loader, timesteps, conf
         )
 
     # Sparse data benchmark
     if conf["sparse"]["enabled"]:
         print("Running sparse benchmark...")
         metrics["sparse"] = evaluate_sparse(
-            surr, surr_name, test_loader, N_train_samples, conf
+            model, surr_name, test_loader, timesteps, N_train_samples, conf
         )
 
     # Uncertainty Quantification (UQ) benchmark
     if conf["UQ"]["enabled"]:
         print("Running UQ benchmark...")
-        metrics["UQ"] = evaluate_UQ(surr, surr_name, test_loader, timesteps, conf)
+        metrics["UQ"] = evaluate_UQ(model, surr_name, test_loader, timesteps, conf)
 
     # Write metrics to yaml
     write_metrics_to_yaml(surr_name, conf, metrics)
@@ -120,13 +114,13 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
 
 
 def evaluate_accuracy(
-    surr, surr_name: str, test_loader: DataLoader, timesteps, conf: Dict
+    model, surr_name: str, test_loader: DataLoader, timesteps, conf: Dict
 ) -> Dict[str, Any]:
     """
     Evaluate the accuracy of the surrogate model.
 
     Args:
-        surr: The surrogate model class.
+        model: Instance of the surrogate model class.
         surr_name (str): The name of the surrogate model.
         test_loader (DataLoader): The DataLoader object containing the test data.
         conf (dict): The configuration dictionary.
@@ -137,23 +131,17 @@ def evaluate_accuracy(
     training_id = conf["training_id"]
 
     # Load the model
-    model = load_model(
-        surr, training_id, surr_name, model_identifier=f"{surr_name.lower()}_main"
-    )
+    model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
 
     # Use the model's predict method
     criterion = torch.nn.MSELoss(reduction="sum")
-    total_loss, preds_buffer, targets_buffer = model.predict(
-        test_loader,
-        criterion,
-        N_timesteps=len(timesteps),
-    )
+    total_loss, preds, targets = model.predict(test_loader, criterion, timesteps)
 
-    preds_buffer = preds_buffer.transpose(0, 2, 1)
-    targets_buffer = targets_buffer.transpose(0, 2, 1)
+    preds = preds.transpose(0, 2, 1)
+    targets = targets.transpose(0, 2, 1)
 
     # Calculate relative errors
-    relative_errors = np.abs((preds_buffer - targets_buffer) / targets_buffer)
+    relative_errors = np.abs((preds - targets) / targets)
 
     # Plot relative errors over time
     plot_relative_errors_over_time(
@@ -177,7 +165,7 @@ def evaluate_accuracy(
 
 
 def evaluate_dynamic_accuracy(
-    surr,
+    model,
     surr_name: str,
     test_loader: DataLoader,
     timesteps: np.ndarray,
@@ -188,7 +176,7 @@ def evaluate_dynamic_accuracy(
     Evaluate the dynamic accuracy of the surrogate model.
 
     Args:
-        surr: The surrogate model class.
+        model: Instance of the surrogate model class.
         surr_name (str): The name of the surrogate model.
         test_loader (DataLoader): The DataLoader object containing the test data.
         timesteps (np.ndarray): The timesteps array.
@@ -200,33 +188,27 @@ def evaluate_dynamic_accuracy(
     training_id = conf["training_id"]
 
     # Load the model
-    model = load_model(
-        surr, training_id, surr_name, model_identifier=f"{surr_name.lower()}_main"
-    )
+    model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
 
     # Criterion for prediction loss
     criterion = torch.nn.MSELoss(reduction="sum")
 
     # Obtain predictions and targets
-    _, preds_buffer, targets_buffer = model.predict(
-        test_loader,
-        criterion,
-        N_timesteps=len(timesteps),  # Use timesteps instead of len(timesteps)
-    )
+    _, preds, targets = model.predict(test_loader, criterion, timesteps)
 
     # Calculate gradients of the target data w.r.t time
-    gradients = np.gradient(targets_buffer, axis=1)
+    gradients = np.gradient(targets, axis=1)
     # Take absolute value and normalize gradients
     gradients = np.abs(gradients) / np.abs(gradients).max()
 
     # Calculate absolute prediction errors
-    prediction_errors = np.abs(preds_buffer - targets_buffer)
+    prediction_errors = np.abs(preds - targets)
     # Normalize prediction errors
     prediction_errors = prediction_errors / prediction_errors.max()
 
     # Calculate correlations
     species_correlations = []
-    for i in range(targets_buffer.shape[2]):
+    for i in range(targets.shape[2]):
         gradient_species = gradients[:, :, i].flatten()
         error_species = prediction_errors[:, :, i].flatten()
         correlation, _ = pearsonr(gradient_species, error_species)
@@ -244,7 +226,7 @@ def evaluate_dynamic_accuracy(
     species_names = (
         species_names
         if species_names is not None
-        else [f"quantity_{i}" for i in range(targets_buffer.shape[2])]
+        else [f"quantity_{i}" for i in range(targets.shape[2])]
     )
     species_correlations = dict(zip(species_names, species_correlations))
 
@@ -258,7 +240,7 @@ def evaluate_dynamic_accuracy(
 
 
 def time_inference(
-    surr,
+    model,
     surr_name: str,
     test_loader: DataLoader,
     timesteps: np.ndarray,
@@ -269,7 +251,7 @@ def time_inference(
     Time the inference of the surrogate model.
 
     Args:
-        surr: The surrogate model class.
+        model: Instance of the surrogate model class.
         surr_name (str): The name of the surrogate model.
         test_loader (DataLoader): The DataLoader object containing the test data.
         timesteps (np.ndarray): The timesteps array.
@@ -280,8 +262,7 @@ def time_inference(
         dict: A dictionary containing timing metrics.
     """
     training_id = conf["training_id"]
-    model_identifier = f"{surr_name.lower()}_main"
-    model = load_model(surr, training_id, surr_name, model_identifier=model_identifier)
+    model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
 
     criterion = torch.nn.MSELoss(reduction="sum")
 
@@ -289,7 +270,7 @@ def time_inference(
     inference_times = []
     for _ in range(n_runs):
         start_time = time.time()
-        _, _, _ = model.predict(test_loader, criterion, N_timesteps=len(timesteps))
+        _, _, _ = model.predict(test_loader, criterion, timesteps)
         end_time = time.time()
         inference_times.append(end_time - start_time)
 
@@ -311,13 +292,13 @@ def time_inference(
 
 
 def evaluate_compute(
-    surr, surr_name: str, test_loader: DataLoader, conf: Dict
+    model, surr_name: str, test_loader: DataLoader, conf: Dict
 ) -> Dict[str, Any]:
     """
     Evaluate the computational resource requirements of the surrogate model.
 
     Args:
-        surr: The surrogate model class.
+        model: Instance of the surrogate model class.
         surr_name (str): The name of the surrogate model.
         test_loader (DataLoader): The DataLoader object containing the test data.
         conf (dict): The configuration dictionary.
@@ -326,8 +307,7 @@ def evaluate_compute(
         dict: A dictionary containing model complexity metrics.
     """
     training_id = conf["training_id"]
-    model_identifier = f"{surr_name.lower()}_main"
-    model = load_model(surr, training_id, surr_name, model_identifier=model_identifier)
+    model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
 
     # Count the number of trainable parameters
     num_params = count_trainable_parameters(model)
@@ -347,13 +327,13 @@ def evaluate_compute(
 
 
 def evaluate_interpolation(
-    surr, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
+    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
 ) -> Dict[str, Any]:
     """
     Evaluate the interpolation performance of the surrogate model.
 
     Args:
-        surr: The surrogate model class.
+        model: Instance of the surrogate model class.
         surr_name (str): The name of the surrogate model.
         test_loader (DataLoader): The DataLoader object containing the test data.
         timesteps (np.ndarray): The timesteps array.
@@ -380,10 +360,8 @@ def evaluate_interpolation(
             if interval == 1
             else f"{surr_name.lower()}_interpolation_{interval}"
         )
-        model = load_model(surr, training_id, surr_name, model_id)
-        total_loss, _, _ = model.predict(
-            test_loader, criterion, N_timesteps=len(timesteps)
-        )
+        model.load(training_id, surr_name, model_identifier=model_id)
+        total_loss, _, _ = model.predict(test_loader, criterion, timesteps)
         interpolation_metrics[f"interval {interval}"] = {"MSE": total_loss}
 
     # Extract metrics and errors for plotting
@@ -400,13 +378,13 @@ def evaluate_interpolation(
 
 
 def evaluate_extrapolation(
-    surr, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
+    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
 ) -> Dict[str, Any]:
     """
     Evaluate the extrapolation performance of the surrogate model.
 
     Args:
-        surr: The surrogate model class.
+        model: Instance of the surrogate model class.
         surr_name (str): The name of the surrogate model.
         test_loader (DataLoader): The DataLoader object containing the test data.
         timesteps (np.ndarray): The timesteps array.
@@ -434,10 +412,8 @@ def evaluate_extrapolation(
             if cutoff == max_cut
             else f"{surr_name.lower()}_extrapolation_{cutoff}"
         )
-        model = load_model(surr, training_id, surr_name, model_id)
-        total_loss, _, _ = model.predict(
-            test_loader, criterion, N_timesteps=len(timesteps)
-        )
+        model.load(training_id, surr_name, model_identifier=model_id)
+        total_loss, _, _ = model.predict(test_loader, criterion, timesteps)
         extrapolation_metrics[f"cutoff {cutoff}"] = {"MSE": total_loss}
 
     # Extract metrics and errors for plotting
@@ -454,13 +430,18 @@ def evaluate_extrapolation(
 
 
 def evaluate_sparse(
-    surr, surr_name: str, test_loader: DataLoader, N_train_samples: int, conf: Dict
+    model,
+    surr_name: str,
+    test_loader: DataLoader,
+    timesteps: np.ndarray,
+    N_train_samples: int,
+    conf: Dict,
 ) -> Dict[str, Any]:
     """
     Evaluate the performance of the surrogate model with sparse training data.
 
     Args:
-        surr: The surrogate model class.
+        model: Instance of the surrogate model class.
         surr_name (str): The name of the surrogate model.
         test_loader (DataLoader): The DataLoader object containing the test data.
         N_train_samples (int): The number of training samples in the full dataset.
@@ -487,12 +468,8 @@ def evaluate_sparse(
             if factor == 1
             else f"{surr_name.lower()}_sparse_{factor}"
         )
-        model = load_model(surr, training_id, surr_name, model_id)
-        total_loss, _, _ = model.predict(
-            test_loader,
-            criterion,
-            N_timesteps=len(test_loader.dataset),
-        )
+        model.load(training_id, surr_name, model_identifier=model_id)
+        total_loss, _, _ = model.predict(test_loader, criterion, timesteps)
         n_train_samples = N_train_samples // factor
         sparse_metrics[f"factor {factor}"] = {
             "MSE": total_loss,
@@ -519,13 +496,13 @@ def evaluate_sparse(
 
 
 def evaluate_UQ(
-    surr, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
+    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
 ) -> Dict[str, Any]:
     """
     Evaluate the uncertainty quantification (UQ) performance of the surrogate model.
 
     Args:
-        surr: The surrogate model class.
+        model: Instance of the surrogate model class.
         surr_name (str): The name of the surrogate model.
         test_loader (DataLoader): The DataLoader object containing the test data.
         timesteps (np.ndarray): The timesteps array.
@@ -544,16 +521,12 @@ def evaluate_UQ(
     # Obtain predictions for each model
     all_predictions = []
     for i in range(n_models):
-        model_identifier = (
+        model_id = (
             f"{surr_name.lower()}_main" if i == 0 else f"{surr_name.lower()}_UQ_{i}"
         )
-        model = load_model(
-            surr, training_id, surr_name, model_identifier=model_identifier
-        )
-        _, preds_buffer, targets_buffer = model.predict(
-            test_loader, criterion, N_timesteps=len(timesteps)
-        )
-        all_predictions.append(preds_buffer)
+        model.load(training_id, surr_name, model_identifier=model_id)
+        _, preds, targets = model.predict(test_loader, criterion, timesteps)
+        all_predictions.append(preds)
 
     all_predictions = np.array(all_predictions)
 
@@ -563,12 +536,12 @@ def evaluate_UQ(
     average_uncertainty = np.mean(preds_std)
 
     # Correlate uncertainty with errors
-    errors = np.abs(preds_mean - targets_buffer)
+    errors = np.abs(preds_mean - targets)
     correlation_metrics, _ = pearsonr(errors.flatten(), preds_std.flatten())
 
     # Plots
     plot_example_predictions_with_uncertainty(
-        surr_name, conf, preds_mean, preds_std, targets_buffer, timesteps, save=True
+        surr_name, conf, preds_mean, preds_std, targets, timesteps, save=True
     )
     plot_average_uncertainty_over_time(surr_name, conf, preds_std, timesteps, save=True)
     plot_uncertainty_vs_errors(surr_name, conf, preds_std, errors, save=True)

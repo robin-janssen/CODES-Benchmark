@@ -8,6 +8,14 @@ class AbstractSurrogateModel(ABC, nn.Module):
         super(AbstractSurrogateModel, self).__init__()
 
     @abstractmethod
+    def forward(self, x):
+        pass
+
+    @abstractmethod
+    def prepare_data(self, data_loader):
+        pass
+
+    @abstractmethod
     def fit(self, conf, data_loader, test_loader=None):
         pass
 

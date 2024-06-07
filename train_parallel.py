@@ -77,16 +77,16 @@ def train_and_save_model(
     )
     full_test_data, _, _ = check_and_load_data(config["dataset"], "test", verbose=False)
 
-    # full_train_data = full_train_data[:50]
-    # full_test_data = full_test_data[:50]
-
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(
         full_train_data, full_test_data, osu_timesteps, mode, metric
     )
 
+    train_loader = model.prepare_data(train_data, timesteps, shuffle=True)
+    test_loader = model.prepare_data(test_data, timesteps, shuffle=False)
+
     # Train the model
-    model.fit(train_data, test_data, timesteps)
+    model.fit(train_loader, test_loader, timesteps)
 
     # Save the model (making the name lowercase and removing any underscores)
     model_name = f"{surrogate_name.lower()}_{mode}_{metric}".strip("_")
