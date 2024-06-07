@@ -275,7 +275,7 @@ class MultiONet(OperatorNetwork):
         self,
         model_name: str,
         subfolder: str = "trained",
-        unique_id: str = "run_1",
+        training_id: str = "run_1",
         dataset_name: str = "dataset",
     ) -> None:
         """
@@ -284,11 +284,11 @@ class MultiONet(OperatorNetwork):
         Args:
             model_name (str): The name of the model.
             subfolder (str): The subfolder to save the model in.
-            unique_id (str): A unique identifier to include in the directory name.
+            training_id (str): A unique identifier to include in the directory name.
             dataset_name (str): The name of the dataset.
         """
         base_dir = os.getcwd()
-        subfolder = os.path.join(subfolder, unique_id, "DeepONet")
+        subfolder = os.path.join(subfolder, training_id, "DeepONet")
         model_dir = create_model_dir(base_dir, subfolder)
         self.dataset_name = dataset_name
 
