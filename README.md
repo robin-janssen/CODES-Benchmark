@@ -14,9 +14,11 @@ This repo aims to provide a way of benchmarking surrogate models for chemical re
 <details>
   <summary><i>Adding a new model</i></summary>
 
-A new model should be implemented as a subclass to the base class AbstractSurrogateModel. This class in turn is a subclass of nn.Module, such that each model will be an nn.Module also. 
+A new model should be implemented as a subclass to the base class AbstractSurrogateModel. This class in turn is a subclass of nn.Module, such that each model will be a nn.Module also. 
 
-AbstractSurrogateModel mandates the implementation of four methods that are required either for training or for benchmarking. The methods are:
+AbstractSurrogateModel mandates the implementation of five methods that are required either for training or for benchmarking. Please ensure that any implemented model adheres to the definition of these methods regarding the number of inputs and outputs as well as their data type and shape. This is import for the train.py and benchmark.py scripts to run. 
+
+The methods are:
 
 * forward(initial_conditions, times):
   Implements one forward pass of the model. 
@@ -65,11 +67,41 @@ This method is used to save the model. In addition to the model parameters (the 
   * None (the model is saved to disk).
 
 - predict(dataloader, criterion, timesteps):
-This method is used to make predictions for the provided dataloader. 
+
+  This method is used to make predictions for the provided dataloader. The predictions are compared to the true values using the provided criterion.
+
+  Note: In the context of the benchmark, the criterion used is torch.nn.MSELoss(reduction="sum"). This means that across a batch, the loss is the sum of the squared differences between the predictions and the true values. Since we are interested in the mean squared error per prediction, the sum of these losses should be divided by the number of predictions, which is the product of the batch size, timesteps and number of chemicals. This quantity is returned as the total_loss.
+
+  Inputs:
+  * dataloader (torch.utils.data.DataLoader): DataLoader with the data to make predictions on.
+  * criterion (torch.nn.Module): Loss function to use for comparing the predictions to the true values.
+  * timesteps (np.ndarray): Timesteps corresponding to the data, shape [N_timesteps].
+
+  Returns:
+  * total_loss (float): Total loss of the predictions.
+  * preds (torch.tensor): Predictions made by the model, shape [N_samples, N_chemicals, N_timesteps].
+  * targets (torch.tensor): True values to compare the predictions to, shape [N_samples, N_chemicals, N_timesteps].
 
 
 </details>
 
 <details>
   <summary><i>Adding a new dataset</i></summary>
+
+
+It is easy to add a new dataset to the benchmark. To do so, you can use the function create_hdf5_dataset (train_data, test_data, dataset_name, data_dir, timesteps). An example of its usage is given in the script make_new_dataset.py.
+
+The function takes five inputs:
+
+* train_data (numpy.ndarray): Training data to save, shape [N_samples, N_chemicals, N_timesteps].
+* test_data (numpy.ndarray): Test data to save, shape [N_samples, N_chemicals, N_timesteps].
+* dataset_name (str): Name of the dataset to save.
+* data_dir (str): Directory to save the dataset in.
+* timesteps (np.ndarray): Timesteps corresponding to the data, shape [N_timesteps].
+
+It is important that the train and test data have the correct shape, i.e. [N_samples, N_chemicals, N_timesteps]. 
+The default data_dir is data, which is a subdirectory of the root directory of the repository. The timesteps are an optional input, if they are not provided, the check_and_load_data function will automatically create a numpy array with the timesteps from 0 to N_timesteps - 1.
+
+The data is stored as provided in the numpy arrays. Please ensure that the data is clean and has a reasonable range. Ideally, it should be normalized. The data is stored in the path data_dir/dataset_name/data.hdf5.  
+
 </details>

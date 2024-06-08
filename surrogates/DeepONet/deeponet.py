@@ -230,7 +230,6 @@ class MultiONet(OperatorNetwork):
             data_loader (DataLoader): The DataLoader object containing the test data.
             criterion (nn.Module): The loss function.
             N_timesteps (int): The number of timesteps.
-            reshape (bool, optional): Whether to reshape the outputs.
 
         Returns:
             tuple: The total loss, outputs, and targets.
@@ -241,35 +240,96 @@ class MultiONet(OperatorNetwork):
         self.to(device)
 
         total_loss = 0
-        preds_buffer = []
-        targets_buffer = []
-        with torch.no_grad():
-            for branch_inputs, trunk_inputs, targets in data_loader:
-                branch_inputs, trunk_inputs, targets = (
-                    branch_inputs.to(device),
-                    trunk_inputs.to(device),
-                    targets.to(device),
-                )
-                outputs = self(branch_inputs, trunk_inputs)
-                loss = criterion(outputs, targets)
-                total_loss += loss.item()
+        dataset_size = len(data_loader.dataset)
 
-                preds_buffer.append(outputs.cpu().numpy())
-                targets_buffer.append(targets.cpu().numpy())
-
-        preds_buffer = np.concatenate(preds_buffer, axis=0)
-        targets_buffer = np.concatenate(targets_buffer, axis=0)
-
-        # Calculate relative error
-        total_loss /= len(data_loader.dataset) * targets_buffer.shape[1]
-
-        # if reshape:
-        preds_buffer = preds_buffer.reshape(-1, N_timesteps, preds_buffer.shape[1])
-        targets_buffer = targets_buffer.reshape(
-            -1, N_timesteps, targets_buffer.shape[1]
+        # Pre-allocate buffers for predictions and targets
+        preds = torch.zeros((dataset_size, self.N), dtype=torch.float32, device=device)
+        targets = torch.zeros(
+            (dataset_size, self.N), dtype=torch.float32, device=device
         )
 
-        return total_loss, preds_buffer, targets_buffer
+        start_idx = 0
+
+        with torch.no_grad():
+            for branch_inputs, trunk_inputs, batch_targets in data_loader:
+                batch_size = branch_inputs.size(0)
+                branch_inputs, trunk_inputs, batch_targets = (
+                    branch_inputs.to(device),
+                    trunk_inputs.to(device),
+                    batch_targets.to(device),
+                )
+                outputs = self(branch_inputs, trunk_inputs)
+                loss = criterion(outputs, batch_targets)
+                total_loss += loss.item()
+
+                # Write predictions and targets to the pre-allocated buffers
+                preds[start_idx : start_idx + batch_size] = outputs
+                targets[start_idx : start_idx + batch_size] = batch_targets
+
+                start_idx += batch_size
+
+        preds = preds.cpu().numpy()
+        targets = targets.cpu().numpy()
+
+        # Calculate relative error
+        total_loss /= dataset_size * self.N
+
+        preds = preds.reshape(-1, N_timesteps, self.N)
+        targets = targets.reshape(-1, N_timesteps, self.N)
+
+        return total_loss, preds, targets
+
+    # def predict(
+    #     self,
+    #     data_loader: DataLoader,
+    #     criterion: nn.Module,
+    #     timesteps: np.ndarray,
+    # ) -> Tuple[float, np.ndarray, np.ndarray]:
+    #     """
+    #     Evaluate the model on the test data.
+
+    #     Args:
+    #         data_loader (DataLoader): The DataLoader object containing the test data.
+    #         criterion (nn.Module): The loss function.
+    #         N_timesteps (int): The number of timesteps.
+
+    #     Returns:
+    #         tuple: The total loss, outputs, and targets.
+    #     """
+    #     N_timesteps = len(timesteps)
+    #     device = self.device
+    #     self.eval()
+    #     self.to(device)
+
+    #     total_loss = 0
+    #     preds_buffer = []
+    #     targets_buffer = []
+    #     with torch.no_grad():
+    #         for branch_inputs, trunk_inputs, targets in data_loader:
+    #             branch_inputs, trunk_inputs, targets = (
+    #                 branch_inputs.to(device),
+    #                 trunk_inputs.to(device),
+    #                 targets.to(device),
+    #             )
+    #             outputs = self(branch_inputs, trunk_inputs)
+    #             loss = criterion(outputs, targets)
+    #             total_loss += loss.item()
+
+    #             preds_buffer.append(outputs.cpu().numpy())
+    #             targets_buffer.append(targets.cpu().numpy())
+
+    #     preds_buffer = np.concatenate(preds_buffer, axis=0)
+    #     targets_buffer = np.concatenate(targets_buffer, axis=0)
+
+    #     # Calculate relative error
+    #     total_loss /= len(data_loader.dataset) * targets_buffer.shape[1]
+
+    #     preds_buffer = preds_buffer.reshape(-1, N_timesteps, preds_buffer.shape[1])
+    #     targets_buffer = targets_buffer.reshape(
+    #         -1, N_timesteps, targets_buffer.shape[1]
+    #     )
+
+    #     return total_loss, preds_buffer, targets_buffer
 
     def save(
         self,
