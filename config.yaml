@@ -1,7 +1,7 @@
-training_id: "training3"
-surrogates: ["DeepONet", "NeuralODE"]
+training_id: "FCNNtest"
+surrogates: ["FCNN"]
 dataset: "Osu2008"
-devices: ["cuda:7"]
+devices: ["cuda:6", "cuda:2"]
 
 training: 
   epochs: 100

@@ -1,0 +1,108 @@
+accuracy:
+  total_loss: 0.009958316985492049
+  mean_relative_error: 0.09526626020669937
+  median_relative_error: 0.008409282192587852
+  max_relative_error: 4486.3017578125
+  min_relative_error: 0.0
+dynamic_accuracy:
+  species_correlations:
+    quantity_0: -0.0503063355349901
+    quantity_1: 0.4282720730010052
+    quantity_2: 0.1301139209806476
+    quantity_3: 0.11527110163963107
+    quantity_4: -0.011275113730255982
+    quantity_5: 0.120020018694985
+    quantity_6: 0.0023206590255416466
+    quantity_7: 0.2122332819823151
+    quantity_8: 0.14670884097969675
+    quantity_9: 0.26091109665096013
+    quantity_10: 0.0006162317180581352
+    quantity_11: 0.07811528159685813
+    quantity_12: 0.1269626394935104
+    quantity_13: 0.24638979250703935
+    quantity_14: -0.01344889481173104
+    quantity_15: 0.16438681680304676
+    quantity_16: -0.19486868349295244
+    quantity_17: -0.08664774952542562
+    quantity_18: 0.37916271864102497
+    quantity_19: 0.29827928325626835
+    quantity_20: 0.005390668403546233
+    quantity_21: 0.1894058369598207
+    quantity_22: 0.23323686172885918
+    quantity_23: 0.046696698404714444
+    quantity_24: 0.2008381309645722
+    quantity_25: 0.08295772794092582
+    quantity_26: 0.15236453228079624
+    quantity_27: 0.1338352088099758
+    quantity_28: 0.19491543684723966
+  avg_correlation: 0.37510618147745267
+timing:
+  mean_inference_time_per_run: 0.49167895317077637
+  std_inference_time_per_run: 0.028582944992784933
+  num_predictions: 20000
+  mean_inference_time_per_prediction: 2.4583947658538818e-05
+  std_inference_time_per_prediction: 1.4291472496392466e-06
+compute:
+  num_trainable_parameters: 172829
+  memory_footprint:
+    before_forward: 726839296
+    after_forward: 726839296
+    forward_pass_memory: 0
+    after_backward: 755113984
+    backward_pass_memory: 28274688
+interpolation:
+  interval 1:
+    MSE: 0.009958316985492049
+  interval 2:
+    MSE: 0.061784941285232015
+  interval 3:
+    MSE: 0.11726661947842303
+  interval 4:
+    MSE: 0.15835765312457906
+  interval 5:
+    MSE: 0.19977036764210668
+  interval 6:
+    MSE: 0.22159499753754713
+  interval 7:
+    MSE: 0.2976947793894801
+  interval 8:
+    MSE: 0.28108152892014077
+  interval 9:
+    MSE: 0.3451244804645407
+  interval 10:
+    MSE: 0.5914515896501212
+extrapolation:
+  cutoff 50:
+    MSE: 4.105930465382543
+  cutoff 60:
+    MSE: 1.8222368189318428
+  cutoff 70:
+    MSE: 1.2118911267510777
+  cutoff 80:
+    MSE: 0.32929827017948543
+  cutoff 100:
+    MSE: 0.009958316985492049
+  cutoff 90:
+    MSE: 0.029859880092226225
+sparse:
+  factor 1:
+    MSE: 0.009958316985492049
+    n_train_samples: 800
+  factor 2:
+    MSE: 0.051934594884412044
+    n_train_samples: 400
+  factor 4:
+    MSE: 0.15268036584525274
+    n_train_samples: 200
+  factor 8:
+    MSE: 0.35282978299897294
+    n_train_samples: 100
+  factor 16:
+    MSE: 0.8713268089557517
+    n_train_samples: 50
+  factor 32:
+    MSE: 3.5329806017645473
+    n_train_samples: 25
+UQ:
+  average_uncertainty: 0.06213150545954704
+  correlation_metrics: 0.6219216174819273

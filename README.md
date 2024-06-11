@@ -20,12 +20,11 @@ AbstractSurrogateModel mandates the implementation of five methods that are requ
 
 The methods are:
 
-* forward(initial_conditions, times):
+* forward(inputs):
   Implements one forward pass of the model. 
 
   Inputs:
-  * initial_conditions (torch.tensor): (Chemical) quantities at t=0, shape [batch_size, N_chemicals].
-  * times (torch.tensor): Times at which to obtain the predictions, shape [batch_size, 1]
+  * inputs (tuple): Tuple of N torch.tensors as returned by the dataloader (i.e. inputs = next(iter(dataloader))). This means that inputs will contain, in addition to the initial conditions and the times, the targets. The targets can be discarded here, as they are not needed for the forward pass. This handling is for compatibility with the training and benchmarking scripts.
 
   Returns:
   * preds (torch.tensor): Predicted (chemical) quantities at the specified times, shape [batch_size, N_chemicals]

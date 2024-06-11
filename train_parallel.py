@@ -6,45 +6,8 @@ from queue import Queue
 from threading import Thread
 
 from surrogates.surrogate_classes import surrogate_classes
-from utils import load_and_save_config
-from data import check_and_load_data
-
-
-def get_data_subset(full_train_data, full_test_data, osu_timesteps, mode, metric):
-    """
-    Get the appropriate data subset based on the mode and metric.
-
-    Args:
-        full_train_data (np.ndarray): The full training data.
-        full_test_data (np.ndarray): The full test data.
-        osu_timesteps (np.ndarray): The timesteps.
-        mode (str): The benchmark mode (e.g., "accuracy", "interpolation", "extrapolation", "sparse", "UQ").
-        metric (str): The specific metric for the mode (e.g., interval, cutoff, factor).
-
-    Returns:
-        tuple: The training data, test data, and timesteps subset.
-    """
-    if mode == "interpolation":
-        interval = int(metric)
-        train_data = full_train_data[:, ::interval]
-        test_data = full_test_data[:, ::interval]
-        timesteps = osu_timesteps[::interval]
-    elif mode == "extrapolation":
-        cutoff = int(metric)
-        train_data = full_train_data[:, :cutoff]
-        test_data = full_test_data[:, :cutoff]
-        timesteps = osu_timesteps[:cutoff]
-    elif mode == "sparse":
-        factor = int(metric)
-        train_data = full_train_data[::factor]
-        test_data = full_test_data[::factor]
-        timesteps = osu_timesteps
-    else:
-        train_data = full_train_data
-        test_data = full_test_data
-        timesteps = osu_timesteps
-
-    return train_data, test_data, timesteps
+from utils import load_and_save_config, set_random_seeds
+from data import check_and_load_data, get_data_subset
 
 
 def train_and_save_model(
@@ -77,6 +40,10 @@ def train_and_save_model(
     )
     full_test_data, _, _ = check_and_load_data(config["dataset"], "test", verbose=False)
 
+    # Just for testing purposes
+    full_train_data = full_train_data[:200]
+    full_test_data = full_test_data[:200]
+
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(
         full_train_data, full_test_data, osu_timesteps, mode, metric
@@ -93,7 +60,7 @@ def train_and_save_model(
     model_name = model_name.replace("__", "_")
     model.save(
         model_name=model_name,
-        unique_id=config["training_id"],
+        training_id=config["training_id"],
         dataset_name=config["dataset"],
     )
 
@@ -194,6 +161,7 @@ def main():
     tasks = []
     device_list = config["devices"]
     device_list = [device_list] if isinstance(device_list, str) else device_list
+
     for surrogate_name in config["surrogates"]:
         if surrogate_name in surrogate_classes:
             surrogate_class = surrogate_classes[surrogate_name]
@@ -201,8 +169,7 @@ def main():
         else:
             print(f"Surrogate {surrogate_name} not recognized. Skipping.")
 
-        # if len(device_list) > 1:
-        #     parallel_training(tasks, device_list)    if len(device_list) > 1:
+    if len(device_list) > 1:
         parallel_training(tasks, device_list)
     else:
         for task in tasks:

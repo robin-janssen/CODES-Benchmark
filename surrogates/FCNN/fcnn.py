@@ -4,23 +4,20 @@ import torch
 import torch.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
+from torch.utils.data import TensorDataset
 from tqdm import tqdm
-from typing import Tuple, Optional, TypeVar
+from typing import Tuple, Optional
 import yaml
 
 from surrogates.surrogates import AbstractSurrogateModel
-
-# Use the below import to adjust the config class to the specific model
-from surrogates.DeepONet.config_classes import OChemicalTrainConfig as MultiONetConfig
-from data import create_dataloader_deeponet
+from surrogates.FCNN.fcnn_config import OConfig
 
 from utils import time_execution, create_model_dir
-from .utils import mass_conservation_loss
 
 
-class BranchNet(nn.Module):
+class FullyConnectedNet(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, num_hidden_layers):
-        super(BranchNet, self).__init__()
+        super(FullyConnectedNet, self).__init__()
         layers = [nn.Linear(input_size, hidden_size), nn.ReLU()]
         for _ in range(num_hidden_layers - 1):
             layers += [nn.Linear(hidden_size, hidden_size), nn.ReLU()]
@@ -31,113 +28,45 @@ class BranchNet(nn.Module):
         return self.network(x)
 
 
-class TrunkNet(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, num_hidden_layers):
-        super(TrunkNet, self).__init__()
-        layers = [nn.Linear(input_size, hidden_size), nn.ReLU()]
-        for _ in range(num_hidden_layers - 1):
-            layers += [nn.Linear(hidden_size, hidden_size), nn.ReLU()]
-        layers.append(nn.Linear(hidden_size, output_size))
-        self.network = nn.Sequential(*layers)
-
-    def forward(self, x):
-        return self.network(x)
-
-
-class OperatorNetwork(AbstractSurrogateModel):
-    def __init__(self):
-        super(OperatorNetwork, self).__init__()
-
-    def post_init_check(self):
-        if not hasattr(self, "branch_net") or not hasattr(self, "trunk_net"):
-            raise NotImplementedError(
-                "Child classes must initialize a branch_net and trunk_net."
-            )
-        if not hasattr(self, "forward") or not callable(self.forward):
-            raise NotImplementedError("Child classes must implement a forward method.")
-
-    def forward(self, branch_input, trunk_input):
-        # Define a generic forward pass or raise an error to enforce child class implementation
-        raise NotImplementedError("Forward method must be implemented by subclasses.")
-
-    @staticmethod
-    def _calculate_split_sizes(total_neurons, num_splits):
-        """Helper function to calculate split sizes for even distribution"""
-        base_size = total_neurons // num_splits
-        remainder = total_neurons % num_splits
-        return [
-            base_size + 1 if i < remainder else base_size for i in range(num_splits)
-        ]
-
-
-OperatorNetworkType = TypeVar("OperatorNetworkType", bound=OperatorNetwork)
-
-
-class MultiONet(OperatorNetwork):
+class FullyConnected(AbstractSurrogateModel):
     def __init__(self, device: str = None):
         """
-        Initialize the MultiONet model with a configuration.
+        Initialize the FullyConnected model with a configuration.
 
         The configuration must provide the following information:
-
-        - branch_input_size (int): The input size for the branch network.
-        - trunk_input_size (int): The input size for the trunk network.
-        - hidden_size (int): The number of hidden units in each layer of the branch and trunk networks.
-        - branch_hidden_layers (int): The number of hidden layers in the branch network.
-        - trunk_hidden_layers (int): The number of hidden layers in the trunk network.
-        - output_neurons (int): The number of neurons in the last layer of both branch and trunk networks.
-        - N_outputs (int): The number of outputs of the model.
+        - input_size (int): The input size for the network.
+        - hidden_size (int): The number of hidden units in each layer of the network.
+        - num_hidden_layers (int): The number of hidden layers in the network.
+        - output_size (int): The number of outputs of the model.
         - device (str): The device to use for training (e.g., 'cpu', 'cuda:0').
         """
-        config = MultiONetConfig()  # Load the specific config for DeepONet
-        super(MultiONet, self).__init__()
+        config = OConfig()  # Load the specific config for FullyConnected
+        super(FullyConnected, self).__init__()
 
         self.config = config
         if device is not None:
             config.device = device
         self.device = config.device
-        self.N = config.N_outputs  # Number of outputs
-        self.outputs = config.output_neurons  # Number of neurons in the last layer
-        self.branch_net = BranchNet(
-            config.branch_input_size,
+        self.model = FullyConnectedNet(
+            config.input_size,
             config.hidden_size,
-            config.output_neurons,
-            config.branch_hidden_layers,
-        ).to(config.device)
-        self.trunk_net = TrunkNet(
-            config.trunk_input_size,
-            config.hidden_size,
-            config.output_neurons,
-            config.trunk_hidden_layers,
+            config.output_size,
+            config.num_hidden_layers,
         ).to(config.device)
 
-    def forward(
-        self, inputs: Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
-    ) -> torch.Tensor:
+    def forward(self, inputs: Tuple) -> torch.Tensor:
         """
-        Forward pass for the MultiONet model.
+        Forward pass for the FullyConnected model.
 
         Args:
-            inputs (tuple): The input tuple containing branch_input, trunk_input, and targets.
-            Note: The targets are not used in the forward pass, but are included for compatibility with DataLoader.
+            inputs: Tuple containing the input tensor and the target tensor.
+            Note: The targets are not used in the forward pass but are included for compatibility with the DataLoader.
 
         Returns:
             torch.Tensor: Output tensor of the model.
         """
-        branch_input, trunk_input, _ = inputs
-        branch_output = self.branch_net(branch_input)
-        trunk_output = self.trunk_net(trunk_input)
-
-        # Splitting the outputs for multiple output values
-        split_sizes = self._calculate_split_sizes(self.outputs, self.N)
-        branch_splits = torch.split(branch_output, split_sizes, dim=1)
-        trunk_splits = torch.split(trunk_output, split_sizes, dim=1)
-
-        result = []
-        for b_split, t_split in zip(branch_splits, trunk_splits):
-            result.append(torch.sum(b_split * t_split, dim=1, keepdim=True))
-
-        return torch.cat(result, dim=1)
+        x, _ = inputs
+        return self.model(x)
 
     def prepare_data(
         self,
@@ -162,14 +91,38 @@ class MultiONet(OperatorNetwork):
         if batch_size is None:
             batch_size = self.config.batch_size
 
-        # Create the DataLoader object
-        dataloader = create_dataloader_deeponet(
+        # Concatenate timesteps to the dataset as an additional feature
+        n_samples, n_timesteps, n_features = dataset.shape
+        dataset_with_time = np.concatenate(
+            [
+                dataset,
+                np.tile(timesteps, (n_samples, 1)).reshape(n_samples, n_timesteps, 1),
+            ],
+            axis=2,
+        )
+
+        # Flatten the dataset for FCNN
+        flattened_data = dataset_with_time.reshape(-1, n_features + 1)
+        flattened_targets = dataset.reshape(-1, n_features)
+
+        # Convert to PyTorch tensors
+        inputs_tensor = torch.tensor(flattened_data, dtype=torch.float32)
+        targets_tensor = torch.tensor(flattened_targets, dtype=torch.float32)
+
+        # Create a TensorDataset and DataLoader
+        dataset = TensorDataset(inputs_tensor, targets_tensor)
+
+        def worker_init_fn(worker_id):
+            torch_seed = torch.initial_seed()
+            np_seed = torch_seed // 2**32 - 1
+            np.random.seed(np_seed)
+
+        return DataLoader(
             dataset,
-            timesteps,
             batch_size=batch_size,
             shuffle=shuffle,
+            worker_init_fn=worker_init_fn,
         )
-        return dataloader
 
     @time_execution
     def fit(
@@ -179,13 +132,12 @@ class MultiONet(OperatorNetwork):
         timesteps: np.ndarray,
     ) -> None:
         """
-        Train the MultiONet model.
+        Train the FullyConnected model.
 
         Args:
-            train_data (np.ndarray): The training data.
-            test_data (np.ndarray): The test data (to evaluate the model during training).
+            train_loader (DataLoader): The DataLoader object containing the training data.
+            test_loader (DataLoader): The DataLoader object containing the test data.
             timesteps (np.ndarray): The timesteps.
-            dataset_name (str): The name of the dataset.
 
         Returns:
             None
@@ -230,7 +182,7 @@ class MultiONet(OperatorNetwork):
         Args:
             data_loader (DataLoader): The DataLoader object containing the test data.
             criterion (nn.Module): The loss function.
-            N_timesteps (int): The number of timesteps.
+            timesteps (np.ndarray): The timesteps array.
 
         Returns:
             tuple: The total loss, outputs, and targets.
@@ -244,22 +196,23 @@ class MultiONet(OperatorNetwork):
         dataset_size = len(data_loader.dataset)
 
         # Pre-allocate buffers for predictions and targets
-        preds = torch.zeros((dataset_size, self.N), dtype=torch.float32, device=device)
+        preds = torch.zeros(
+            (dataset_size, self.config.output_size), dtype=torch.float32, device=device
+        )
         targets = torch.zeros(
-            (dataset_size, self.N), dtype=torch.float32, device=device
+            (dataset_size, self.config.output_size), dtype=torch.float32, device=device
         )
 
         start_idx = 0
 
         with torch.no_grad():
-            for branch_inputs, trunk_inputs, batch_targets in data_loader:
-                batch_size = branch_inputs.size(0)
-                branch_inputs, trunk_inputs, batch_targets = (
-                    branch_inputs.to(device),
-                    trunk_inputs.to(device),
+            for inputs, batch_targets in data_loader:
+                batch_size = inputs.size(0)
+                inputs, batch_targets = (
+                    inputs.to(device),
                     batch_targets.to(device),
                 )
-                outputs = self((branch_inputs, trunk_inputs, batch_targets))
+                outputs = self((inputs, batch_targets))
                 loss = criterion(outputs, batch_targets)
                 total_loss += loss.item()
 
@@ -273,10 +226,10 @@ class MultiONet(OperatorNetwork):
         targets = targets.cpu().numpy()
 
         # Calculate relative error
-        total_loss /= dataset_size * self.N
+        total_loss /= dataset_size * self.config.output_size
 
-        preds = preds.reshape(-1, N_timesteps, self.N)
-        targets = targets.reshape(-1, N_timesteps, self.N)
+        preds = preds.reshape(-1, N_timesteps, self.config.output_size)
+        targets = targets.reshape(-1, N_timesteps, self.config.output_size)
 
         return total_loss, preds, targets
 
@@ -297,7 +250,7 @@ class MultiONet(OperatorNetwork):
             dataset_name (str): The name of the dataset.
         """
         base_dir = os.getcwd()
-        subfolder = os.path.join(subfolder, training_id, "DeepONet")
+        subfolder = os.path.join(subfolder, training_id, "FCNN")
         model_dir = create_model_dir(base_dir, subfolder)
         self.dataset_name = dataset_name
 
@@ -307,9 +260,6 @@ class MultiONet(OperatorNetwork):
 
         # Create the hyperparameters dictionary from the config dataclass
         hyperparameters = dataclasses.asdict(self.config)
-
-        # Remove the masses list from the hyperparameters
-        hyperparameters.pop("masses", None)
 
         # Append the train time to the hyperparameters
         hyperparameters["train_duration"] = self.fit.duration
@@ -358,11 +308,6 @@ class MultiONet(OperatorNetwork):
             callable: The loss function.
         """
         crit = nn.MSELoss(reduction="sum")
-        if hasattr(self.config, "masses") and self.config.masses is not None:
-            weights = (1.0, self.config.massloss_factor)
-            crit = mass_conservation_loss(
-                self.config.masses, crit, weights, self.config.device
-            )
         return crit
 
     def setup_optimizer_and_scheduler(
@@ -370,10 +315,6 @@ class MultiONet(OperatorNetwork):
     ) -> Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
         """
         Utility function to set up the optimizer and scheduler for training.
-
-        Args:
-            conf (dataclasses.dataclass): The configuration dataclass.
-            deeponet (OperatorNetworkType): The model to train.
 
         Returns:
             tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler): The optimizer and scheduler.
@@ -447,18 +388,17 @@ class MultiONet(OperatorNetwork):
         self.train()
         total_loss = 0
         dataset_size = len(data_loader.dataset)
-        N_outputs = self.config.N_outputs
+        N_outputs = self.config.output_size
 
         for batch in data_loader:
-            branch_input, trunk_input, targets = batch
-            branch_input, trunk_input, targets = (
-                branch_input.to(self.device),
-                trunk_input.to(self.device),
+            inputs, targets = batch
+            inputs, targets = (
+                inputs.to(self.device),
                 targets.to(self.device),
             )
 
             optimizer.zero_grad()
-            outputs = self.forward(branch_input, trunk_input)
+            outputs = self.forward(inputs)
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()

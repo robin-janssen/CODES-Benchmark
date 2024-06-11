@@ -135,22 +135,22 @@ def count_trainable_parameters(model: torch.nn.Module) -> int:
 
 
 def measure_memory_footprint(
-    model: torch.nn.Module, initial_conditions: torch.Tensor, times: torch.Tensor
+    model: torch.nn.Module,
+    inputs: tuple,
 ) -> dict:
     """
     Measure the memory footprint of the model during the forward and backward pass.
 
     Args:
         model (torch.nn.Module): The PyTorch model.
-        initial_conditions (torch.Tensor): The initial conditions tensor.
-        times (torch.Tensor): The times tensor.
+        inputs (tuple): The input data for the model.
 
     Returns:
         dict: A dictionary containing memory footprint measurements.
     """
     # model.to(model.device)
-    initial_conditions = initial_conditions.to(model.device)
-    times = times.to(model.device)
+    # initial_conditions = initial_conditions.to(model.device)
+    # times = times.to(model.device)
 
     def get_memory_usage():
         process = psutil.Process(os.getpid())
@@ -160,7 +160,8 @@ def measure_memory_footprint(
     before_forward = get_memory_usage()
 
     # Forward pass
-    output = model(initial_conditions, times)
+    inputs = (i.to(model.device) for i in inputs)
+    output = model(inputs)
     after_forward = get_memory_usage()
 
     # Measure memory usage before the backward pass

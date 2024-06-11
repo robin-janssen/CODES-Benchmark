@@ -72,7 +72,7 @@ class OChemicalTrainConfig:
     trunk_hidden_layers: int = 5
     output_neurons: int = 290
     N_outputs: int = 29
-    num_epochs: int = 500
+    num_epochs: int = 50
     learning_rate: float = 1e-4
     schedule: bool = False
     N_sensors: int = 29

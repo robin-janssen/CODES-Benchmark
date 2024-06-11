@@ -240,6 +240,66 @@ def plot_sparse_errors(
     plt.close()
 
 
+def plot_average_errors_over_time(
+    surr_name: str,
+    conf: dict,
+    errors: np.ndarray,
+    metrics: np.ndarray,
+    timesteps: np.ndarray,
+    mode: str,
+    save: bool = False,
+) -> None:
+    """
+    Plot the errors over time for different modes (interpolation, extrapolation, sparse).
+
+    Args:
+        surr_name (str): The name of the surrogate model.
+        conf (dict): The configuration dictionary.
+        errors (np.ndarray): Errors array of shape [N_metrics, N_timesteps].
+        metrics (np.ndarray): Metrics array of shape [N_metrics].
+        timesteps (np.ndarray): Timesteps array.
+        mode (str): The mode of evaluation ('interpolation', 'extrapolation', 'sparse').
+        save (bool, optional): Whether to save the plot as a file.
+    """
+    plt.figure(figsize=(10, 6))
+
+    for i, metric in enumerate(metrics):
+        label = (
+            f"interval {metric}"
+            if mode == "interpolation"
+            else f"cutoff {metric}" if mode == "extrapolation" else f"factor {metric}"
+        )
+        plt.plot(timesteps, errors[i], label=label)
+
+    plt.xlabel("Timesteps")
+    plt.ylabel("Errors")
+    title = (
+        "Interpolation Errors Over Time"
+        if mode == "interpolation"
+        else (
+            "Extrapolation Errors Over Time"
+            if mode == "extrapolation"
+            else "Sparse Errors Over Time"
+        )
+    )
+    plt.title(title)
+    plt.legend()
+
+    if save and conf:
+        filename = (
+            "interpolation_errors_over_time.png"
+            if mode == "interpolation"
+            else (
+                "extrapolation_errors_over_time.png"
+                if mode == "extrapolation"
+                else "sparse_errors_over_time.png"
+            )
+        )
+        save_plot(plt, filename, conf, surr_name)
+
+    plt.close()
+
+
 def plot_example_predictions_with_uncertainty(
     surr_name: str,
     conf: dict,

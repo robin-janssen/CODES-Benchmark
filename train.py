@@ -53,7 +53,7 @@ def train_and_save_model(
     model_name = model_name.replace("__", "_")
     model.save(
         model_name=model_name,
-        unique_id=config["training_id"],
+        training_id=config["training_id"],
         dataset_name=config["dataset"],
     )
 

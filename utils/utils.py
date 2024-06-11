@@ -3,6 +3,9 @@ import functools
 import time
 import os
 import shutil
+import random
+import numpy as np
+import torch
 
 
 def read_yaml_config(config_path):
@@ -76,3 +79,12 @@ def load_and_save_config(config_path: str = "config.yaml") -> dict:
     shutil.copyfile(config_path, config_save_path)
 
     return config
+
+
+def set_random_seeds(seed: int):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False

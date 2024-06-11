@@ -1,55 +1,3 @@
-accuracy:
-  total_loss: 0.006513840233046433
-  mean_relative_error: 0.0515940859913826
-  median_relative_error: 0.004945913329720497
-  max_relative_error: 2811.167236328125
-  min_relative_error: 0.0
-dynamic_accuracy:
-  species_correlations:
-    quantity_0: 0.6761273660671709
-    quantity_1: 0.7100152901469686
-    quantity_2: 0.3557585625427259
-    quantity_3: 0.5294810491157611
-    quantity_4: 0.49355075701871476
-    quantity_5: 0.49164500147677553
-    quantity_6: 0.336259020168139
-    quantity_7: 0.24836692069237426
-    quantity_8: 0.45669996117250417
-    quantity_9: 0.5894246951237067
-    quantity_10: 0.3536426568412193
-    quantity_11: 0.2564376494555364
-    quantity_12: 0.3130326773123812
-    quantity_13: 0.5728669516943161
-    quantity_14: 0.14956358137996495
-    quantity_15: 0.5408160515993465
-    quantity_16: -0.1685610723846243
-    quantity_17: 0.5790350605908081
-    quantity_18: 0.31940434483428043
-    quantity_19: -0.06057949514378783
-    quantity_20: -0.0015226788559863811
-    quantity_21: 0.23748227587017395
-    quantity_22: 0.173905834707793
-    quantity_23: 0.6125513813868437
-    quantity_24: 0.2906446736049324
-    quantity_25: 0.36664701243377423
-    quantity_26: 0.41176320870534333
-    quantity_27: 0.24861841571730817
-    quantity_28: -0.19938915025460885
-  avg_correlation: 0.3841776960899079
-timing:
-  mean_inference_time_per_run: 0.45003738403320315
-  std_inference_time_per_run: 0.02466955231997369
-  num_predictions: 20000
-  mean_inference_time_per_prediction: 2.2501869201660158e-05
-  std_inference_time_per_prediction: 1.2334776159986846e-06
-compute:
-  num_trainable_parameters: 142580
-  memory_footprint:
-    before_forward: 854765568
-    after_forward: 854765568
-    forward_pass_memory: 0
-    after_backward: 879452160
-    backward_pass_memory: 24686592
 interpolation:
   interval 1:
     MSE: 0.006513840233046433
@@ -105,4 +53,4 @@ sparse:
     n_train_samples: 25
 UQ:
   average_uncertainty: 0.044606518000364304
-  correlation_metrics: 0.5200711130167169
+  correlation_metrics: 0.520071113016717

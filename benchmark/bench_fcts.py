@@ -10,6 +10,7 @@ from .bench_plots import (
     plot_dynamic_correlation,
     plot_generalization_errors,
     plot_sparse_errors,
+    plot_average_errors_over_time,
     plot_average_uncertainty_over_time,
     plot_example_predictions_with_uncertainty,
     plot_uncertainty_vs_errors,
@@ -137,8 +138,8 @@ def evaluate_accuracy(
     criterion = torch.nn.MSELoss(reduction="sum")
     total_loss, preds, targets = model.predict(test_loader, criterion, timesteps)
 
-    preds = preds.transpose(0, 2, 1)
-    targets = targets.transpose(0, 2, 1)
+    # preds = preds.transpose(0, 2, 1)
+    # targets = targets.transpose(0, 2, 1)
 
     # Calculate relative errors
     relative_errors = np.abs((preds - targets) / targets)
@@ -313,9 +314,9 @@ def evaluate_compute(
     num_params = count_trainable_parameters(model)
 
     # Get a sample input tensor from the test_loader
-    sample_ICs, sample_times, _ = next(iter(test_loader))
+    inputs = next(iter(test_loader))
     # Measure the memory footprint during forward and backward pass
-    memory_footprint = measure_memory_footprint(model, sample_ICs, sample_times)
+    memory_footprint = measure_memory_footprint(model, inputs)
 
     # Store complexity metrics
     complexity_metrics = {
@@ -348,6 +349,7 @@ def evaluate_interpolation(
     intervals = intervals[intervals > 1]
     intervals = np.insert(intervals, 0, 1)
     interpolation_metrics = {}
+    errors = np.zeros((len(intervals), len(timesteps)))
 
     # Criterion for prediction loss
     criterion = torch.nn.MSELoss(reduction="sum")
@@ -361,8 +363,11 @@ def evaluate_interpolation(
             else f"{surr_name.lower()}_interpolation_{interval}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        total_loss, _, _ = model.predict(test_loader, criterion, timesteps)
+        total_loss, preds, targets = model.predict(test_loader, criterion, timesteps)
         interpolation_metrics[f"interval {interval}"] = {"MSE": total_loss}
+
+        mean_absolute_errors = np.mean(np.abs(preds - targets), axis=(0, 2))
+        errors[intervals == interval] = mean_absolute_errors
 
     # Extract metrics and errors for plotting
     model_errors = np.array(
@@ -372,6 +377,15 @@ def evaluate_interpolation(
     # Plot interpolation errors
     plot_generalization_errors(
         surr_name, conf, intervals, model_errors, interpolate=True, save=True
+    )
+    plot_average_errors_over_time(
+        surr_name,
+        conf,
+        errors,
+        intervals,
+        timesteps,
+        mode="interpolation",
+        save=True,
     )
 
     return interpolation_metrics
@@ -400,6 +414,7 @@ def evaluate_extrapolation(
     cutoffs = cutoffs[cutoffs < max_cut]
     cutoffs = np.insert(cutoffs, -1, max_cut)
     extrapolation_metrics = {}
+    errors = np.zeros((len(cutoffs), len(timesteps)))
 
     # Criterion for prediction loss
     criterion = torch.nn.MSELoss(reduction="sum")
@@ -413,8 +428,11 @@ def evaluate_extrapolation(
             else f"{surr_name.lower()}_extrapolation_{cutoff}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        total_loss, _, _ = model.predict(test_loader, criterion, timesteps)
+        total_loss, preds, targets = model.predict(test_loader, criterion, timesteps)
         extrapolation_metrics[f"cutoff {cutoff}"] = {"MSE": total_loss}
+
+        mean_absolute_errors = np.mean(np.abs(preds - targets), axis=(0, 2))
+        errors[cutoffs == cutoff] = mean_absolute_errors
 
     # Extract metrics and errors for plotting
     model_errors = np.array(
@@ -424,6 +442,15 @@ def evaluate_extrapolation(
     # Plot extrapolation errors
     plot_generalization_errors(
         surr_name, conf, cutoffs, model_errors, interpolate=False, save=True
+    )
+    plot_average_errors_over_time(
+        surr_name,
+        conf,
+        errors,
+        cutoffs,
+        timesteps,
+        mode="extrapolation",
+        save=True,
     )
 
     return extrapolation_metrics
@@ -456,6 +483,7 @@ def evaluate_sparse(
     factors = factors[factors > 1]
     factors = np.insert(factors, 0, 1)
     sparse_metrics = {}
+    errors = np.zeros((len(factors), len(timesteps)))
 
     # Criterion for prediction loss
     criterion = torch.nn.MSELoss(reduction="sum")
@@ -469,12 +497,14 @@ def evaluate_sparse(
             else f"{surr_name.lower()}_sparse_{factor}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        total_loss, _, _ = model.predict(test_loader, criterion, timesteps)
+        total_loss, preds, targets = model.predict(test_loader, criterion, timesteps)
         n_train_samples = N_train_samples // factor
         sparse_metrics[f"factor {factor}"] = {
             "MSE": total_loss,
             "n_train_samples": n_train_samples,
         }
+        mean_absolute_errors = np.mean(np.abs(preds - targets), axis=(0, 2))
+        errors[factors == factor] = mean_absolute_errors
 
     # Extract metrics and errors for plotting
     model_errors = np.array([metric["MSE"] for metric in sparse_metrics.values()])
@@ -489,6 +519,15 @@ def evaluate_sparse(
         n_train_samples_array,
         model_errors,
         title="Sparse Training Errors",
+        save=True,
+    )
+    plot_average_errors_over_time(
+        surr_name,
+        conf,
+        errors,
+        n_train_samples_array,
+        timesteps,
+        mode="sparse",
         save=True,
     )
 

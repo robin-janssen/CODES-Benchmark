@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 
 
-def create_dataloader_chemicals(
+def create_dataloader_deeponet(
     data,
     timesteps,
     fraction=1,

@@ -3,6 +3,7 @@ from .utils import (
     time_execution,
     create_model_dir,
     load_and_save_config,
+    set_random_seeds,
 )
 
 __all__ = [
@@ -10,4 +11,5 @@ __all__ = [
     "time_execution",
     "create_model_dir",
     "load_and_save_config",
+    "set_random_seeds",
 ]

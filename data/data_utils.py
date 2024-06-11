@@ -145,3 +145,40 @@ def create_hdf5_dataset(
         f.attrs["n_chemicals"] = train_data.shape[2]
 
     print(f"HDF5 dataset created at {data_file_path}")
+
+
+def get_data_subset(full_train_data, full_test_data, osu_timesteps, mode, metric):
+    """
+    Get the appropriate data subset based on the mode and metric.
+
+    Args:
+        full_train_data (np.ndarray): The full training data.
+        full_test_data (np.ndarray): The full test data.
+        osu_timesteps (np.ndarray): The timesteps.
+        mode (str): The benchmark mode (e.g., "accuracy", "interpolation", "extrapolation", "sparse", "UQ").
+        metric (str): The specific metric for the mode (e.g., interval, cutoff, factor).
+
+    Returns:
+        tuple: The training data, test data, and timesteps subset.
+    """
+    if mode == "interpolation":
+        interval = int(metric)
+        train_data = full_train_data[:, ::interval]
+        test_data = full_test_data[:, ::interval]
+        timesteps = osu_timesteps[::interval]
+    elif mode == "extrapolation":
+        cutoff = int(metric)
+        train_data = full_train_data[:, :cutoff]
+        test_data = full_test_data[:, :cutoff]
+        timesteps = osu_timesteps[:cutoff]
+    elif mode == "sparse":
+        factor = int(metric)
+        train_data = full_train_data[::factor]
+        test_data = full_test_data[::factor]
+        timesteps = osu_timesteps
+    else:
+        train_data = full_train_data
+        test_data = full_test_data
+        timesteps = osu_timesteps
+
+    return train_data, test_data, timesteps
