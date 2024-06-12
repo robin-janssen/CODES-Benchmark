@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from copy import deepcopy
 import yaml
 import torch
 import psutil
@@ -202,6 +203,31 @@ def convert_to_standard_types(data):
         return str(data)
 
 
+def discard_numpy_entries(d: dict) -> dict:
+    """
+    Recursively remove dictionary entries that contain NumPy arrays.
+
+    Args:
+        d (dict): The input dictionary.
+
+    Returns:
+        dict: A new dictionary without entries containing NumPy arrays.
+    """
+    if not isinstance(d, dict):
+        return d
+
+    clean_dict = {}
+    for key, value in d.items():
+        if isinstance(value, dict):
+            cleaned_value = discard_numpy_entries(value)
+            if cleaned_value:  # Only add non-empty dictionaries
+                clean_dict[key] = cleaned_value
+        elif not isinstance(value, np.ndarray):
+            clean_dict[key] = value
+
+    return clean_dict
+
+
 def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
     """
     Write the benchmark metrics to a YAML file.
@@ -211,8 +237,26 @@ def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
         conf (dict): The configuration dictionary.
         metrics (dict): The benchmark metrics.
     """
+    write_metrics = deepcopy(metrics)
+
+    # Remove problematic entries
+    if conf["accuracy"]:
+        write_metrics["accuracy"].pop("mean_relative_error_over_time", None)
+        write_metrics["accuracy"].pop("median_relative_error_over_time", None)
+    if conf["interpolation"]["enabled"]:
+        write_metrics["interpolation"].pop("model_errors", None)
+        write_metrics["interpolation"].pop("intervals", None)
+    if conf["extrapolation"]["enabled"]:
+        write_metrics["extrapolation"].pop("model_errors", None)
+        write_metrics["extrapolation"].pop("cutoffs", None)
+    if conf["sparse"]["enabled"]:
+        write_metrics["sparse"].pop("model_errors", None)
+        write_metrics["sparse"].pop("N_train_samples", None)
+
     # Convert metrics to standard types
-    metrics = convert_to_standard_types(metrics)
+    write_metrics = convert_to_standard_types(write_metrics)
+
+    # write_metrics = discard_numpy_entries(write_metrics)
 
     # Make results directory
     try:
@@ -223,4 +267,4 @@ def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
     with open(
         f"results/{conf['training_id']}/{surr_name.lower()}_metrics.yaml", "w"
     ) as f:
-        yaml.dump(metrics, f, sort_keys=False)
+        yaml.dump(write_metrics, f, sort_keys=False)

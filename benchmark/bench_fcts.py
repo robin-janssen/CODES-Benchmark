@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import time
+import os
 from typing import Dict, Any
 from torch.utils.data import DataLoader
 from scipy.stats import pearsonr
@@ -15,6 +16,10 @@ from .bench_plots import (
     plot_example_predictions_with_uncertainty,
     plot_uncertainty_vs_errors,
     plot_surr_losses,
+    plot_loss_comparison,
+    plot_relative_errors,
+    inference_time_bar_plot,
+    plot_generalization_error_comparison,
 )
 from .bench_utils import (
     count_trainable_parameters,
@@ -144,6 +149,10 @@ def evaluate_accuracy(
     # Calculate relative errors
     relative_errors = np.abs((preds - targets) / targets)
 
+    # Calculate mean and median relative errors over time
+    mean_relative_error = np.mean(relative_errors, axis=(0, 2))
+    median_relative_error = np.median(relative_errors, axis=(0, 2))
+
     # Plot relative errors over time
     plot_relative_errors_over_time(
         surr_name,
@@ -160,6 +169,8 @@ def evaluate_accuracy(
         "median_relative_error": np.median(relative_errors),
         "max_relative_error": np.max(relative_errors),
         "min_relative_error": np.min(relative_errors),
+        "mean_relative_error_over_time": mean_relative_error,
+        "median_relative_error_over_time": median_relative_error,
     }
 
     return accuracy_metrics
@@ -373,6 +384,8 @@ def evaluate_interpolation(
     model_errors = np.array(
         [metric["MSE"] for metric in interpolation_metrics.values()]
     )
+    interpolation_metrics["model_errors"] = model_errors
+    interpolation_metrics["intervals"] = intervals
 
     # Plot interpolation errors
     plot_generalization_errors(
@@ -438,6 +451,8 @@ def evaluate_extrapolation(
     model_errors = np.array(
         [metric["MSE"] for metric in extrapolation_metrics.values()]
     )
+    extrapolation_metrics["model_errors"] = model_errors
+    extrapolation_metrics["cutoffs"] = cutoffs
 
     # Plot extrapolation errors
     plot_generalization_errors(
@@ -511,6 +526,8 @@ def evaluate_sparse(
     n_train_samples_array = np.array(
         [metric["n_train_samples"] for metric in sparse_metrics.values()]
     )
+    sparse_metrics["model_errors"] = model_errors
+    sparse_metrics["N_train_samples"] = n_train_samples_array
 
     # Plot sparse training errors
     plot_sparse_errors(
@@ -594,6 +611,222 @@ def evaluate_UQ(
     return UQ_metrics
 
 
-def compare_models(metrics):
-    # Compare models
-    pass
+def compare_models(metrics: dict, config: dict):
+
+    # Compare main model losses
+    if config["losses"]:
+        compare_main_losses(metrics, config)
+
+    # Compare accuracies
+    if config["accuracy"]:
+        compare_relative_errors(metrics, config)
+
+    # Compare inference time
+    if config["timing"]:
+        compare_inference_time(metrics, config)
+
+    # Compare interpolation errors
+    if config["interpolation"]["enabled"]:
+        compare_interpolation(metrics, config)
+
+    # Compare extrapolation errors
+    if config["extrapolation"]["enabled"]:
+        compare_extrapolation(metrics, config)
+
+    # Compare sparse training errors
+    if config["sparse"]["enabled"]:
+        compare_sparse(metrics, config)
+
+
+def compare_main_losses(metrics: dict, config: dict) -> None:
+    """
+    Compare the training and test losses of the main models for different surrogate models.
+
+    Args:
+        metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
+
+    Returns:
+        None
+    """
+    train_losses = []
+    test_losses = []
+    labels = []
+
+    for surrogate, surrogate_metrics in metrics.items():
+        training_id = config["training_id"]
+        base_dir = f"trained/{training_id}/{surrogate}"
+
+        def load_losses(model_identifier: str):
+            loss_path = os.path.join(base_dir, f"{model_identifier}_losses.npz")
+            with np.load(loss_path) as data:
+                train_loss = data["train_loss"]
+                test_loss = data["test_loss"]
+            return train_loss, test_loss
+
+        # Load main model losses
+        main_train_loss, main_test_loss = load_losses(f"{surrogate.lower()}_main")
+        train_losses.append(main_train_loss)
+        test_losses.append(main_test_loss)
+        labels.append(surrogate)
+
+    # Plot the comparison of main model losses
+    plot_loss_comparison(tuple(train_losses), tuple(test_losses), tuple(labels), config)
+
+
+def compare_relative_errors(metrics: Dict[str, dict], config: dict) -> None:
+    """
+    Compare the relative errors over time for different surrogate models.
+
+    Args:
+        metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
+
+    Returns:
+        None
+    """
+    mean_errors = {}
+    median_errors = {}
+    timesteps = None
+
+    for surrogate, surrogate_metrics in metrics.items():
+        if "accuracy" in surrogate_metrics:
+            mean_error = surrogate_metrics["accuracy"].get(
+                "mean_relative_error_over_time"
+            )
+            median_error = surrogate_metrics["accuracy"].get(
+                "median_relative_error_over_time"
+            )
+            if mean_error is not None and median_error is not None:
+                mean_errors[surrogate] = mean_error
+                median_errors[surrogate] = median_error
+                if timesteps is None:
+                    timesteps = np.arange(len(mean_error))
+
+    plot_relative_errors(mean_errors, median_errors, timesteps, config)
+
+
+def compare_inference_time(
+    metrics: Dict[str, Dict], config: Dict, save: bool = True
+) -> None:
+    """
+    Compare the mean inference time of different surrogate models.
+
+    Args:
+        metrics (Dict[str, Dict]): Dictionary containing the benchmark metrics for each surrogate model.
+        config (Dict): Configuration dictionary.
+        save (bool, optional): Whether to save the plot. Defaults to True.
+
+    Returns:
+        None
+    """
+    mean_inference_times = {}
+    std_inference_times = {}
+
+    for surrogate, surrogate_metrics in metrics.items():
+        if "timing" in surrogate_metrics:
+            mean_time = surrogate_metrics["timing"].get(
+                "mean_inference_time_per_prediction"
+            )
+            std_time = surrogate_metrics["timing"].get(
+                "std_inference_time_per_prediction"
+            )
+            if mean_time is not None and std_time is not None:
+                mean_inference_times[surrogate] = mean_time
+                std_inference_times[surrogate] = std_time
+
+    surrogates = list(mean_inference_times.keys())
+    means = list(mean_inference_times.values())
+    stds = list(std_inference_times.values())
+
+    inference_time_bar_plot(surrogates, means, stds, config, save)
+
+
+def compare_interpolation(all_metrics: dict, config: dict) -> None:
+    """
+    Compare the interpolation errors of different surrogate models.
+
+    Args:
+        all_metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
+
+    Returns:
+        None
+    """
+    surrogates = list(all_metrics.keys())
+    intervals = []
+    model_errors = []
+
+    for surrogate in surrogates:
+        if "interpolation" in all_metrics[surrogate]:
+            intervals.append(all_metrics[surrogate]["interpolation"]["intervals"])
+            model_errors.append(all_metrics[surrogate]["interpolation"]["model_errors"])
+
+    plot_generalization_error_comparison(
+        surrogates,
+        intervals,
+        model_errors,
+        "Interpolation Interval",
+        "interpolation_errors.png",
+        config,
+    )
+
+
+def compare_extrapolation(all_metrics: dict, config: dict) -> None:
+    """
+    Compare the extrapolation errors of different surrogate models.
+
+    Args:
+        all_metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
+
+    Returns:
+        None
+    """
+    surrogates = list(all_metrics.keys())
+    cutoffs = []
+    model_errors = []
+
+    for surrogate in surrogates:
+        if "extrapolation" in all_metrics[surrogate]:
+            cutoffs.append(all_metrics[surrogate]["extrapolation"]["cutoffs"])
+            model_errors.append(all_metrics[surrogate]["extrapolation"]["model_errors"])
+
+    plot_generalization_error_comparison(
+        surrogates,
+        cutoffs,
+        model_errors,
+        "Extrapolation Cutoff",
+        "extrapolation_errors.png",
+        config,
+    )
+
+
+def compare_sparse(all_metrics: dict, config: dict) -> None:
+    """
+    Compare the sparse training errors of different surrogate models.
+
+    Args:
+        all_metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
+
+    Returns:
+        None
+    """
+    surrogates = list(all_metrics.keys())
+    n_train_samples = []
+    model_errors = []
+
+    for surrogate in surrogates:
+        if "sparse" in all_metrics[surrogate]:
+            n_train_samples.append(all_metrics[surrogate]["sparse"]["N_train_samples"])
+            model_errors.append(all_metrics[surrogate]["sparse"]["model_errors"])
+
+    plot_generalization_error_comparison(
+        surrogates,
+        n_train_samples,
+        model_errors,
+        "Number of Training Samples",
+        "sparse_errors.png",
+        config,
+    )

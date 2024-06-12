@@ -26,7 +26,7 @@ def main(args):
 
     # Compare models
     if config["compare"]:
-        compare_models(metrics)
+        compare_models(all_metrics, config)
 
 
 if __name__ == "__main__":

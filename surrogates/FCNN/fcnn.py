@@ -2,6 +2,7 @@ import dataclasses
 import os
 import torch
 import torch.nn as nn
+from torch.profiler import profile, ProfilerActivity, record_function
 import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
@@ -110,6 +111,9 @@ class FullyConnected(AbstractSurrogateModel):
         targets_tensor = torch.tensor(flattened_targets, dtype=torch.float32)
 
         # Create a TensorDataset and DataLoader
+        # dataset = TensorDataset(
+        #     inputs_tensor.to(self.device), targets_tensor.to(self.device)
+        # )
         dataset = TensorDataset(inputs_tensor, targets_tensor)
 
         def worker_init_fn(worker_id):
@@ -117,12 +121,17 @@ class FullyConnected(AbstractSurrogateModel):
             np_seed = torch_seed // 2**32 - 1
             np.random.seed(np_seed)
 
-        return DataLoader(
+        dataloader = DataLoader(
             dataset,
             batch_size=batch_size,
             shuffle=shuffle,
             worker_init_fn=worker_init_fn,
+            num_workers=4,
         )
+
+        self.dataset_size = len(dataloader.dataset)
+
+        return dataloader
 
     @time_execution
     def fit(
@@ -389,16 +398,14 @@ class FullyConnected(AbstractSurrogateModel):
         total_loss = 0
         dataset_size = len(data_loader.dataset)
         N_outputs = self.config.output_size
-
         for batch in data_loader:
             inputs, targets = batch
             inputs, targets = (
                 inputs.to(self.device),
                 targets.to(self.device),
             )
-
             optimizer.zero_grad()
-            outputs = self.forward(inputs)
+            outputs = self.forward((inputs, targets))
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
@@ -407,3 +414,64 @@ class FullyConnected(AbstractSurrogateModel):
 
         total_loss /= dataset_size * N_outputs
         return total_loss
+
+    def epoch_profiled(
+        self,
+        data_loader: DataLoader,
+        criterion: nn.Module,
+        optimizer: torch.optim.Optimizer,
+    ) -> float:
+        """
+        Perform a single training step on the model.
+
+        Args:
+            data_loader (DataLoader): The DataLoader object containing the training data.
+            criterion (nn.Module): The loss function.
+            optimizer (torch.optim.Optimizer): The optimizer.
+
+        Returns:
+            float: The total loss for the training step.
+        """
+        self.train()
+        total_loss = 0
+        N_outputs = self.config.output_size
+
+        with torch.profiler.profile(
+            activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+            schedule=torch.profiler.schedule(wait=5, warmup=2, active=5, repeat=1),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler("./log/HTA2"),
+            record_shapes=True,
+            profile_memory=True,
+            with_stack=True,
+            experimental_config=torch._C._profiler._ExperimentalConfig(verbose=True),
+        ) as prof:
+            i = 0
+            for batch in data_loader:
+                i += 1
+                if i >= 30:
+                    break
+                inputs, targets = batch
+                inputs, targets = inputs.to(self.device), targets.to(self.device)
+                optimizer.zero_grad()
+
+                with record_function("model_inference"):
+                    outputs = self.forward((inputs, targets))
+                torch.cuda.synchronize()
+
+                with record_function("loss_calculation"):
+                    loss = criterion(outputs, targets)
+
+                with record_function("backward_pass"):
+                    loss.backward()
+                torch.cuda.synchronize()
+
+                with record_function("optimizer_step"):
+                    optimizer.step()
+                torch.cuda.synchronize()
+
+                total_loss += loss.item()
+
+                prof.step()
+
+        total_loss /= self.dataset_size * N_outputs
+        return total_loss, prof

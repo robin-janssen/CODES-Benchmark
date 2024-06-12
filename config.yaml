@@ -1,11 +1,7 @@
 training_id: "FCNNtest"
-surrogates: ["FCNN"]
+surrogates: ["FCNN", "DeepONet"]
 dataset: "Osu2008"
-devices: ["cuda:6", "cuda:2"]
-
-training: 
-  epochs: 100
-  batch_size: 128
+devices: ["cuda:0", "cuda:6"]
 
 losses: True
 accuracy: True

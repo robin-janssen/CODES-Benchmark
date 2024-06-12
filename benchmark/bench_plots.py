@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 
-def save_plot(plt, filename: str, conf: dict, surr_name: str) -> None:
+def save_plot(plt, filename: str, conf: dict, surr_name: str = "") -> None:
     """
     Save the plot to a file, creating necessary directories if they don't exist.
 
@@ -606,4 +606,173 @@ def plot_losses(
         save_plot(plt, "losses_" + mode.lower() + ".png", conf, surr_name)
 
     # plt.show()
+    plt.close()
+
+
+def plot_loss_comparison(
+    train_losses: tuple[np.ndarray, ...],
+    test_losses: tuple[np.ndarray, ...],
+    labels: tuple[str, ...],
+    config: dict,
+    save: bool = True,
+) -> None:
+    """
+    Plot the training and test losses for different surrogate models.
+
+    Args:
+        train_losses (tuple): Tuple of training loss arrays for each surrogate model.
+        test_losses (tuple): Tuple of test loss arrays for each surrogate model.
+        labels (tuple): Tuple of labels for each surrogate model.
+        config (dict): Configuration dictionary.
+        save (bool): Whether to save the plot.
+
+    Returns:
+        None
+    """
+    plt.figure(figsize=(12, 6))
+
+    for train_loss, test_loss, label in zip(train_losses, test_losses, labels):
+        plt.plot(train_loss, label=f"{label} Train Loss")
+        plt.plot(test_loss, label=f"{label} Test Loss", linestyle="--")
+
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.yscale("log")
+    plt.title("Comparison of Training and Test Losses")
+    plt.legend()
+    plt.grid(True)
+
+    if save and config:
+        save_plot(plt, "comparison_main_model_losses.png", config)
+
+    plt.show()
+
+
+def plot_relative_errors(
+    mean_errors: dict[str, np.ndarray],
+    median_errors: dict[str, np.ndarray],
+    timesteps: np.ndarray,
+    config: dict,
+    save: bool = True,
+) -> None:
+    """
+    Plot the relative errors over time for different surrogate models.
+
+    Args:
+        mean_errors (dict): Dictionary containing the mean relative errors for each surrogate model.
+        median_errors (dict): Dictionary containing the median relative errors for each surrogate model.
+        timesteps (np.ndarray): Array of timesteps.
+        config (dict): Configuration dictionary.
+        save (bool): Whether to save the plot.
+
+    Returns:
+        None
+    """
+    plt.figure(figsize=(12, 6))
+    colors = plt.cm.viridis(np.linspace(0, 1, len(mean_errors)))
+    linestyles = ["-", "--", ":", "-."]
+
+    for i, surrogate in enumerate(mean_errors.keys()):
+        plt.plot(
+            timesteps,
+            mean_errors[surrogate],
+            label=f"{surrogate} Mean",
+            color=colors[i],
+            linestyle=linestyles[0],
+        )
+        plt.plot(
+            timesteps,
+            median_errors[surrogate],
+            label=f"{surrogate} Median",
+            color=colors[i],
+            linestyle=linestyles[1],
+        )
+
+    plt.xlabel("Timesteps")
+    plt.ylabel("Relative Error")
+    plt.yscale("log")
+    plt.title("Comparison of Relative Errors Over Time")
+    plt.legend()
+    # plt.grid(True)
+
+    if save and config:
+        save_plot(plt, "comparison_relative_errors.png", config)
+
+    plt.show()
+
+
+def inference_time_bar_plot(
+    surrogates: list[str],
+    means: list[float],
+    stds: list[float],
+    config: dict,
+    save: bool = True,
+) -> None:
+    """
+    Plot the mean inference time with standard deviation for different surrogate models.
+
+    Args:
+        surrogates (List[str]): List of surrogate model names.
+        means (List[float]): List of mean inference times for each surrogate model.
+        stds (List[float]): List of standard deviation of inference times for each surrogate model.
+        config (Dict): Configuration dictionary.
+        save (bool, optional): Whether to save the plot. Defaults to True.
+
+    Returns:
+        None
+    """
+    plt.figure(figsize=(10, 6))
+    plt.bar(surrogates, means, yerr=stds, capsize=5, alpha=0.7, color="b", ecolor="r")
+    plt.xlabel("Surrogate Model")
+    plt.ylabel("Mean Inference Time per Prediction (s)")
+    plt.title("Comparison of Mean Inference Time with Standard Deviation")
+
+    if save:
+        save_plot(plt, "comparison_mean_inference_time.png", config)
+
+    plt.show()
+
+
+def plot_generalization_error_comparison(
+    surrogates: list[str],
+    metrics_list: list[np.array],
+    model_errors_list: list[np.array],
+    xlabel: str,
+    filename: str,
+    config: dict,
+    save: bool = True,
+) -> None:
+    """
+    Plot the generalization errors of different surrogate models.
+
+    Args:
+        surrogates (list): List of surrogate model names.
+        metrics_list (list[np.array]): List of numpy arrays containing the metrics for each surrogate model.
+        model_errors_list (list[np.array]): List of numpy arrays containing the errors for each surrogate model.
+        xlabel (str): Label for the x-axis.
+        filename (str): Filename to save the plot.
+        config (dict): Configuration dictionary.
+        save (bool): Whether to save the plot.
+
+    Returns:
+        None
+    """
+    colors = plt.cm.viridis(np.linspace(0, 1, len(surrogates)))
+
+    plt.figure(figsize=(10, 6))
+    for i, surrogate in enumerate(surrogates):
+        plt.scatter(
+            metrics_list[i], model_errors_list[i], label=surrogate, color=colors[i]
+        )
+
+    plt.xlabel(xlabel)
+    plt.ylabel("Mean Absolute Error")
+    plt.yscale("log")
+    plt.title(f"Comparison of {xlabel} Errors")
+    plt.legend()
+
+    if save:
+        save_plot(plt, filename, config)
+
+    plt.show()
     plt.close()

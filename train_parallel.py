@@ -41,8 +41,8 @@ def train_and_save_model(
     full_test_data, _, _ = check_and_load_data(config["dataset"], "test", verbose=False)
 
     # Just for testing purposes
-    full_train_data = full_train_data[:200]
-    full_test_data = full_test_data[:200]
+    # full_train_data = full_train_data[:200]
+    # full_test_data = full_test_data[:200]
 
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(

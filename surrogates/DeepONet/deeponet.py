@@ -11,7 +11,7 @@ import yaml
 from surrogates.surrogates import AbstractSurrogateModel
 
 # Use the below import to adjust the config class to the specific model
-from surrogates.DeepONet.config_classes import OChemicalTrainConfig as MultiONetConfig
+from surrogates.DeepONet.deeponet_config import OChemicalTrainConfig as MultiONetConfig
 from data import create_dataloader_deeponet
 
 from utils import time_execution, create_model_dir
@@ -168,6 +168,7 @@ class MultiONet(OperatorNetwork):
             timesteps,
             batch_size=batch_size,
             shuffle=shuffle,
+            device=self.device,
         )
         return dataloader
 
@@ -458,7 +459,7 @@ class MultiONet(OperatorNetwork):
             )
 
             optimizer.zero_grad()
-            outputs = self.forward(branch_input, trunk_input)
+            outputs = self((branch_input, trunk_input, targets))
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()

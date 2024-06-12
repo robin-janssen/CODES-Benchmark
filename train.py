@@ -1,11 +1,19 @@
 # This is the main training script for the models. It trains all required models and saves them.
 # The structure of the file should be something like this:
 
+import os
+
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+
 import numpy as np
 
 from surrogates.surrogate_classes import surrogate_classes
 from data import check_and_load_data
 from utils import load_and_save_config
+
+import torch
+
+torch.cuda.init()
 
 
 def train_and_save_model(

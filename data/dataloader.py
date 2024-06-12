@@ -12,6 +12,7 @@ def create_dataloader_deeponet(
     batch_size=32,
     shuffle=False,
     normalize=False,
+    device="cpu",
 ):
     """
     Create a DataLoader with optional fractional subsampling for chemical evolution data for DeepONet.
@@ -21,7 +22,8 @@ def create_dataloader_deeponet(
     :param fraction: Fraction of the grid points to sample.
     :param batch_size: Batch size for the DataLoader.
     :param shuffle: Whether to shuffle the data.
-    :param normalize: Whether to normalize the data.
+    :param normalize: Whether to normalize the data.#
+    :param device: Device to use.
     :return: A DataLoader object.
     """
     # Initialize lists to store the inputs and targets
@@ -71,4 +73,5 @@ def create_dataloader_deeponet(
         batch_size=batch_size,
         shuffle=shuffle,
         worker_init_fn=worker_init_fn,
+        num_workers=4,
     )

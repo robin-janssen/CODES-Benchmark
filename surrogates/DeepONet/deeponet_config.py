@@ -72,7 +72,7 @@ class OChemicalTrainConfig:
     trunk_hidden_layers: int = 5
     output_neurons: int = 290
     N_outputs: int = 29
-    num_epochs: int = 50
+    num_epochs: int = 250
     learning_rate: float = 1e-4
     schedule: bool = False
     N_sensors: int = 29
@@ -84,4 +84,4 @@ class OChemicalTrainConfig:
     # optuna_trial: Trial | None = None
     regularization_factor: float = 0.012
     massloss_factor: float = 0.012
-    batch_size: int = 256
+    batch_size: int = 1024
