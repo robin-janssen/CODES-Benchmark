@@ -1,5 +1,5 @@
 import os
 
 # use only on IWR Compute Server
-os.system('export PIP_CACHE_DIR=export/data/scratch.cache')
+os.environ['PIP_CACHE_DIR'] = '/export/scratch2/isulzer/.cache'
 os.system('pip install -r requirements.txt')

@@ -212,6 +212,9 @@ def jac_det(f, x):
 # def mass_function(n: torch.Tensor):
 #     return torch.sum(MASSES * n, dim=-1)
 
+def mass_function(n: torch.Tensor):
+    raise NotImplementedError("mass function not implemented, please don't use it")
+
 
 def relative_error(x_true: torch.Tensor, x_pred: torch.Tensor):
     return torch.abs((x_pred - x_true) / torch.amax(x_true, dim=1)[:, None, :])
