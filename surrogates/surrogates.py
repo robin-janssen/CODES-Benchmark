@@ -1,11 +1,18 @@
 from abc import ABC, abstractmethod
-import torch.nn as nn
+from typing import Optional, Union
+
+from torch import nn
+from torch import Tensor
 
 
 # Define abstract base class for surrogate models
 class AbstractSurrogateModel(ABC, nn.Module):
+
+    train_loss: Union[None, list[float], Tensor]
+    test_loss: Union[None, list[float], Tensor]
+
     def __init__(self):
-        super(AbstractSurrogateModel, self).__init__()
+        super().__init__()
 
     @abstractmethod
     def forward(self, x):
