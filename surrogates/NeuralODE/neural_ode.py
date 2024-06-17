@@ -1,10 +1,16 @@
+import os
+import dataclasses
+import yaml
+
 import torch
 from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchdiffeq import odeint, odeint_adjoint
+import numpy as np
 
 from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.NeuralODE.neural_ode_config import NeuralODEConfigOSU as Config
+from utils import create_model_dir, time_execution
 
 
 class NeuralODE(AbstractSurrogateModel):
@@ -16,11 +22,12 @@ class NeuralODE(AbstractSurrogateModel):
 
     def forward(self, x):
         t_range = self._get_t_range()
-        return self.model(x, t_range)
+        return self.model.forward(x, t_range)
 
     def prepare_data(self, data_loader):
         pass
 
+    @time_execution
     def fit(self, conf, data_loader, test_loader=None):
         # TODO: make Optimizer and scheduler configable
         optimizer = Adam(self.model.parameters(), lr=self.config.learnign_rate)
@@ -30,24 +37,70 @@ class NeuralODE(AbstractSurrogateModel):
                 optimizer, self.config.epochs, eta_min=self.config.final_learning_rate
             )
         t_range = self._get_t_range()
+        losses = torch.empty((self.config.epochs, len(data_loader)))
         for epoch in range(self.config.epochs):
             for i, x_true in enumerate(data_loader):
                 optimizer.zero_grad()
                 x0 = x_true[:, :, 0]
-                x_pred = self.model(x0, t_range)
+                x_pred = self.model.forward(x0, t_range)
                 loss = self.model.total_loss(x_true, x_pred)
                 loss.backward()
                 optimizer.step()
+                losses[epoch, i] = loss.item()
+                if epoch == 10 and i == 0:
+                    with torch.no_grad():
+                        self.model.renormalize_loss_weights(x_true, x_pred)
             if scheduler is not None:
                 scheduler.step()
+        self.train_loss = losses
 
     def predict(self, data_loader):
-        pass
 
-    def save(
-        self, model_name, config, subfolder, train_loss, test_loss, training_duration
-    ):
-        pass
+        self.model.eval()
+        self.model = self.model.to(self.config.device)
+
+        t_range = self._get_t_range()
+        total_loss = 0
+        predictions = torch.empty((t_range.shape[0], len(data_loader)))
+        targets = torch.empty((t_range.shape[0], len(data_loader)))
+        batch_size = data_loader.batch_size
+
+        with torch.inference_mode():
+            for i, x_true in enumerate(data_loader):
+                x0 = x_true[:, :, 0]
+                x_pred = self.model.forward(x0, t_range)
+                loss = self.model.total_loss(x_true, x_pred)
+                total_loss += loss.item()
+                predictions[:, i * batch_size : (i + 1) * batch_size] = x_pred
+                targets[:, i * batch_size : (i + 1) * batch_size] = x_true
+
+        predictions = predictions.cpu().numpy()
+        targets = targets.cpu().numpy()
+
+        return total_loss, predictions, targets
+
+    def save(self, model_name: str, subfolder: str, training_id: str) -> None:
+
+        base_dir = os.getcwd()
+        subfolder = os.path.join(subfolder, training_id, "DeepONet")
+        model_dir = create_model_dir(base_dir, subfolder)
+
+        # Save the model state dict
+        model_path = os.path.join(model_dir, f"{model_name}.pth")
+        torch.save(self.state_dict(), model_path)
+
+        hyperparameters = dataclasses.asdict(self.config)
+
+        hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
+        with open(hyperparameters_path, "w") as file:
+            yaml.dump(hyperparameters, file)
+
+        if self.train_loss is not None and self.test_loss is not None:
+            # Save the losses as a numpy file
+            losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
+            np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
+
+        print(f"Model, losses and hyperparameters saved to {model_dir}")
 
     def _get_t_range(self):
         return torch.linspace(0, 1, self.config.t_steps)
@@ -58,6 +111,7 @@ class ModelWrapper(torch.nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
+        self.loss_weights = [100.0, 1.0, 1.0, 1.0]
 
         self.encoder = Encoder(
             in_features=config.in_features,
@@ -107,6 +161,47 @@ class ModelWrapper(torch.nn.Module):
         if not isinstance(result, torch.Tensor):
             raise TypeError("odeint must return tensor, check inputs")
         return self.decoder(torch.permute(result, dims=(1, 0, 2)))
+
+    def renormalize_loss_weights(self, x_true, x_pred):
+        self.loss_weights[0] = 1 / self.l2_loss(x_true, x_pred).item() * 100
+        self.loss_weights[1] = 1 / self.identity_loss(x_true).item()
+        self.loss_weights[2] = 1 / self.deriv_loss(x_true, x_pred).item()
+        self.loss_weights[3] = 1 / self.deriv2_loss(x_true, x_pred).item()
+
+    def total_loss(self, x_true, x_pred):
+        return (
+            self.loss_weights[0] * self.l2_loss(x_true, x_pred)
+            + self.loss_weights[1] * self.identity_loss(x_true)
+            + self.loss_weights[2] * self.deriv_loss(x_true, x_pred)
+            + self.loss_weights[3] * self.deriv2_loss(x_true, x_pred)
+        )
+
+    def identity_loss(self, x: torch.Tensor):
+        return self.l2_loss(x, self.decoder(self.encoder(x)))
+
+    @classmethod
+    def l2_loss(cls, x_true: torch.Tensor, x_pred: torch.Tensor):
+        return torch.mean(torch.abs(x_true - x_pred) ** 2)
+
+    @classmethod
+    def mass_conservation_loss(cls):
+        raise NotImplementedError("Don't use yet please")
+
+    @classmethod
+    def deriv_loss(cls, x_true, x_pred):
+        return cls.l2_loss(cls.deriv(x_pred), cls.deriv(x_true))
+
+    @classmethod
+    def deriv2_loss(cls, x_true, x_pred):
+        return cls.l2_loss(cls.deriv2(x_pred), cls.deriv2(x_true))
+
+    @classmethod
+    def deriv(cls, x):
+        return torch.gradient(x, dim=1)[0].squeeze(0)
+
+    @classmethod
+    def deriv2(cls, x):
+        return cls.deriv(cls.deriv(x))
 
 
 class ODE(torch.nn.Module):
