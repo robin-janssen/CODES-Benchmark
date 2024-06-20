@@ -10,7 +10,6 @@ from .bench_plots import (
     plot_relative_errors_over_time,
     plot_dynamic_correlation,
     plot_generalization_errors,
-    plot_sparse_errors,
     plot_average_errors_over_time,
     plot_average_uncertainty_over_time,
     plot_example_predictions_with_uncertainty,
@@ -106,6 +105,13 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
         print("Running sparse benchmark...")
         metrics["sparse"] = evaluate_sparse(
             model, surr_name, test_loader, timesteps, N_train_samples, conf
+        )
+
+    # Batch size benchmark
+    if conf["batch_scaling"]["enabled"]:
+        print("Running batch size benchmark...")
+        metrics["batch_size"] = evaluate_batchsize(
+            model, surr_name, test_loader, timesteps, conf
         )
 
     # Uncertainty Quantification (UQ) benchmark
@@ -389,7 +395,7 @@ def evaluate_interpolation(
 
     # Plot interpolation errors
     plot_generalization_errors(
-        surr_name, conf, intervals, model_errors, interpolate=True, save=True
+        surr_name, conf, intervals, model_errors, mode="interpolation", save=True
     )
     plot_average_errors_over_time(
         surr_name,
@@ -456,7 +462,7 @@ def evaluate_extrapolation(
 
     # Plot extrapolation errors
     plot_generalization_errors(
-        surr_name, conf, cutoffs, model_errors, interpolate=False, save=True
+        surr_name, conf, cutoffs, model_errors, mode="extrapolation", save=True
     )
     plot_average_errors_over_time(
         surr_name,
@@ -530,13 +536,8 @@ def evaluate_sparse(
     sparse_metrics["N_train_samples"] = n_train_samples_array
 
     # Plot sparse training errors
-    plot_sparse_errors(
-        surr_name,
-        conf,
-        n_train_samples_array,
-        model_errors,
-        title="Sparse Training Errors",
-        save=True,
+    plot_generalization_errors(
+        surr_name, conf, n_train_samples_array, model_errors, mode="sparse", save=True
     )
     plot_average_errors_over_time(
         surr_name,
@@ -549,6 +550,66 @@ def evaluate_sparse(
     )
 
     return sparse_metrics
+
+
+def evaluate_batchsize(
+    model,
+    surr_name: str,
+    test_loader: DataLoader,
+    timesteps: np.ndarray,
+    conf: Dict,
+) -> Dict[str, Any]:
+    """
+    Evaluate the performance of the surrogate model with different batch sizes.
+
+    Args:
+        model: Instance of the surrogate model class.
+        surr_name (str): The name of the surrogate model.
+        test_loader (DataLoader): The DataLoader object containing the test data.
+        timesteps (np.ndarray): The timesteps array.
+        conf (dict): The configuration dictionary.
+
+    Returns:
+        dict: A dictionary containing batch size training metrics.
+    """
+    training_id = conf["training_id"]
+    batch_sizes = conf["batch_scaling"]["sizes"]
+    batch_metrics = {}
+    errors = np.zeros((len(batch_sizes), len(timesteps)))
+
+    # Criterion for prediction loss
+    criterion = torch.nn.MSELoss(reduction="sum")
+
+    # Evaluate models for each batch size
+    for i, batch_size in enumerate(batch_sizes):
+        model_id = f"{surr_name.lower()}_batchsize_{batch_size}"
+        model.load(training_id, surr_name, model_identifier=model_id)
+        total_loss, preds, targets = model.predict(test_loader, criterion, timesteps)
+        batch_metrics[f"batch_size {batch_size}"] = {"MSE": total_loss}
+        mean_absolute_errors = np.mean(np.abs(preds - targets), axis=(0, 2))
+        errors[i] = mean_absolute_errors
+
+    # Extract metrics and errors for plotting
+    model_errors = np.array([metric["MSE"] for metric in batch_metrics.values()])
+    batch_sizes_array = np.array(batch_sizes)
+    batch_metrics["model_errors"] = model_errors
+    batch_metrics["batch_sizes"] = batch_sizes_array
+
+    # Plot batch size training errors
+    plot_generalization_errors(
+        surr_name, conf, batch_sizes_array, model_errors, mode="batchsize", save=True
+    )
+    plot_average_errors_over_time(
+        surr_name,
+        conf,
+        errors,
+        batch_sizes_array,
+        timesteps,
+        mode="batchsize",
+        save=True,
+    )
+
+    return batch_metrics
 
 
 def evaluate_UQ(
@@ -613,13 +674,11 @@ def evaluate_UQ(
 
 def compare_models(metrics: dict, config: dict):
 
-    # Compare main model losses
-    if config["losses"]:
-        compare_main_losses(metrics, config)
-
     # Compare accuracies
     if config["accuracy"]:
         compare_relative_errors(metrics, config)
+        if config["losses"]:
+            compare_main_losses(metrics, config)
 
     # Compare inference time
     if config["timing"]:
@@ -636,6 +695,14 @@ def compare_models(metrics: dict, config: dict):
     # Compare sparse training errors
     if config["sparse"]["enabled"]:
         compare_sparse(metrics, config)
+
+    # Compare batch size training errors
+    if config["batch_scaling"]["enabled"]:
+        compare_batchsize(metrics, config)
+
+    # Compare UQ metrics
+    if config["UQ"]["enabled"]:
+        compare_UQ(metrics, config)
 
 
 def compare_main_losses(metrics: dict, config: dict) -> None:
@@ -830,3 +897,38 @@ def compare_sparse(all_metrics: dict, config: dict) -> None:
         "sparse_errors.png",
         config,
     )
+
+
+def compare_batchsize(all_metrics: dict, config: dict) -> None:
+    """
+    Compare the batch size training errors of different surrogate models.
+
+    Args:
+        all_metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
+
+    Returns:
+        None
+    """
+    surrogates = list(all_metrics.keys())
+    batch_sizes = []
+    model_errors = []
+
+    for surrogate in surrogates:
+        if "batch_size" in all_metrics[surrogate]:
+            batch_sizes.append(all_metrics[surrogate]["batch_size"]["batch_sizes"])
+            model_errors.append(all_metrics[surrogate]["batch_size"]["model_errors"])
+
+    plot_generalization_error_comparison(
+        surrogates,
+        batch_sizes,
+        model_errors,
+        "Batch Size",
+        "batch_size_errors.png",
+        config,
+        xlog=True,
+    )
+
+
+def compare_UQ(all_metrics: dict, config: dict) -> None:
+    pass

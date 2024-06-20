@@ -88,3 +88,26 @@ def set_random_seeds(seed: int):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+
+
+def nice_print(message: str, width: int = 80) -> None:
+    """
+    Print a message in a nicely formatted way with a fixed width.
+
+    Args:
+        message (str): The message to print.
+        width (int): The width of the printed box. Default is 80.
+    """
+    # Calculate padding
+    padding = (width - len(message) - 2) // 2
+    padding_left = padding
+    padding_right = padding
+
+    # If message length is odd, add one more space to the right
+    if (width - len(message)) % 2 != 0:
+        padding_right += 1
+
+    border = "-" * width
+    print(
+        f"\n{border}\n|{' ' * padding_left}{message}{' ' * padding_right}|\n{border}\n"
+    )

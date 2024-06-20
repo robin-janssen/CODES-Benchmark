@@ -1,23 +1,37 @@
-training_id: "FCNNtest"
-surrogates: ["FCNN", "DeepONet"]
+# Global settings for the benchmark
+training_id: "DeepONet_convergence"
+surrogates: ["DeepONet"]
 dataset: "Osu2008"
-devices: ["cuda:0", "cuda:6"]
+devices: ["cuda:3"]
+seed: 42
 
+# Details of the benchmarking
 losses: True
 accuracy: True
-dynamic_accuracy: True
-timing: True
-compute: True
+dynamic_accuracy: False
+timing: False
+compute: False
 interpolation: 
-  enabled: True
+  enabled: False
   intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
 extrapolation: 
-  enabled: True
+  enabled: False
   cutoffs: [50, 60, 70, 80, 90]
 sparse: 
-  enabled: True
+  enabled: False
   factors: [2, 4, 8, 16, 32]
+batch_scaling:
+  enabled: False
+  sizes: [16, 64, 256, 1024, 4096]
+  subset: 2  # Factor by which to slice the dataset (just for faster training)
+  epochs: 150
 UQ: 
-  enabled: True
+  enabled: False
   n_models: 5  # Number of models for deep ensemble
 compare: True # Whether to compare the surrogates
+
+# Optional global settings
+# Leave empty if the quantities should be set per surrogate
+
+batch_size: 128
+epochs: 500

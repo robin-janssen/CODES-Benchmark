@@ -147,7 +147,9 @@ def create_hdf5_dataset(
     print(f"HDF5 dataset created at {data_file_path}")
 
 
-def get_data_subset(full_train_data, full_test_data, osu_timesteps, mode, metric):
+def get_data_subset(
+    full_train_data, full_test_data, osu_timesteps, mode, metric, config
+):
     """
     Get the appropriate data subset based on the mode and metric.
 
@@ -156,7 +158,8 @@ def get_data_subset(full_train_data, full_test_data, osu_timesteps, mode, metric
         full_test_data (np.ndarray): The full test data.
         osu_timesteps (np.ndarray): The timesteps.
         mode (str): The benchmark mode (e.g., "accuracy", "interpolation", "extrapolation", "sparse", "UQ").
-        metric (str): The specific metric for the mode (e.g., interval, cutoff, factor).
+        metric (str): The specific metric for the mode (e.g., interval, cutoff, factor, batch size).
+        config (dict): The configuration dictionary.
 
     Returns:
         tuple: The training data, test data, and timesteps subset.
@@ -173,6 +176,11 @@ def get_data_subset(full_train_data, full_test_data, osu_timesteps, mode, metric
         timesteps = osu_timesteps[:cutoff]
     elif mode == "sparse":
         factor = int(metric)
+        train_data = full_train_data[::factor]
+        test_data = full_test_data[::factor]
+        timesteps = osu_timesteps
+    elif mode == "batch_size":
+        factor = config["batch_scaling"]["subset"]
         train_data = full_train_data[::factor]
         test_data = full_test_data[::factor]
         timesteps = osu_timesteps

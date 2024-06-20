@@ -168,7 +168,6 @@ class MultiONet(OperatorNetwork):
             timesteps,
             batch_size=batch_size,
             shuffle=shuffle,
-            device=self.device,
         )
         return dataloader
 
@@ -178,6 +177,7 @@ class MultiONet(OperatorNetwork):
         train_loader: DataLoader,
         test_loader: DataLoader,
         timesteps: np.ndarray,
+        epochs: int | None = None,
     ) -> None:
         """
         Train the MultiONet model.
@@ -186,7 +186,7 @@ class MultiONet(OperatorNetwork):
             train_data (np.ndarray): The training data.
             test_data (np.ndarray): The test data (to evaluate the model during training).
             timesteps (np.ndarray): The timesteps.
-            dataset_name (str): The name of the dataset.
+            epochs (int, optional): The number of epochs to train the model.
 
         Returns:
             None
@@ -198,10 +198,12 @@ class MultiONet(OperatorNetwork):
         optimizer, scheduler = self.setup_optimizer_and_scheduler()
 
         train_loss_hist, test_loss_hist = self.setup_losses(
-            prev_train_loss=None, prev_test_loss=None
+            prev_train_loss=None, prev_test_loss=None, epochs=epochs
         )
 
-        progress_bar = tqdm(range(self.config.num_epochs), desc="Training Progress")
+        epochs = self.config.num_epochs if epochs is None else epochs
+
+        progress_bar = tqdm(range(epochs), desc="Training Progress")
         for epoch in progress_bar:
             train_loss_hist[epoch] = self.epoch(train_loader, criterion, optimizer)
 
@@ -404,6 +406,7 @@ class MultiONet(OperatorNetwork):
         self,
         prev_train_loss: Optional[np.ndarray] = None,
         prev_test_loss: Optional[np.ndarray] = None,
+        epochs: int | None = None,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Set up the loss history arrays for training.
@@ -411,20 +414,18 @@ class MultiONet(OperatorNetwork):
         Args:
             prev_train_loss (np.ndarray): Previous training loss history.
             prev_test_loss (np.ndarray): Previous test loss history.
+            epochs (int, optional): The number of epochs to train the model.
 
         Returns:
             tuple: The training and testing loss history arrays (both np.ndarrays).
         """
+        epochs = self.config.num_epochs if epochs is None else epochs
         if self.config.pretrained_model_path is None:
-            train_loss_hist = np.zeros(self.config.num_epochs)
-            test_loss_hist = np.zeros(self.config.num_epochs)
+            train_loss_hist = np.zeros(epochs)
+            test_loss_hist = np.zeros(epochs)
         else:
-            train_loss_hist = np.concatenate(
-                (prev_train_loss, np.zeros(self.config.num_epochs))
-            )
-            test_loss_hist = np.concatenate(
-                (prev_test_loss, np.zeros(self.config.num_epochs))
-            )
+            train_loss_hist = np.concatenate((prev_train_loss, np.zeros(epochs)))
+            test_loss_hist = np.concatenate((prev_test_loss, np.zeros(epochs)))
 
         return train_loss_hist, test_loss_hist
 

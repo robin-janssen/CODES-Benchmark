@@ -12,7 +12,6 @@ def create_dataloader_deeponet(
     batch_size=32,
     shuffle=False,
     normalize=False,
-    device="cpu",
 ):
     """
     Create a DataLoader with optional fractional subsampling for chemical evolution data for DeepONet.

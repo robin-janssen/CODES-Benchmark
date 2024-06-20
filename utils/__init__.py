@@ -4,6 +4,7 @@ from .utils import (
     create_model_dir,
     load_and_save_config,
     set_random_seeds,
+    nice_print,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "create_model_dir",
     "load_and_save_config",
     "set_random_seeds",
+    "nice_print",
 ]

@@ -163,77 +163,138 @@ def plot_dynamic_correlation(
     plt.close()
 
 
+# def plot_generalization_errors(
+#     surr_name: str,
+#     conf: dict,
+#     metrics: np.array,
+#     model_errors: np.array,
+#     interpolate: bool = True,
+#     save: bool = False,
+# ) -> None:
+#     """
+#     Plot the interpolation or extrapolation errors of a model.
+
+#     Args:
+#         surr_name (str): The name of the surrogate model.
+#         conf (dict): The configuration dictionary.
+#         metrics (np.array): The interpolation intervals or extrapolation cutoffs.
+#         model_errors (np.array): The mean absolute errors of the model.
+#         interpolate (bool): Whether to plot interpolation errors. If False, extrapolation errors are plotted.
+#         save (bool): Whether to save the plot.
+
+#     Returns:
+#         None
+#     """
+#     xlabel = "Interpolation Interval" if interpolate else "Extrapolation Cutoff"
+#     title = "Interpolation Errors" if interpolate else "Extrapolation Errors"
+#     filename = "interpolation_errors.png" if interpolate else "extrapolation_errors.png"
+#     plt.scatter(metrics, model_errors)
+#     plt.xlabel(xlabel)
+#     plt.ylabel("Mean Absolute Error")
+#     plt.yscale("log")
+#     plt.title(title)
+
+#     if save and conf:
+#         save_plot(plt, filename, conf, surr_name)
+
+#     # plt.show()
+
+#     plt.close()
+
+
+# def plot_sparse_errors(
+#     surr_name: str,
+#     conf: dict,
+#     n_train_samples: np.ndarray,
+#     model_errors: np.ndarray,
+#     title: Optional[str] = None,
+#     save: bool = False,
+# ) -> None:
+#     """
+#     Plot the sparse training errors of a model.
+
+#     Args:
+#         surr_name: The name of the surrogate model.
+#         conf: The configuration dictionary.
+#         n_train_samples: Numpy array containing the number of training samples.
+#         model_errors: Numpy array containing the model errors.
+#         title: Optional title for the plot.
+#         save: Whether to save the plot as a file.
+
+#     Returns:
+#         None
+#     """
+#     plt.scatter(n_train_samples, model_errors)
+#     plt.xlabel("Number of Training Samples")
+#     plt.ylabel("Mean Absolute Error")
+#     plt.yscale("log")
+#     if title is None:
+#         title = "Sparse Training Errors"
+#     plt.title(title)
+
+#     if save and conf:
+#         save_plot(plt, "sparse_errors.png", conf, surr_name)
+
+#     # plt.show()
+
+#     plt.close()
+
+
 def plot_generalization_errors(
     surr_name: str,
     conf: dict,
-    metrics: np.array,
-    model_errors: np.array,
-    interpolate: bool = True,
+    metrics: np.ndarray,
+    model_errors: np.ndarray,
+    mode: str,
     save: bool = False,
 ) -> None:
     """
-    Plot the interpolation or extrapolation errors of a model.
+    Plot the generalization errors of a model for various metrics.
 
     Args:
         surr_name (str): The name of the surrogate model.
         conf (dict): The configuration dictionary.
-        metrics (np.array): The interpolation intervals or extrapolation cutoffs.
-        model_errors (np.array): The mean absolute errors of the model.
-        interpolate (bool): Whether to plot interpolation errors. If False, extrapolation errors are plotted.
+        metrics (np.ndarray): The metrics (e.g., intervals, cutoffs, batch sizes, number of training samples).
+        model_errors (np.ndarray): The model errors.
+        mode (str): The mode of generalization ("interpolation", "extrapolation", "sparse", "batchsize").
         save (bool): Whether to save the plot.
 
     Returns:
         None
     """
-    xlabel = "Interpolation Interval" if interpolate else "Extrapolation Cutoff"
-    title = "Interpolation Errors" if interpolate else "Extrapolation Errors"
-    filename = "interpolation_errors.png" if interpolate else "extrapolation_errors.png"
-    plt.scatter(metrics, model_errors)
+    if mode == "interpolation":
+        xlabel = "Interpolation Interval"
+        title = "Interpolation Errors"
+        filename = "interpolation_errors.png"
+    elif mode == "extrapolation":
+        xlabel = "Extrapolation Cutoff"
+        title = "Extrapolation Errors"
+        filename = "extrapolation_errors.png"
+    elif mode == "sparse":
+        xlabel = "Number of Training Samples"
+        title = "Sparse Training Errors"
+        filename = "sparse_errors.png"
+    elif mode == "batchsize":
+        xlabel = "Batch Size"
+        title = "Batch Size Training Errors"
+        filename = "batchsize_errors.png"
+    else:
+        raise ValueError(
+            "Invalid mode. Choose from 'interpolation', 'extrapolation', 'sparse', 'batchsize'."
+        )
+
+    plt.figure(figsize=(10, 6))
+    plt.scatter(metrics, model_errors, label=surr_name)
     plt.xlabel(xlabel)
+    if mode == "sparse" or mode == "batchsize":
+        plt.xscale("log")
     plt.ylabel("Mean Absolute Error")
     plt.yscale("log")
     plt.title(title)
+    plt.legend()
 
     if save and conf:
         save_plot(plt, filename, conf, surr_name)
-
-    # plt.show()
-
-    plt.close()
-
-
-def plot_sparse_errors(
-    surr_name: str,
-    conf: dict,
-    n_train_samples: np.ndarray,
-    model_errors: np.ndarray,
-    title: Optional[str] = None,
-    save: bool = False,
-) -> None:
-    """
-    Plot the sparse training errors of a model.
-
-    Args:
-        surr_name: The name of the surrogate model.
-        conf: The configuration dictionary.
-        n_train_samples: Numpy array containing the number of training samples.
-        model_errors: Numpy array containing the model errors.
-        title: Optional title for the plot.
-        save: Whether to save the plot as a file.
-
-    Returns:
-        None
-    """
-    plt.scatter(n_train_samples, model_errors)
-    plt.xlabel("Number of Training Samples")
-    plt.ylabel("Mean Absolute Error")
-    plt.yscale("log")
-    if title is None:
-        title = "Sparse Training Errors"
-    plt.title(title)
-
-    if save and conf:
-        save_plot(plt, "sparse_errors.png", conf, surr_name)
 
     # plt.show()
 
@@ -250,7 +311,7 @@ def plot_average_errors_over_time(
     save: bool = False,
 ) -> None:
     """
-    Plot the errors over time for different modes (interpolation, extrapolation, sparse).
+    Plot the errors over time for different modes (interpolation, extrapolation, sparse, batchsize).
 
     Args:
         surr_name (str): The name of the surrogate model.
@@ -258,46 +319,42 @@ def plot_average_errors_over_time(
         errors (np.ndarray): Errors array of shape [N_metrics, N_timesteps].
         metrics (np.ndarray): Metrics array of shape [N_metrics].
         timesteps (np.ndarray): Timesteps array.
-        mode (str): The mode of evaluation ('interpolation', 'extrapolation', 'sparse').
+        mode (str): The mode of evaluation ('interpolation', 'extrapolation', 'sparse', 'batchsize').
         save (bool, optional): Whether to save the plot as a file.
     """
     plt.figure(figsize=(10, 6))
 
-    for i, metric in enumerate(metrics):
-        label = (
-            f"interval {metric}"
-            if mode == "interpolation"
-            else f"cutoff {metric}" if mode == "extrapolation" else f"factor {metric}"
-        )
-        plt.plot(timesteps, errors[i], label=label)
+    labels = {
+        "interpolation": "interval",
+        "extrapolation": "cutoff",
+        "sparse": "samples",
+        "batchsize": "batch size"
+    }
+    if mode not in labels:
+        raise ValueError("Invalid mode. Choose from 'interpolation', 'extrapolation', 'sparse', 'batchsize'.")
+    
+    if mode == "sparse":
+        for i, metric in enumerate(metrics):
+            label = f"{metric} {labels[mode]}"
+            plt.plot(timesteps, errors[i], label=label)
+    else:
+        for i, metric in enumerate(metrics):
+            label = f"{labels[mode]} {metric}"
+            plt.plot(timesteps, errors[i], label=label)
 
     plt.xlabel("Timesteps")
     plt.ylabel("Errors")
-    title = (
-        "Interpolation Errors Over Time"
-        if mode == "interpolation"
-        else (
-            "Extrapolation Errors Over Time"
-            if mode == "extrapolation"
-            else "Sparse Errors Over Time"
-        )
-    )
+    title = f"{mode.capitalize()} Errors Over Time"
+    filename = f"{mode}_errors_over_time.png"
+
     plt.title(title)
     plt.legend()
 
     if save and conf:
-        filename = (
-            "interpolation_errors_over_time.png"
-            if mode == "interpolation"
-            else (
-                "extrapolation_errors_over_time.png"
-                if mode == "extrapolation"
-                else "sparse_errors_over_time.png"
-            )
-        )
         save_plot(plt, filename, conf, surr_name)
 
     plt.close()
+
 
 
 def plot_example_predictions_with_uncertainty(
@@ -474,18 +531,17 @@ def plot_surr_losses(surr_name: str, conf: dict, timesteps: np.ndarray) -> None:
         return train_loss, test_loss
 
     # Main model losses
-    main_train_loss, main_test_loss = load_losses(f"{surr_name.lower()}_main")
-
-    # Plot main model losses
-    plot_losses(
-        (main_train_loss, main_test_loss),
-        ("Train Loss", "Test Loss"),
-        title="Main Model Losses",
-        save=True,
-        conf=conf,
-        surr_name=surr_name,
-        mode="main",
-    )
+    if conf["accuracy"]:
+        main_train_loss, main_test_loss = load_losses(f"{surr_name.lower()}_main")
+        plot_losses(
+            (main_train_loss, main_test_loss),
+            ("Train Loss", "Test Loss"),
+            title="Main Model Losses",
+            save=True,
+            conf=conf,
+            surr_name=surr_name,
+            mode="main",
+        )
 
     # Interpolation losses
     if conf["interpolation"]["enabled"]:
@@ -565,6 +621,27 @@ def plot_surr_losses(surr_name: str, conf: dict, timesteps: np.ndarray) -> None:
             conf=conf,
             surr_name=surr_name,
             mode="UQ",
+        )
+
+    # Batchsize losses
+    if conf["batch_scaling"]["enabled"]:
+        batch_sizes = conf["batch_scaling"]["sizes"]
+        batch_train_losses = []
+        batch_test_losses = []
+        for batch_size in batch_sizes:
+            train_loss, test_loss = load_losses(
+                f"{surr_name.lower()}_batchsize_{batch_size}"
+            )
+            batch_train_losses.append(train_loss)
+            batch_test_losses.append(test_loss)
+        plot_losses(
+            tuple(batch_train_losses),
+            tuple(f"Batch Size {batch_size}" for batch_size in batch_sizes),
+            title="Batch Size Losses",
+            save=True,
+            conf=conf,
+            surr_name=surr_name,
+            mode="batchsize",
         )
 
 
@@ -741,6 +818,7 @@ def plot_generalization_error_comparison(
     filename: str,
     config: dict,
     save: bool = True,
+    xlog: bool = False,
 ) -> None:
     """
     Plot the generalization errors of different surrogate models.
@@ -753,6 +831,7 @@ def plot_generalization_error_comparison(
         filename (str): Filename to save the plot.
         config (dict): Configuration dictionary.
         save (bool): Whether to save the plot.
+        xlog (bool): Whether to use a log scale for the x-axis.
 
     Returns:
         None
@@ -766,6 +845,8 @@ def plot_generalization_error_comparison(
         )
 
     plt.xlabel(xlabel)
+    if xlog:
+        plt.xscale("log")
     plt.ylabel("Mean Absolute Error")
     plt.yscale("log")
     plt.title(f"Comparison of {xlabel} Errors")

@@ -2,7 +2,7 @@ import dataclasses
 import os
 import torch
 import torch.nn as nn
-from torch.profiler import profile, ProfilerActivity, record_function
+from torch.profiler import ProfilerActivity, record_function
 import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
@@ -89,8 +89,7 @@ class FullyConnected(AbstractSurrogateModel):
             dataloader: The DataLoader object containing the prepared data.
         """
         # Use batch size from the config if not provided
-        if batch_size is None:
-            batch_size = self.config.batch_size
+        batch_size = self.config.batch_size if batch_size is None else batch_size
 
         # Concatenate timesteps to the dataset as an additional feature
         n_samples, n_timesteps, n_features = dataset.shape
@@ -139,6 +138,7 @@ class FullyConnected(AbstractSurrogateModel):
         train_loader: DataLoader,
         test_loader: DataLoader,
         timesteps: np.ndarray,
+        epochs: int | None = None,
     ) -> None:
         """
         Train the FullyConnected model.
@@ -147,6 +147,7 @@ class FullyConnected(AbstractSurrogateModel):
             train_loader (DataLoader): The DataLoader object containing the training data.
             test_loader (DataLoader): The DataLoader object containing the test data.
             timesteps (np.ndarray): The timesteps.
+            epochs (int, optional): The number of epochs to train the model.
 
         Returns:
             None
@@ -158,10 +159,12 @@ class FullyConnected(AbstractSurrogateModel):
         optimizer, scheduler = self.setup_optimizer_and_scheduler()
 
         train_loss_hist, test_loss_hist = self.setup_losses(
-            prev_train_loss=None, prev_test_loss=None
+            prev_train_loss=None, prev_test_loss=None, epochs=epochs
         )
 
-        progress_bar = tqdm(range(self.config.num_epochs), desc="Training Progress")
+        epochs = self.config.num_epochs if epochs is None else epochs
+
+        progress_bar = tqdm(range(epochs), desc="Training Progress")
         for epoch in progress_bar:
             train_loss_hist[epoch] = self.epoch(train_loader, criterion, optimizer)
 
@@ -353,6 +356,7 @@ class FullyConnected(AbstractSurrogateModel):
         self,
         prev_train_loss: Optional[np.ndarray] = None,
         prev_test_loss: Optional[np.ndarray] = None,
+        epochs: int | None = None,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Set up the loss history arrays for training.
@@ -364,16 +368,13 @@ class FullyConnected(AbstractSurrogateModel):
         Returns:
             tuple: The training and testing loss history arrays (both np.ndarrays).
         """
+        epochs = self.config.num_epochs if epochs is None else epochs
         if self.config.pretrained_model_path is None:
-            train_loss_hist = np.zeros(self.config.num_epochs)
-            test_loss_hist = np.zeros(self.config.num_epochs)
+            train_loss_hist = np.zeros(epochs)
+            test_loss_hist = np.zeros(epochs)
         else:
-            train_loss_hist = np.concatenate(
-                (prev_train_loss, np.zeros(self.config.num_epochs))
-            )
-            test_loss_hist = np.concatenate(
-                (prev_test_loss, np.zeros(self.config.num_epochs))
-            )
+            train_loss_hist = np.concatenate((prev_train_loss, np.zeros(epochs)))
+            test_loss_hist = np.concatenate((prev_test_loss, np.zeros(epochs)))
 
         return train_loss_hist, test_loss_hist
 

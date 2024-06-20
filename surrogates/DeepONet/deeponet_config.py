@@ -73,7 +73,7 @@ class OChemicalTrainConfig:
     output_neurons: int = 290
     N_outputs: int = 29
     num_epochs: int = 250
-    learning_rate: float = 1e-4
+    learning_rate: float = 3e-4
     schedule: bool = False
     N_sensors: int = 29
     N_timesteps: int = 100
@@ -82,6 +82,6 @@ class OChemicalTrainConfig:
     device: str = "mps"
     use_streamlit: bool = False
     # optuna_trial: Trial | None = None
-    regularization_factor: float = 0.012
-    massloss_factor: float = 0.012
+    regularization_factor: float = 0.0  # 0.012
+    massloss_factor: float = 0.0  # 0.012
     batch_size: int = 1024

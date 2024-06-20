@@ -1,12 +1,12 @@
 import os
 
-os.environ["TQDM_DISABLE"] = "1"
+# os.environ["TQDM_DISABLE"] = "1"
 
 from queue import Queue
 from threading import Thread
 
 from surrogates.surrogate_classes import surrogate_classes
-from utils import load_and_save_config, set_random_seeds
+from utils import load_and_save_config, set_random_seeds, nice_print
 from data import check_and_load_data, get_data_subset
 
 
@@ -16,7 +16,9 @@ def train_and_save_model(
     metric: str,
     surrogate_class,
     config,
-    device: str,
+    seed: int | None = None,
+    epochs: int | None = None,
+    device: str = "cpu",
 ):
     """
     Train and save a model for a specific benchmark mode.
@@ -24,36 +26,44 @@ def train_and_save_model(
     Args:
         mode (str): The benchmark mode (e.g., "accuracy", "interpolation", "extrapolation", "sparse", "UQ").
         surrogate_name (str): The name of the surrogate model.
-        metric (str): The specific metric for the mode (e.g., interval, cutoff, factor).
+        metric (str): The specific metric for the mode (e.g., interval, cutoff, factor, batch size).
         surrogate_class: The class of the surrogate model.
         config (dict): The configuration dictionary.
+        seed (int): The seed for initializing the model and shuffling the data.
+        epochs (int): The number of epochs to train the model.
         device (str): The device to use for training (e.g., 'cuda:0').
     """
+    # Set the seed for the training
+    if seed is not None:
+        set_random_seeds(seed)
+
     # Set the device for the model
-    # print(os.environ["CUDA_VISIBLE_DEVICES"])
-    # os.environ["CUDA_VISIBLE_DEVICES"] = device if "cuda" in device else ""
     model = surrogate_class(device=device)
 
+    # Determine the batch size and number of epochs
+    batch_size = int(metric) if mode == "batch_size" else config["batch_size"]
+    epochs = epochs if epochs is not None else config["epochs"]
+
     # Load full data
-    full_train_data, osu_timesteps, _ = check_and_load_data(
+    full_train_data, timesteps, _ = check_and_load_data(
         config["dataset"], "train", verbose=False
     )
     full_test_data, _, _ = check_and_load_data(config["dataset"], "test", verbose=False)
 
-    # Just for testing purposes
-    # full_train_data = full_train_data[:200]
-    # full_test_data = full_test_data[:200]
-
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(
-        full_train_data, full_test_data, osu_timesteps, mode, metric
+        full_train_data, full_test_data, timesteps, mode, metric, config
     )
 
-    train_loader = model.prepare_data(train_data, timesteps, shuffle=True)
-    test_loader = model.prepare_data(test_data, timesteps, shuffle=False)
+    train_loader = model.prepare_data(
+        train_data, timesteps, batch_size=batch_size, shuffle=True
+    )
+    test_loader = model.prepare_data(
+        test_data, timesteps, batch_size=batch_size, shuffle=False
+    )
 
     # Train the model
-    model.fit(train_loader, test_loader, timesteps)
+    model.fit(train_loader, test_loader, timesteps, epochs=epochs)
 
     # Save the model (making the name lowercase and removing any underscores)
     model_name = f"{surrogate_name.lower()}_{mode}_{metric}".strip("_")
@@ -76,9 +86,13 @@ def train_surrogate(config, surrogate_class, surrogate_name):
     """
 
     tasks = []
+    seed = config["seed"]
+    epochs = config["epochs"]
 
     if config["accuracy"]:
-        tasks.append(("main", surrogate_name, "", surrogate_class, config))
+        tasks.append(
+            ("main", surrogate_name, "", surrogate_class, config, seed, epochs)
+        )
 
     if config["interpolation"]["enabled"]:
         for interval in config["interpolation"]["intervals"]:
@@ -89,25 +103,67 @@ def train_surrogate(config, surrogate_class, surrogate_name):
                     str(interval),
                     surrogate_class,
                     config,
+                    seed + interval,
+                    epochs,
                 )
             )
 
     if config["extrapolation"]["enabled"]:
         for cutoff in config["extrapolation"]["cutoffs"]:
             tasks.append(
-                ("extrapolation", surrogate_name, str(cutoff), surrogate_class, config)
+                (
+                    "extrapolation",
+                    surrogate_name,
+                    str(cutoff),
+                    surrogate_class,
+                    config,
+                    seed + cutoff,
+                    epochs,
+                )
             )
 
     if config["sparse"]["enabled"]:
         for factor in config["sparse"]["factors"]:
             tasks.append(
-                ("sparse", surrogate_name, str(factor), surrogate_class, config)
+                (
+                    "sparse",
+                    surrogate_name,
+                    str(factor),
+                    surrogate_class,
+                    config,
+                    seed + factor,
+                    epochs,
+                )
             )
 
     if config["UQ"]["enabled"]:
         n_models = config["UQ"]["n_models"]
         for i in range(n_models - 1):
-            tasks.append(("UQ", surrogate_name, str(i + 1), surrogate_class, config))
+            tasks.append(
+                (
+                    "UQ",
+                    surrogate_name,
+                    str(i + 1),
+                    surrogate_class,
+                    config,
+                    seed + i,
+                    epochs,
+                )
+            )
+
+    if config["batch_scaling"]["enabled"]:
+        for batch_size in config["batch_scaling"]["sizes"]:
+            tasks.append(
+                (
+                    "batchsize",
+                    surrogate_name,
+                    str(batch_size),
+                    surrogate_class,
+                    config,
+                    seed + batch_size,
+                    config["batch_scaling"]["epochs"],
+                )
+            )
 
     return tasks
 
@@ -164,6 +220,7 @@ def main():
 
     for surrogate_name in config["surrogates"]:
         if surrogate_name in surrogate_classes:
+            nice_print(f"Training surrogate model: {surrogate_name}")
             surrogate_class = surrogate_classes[surrogate_name]
             tasks += train_surrogate(config, surrogate_class, surrogate_name)
         else:
