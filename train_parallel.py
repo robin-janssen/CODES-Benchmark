@@ -56,14 +56,19 @@ def train_and_save_model(
     )
 
     train_loader = model.prepare_data(
-        train_data, timesteps, batch_size=batch_size, shuffle=True
+        dataset=train_data, timesteps=timesteps, batch_size=batch_size, shuffle=True
     )
     test_loader = model.prepare_data(
-        test_data, timesteps, batch_size=batch_size, shuffle=False
+        dataset=test_data, timesteps=timesteps, batch_size=batch_size, shuffle=False
     )
 
     # Train the model
-    model.fit(train_loader, test_loader, timesteps, epochs=epochs)
+    model.fit(
+        train_loader=train_loader,
+        test_loader=test_loader,
+        timesteps=timesteps,
+        epochs=epochs,
+    )
 
     # Save the model (making the name lowercase and removing any underscores)
     model_name = f"{surrogate_name.lower()}_{mode}_{metric}".strip("_")

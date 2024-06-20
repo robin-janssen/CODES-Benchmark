@@ -48,11 +48,15 @@ def train_and_save_model(
     # Instantiate the model to access its internal configuration
     model = surrogate_class(device=device)
 
-    train_loader = model.prepare_data(train_data, timesteps, shuffle=True)
-    test_loader = model.prepare_data(test_data, timesteps, shuffle=False)
+    train_loader = model.prepare_data(
+        dataset=train_data, timesteps=timesteps, shuffle=True
+    )
+    test_loader = model.prepare_data(
+        dataset=test_data, timesteps=timesteps, shuffle=False
+    )
 
     # Train the model
-    model.fit(train_loader, test_loader, timesteps)
+    model.fit(train_loader=train_loader, test_loader=test_loader, timesteps=timesteps)
 
     # Save the model (making the name lowercase and removing any underscores)
 

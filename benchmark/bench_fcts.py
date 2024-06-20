@@ -53,7 +53,9 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
     )
 
     # Create dataloader for the test data
-    test_loader = model.prepare_data(full_test_data, timesteps, shuffle=False)
+    test_loader = model.prepare_data(
+        dataset=full_test_data, timesteps=timesteps, shuffle=False
+    )
 
     # Plot training losses
     if conf["losses"]:
@@ -147,7 +149,9 @@ def evaluate_accuracy(
 
     # Use the model's predict method
     criterion = torch.nn.MSELoss(reduction="sum")
-    total_loss, preds, targets = model.predict(test_loader, criterion, timesteps)
+    total_loss, preds, targets = model.predict(
+        data_loader=test_loader, criterion=criterion, timesteps=timesteps
+    )
 
     # preds = preds.transpose(0, 2, 1)
     # targets = targets.transpose(0, 2, 1)
@@ -212,7 +216,9 @@ def evaluate_dynamic_accuracy(
     criterion = torch.nn.MSELoss(reduction="sum")
 
     # Obtain predictions and targets
-    _, preds, targets = model.predict(test_loader, criterion, timesteps)
+    _, preds, targets = model.predict(
+        data_loader=test_loader, criterion=criterion, timesteps=timesteps
+    )
 
     # Calculate gradients of the target data w.r.t time
     gradients = np.gradient(targets, axis=1)
@@ -288,7 +294,9 @@ def time_inference(
     inference_times = []
     for _ in range(n_runs):
         start_time = time.time()
-        _, _, _ = model.predict(test_loader, criterion, timesteps)
+        _, _, _ = model.predict(
+            data_loader=test_loader, criterion=criterion, timesteps=timesteps
+        )
         end_time = time.time()
         inference_times.append(end_time - start_time)
 
@@ -380,7 +388,9 @@ def evaluate_interpolation(
             else f"{surr_name.lower()}_interpolation_{interval}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        total_loss, preds, targets = model.predict(test_loader, criterion, timesteps)
+        total_loss, preds, targets = model.predict(
+            data_loader=test_loader, criterion=criterion, timesteps=timesteps
+        )
         interpolation_metrics[f"interval {interval}"] = {"MSE": total_loss}
 
         mean_absolute_errors = np.mean(np.abs(preds - targets), axis=(0, 2))
@@ -447,7 +457,9 @@ def evaluate_extrapolation(
             else f"{surr_name.lower()}_extrapolation_{cutoff}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        total_loss, preds, targets = model.predict(test_loader, criterion, timesteps)
+        total_loss, preds, targets = model.predict(
+            data_loader=test_loader, criterion=criterion, timesteps=timesteps
+        )
         extrapolation_metrics[f"cutoff {cutoff}"] = {"MSE": total_loss}
 
         mean_absolute_errors = np.mean(np.abs(preds - targets), axis=(0, 2))
@@ -518,7 +530,9 @@ def evaluate_sparse(
             else f"{surr_name.lower()}_sparse_{factor}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        total_loss, preds, targets = model.predict(test_loader, criterion, timesteps)
+        total_loss, preds, targets = model.predict(
+            data_loader=test_loader, criterion=criterion, timesteps=timesteps
+        )
         n_train_samples = N_train_samples // factor
         sparse_metrics[f"factor {factor}"] = {
             "MSE": total_loss,
@@ -584,7 +598,9 @@ def evaluate_batchsize(
     for i, batch_size in enumerate(batch_sizes):
         model_id = f"{surr_name.lower()}_batchsize_{batch_size}"
         model.load(training_id, surr_name, model_identifier=model_id)
-        total_loss, preds, targets = model.predict(test_loader, criterion, timesteps)
+        total_loss, preds, targets = model.predict(
+            data_loader=test_loader, criterion=criterion, timesteps=timesteps
+        )
         batch_metrics[f"batch_size {batch_size}"] = {"MSE": total_loss}
         mean_absolute_errors = np.mean(np.abs(preds - targets), axis=(0, 2))
         errors[i] = mean_absolute_errors
@@ -642,7 +658,9 @@ def evaluate_UQ(
             f"{surr_name.lower()}_main" if i == 0 else f"{surr_name.lower()}_UQ_{i}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        _, preds, targets = model.predict(test_loader, criterion, timesteps)
+        _, preds, targets = model.predict(
+            data_loader=test_loader, criterion=criterion, timesteps=timesteps
+        )
         all_predictions.append(preds)
 
     all_predictions = np.array(all_predictions)

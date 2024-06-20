@@ -162,7 +162,7 @@ def measure_memory_footprint(
 
     # Forward pass
     inputs = (i.to(model.device) for i in inputs)
-    output = model(inputs)
+    output = model(inputs=inputs)
     after_forward = get_memory_usage()
 
     # Measure memory usage before the backward pass
