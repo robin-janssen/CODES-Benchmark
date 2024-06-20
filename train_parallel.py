@@ -76,6 +76,7 @@ def train_and_save_model(
     model.save(
         model_name=model_name,
         training_id=config["training_id"],
+        subfolder="trained",
         dataset_name=config["dataset"],
     )
 

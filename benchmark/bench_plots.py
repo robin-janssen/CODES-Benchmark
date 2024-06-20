@@ -525,14 +525,18 @@ def plot_surr_losses(surr_name: str, conf: dict, timesteps: np.ndarray) -> None:
 
     def load_losses(model_identifier: str):
         loss_path = os.path.join(base_dir, f"{model_identifier}_losses.npz")
-        with np.load(loss_path) as data:
-            train_loss = data["train_loss"]
-            test_loss = data["test_loss"]
-        return train_loss, test_loss
+        if os.path.exists(loss_path):
+            with np.load(loss_path) as data:
+                train_loss = data["train_loss"]
+                test_loss = data["test_loss"]
+            return train_loss, test_loss
+        return None, None
 
     # Main model losses
     if conf["accuracy"]:
         main_train_loss, main_test_loss = load_losses(f"{surr_name.lower()}_main")
+        if main_train_loss is None:
+            return
         plot_losses(
             (main_train_loss, main_test_loss),
             ("Train Loss", "Test Loss"),

@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from torch import nn, Tensor
 from torchdiffeq import odeint, odeint_adjoint
 import numpy as np
+from tqdm import tqdm
 
 from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.NeuralODE.neural_ode_config import NeuralODEConfigOSU as Config
@@ -65,8 +66,8 @@ class NeuralODE(AbstractSurrogateModel):
         self,
         dataset: np.ndarray,
         timesteps: np.ndarray,
-        batch_size: int | None,
-        shuffle: bool,
+        batch_size: int | None = None,
+        shuffle: bool = True,
     ) -> DataLoader:
         """
         Prepares the data for training by creating a DataLoader object.
@@ -80,7 +81,8 @@ class NeuralODE(AbstractSurrogateModel):
         Returns:
             DataLoader: The DataLoader object containing the prepared data.
         """
-        dataset = ChemDataset(dataset)
+        batch_size = self.config.batch_size if batch_size is None else batch_size
+        dataset = ChemDataset(dataset, device=self.config.device)
         return torch.utils.data.DataLoader(
             dataset, batch_size=batch_size, shuffle=shuffle
         )
@@ -93,9 +95,13 @@ class NeuralODE(AbstractSurrogateModel):
         timesteps: np.ndarray,
         epochs: int | None,
     ):
+
+        timesteps = torch.tensor(timesteps).to(self.config.device)
         epochs = self.config.epochs if epochs is None else epochs
+
         # TODO: make Optimizer and scheduler configable
         optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
+
         scheduler = None
         if self.config.final_learning_rate is not None:
             scheduler = CosineAnnealingLR(
@@ -103,20 +109,28 @@ class NeuralODE(AbstractSurrogateModel):
             )
         losses = torch.empty((self.config.epochs, len(train_loader)))
         # TODO: calculate test loss
-        for epoch in range(epochs):
+        progress_bar = tqdm(range(epochs), desc="Training Progress")
+
+        for epoch in progress_bar:
             for i, x_true in enumerate(train_loader):
                 optimizer.zero_grad()
-                x0 = x_true[:, :, 0]
+                x0 = x_true[:, 0, :]
                 x_pred = self.model.forward(x0, timesteps)
                 loss = self.model.total_loss(x_true, x_pred)
                 loss.backward()
                 optimizer.step()
                 losses[epoch, i] = loss.item()
+
                 if epoch == 10 and i == 0:
                     with torch.no_grad():
                         self.model.renormalize_loss_weights(x_true, x_pred)
+
+            clr = optimizer.param_groups[0]["lr"]
+            progress_bar.set_postfix({"loss": losses[epoch, -1], "lr": clr})
+
             if scheduler is not None:
                 scheduler.step()
+
         self.train_loss = losses
 
     def predict(
@@ -140,7 +154,7 @@ class NeuralODE(AbstractSurrogateModel):
 
         with torch.inference_mode():
             for i, x_true in enumerate(data_loader):
-                x0 = x_true[:, :, 0]
+                x0 = x_true[:, 0, :]
                 x_pred = self.model.forward(x0, timesteps)
                 loss = criterion(x_true, x_pred)
                 total_loss += loss.item()
@@ -151,29 +165,6 @@ class NeuralODE(AbstractSurrogateModel):
         targets = targets.cpu().numpy()
 
         return total_loss, predictions, targets
-
-    def save(self, model_name: str, subfolder: str, training_id: str) -> None:
-
-        base_dir = os.getcwd()
-        subfolder = os.path.join(subfolder, training_id, "DeepONet")
-        model_dir = create_model_dir(base_dir, subfolder)
-
-        # Save the model state dict
-        model_path = os.path.join(model_dir, f"{model_name}.pth")
-        torch.save(self.state_dict(), model_path)
-
-        hyperparameters = dataclasses.asdict(self.config)
-
-        hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
-        with open(hyperparameters_path, "w") as file:
-            yaml.dump(hyperparameters, file)
-
-        if self.train_loss is not None and self.test_loss is not None:
-            # Save the losses as a numpy file
-            losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
-            np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
-
-        print(f"Model, losses and hyperparameters saved to {model_dir}")
 
 
 class ModelWrapper(torch.nn.Module):
@@ -198,8 +189,8 @@ class ModelWrapper(torch.nn.Module):
             activation=config.coder_activation,
         )
         self.ode = ODE(
-            input_shape=config.in_features,
-            output_shape=config.in_features,
+            input_shape=config.latent_features,
+            output_shape=config.latent_features,
             activation=config.ode_activation,
             n_hidden=config.ode_hidden,
             layer_width=config.ode_layer_width,
@@ -292,12 +283,14 @@ class ODE(torch.nn.Module):
         self.activation = activation
 
         self.mlp = torch.nn.Sequential()
-        self.mlp.append(torch.nn.Linear(input_shape, layer_width))
+        self.mlp.append(torch.nn.Linear(input_shape, layer_width, dtype=torch.float64))
         self.mlp.append(self.activation)
         for i in range(n_hidden):
-            self.mlp.append(torch.nn.Linear(layer_width, layer_width))
+            self.mlp.append(
+                torch.nn.Linear(layer_width, layer_width, dtype=torch.float64)
+            )
             self.mlp.append(self.activation)
-        self.mlp.append(torch.nn.Linear(layer_width, output_shape))
+        self.mlp.append(torch.nn.Linear(layer_width, output_shape, dtype=torch.float64))
 
     def forward(self, t, x):
         if self.tanh_reg:
@@ -326,12 +319,20 @@ class Encoder(torch.nn.Module):
         self.activation = activation
 
         self.mlp = torch.nn.Sequential()
-        self.mlp.append(torch.nn.Linear(self.in_features, self.width_list[0]))
+        self.mlp.append(
+            torch.nn.Linear(self.in_features, self.width_list[0], dtype=torch.float64)
+        )
         self.mlp.append(self.activation)
         for i, width in enumerate(self.width_list[1:]):
-            self.mlp.append(torch.nn.Linear(self.width_list[i], width))
+            self.mlp.append(
+                torch.nn.Linear(self.width_list[i], width, dtype=torch.float64)
+            )
             self.mlp.append(self.activation)
-        self.mlp.append(torch.nn.Linear(self.width_list[-1], self.latent_features))
+        self.mlp.append(
+            torch.nn.Linear(
+                self.width_list[-1], self.latent_features, dtype=torch.float64
+            )
+        )
         self.mlp.append(torch.nn.Tanh())
 
     def forward(self, x):
@@ -360,12 +361,20 @@ class Decoder(torch.nn.Module):
         self.width_list.reverse()
 
         self.mlp = torch.nn.Sequential()
-        self.mlp.append(torch.nn.Linear(self.latent_features, self.width_list[0]))
+        self.mlp.append(
+            torch.nn.Linear(
+                self.latent_features, self.width_list[0], dtype=torch.float64
+            )
+        )
         self.mlp.append(self.activation)
         for i, width in enumerate(self.width_list[1:]):
-            self.mlp.append(torch.nn.Linear(self.width_list[i], width))
+            self.mlp.append(
+                torch.nn.Linear(self.width_list[i], width, dtype=torch.float64)
+            )
             self.mlp.append(self.activation)
-        self.mlp.append(torch.nn.Linear(self.width_list[-1], self.out_features))
+        self.mlp.append(
+            torch.nn.Linear(self.width_list[-1], self.out_features, dtype=torch.float64)
+        )
         self.mlp.append(torch.nn.Tanh())
 
     def forward(self, x):

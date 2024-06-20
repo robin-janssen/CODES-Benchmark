@@ -24,7 +24,7 @@ batch_scaling:
   enabled: True
   sizes: [16, 64, 256, 1024, 4096]
   subset: 2  # Factor by which to slice the dataset (just for faster training)
-  epochs: 150
+  epochs: 1
 UQ: 
   enabled: True
   n_models: 5  # Number of models for deep ensemble
@@ -34,4 +34,4 @@ compare: True # Whether to compare the surrogates
 # Leave empty if the quantities should be set per surrogate
 
 batch_size: 128
-epochs: 500
+epochs: 1

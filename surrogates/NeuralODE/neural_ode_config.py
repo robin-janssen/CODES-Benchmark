@@ -25,3 +25,4 @@ class NeuralODEConfigOSU:
     epochs: int = 10000
 
     device: str = "cuda:0"
+    batch_size = 128
