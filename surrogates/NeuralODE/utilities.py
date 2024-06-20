@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 # from datetime import datetime
 # import pandas as pd
 # import os
-from functorch import vmap, jacrev, jacfwd  # , hessian
+# from functorch import vmap, jacrev, jacfwd  # , hessian
 from matplotlib.offsetbox import AnchoredText
 
 # import h5py
@@ -184,28 +184,28 @@ def nth_derivative(f: torch.Tensor, at: torch.Tensor, order: int):
     return derivatives
 
 
-def batch_jacobian(f, x, reverse_mode=True):
-    if reverse_mode:
-        return vmap(vmap(jacrev(f)))(x)
-    else:
-        return vmap(vmap(jacfwd(f)))(x)
+# def batch_jacobian(f, x, reverse_mode=True):
+#     if reverse_mode:
+#         return vmap(vmap(jacrev(f)))(x)
+#     else:
+#         return vmap(vmap(jacfwd(f)))(x)
 
 
-def batch_hessian(f, x, reverse_mode=True):
-    # return vmap(vmap(hessian(f)))(x)
-    if reverse_mode:
-        return vmap(vmap(jacfwd(jacrev(f))))(x)
-    else:
-        return vmap(vmap(jacrev(jacfwd(f))))(x)
+# def batch_hessian(f, x, reverse_mode=True):
+#     # return vmap(vmap(hessian(f)))(x)
+#     if reverse_mode:
+#         return vmap(vmap(jacfwd(jacrev(f))))(x)
+#     else:
+#         return vmap(vmap(jacrev(jacfwd(f))))(x)
 
 
-def batch_3rd(f, x):
-    return (vmap(vmap(jacfwd(jacrev(jacfwd(f))))))(x)
-    # return(vmap(vmap(jacrev(jacfwd(jacrev(f))))))(x)
+# def batch_3rd(f, x):
+#     return (vmap(vmap(jacfwd(jacrev(jacfwd(f))))))(x)
+#     # return(vmap(vmap(jacrev(jacfwd(jacrev(f))))))(x)
 
 
-def jac_det(f, x):
-    return vmap(vmap(jacrev(f)))(x).sum()
+# def jac_det(f, x):
+#     return vmap(vmap(jacrev(f)))(x).sum()
 
 
 # def mass_function(n: torch.Tensor):

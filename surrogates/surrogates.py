@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import os
 import dataclasses
 import yaml
+from typing import Callable
 
 # from typing import Optional, Union
 
@@ -51,7 +52,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
     def predict(
         self,
         data_loader: DataLoader | Tensor,
-        criterion: nn.Module,
+        criterion: nn.Module | Callable,
         timesteps: np.ndarray,
     ) -> tuple[float, np.ndarray, np.ndarray]:
         pass

@@ -1,6 +1,4 @@
-import os
-import dataclasses
-import yaml
+from typing import Callable
 
 import torch
 from torch.optim import Adam
@@ -70,7 +68,7 @@ class NeuralODE(AbstractSurrogateModel):
         dataset_val: np.ndarray | None = None,
         batch_size: int | None = None,
         shuffle: bool = True,
-    ) -> tuple[DataLoader, DataLoader, DataLoader]:
+    ) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
         """
         Prepares the data for training by creating a DataLoader object.
 
@@ -83,7 +81,7 @@ class NeuralODE(AbstractSurrogateModel):
         Returns:
             DataLoader: The DataLoader object containing the prepared data.
         """
-        
+
         batch_size = self.config.batch_size if batch_size is None else batch_size
         device = self.config.device
 
@@ -105,10 +103,8 @@ class NeuralODE(AbstractSurrogateModel):
             dataloader_val = torch.utils.data.DataLoader(
                 dset_val, batch_size=batch_size, shuffle=shuffle
             )
-        
-        return dataloader_train, dataloader_test, dataloader_val
-    
 
+        return dataloader_train, dataloader_test, dataloader_val
 
     @time_execution
     def fit(
@@ -131,6 +127,7 @@ class NeuralODE(AbstractSurrogateModel):
                 optimizer, self.config.epochs, eta_min=self.config.final_learning_rate
             )
         losses = torch.empty((self.config.epochs, len(train_loader)))
+        test_losses = torch.empty((self.config.epochs))
         # TODO: calculate test loss
         progress_bar = tqdm(range(epochs), desc="Training Progress")
 
@@ -155,18 +152,21 @@ class NeuralODE(AbstractSurrogateModel):
                 scheduler.step()
 
             with torch.inference_mode():
-                for i, x_true in enumerate(test_loader):
+                self.model.eval()
+                loss, _, _ = self.predict(test_loader, self.model.total_loss, timesteps)
+                self.model.train()
+                test_losses[epoch] = loss
 
         self.train_loss = np.mean(losses, axis=1)
+        self.test_loss = test_losses
 
     def predict(
         self,
         data_loader: DataLoader | Tensor,
-        criterion: nn.Module,
+        criterion: nn.Module | Callable,
         timesteps: np.ndarray,
     ) -> tuple[float, np.ndarray, np.ndarray]:
 
-        self.model.eval()
         self.model = self.model.to(self.config.device)
 
         total_loss = 0
@@ -189,6 +189,8 @@ class NeuralODE(AbstractSurrogateModel):
 
         predictions = predictions.cpu().numpy()
         targets = targets.cpu().numpy()
+
+        self.model.train()
 
         return total_loss, predictions, targets
 

@@ -54,11 +54,8 @@ def train_and_save_model(
         full_train_data, full_test_data, timesteps, mode, metric, config
     )
 
-    train_loader = model.prepare_data(
-        dataset=train_data, timesteps=timesteps, batch_size=batch_size, shuffle=True
-    )
-    test_loader = model.prepare_data(
-        dataset=test_data, timesteps=timesteps, batch_size=batch_size, shuffle=False
+    train_loader, test_loader, _ = model.prepare_data(
+        dataset_train=train_data, dataset_test=test_data, dataset_val=None, timesteps=timesteps, batch_size=batch_size, shuffle=True
     )
 
     # Train the model

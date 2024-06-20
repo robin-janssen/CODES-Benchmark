@@ -48,13 +48,13 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
     # Placeholder for metrics
     metrics = {}
 
-    _, full_test_data, _, timesteps, N_train_samples = check_and_load_data(
+    full_train_data, full_test_data, _, timesteps, N_train_samples = check_and_load_data(
         conf["dataset"]
     )
 
     # Create dataloader for the test data
-    test_loader = model.prepare_data(
-        dataset=full_test_data, timesteps=timesteps, shuffle=False
+    _, test_loader, _ = model.prepare_data(
+        dataset_train=full_train_data, dataset_test=full_test_data, dataset_val=None, timesteps=timesteps, shuffle=False
     )
 
     # Plot training losses
