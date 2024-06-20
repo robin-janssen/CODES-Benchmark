@@ -235,10 +235,10 @@ def deriv2(x):
 
 class ChemDataset(torch.utils.data.Dataset):
 
-    def __init__(self, raw_data, device):
+    def __init__(self, raw_data, device, xmin=None, xmax=None):
         self.data = torch.tensor(raw_data, dtype=torch.float64)
-        self.xmin = self.data.min()
-        self.xmax = self.data.max()
+        self.xmin = self.data.min() if xmin is None else xmin
+        self.xmax = self.data.max() if xmax is None else xmax
         self.data = 2 * (self.data - self.xmin) / (self.xmax - self.xmin) - 1
         self.length = self.data.shape[0]
         if not self.data.dtype == torch.float64:

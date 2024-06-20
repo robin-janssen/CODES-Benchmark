@@ -28,11 +28,13 @@ class AbstractSurrogateModel(ABC, nn.Module):
     @abstractmethod
     def prepare_data(
         self,
-        dataset: np.ndarray,
         timesteps: np.ndarray,
-        batch_size: int | None,
-        shuffle: bool,
-    ):
+        dataset_train: np.ndarray,
+        dataset_test: np.ndarray | None = None,
+        dataset_val: np.ndarray | None = None,
+        batch_size: int | None = None,
+        shuffle: bool = True,
+    ) -> tuple[DataLoader, DataLoader, DataLoader]:
         pass
 
     @abstractmethod
@@ -54,7 +56,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
     ) -> tuple[float, np.ndarray, np.ndarray]:
         pass
 
-    @abstractmethod
     def save(
         self,
         model_name: str,
@@ -90,3 +91,24 @@ class AbstractSurrogateModel(ABC, nn.Module):
         np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
 
         print(f"Model, losses and hyperparameters saved to {model_dir}")
+
+    def load(
+            self, training_id: str, surr_name: str, model_identifier: str
+        ) -> None:
+        """
+        Load a trained surrogate model.
+
+        Args:
+            model: Instance of the surrogate model class.
+            training_id (str): The training identifier.
+            surr_name (str): The name of the surrogate model.
+            model_identifier (str): The identifier of the model (e.g., 'main').
+
+        Returns:
+            The loaded surrogate model.
+        """
+        statedict_path = os.path.join(
+            "trained", training_id, surr_name, f"{model_identifier}.pth"
+        )
+        self.load_state_dict(torch.load(statedict_path))
+        self.eval()

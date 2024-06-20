@@ -64,11 +64,13 @@ class NeuralODE(AbstractSurrogateModel):
 
     def prepare_data(
         self,
-        dataset: np.ndarray,
         timesteps: np.ndarray,
+        dataset_train: np.ndarray,
+        dataset_test: np.ndarray | None = None,
+        dataset_val: np.ndarray | None = None,
         batch_size: int | None = None,
         shuffle: bool = True,
-    ) -> DataLoader:
+    ) -> tuple[DataLoader, DataLoader, DataLoader]:
         """
         Prepares the data for training by creating a DataLoader object.
 
@@ -81,11 +83,32 @@ class NeuralODE(AbstractSurrogateModel):
         Returns:
             DataLoader: The DataLoader object containing the prepared data.
         """
+        
         batch_size = self.config.batch_size if batch_size is None else batch_size
-        dataset = ChemDataset(dataset, device=self.config.device)
-        return torch.utils.data.DataLoader(
-            dataset, batch_size=batch_size, shuffle=shuffle
+        device = self.config.device
+
+        dset_train = ChemDataset(dataset_train, device=self.config.device)
+        dataloader_train = torch.utils.data.DataLoader(
+            dset_train, batch_size=batch_size, shuffle=shuffle
         )
+
+        dataloader_test = None
+        if dataset_test is not None:
+            dset_test = ChemDataset(dataset_test, device=self.config.device)
+            dataloader_test = torch.utils.data.DataLoader(
+                dset_test, batch_size=batch_size, shuffle=shuffle
+            )
+
+        dataloader_val = None
+        if dataset_val is not None:
+            dset_val = ChemDataset(dataset_val, device=self.config.device)
+            dataloader_val = torch.utils.data.DataLoader(
+                dset_val, batch_size=batch_size, shuffle=shuffle
+            )
+        
+        return dataloader_train, dataloader_test, dataloader_val
+    
+
 
     @time_execution
     def fit(
@@ -131,7 +154,10 @@ class NeuralODE(AbstractSurrogateModel):
             if scheduler is not None:
                 scheduler.step()
 
-        self.train_loss = losses
+            with torch.inference_mode():
+                for i, x_true in enumerate(test_loader):
+
+        self.train_loss = np.mean(losses, axis=1)
 
     def predict(
         self,

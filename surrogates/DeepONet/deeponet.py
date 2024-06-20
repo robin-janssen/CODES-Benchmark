@@ -335,27 +335,6 @@ class MultiONet(OperatorNetwork):
 
         print(f"Model, losses and hyperparameters saved to {model_dir}")
 
-    def load(
-        self, training_id: str, surr_name: str, model_identifier: str
-    ) -> torch.nn.Module:
-        """
-        Load a trained surrogate model.
-
-        Args:
-            model: Instance of the surrogate model class.
-            training_id (str): The training identifier.
-            surr_name (str): The name of the surrogate model.
-            model_identifier (str): The identifier of the model (e.g., 'main').
-
-        Returns:
-            The loaded surrogate model.
-        """
-        statedict_path = os.path.join(
-            "trained", training_id, surr_name, f"{model_identifier}.pth"
-        )
-        self.load_state_dict(torch.load(statedict_path))
-        self.eval()
-
     def setup_criterion(self) -> callable:
         """
         Utility function to set up the loss function for training.
