@@ -11,8 +11,8 @@ from tqdm import tqdm
 
 from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.NeuralODE.neural_ode_config import NeuralODEConfigOSU as Config
-from utils import create_model_dir, time_execution
 from surrogates.NeuralODE.utilities import ChemDataset
+from utils import time_execution
 
 
 class NeuralODE(AbstractSurrogateModel):
@@ -59,7 +59,9 @@ class NeuralODE(AbstractSurrogateModel):
             torch.Tensor: The output tensor.
         """
         if not isinstance(timesteps, torch.Tensor):
-            timesteps = torch.tensor(timesteps, dtype=torch.float64).to(self.config.device)
+            timesteps = torch.tensor(timesteps, dtype=torch.float64).to(
+                self.config.device
+            )
         return self.model.forward(inputs, timesteps)
 
     def prepare_data(
@@ -88,21 +90,21 @@ class NeuralODE(AbstractSurrogateModel):
         device = self.config.device
 
         dset_train = ChemDataset(dataset_train, device=self.config.device)
-        dataloader_train = torch.utils.data.DataLoader(
+        dataloader_train = DataLoader(
             dset_train, batch_size=batch_size, shuffle=shuffle
         )
 
         dataloader_test = None
         if dataset_test is not None:
             dset_test = ChemDataset(dataset_test, device=self.config.device)
-            dataloader_test = torch.utils.data.DataLoader(
+            dataloader_test = DataLoader(
                 dset_test, batch_size=batch_size, shuffle=shuffle
             )
 
         dataloader_val = None
         if dataset_val is not None:
             dset_val = ChemDataset(dataset_val, device=self.config.device)
-            dataloader_val = torch.utils.data.DataLoader(
+            dataloader_val = DataLoader(
                 dset_val, batch_size=batch_size, shuffle=shuffle
             )
 
@@ -111,13 +113,25 @@ class NeuralODE(AbstractSurrogateModel):
     @time_execution
     def fit(
         self,
-        train_loader: DataLoader | Tensor,
-        test_loader: DataLoader | Tensor,
-        timesteps: np.ndarray,
+        train_loader: DataLoader,
+        test_loader: DataLoader,
+        timesteps: np.ndarray | Tensor,
         epochs: int | None,
-    ):
+    ) -> None:
+        """
+        Fits the model to the training data. Sets the train_loss and test_loss attributes.
 
-        timesteps = torch.tensor(timesteps).to(self.config.device)
+        Args:
+            train_loader (DataLoader): The data loader for the training data.
+            test_loader (DataLoader): The data loader for the test data.
+            timesteps (np.ndarray | Tensor): The array of timesteps.
+            epochs (int | None): The number of epochs to train the model. If None, uses the value from the config.
+
+        Returns:
+            None
+        """
+        if not isinstance(timesteps, torch.Tensor):
+            timesteps = torch.tensor(timesteps).to(self.config.device)
         epochs = self.config.epochs if epochs is None else epochs
 
         # TODO: make Optimizer and scheduler configable
@@ -134,6 +148,7 @@ class NeuralODE(AbstractSurrogateModel):
         progress_bar = tqdm(range(epochs), desc="Training Progress")
 
         for epoch in progress_bar:
+
             for i, x_true in enumerate(train_loader):
                 optimizer.zero_grad()
                 x0 = x_true[:, 0, :]
@@ -164,25 +179,40 @@ class NeuralODE(AbstractSurrogateModel):
 
     def predict(
         self,
-        data_loader: DataLoader | Tensor,
+        data_loader: DataLoader,
         criterion: nn.Module | Callable,
         timesteps: np.ndarray | torch.Tensor,
     ) -> tuple[float, np.ndarray, np.ndarray]:
+        """
+        Makes predictions using the trained model.
+
+        Args:
+            data_loader (DataLoader): The DataLoader object containing the data.
+            criterion (nn.Module | Callable): The loss function to use for prediction.
+            timesteps (np.ndarray | torch.Tensor): The array of timesteps.
+
+        Returns:
+            tuple[float, np.ndarray, np.ndarray]: The total loss, the predictions, and the targets.
+        """
 
         self.model = self.model.to(self.config.device)
         if not isinstance(timesteps, torch.Tensor):
-            t_range = torch.tensor(timesteps, dtype=torch.float64).to(self.config.device)
+            t_range = torch.tensor(timesteps, dtype=torch.float64).to(
+                self.config.device
+            )
         else:
             t_range = timesteps
-
-        total_loss = 0
-        predictions = torch.empty_like(data_loader.dataset.data)
-        targets = torch.empty_like(data_loader.dataset.data)
+        
         if not isinstance(data_loader, DataLoader):
             raise TypeError("data_loader must be a DataLoader object")
+        
         batch_size = data_loader.batch_size
         if batch_size is None:
             raise ValueError("batch_size must be provided by the DataLoader object")
+        
+        total_loss = 0
+        predictions = torch.empty_like(data_loader.dataset.data) # type: ignore
+        targets = torch.empty_like(data_loader.dataset.data) # type: ignore
 
         with torch.inference_mode():
             for i, x_true in enumerate(data_loader):
@@ -190,13 +220,11 @@ class NeuralODE(AbstractSurrogateModel):
                 x_pred = self.model.forward(x0, t_range)
                 loss = criterion(x_true, x_pred)
                 total_loss += loss.item()
-                predictions[i * batch_size : (i + 1) * batch_size,:,:] = x_pred
-                targets[i * batch_size : (i + 1) * batch_size,:,:] = x_true
+                predictions[i * batch_size : (i + 1) * batch_size, :, :] = x_pred
+                targets[i * batch_size : (i + 1) * batch_size, :, :] = x_true
 
         predictions = predictions.cpu().numpy()
         targets = targets.cpu().numpy()
-
-        self.model.train()
 
         return total_loss, predictions, targets
 
