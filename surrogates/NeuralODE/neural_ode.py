@@ -11,6 +11,7 @@ import numpy as np
 from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.NeuralODE.neural_ode_config import NeuralODEConfigOSU as Config
 from utils import create_model_dir, time_execution
+from utilities import ChemDataset
 
 
 class NeuralODE(AbstractSurrogateModel):
@@ -20,15 +21,18 @@ class NeuralODE(AbstractSurrogateModel):
         self.model = ModelWrapper(config=config).to(config.device)
         self.train_loss = None
 
-    def forward(self, x):
-        t_range = self._get_t_range()
-        return self.model.forward(x, t_range)
+    def forward(self, inputs, timesteps):
+        return self.model.forward(inputs, timesteps)
 
-    def prepare_data(self, data_loader):
-        pass
+    def prepare_data(self, raw_data: np.ndarray, batch_size: int, shuffle: bool):
+        dataset = ChemDataset(raw_data)
+        return torch.utils.data.DataLoader(
+            dataset, batch_size=batch_size, shuffle=shuffle
+        )
 
     @time_execution
-    def fit(self, conf, data_loader, test_loader=None):
+    def fit(self, conf, data_loader, test_loader, timesteps, epochs):
+        epochs = self.config.epochs if epochs is None else epochs
         # TODO: make Optimizer and scheduler configable
         optimizer = Adam(self.model.parameters(), lr=self.config.learnign_rate)
         scheduler = None
@@ -36,13 +40,12 @@ class NeuralODE(AbstractSurrogateModel):
             scheduler = CosineAnnealingLR(
                 optimizer, self.config.epochs, eta_min=self.config.final_learning_rate
             )
-        t_range = self._get_t_range()
         losses = torch.empty((self.config.epochs, len(data_loader)))
-        for epoch in range(self.config.epochs):
+        for epoch in range(epochs):
             for i, x_true in enumerate(data_loader):
                 optimizer.zero_grad()
                 x0 = x_true[:, :, 0]
-                x_pred = self.model.forward(x0, t_range)
+                x_pred = self.model.forward(x0, timesteps)
                 loss = self.model.total_loss(x_true, x_pred)
                 loss.backward()
                 optimizer.step()

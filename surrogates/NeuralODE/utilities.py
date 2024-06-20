@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-import torch.utils
+from torch.utils.data import Dataset
 
 # from params import REAL_VARS, MODELS_FOLDER, PLOT_FOLDER, DEVICE, MASSES
 # from params import DEVICE
@@ -231,3 +231,24 @@ def deriv(x):
 
 def deriv2(x):
     return deriv(deriv(x))
+
+
+class ChemDataset(torch.utils.data.Dataset):
+
+    def __init__(self, raw_data):
+        self.data = torch.tensor(raw_data, dtype=torch.float64)
+        self.xmin = self.data.min()
+        self.xmax = self.data.max()
+        self.data = 2 * (self.data - self.xmin) / (self.xmax - self.xmin) - 1
+        self.length = self.data.shape[0]
+        if not self.data.dtype == torch.float64:
+            self.data = torch.tensor(self.data, dtype=torch.float64)
+
+    def __getitem__(self, index):
+        return self.data[index, :, :]
+
+    def __getitems__(self, index_list: list[int]):
+        return self.data[index_list, :, :]
+
+    def __len__(self):
+        return self.length
