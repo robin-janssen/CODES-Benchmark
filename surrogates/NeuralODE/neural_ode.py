@@ -102,6 +102,7 @@ class NeuralODE(AbstractSurrogateModel):
                 optimizer, self.config.epochs, eta_min=self.config.final_learning_rate
             )
         losses = torch.empty((self.config.epochs, len(train_loader)))
+        # TODO: calculate test loss
         for epoch in range(epochs):
             for i, x_true in enumerate(train_loader):
                 optimizer.zero_grad()
@@ -141,7 +142,7 @@ class NeuralODE(AbstractSurrogateModel):
             for i, x_true in enumerate(data_loader):
                 x0 = x_true[:, :, 0]
                 x_pred = self.model.forward(x0, timesteps)
-                loss = self.model.total_loss(x_true, x_pred)
+                loss = criterion(x_true, x_pred)
                 total_loss += loss.item()
                 predictions[:, i * batch_size : (i + 1) * batch_size] = x_pred
                 targets[:, i * batch_size : (i + 1) * batch_size] = x_true
