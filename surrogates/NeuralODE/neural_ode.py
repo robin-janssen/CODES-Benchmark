@@ -41,11 +41,11 @@ class NeuralODE(AbstractSurrogateModel):
 
     def __init__(self, device: str | None = None):
         super().__init__()
-        config: Config = Config()
+        self.config: Config = Config()
         if device is not None:
-            config.device = device
-        self.device = config.device
-        self.model = ModelWrapper(config=config).to(config.device)
+            self.config.device = device
+        self.device = self.config.device
+        self.model = ModelWrapper(config=self.config).to(self.config.device)
         self.train_loss = None
 
     def forward(self, inputs: torch.Tensor, timesteps: torch.Tensor):
