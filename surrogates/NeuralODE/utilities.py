@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-from torch.utils.data import Dataset
 
 # from params import REAL_VARS, MODELS_FOLDER, PLOT_FOLDER, DEVICE, MASSES
 # from params import DEVICE

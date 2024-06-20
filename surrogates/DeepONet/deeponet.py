@@ -325,10 +325,13 @@ class MultiONet(OperatorNetwork):
         with open(hyperparameters_path, "w") as file:
             yaml.dump(hyperparameters, file)
 
-        if self.train_loss is not None and self.test_loss is not None:
-            # Save the losses as a numpy file
-            losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
-            np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
+        # Save the losses as a numpy file
+        if self.train_loss is None:
+            self.train_loss = np.array([])
+        if self.test_loss is None:
+            self.test_loss = np.array([])
+        losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
+        np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
 
         print(f"Model, losses and hyperparameters saved to {model_dir}")
 

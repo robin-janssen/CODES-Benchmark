@@ -62,7 +62,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         training_id: str,
         dataset_name: str,
     ) -> None:
-        
+
         base_dir = os.getcwd()
         subfolder = os.path.join(subfolder, training_id, self.__class__.__name__)
         model_dir = create_model_dir(base_dir, subfolder)
@@ -76,9 +76,17 @@ class AbstractSurrogateModel(ABC, nn.Module):
         for key in hyperparameters.keys():
             if isinstance(hyperparameters[key], nn.Module):
                 hyperparameters[key] = hyperparameters[key].__class__.__name__
-        
+
         hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
         with open(hyperparameters_path, "w") as file:
             yaml.dump(hyperparameters, file)
+
+        # Save the losses as a numpy file
+        if self.train_loss is None:
+            self.train_loss = np.array([])
+        if self.test_loss is None:
+            self.test_loss = np.array([])
+        losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
+        np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
 
         print(f"Model, losses and hyperparameters saved to {model_dir}")
