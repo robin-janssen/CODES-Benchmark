@@ -3,13 +3,12 @@ import h5py
 import numpy as np
 
 
-def check_and_load_data(dataset_name: str, mode: str, verbose: bool = True):
+def check_and_load_data(dataset_name: str, verbose: bool = True):
     """
     Check the specified dataset and load the data based on the mode (train or test).
 
     Args:
         dataset_name (str): The name of the dataset.
-        mode (str): The mode of data to load ('train' or 'test').
         verbose (bool): Whether to print information about the loaded data.
 
     Returns:
@@ -41,19 +40,26 @@ def check_and_load_data(dataset_name: str, mode: str, verbose: bool = True):
 
     with h5py.File(data_file_path, "r") as f:
         # Check if mode data exists
-        if mode not in f:
-            raise Exception(
-                f"'{mode}' data not found in {data_file_path}. Available data: {', '.join(list(f.keys()))}"
-            )
+        # if mode not in f:
+        #     raise Exception(
+        #         f"'{mode}' data not found in {data_file_path}. Available data: {', '.join(list(f.keys()))}"
+        #     )
+        for mode in ("train", "test"):
+            if mode not in f:
+                raise Exception(
+                    f"'{mode}' data not found in {data_file_path}. Available data: {', '.join(list(f.keys()))}"
+                )
 
-        # Load data
-        data = f[mode][:]
+        train_data = f["train"][:]
+        test_data = f["test"][:]
+        # val_data = f["val"][:]
 
         # Check data shape
-        if data.ndim != 3:
-            raise Exception(
-                f"{mode} data does not have the required shape (n_samples, n_timesteps, n_chemicals)."
-            )
+        for data in (train_data, test_data):
+            if data.ndim != 3:
+                raise Exception(
+                    "Data does not have the required shape (n_samples, n_timesteps, n_chemicals)."
+                )
 
         n_samples, n_timesteps, n_chemicals = data.shape
         if verbose:
@@ -84,7 +90,7 @@ def check_and_load_data(dataset_name: str, mode: str, verbose: bool = True):
             if verbose:
                 print("Number of training samples not found in metadata.")
 
-    return data, timesteps, n_train_samples
+    return train_data, test_data, None, timesteps, n_train_samples
 
 
 def create_hdf5_dataset(

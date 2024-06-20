@@ -45,10 +45,9 @@ def train_and_save_model(
     epochs = epochs if epochs is not None else config["epochs"]
 
     # Load full data
-    full_train_data, timesteps, _ = check_and_load_data(
-        config["dataset"], "train", verbose=False
+    full_train_data, full_test_data, _, timesteps, _ = check_and_load_data(
+        config["dataset"], verbose=False
     )
-    full_test_data, _, _ = check_and_load_data(config["dataset"], "test", verbose=False)
 
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(

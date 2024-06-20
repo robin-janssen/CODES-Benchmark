@@ -81,8 +81,9 @@ def train_surrogate(config, surrogate_class, surrogate_name):
     """
 
     # Load data
-    full_train_data, osu_timesteps, _ = check_and_load_data(config["dataset"], "train")
-    full_test_data, _, _ = check_and_load_data(config["dataset"], "test")
+    full_train_data, full_test_data, _, osu_timesteps, _ = check_and_load_data(
+        config["dataset"]
+    )
 
     # Just for testing purposes
     # full_train_data = full_train_data[:20]
