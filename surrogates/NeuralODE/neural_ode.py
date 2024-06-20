@@ -5,6 +5,8 @@ import yaml
 import torch
 from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.utils.data import DataLoader
+from torch import nn, Tensor
 from torchdiffeq import odeint, odeint_adjoint
 import numpy as np
 
@@ -15,23 +17,78 @@ from utilities import ChemDataset
 
 
 class NeuralODE(AbstractSurrogateModel):
+    """
+    NeuralODE is a class that represents a neural ordinary differential equation model.
+
+    It inherits from the AbstractSurrogateModel class and implements methods for training,
+    predicting, and saving the model.
+
+    Attributes:
+        model (ModelWrapper): The neural network model wrapped in a ModelWrapper object.
+        train_loss (torch.Tensor): The training loss of the model.
+
+    Methods:
+        __init__(self, config: Config = Config()): Initializes a NeuralODE object.
+        forward(self, inputs: torch.Tensor, timesteps: torch.Tensor):
+            Performs a forward pass of the model.
+        prepare_data(self, raw_data: np.ndarray, batch_size: int, shuffle: bool):
+            Prepares the data for training and returns a Dataloader.
+        fit(self, conf, data_loader, test_loader, timesteps, epochs): Trains the model.
+        predict(self, data_loader): Makes predictions using the trained model.
+        save(self, model_name: str, subfolder: str, training_id: str) -> None:
+            Saves the model, losses, and hyperparameters.
+    """
 
     def __init__(self, config: Config = Config()):
         super().__init__()
         self.model = ModelWrapper(config=config).to(config.device)
         self.train_loss = None
 
-    def forward(self, inputs, timesteps):
+    def forward(self, inputs: torch.Tensor, timesteps: torch.Tensor):
+        """
+        Perform a forward pass through the model.
+
+        Args:
+            inputs (torch.Tensor): The input tensor.
+            timesteps (torch.Tensor): The tensor representing the timesteps.
+
+        Returns:
+            torch.Tensor: The output tensor.
+        """
         return self.model.forward(inputs, timesteps)
 
-    def prepare_data(self, raw_data: np.ndarray, batch_size: int, shuffle: bool):
-        dataset = ChemDataset(raw_data)
+    def prepare_data(
+            self,
+            dataset: np.ndarray,
+            timesteps: np.ndarray,
+            batch_size: int | None,
+            shuffle: bool,
+        ) -> DataLoader:
+        """
+        Prepares the data for training by creating a DataLoader object.
+
+        Args:
+            dataset (np.ndarray): The input dataset.
+            timesteps (np.ndarray): The timesteps for the dataset.
+            batch_size (int | None): The batch size for the DataLoader. If None, the entire dataset is loaded as a single batch.
+            shuffle (bool): Whether to shuffle the data during training.
+
+        Returns:
+            DataLoader: The DataLoader object containing the prepared data.
+        """
+        dataset = ChemDataset(dataset)
         return torch.utils.data.DataLoader(
             dataset, batch_size=batch_size, shuffle=shuffle
         )
 
     @time_execution
-    def fit(self, conf, data_loader, test_loader, timesteps, epochs):
+    def fit(
+        self,
+        train_loader: DataLoader | Tensor,
+        test_loader: DataLoader | Tensor,
+        timesteps: np.ndarray,
+        epochs: int | None,
+    ):
         epochs = self.config.epochs if epochs is None else epochs
         # TODO: make Optimizer and scheduler configable
         optimizer = Adam(self.model.parameters(), lr=self.config.learnign_rate)
@@ -40,9 +97,9 @@ class NeuralODE(AbstractSurrogateModel):
             scheduler = CosineAnnealingLR(
                 optimizer, self.config.epochs, eta_min=self.config.final_learning_rate
             )
-        losses = torch.empty((self.config.epochs, len(data_loader)))
+        losses = torch.empty((self.config.epochs, len(train_loader)))
         for epoch in range(epochs):
-            for i, x_true in enumerate(data_loader):
+            for i, x_true in enumerate(train_loader):
                 optimizer.zero_grad()
                 x0 = x_true[:, :, 0]
                 x_pred = self.model.forward(x0, timesteps)
@@ -57,21 +114,29 @@ class NeuralODE(AbstractSurrogateModel):
                 scheduler.step()
         self.train_loss = losses
 
-    def predict(self, data_loader):
+    def predict(
+        self,
+        data_loader: DataLoader | Tensor,
+        criterion: nn.Module,
+        timesteps: np.ndarray,
+    ) -> tuple[float, np.ndarray, np.ndarray]:
 
         self.model.eval()
         self.model = self.model.to(self.config.device)
 
-        t_range = self._get_t_range()
         total_loss = 0
-        predictions = torch.empty((t_range.shape[0], len(data_loader)))
-        targets = torch.empty((t_range.shape[0], len(data_loader)))
+        predictions = torch.empty((timesteps.shape[0], len(data_loader)))
+        targets = torch.empty((timesteps.shape[0], len(data_loader)))
+        if not isinstance(data_loader, DataLoader):
+            raise TypeError("data_loader must be a DataLoader object")
         batch_size = data_loader.batch_size
+        if batch_size is None:
+            raise ValueError("batch_size must be provided by the DataLoader object")
 
         with torch.inference_mode():
             for i, x_true in enumerate(data_loader):
                 x0 = x_true[:, :, 0]
-                x_pred = self.model.forward(x0, t_range)
+                x_pred = self.model.forward(x0, timesteps)
                 loss = self.model.total_loss(x_true, x_pred)
                 total_loss += loss.item()
                 predictions[:, i * batch_size : (i + 1) * batch_size] = x_pred
@@ -104,9 +169,6 @@ class NeuralODE(AbstractSurrogateModel):
             np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
 
         print(f"Model, losses and hyperparameters saved to {model_dir}")
-
-    def _get_t_range(self):
-        return torch.linspace(0, 1, self.config.t_steps)
 
 
 class ModelWrapper(torch.nn.Module):
