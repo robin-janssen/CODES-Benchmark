@@ -74,7 +74,7 @@ OperatorNetworkType = TypeVar("OperatorNetworkType", bound=OperatorNetwork)
 
 
 class MultiONet(OperatorNetwork):
-    def __init__(self, device: str = None):
+    def __init__(self, device: str | None = None):
         """
         Initialize the MultiONet model with a configuration.
 

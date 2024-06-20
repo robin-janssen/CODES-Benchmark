@@ -212,6 +212,7 @@ def jac_det(f, x):
 # def mass_function(n: torch.Tensor):
 #     return torch.sum(MASSES * n, dim=-1)
 
+
 def mass_function(n: torch.Tensor):
     raise NotImplementedError("mass function not implemented, please don't use it")
 
@@ -247,8 +248,8 @@ class ChemDataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         return self.data[index, :, :]
 
-    def __getitems__(self, index_list: list[int]):
-        return self.data[index_list, :, :]
+    # def __getitems__(self, index_list: list[int]):
+    #     return self.data[index_list, :, :]
 
     def __len__(self):
         return self.length

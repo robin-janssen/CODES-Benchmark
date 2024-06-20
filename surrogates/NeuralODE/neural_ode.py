@@ -13,7 +13,7 @@ import numpy as np
 from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.NeuralODE.neural_ode_config import NeuralODEConfigOSU as Config
 from utils import create_model_dir, time_execution
-from utilities import ChemDataset
+from surrogates.NeuralODE.utilities import ChemDataset
 
 
 class NeuralODE(AbstractSurrogateModel):
@@ -62,12 +62,12 @@ class NeuralODE(AbstractSurrogateModel):
         return self.model.forward(inputs, timesteps)
 
     def prepare_data(
-            self,
-            dataset: np.ndarray,
-            timesteps: np.ndarray,
-            batch_size: int | None,
-            shuffle: bool,
-        ) -> DataLoader:
+        self,
+        dataset: np.ndarray,
+        timesteps: np.ndarray,
+        batch_size: int | None,
+        shuffle: bool,
+    ) -> DataLoader:
         """
         Prepares the data for training by creating a DataLoader object.
 
@@ -95,7 +95,7 @@ class NeuralODE(AbstractSurrogateModel):
     ):
         epochs = self.config.epochs if epochs is None else epochs
         # TODO: make Optimizer and scheduler configable
-        optimizer = Adam(self.model.parameters(), lr=self.config.learnign_rate)
+        optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
         scheduler = None
         if self.config.final_learning_rate is not None:
             scheduler = CosineAnnealingLR(

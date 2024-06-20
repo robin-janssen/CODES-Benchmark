@@ -1,6 +1,6 @@
 # Global settings for the benchmark
 training_id: "DeepONet_convergence"
-surrogates: ["DeepONet"]
+surrogates: ["NeuralODE"]
 dataset: "Osu2008"
 devices: ["cuda:3"]
 seed: 42
@@ -8,25 +8,25 @@ seed: 42
 # Details of the benchmarking
 losses: True
 accuracy: True
-dynamic_accuracy: False
-timing: False
-compute: False
+dynamic_accuracy: True
+timing: True
+compute: True
 interpolation: 
-  enabled: False
+  enabled: True
   intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
 extrapolation: 
-  enabled: False
+  enabled: True
   cutoffs: [50, 60, 70, 80, 90]
 sparse: 
-  enabled: False
+  enabled: True
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
-  enabled: False
+  enabled: True
   sizes: [16, 64, 256, 1024, 4096]
   subset: 2  # Factor by which to slice the dataset (just for faster training)
   epochs: 150
 UQ: 
-  enabled: False
+  enabled: True
   n_models: 5  # Number of models for deep ensemble
 compare: True # Whether to compare the surrogates
 
