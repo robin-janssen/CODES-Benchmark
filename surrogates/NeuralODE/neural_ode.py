@@ -58,6 +58,8 @@ class NeuralODE(AbstractSurrogateModel):
         Returns:
             torch.Tensor: The output tensor.
         """
+        if not isinstance(timesteps, torch.Tensor):
+            timesteps = torch.tensor(timesteps, dtype=torch.float64).to(self.config.device)
         return self.model.forward(inputs, timesteps)
 
     def prepare_data(
@@ -157,21 +159,25 @@ class NeuralODE(AbstractSurrogateModel):
                 self.model.train()
                 test_losses[epoch] = loss
 
-        self.train_loss = np.mean(losses, axis=1)
+        self.train_loss = torch.mean(losses, dim=1)
         self.test_loss = test_losses
 
     def predict(
         self,
         data_loader: DataLoader | Tensor,
         criterion: nn.Module | Callable,
-        timesteps: np.ndarray,
+        timesteps: np.ndarray | torch.Tensor,
     ) -> tuple[float, np.ndarray, np.ndarray]:
 
         self.model = self.model.to(self.config.device)
+        if not isinstance(timesteps, torch.Tensor):
+            t_range = torch.tensor(timesteps, dtype=torch.float64).to(self.config.device)
+        else:
+            t_range = timesteps
 
         total_loss = 0
-        predictions = torch.empty((timesteps.shape[0], len(data_loader)))
-        targets = torch.empty((timesteps.shape[0], len(data_loader)))
+        predictions = torch.empty_like(data_loader.dataset.data)
+        targets = torch.empty_like(data_loader.dataset.data)
         if not isinstance(data_loader, DataLoader):
             raise TypeError("data_loader must be a DataLoader object")
         batch_size = data_loader.batch_size
@@ -181,11 +187,11 @@ class NeuralODE(AbstractSurrogateModel):
         with torch.inference_mode():
             for i, x_true in enumerate(data_loader):
                 x0 = x_true[:, 0, :]
-                x_pred = self.model.forward(x0, timesteps)
+                x_pred = self.model.forward(x0, t_range)
                 loss = criterion(x_true, x_pred)
                 total_loss += loss.item()
-                predictions[:, i * batch_size : (i + 1) * batch_size] = x_pred
-                targets[:, i * batch_size : (i + 1) * batch_size] = x_true
+                predictions[i * batch_size : (i + 1) * batch_size,:,:] = x_pred
+                targets[i * batch_size : (i + 1) * batch_size,:,:] = x_true
 
         predictions = predictions.cpu().numpy()
         targets = targets.cpu().numpy()
