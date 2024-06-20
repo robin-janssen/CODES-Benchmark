@@ -39,8 +39,12 @@ class NeuralODE(AbstractSurrogateModel):
             Saves the model, losses, and hyperparameters.
     """
 
-    def __init__(self, config: Config = Config()):
+    def __init__(self, device: str | None = None):
         super().__init__()
+        config: Config = Config()
+        if device is not None:
+            config.device = device
+        self.device = config.device
         self.model = ModelWrapper(config=config).to(config.device)
         self.train_loss = None
 
