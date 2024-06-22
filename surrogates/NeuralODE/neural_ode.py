@@ -41,6 +41,8 @@ class NeuralODE(AbstractSurrogateModel):
     def __init__(self, device: str | None = None):
         super().__init__()
         self.config: Config = Config()
+        # TODO find out why the config is loaded incorrectly after the first training
+        self.config.coder_layers = [32, 16, 8]
         if device is not None:
             self.config.device = device
         self.device = self.config.device
@@ -151,8 +153,8 @@ class NeuralODE(AbstractSurrogateModel):
 
             for i, x_true in enumerate(train_loader):
                 optimizer.zero_grad()
-                x0 = x_true[:, 0, :]
-                x_pred = self.model.forward(x0, timesteps)
+                # x0 = x_true[:, 0, :]
+                x_pred = self.model.forward(x_true, timesteps)
                 loss = self.model.total_loss(x_true, x_pred)
                 loss.backward()
                 optimizer.step()
@@ -216,8 +218,8 @@ class NeuralODE(AbstractSurrogateModel):
 
         with torch.inference_mode():
             for i, x_true in enumerate(data_loader):
-                x0 = x_true[:, 0, :]
-                x_pred = self.model.forward(x0, t_range)
+                # x0 = x_true[:, 0, :]
+                x_pred = self.model.forward(x_true, t_range)
                 loss = criterion(x_true, x_pred)
                 total_loss += loss.item()
                 predictions[i * batch_size : (i + 1) * batch_size, :, :] = x_pred
@@ -259,7 +261,9 @@ class ModelWrapper(torch.nn.Module):
             tanh_reg=config.ode_tanh_reg,
         )
 
-    def forward(self, x0, t_range):
+    # def forward(self, x0, t_range):
+    def forward(self, x, t_range):
+        x0 = x[:, 0, :]
         z0 = self.encoder(x0)  # x(t=0)
         if self.config.use_adjoint:
             result = odeint_adjoint(

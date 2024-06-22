@@ -1,0 +1,131 @@
+accuracy:
+  total_loss: 134882.99573079305
+  mean_relative_error: 2.482451766919991
+  median_relative_error: 0.9965631074983128
+  max_relative_error: 54766.15234554943
+  min_relative_error: 2.270178420608712e-06
+dynamic_accuracy:
+  species_correlations:
+    quantity_0: -0.138102140317388
+    quantity_1: -0.36865826318394557
+    quantity_2: 0.02462605033896967
+    quantity_3: -0.12787827961617207
+    quantity_4: -0.3871098674471136
+    quantity_5: 0.1754943333867194
+    quantity_6: -0.17907729338875555
+    quantity_7: 0.3967582242097704
+    quantity_8: -0.22835007246803457
+    quantity_9: -0.33573614198508045
+    quantity_10: 0.055692604114783224
+    quantity_11: -0.5640589798289787
+    quantity_12: -0.1100486414393525
+    quantity_13: -0.37833482869883495
+    quantity_14: -0.7602336772732804
+    quantity_15: 0.19904562912869117
+    quantity_16: -0.4659912731121964
+    quantity_17: -0.5018948022804594
+    quantity_18: -0.5530919471368655
+    quantity_19: 0.3016882850602769
+    quantity_20: -0.26881332980973055
+    quantity_21: 0.17234942406687273
+    quantity_22: 0.021638560517339533
+    quantity_23: -0.270245976376262
+    quantity_24: 0.3420889634436533
+    quantity_25: -0.6686245703684299
+    quantity_26: -0.02120274815344469
+    quantity_27: 0.131341895993341
+    quantity_28: 0.5363842702103706
+  avg_correlation: -0.0482657937708083
+timing:
+  mean_inference_time_per_run: 0.23651123046875
+  std_inference_time_per_run: 0.017232233267925157
+  num_predictions: 200
+  mean_inference_time_per_prediction: 0.00118255615234375
+  std_inference_time_per_prediction: 8.616116633962579e-05
+compute:
+  num_trainable_parameters: 20712
+  memory_footprint:
+    before_forward: 1246437376
+    after_forward: 1247703040
+    forward_pass_memory: 1265664
+    after_backward: 1356754944
+    backward_pass_memory: 109051904
+interpolation:
+  interval 1:
+    MSE: 134882.99573079305
+  interval 2:
+    MSE: 151957.35830289888
+  interval 3:
+    MSE: 122191.24269561388
+  interval 4:
+    MSE: 134275.85335456082
+  interval 5:
+    MSE: 129924.00183080739
+  interval 6:
+    MSE: 131485.2481485281
+  interval 7:
+    MSE: 130850.79118188066
+  interval 8:
+    MSE: 139905.709622208
+  interval 9:
+    MSE: 121790.23919159193
+  interval 10:
+    MSE: 141022.95909052505
+extrapolation:
+  cutoff 50:
+    MSE: 149542.639060647
+  cutoff 60:
+    MSE: 160813.63005158075
+  cutoff 70:
+    MSE: 134120.171736584
+  cutoff 80:
+    MSE: 133280.29421321442
+  cutoff 100:
+    MSE: 134882.99573079305
+  cutoff 90:
+    MSE: 129767.74849608832
+sparse:
+  factor 1:
+    MSE: 134882.99573079305
+    n_train_samples: 800
+  factor 2:
+    MSE: 155276.12529119817
+    n_train_samples: 400
+  factor 4:
+    MSE: 153269.55558679366
+    n_train_samples: 200
+  factor 8:
+    MSE: 166826.32640928132
+    n_train_samples: 100
+  factor 16:
+    MSE: 146736.49155205712
+    n_train_samples: 50
+  factor 32:
+    MSE: 146073.00043234025
+    n_train_samples: 25
+batch_size:
+  batch_size 16:
+    MSE: 139502.4386052282
+  batch_size 64:
+    MSE: 130674.14960706382
+  batch_size 256:
+    MSE: 133070.461781075
+  batch_size 1024:
+    MSE: 136291.48287040825
+  batch_size 4096:
+    MSE: 137338.92708019403
+  model_errors:
+  - 139502.4386052282
+  - 130674.14960706382
+  - 133070.461781075
+  - 136291.48287040825
+  - 137338.92708019403
+  batch_sizes:
+  - 16
+  - 64
+  - 256
+  - 1024
+  - 4096
+UQ:
+  average_uncertainty: 0.12112474586303586
+  correlation_metrics: -0.24712177109739844

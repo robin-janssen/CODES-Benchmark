@@ -93,9 +93,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
         print(f"Model, losses and hyperparameters saved to {model_dir}")
 
-    def load(
-            self, training_id: str, surr_name: str, model_identifier: str
-        ) -> None:
+    def load(self, training_id: str, surr_name: str, model_identifier: str) -> None:
         """
         Load a trained surrogate model.
 

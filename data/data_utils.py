@@ -153,9 +153,7 @@ def create_hdf5_dataset(
     print(f"HDF5 dataset created at {data_file_path}")
 
 
-def get_data_subset(
-    full_train_data, full_test_data, osu_timesteps, mode, metric, config
-):
+def get_data_subset(full_train_data, full_test_data, timesteps, mode, metric, config):
     """
     Get the appropriate data subset based on the mode and metric.
 
@@ -174,25 +172,25 @@ def get_data_subset(
         interval = int(metric)
         train_data = full_train_data[:, ::interval]
         test_data = full_test_data[:, ::interval]
-        timesteps = osu_timesteps[::interval]
+        timesteps = timesteps[::interval]
     elif mode == "extrapolation":
         cutoff = int(metric)
         train_data = full_train_data[:, :cutoff]
         test_data = full_test_data[:, :cutoff]
-        timesteps = osu_timesteps[:cutoff]
+        timesteps = timesteps[:cutoff]
     elif mode == "sparse":
         factor = int(metric)
         train_data = full_train_data[::factor]
         test_data = full_test_data[::factor]
-        timesteps = osu_timesteps
+        timesteps = timesteps
     elif mode == "batch_size":
         factor = config["batch_scaling"]["subset"]
         train_data = full_train_data[::factor]
         test_data = full_test_data[::factor]
-        timesteps = osu_timesteps
+        timesteps = timesteps
     else:
         train_data = full_train_data
         test_data = full_test_data
-        timesteps = osu_timesteps
+        timesteps = timesteps
 
     return train_data, test_data, timesteps
