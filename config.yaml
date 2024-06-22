@@ -1,8 +1,8 @@
 # Global settings for the benchmark
-training_id: "DeepONet_convergence"
+training_id: "NeuralODEtest"
 surrogates: ["NeuralODE"]
 dataset: "Osu2008"
-devices: ["cuda:3"]
+devices: ["cuda:4"]
 seed: 42
 
 # Details of the benchmarking

@@ -48,13 +48,17 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
     # Placeholder for metrics
     metrics = {}
 
-    full_train_data, full_test_data, _, timesteps, N_train_samples = check_and_load_data(
-        conf["dataset"]
+    full_train_data, full_test_data, _, timesteps, N_train_samples = (
+        check_and_load_data(conf["dataset"])
     )
 
     # Create dataloader for the test data
     _, test_loader, _ = model.prepare_data(
-        dataset_train=full_train_data, dataset_test=full_test_data, dataset_val=None, timesteps=timesteps, shuffle=False
+        dataset_train=full_train_data,
+        dataset_test=full_test_data,
+        dataset_val=None,
+        timesteps=timesteps,
+        shuffle=False,
     )
 
     # Plot training losses
@@ -86,7 +90,9 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
     # Compute (resources) benchmark
     if conf["compute"]:
         print("Running compute benchmark...")
-        metrics["compute"] = evaluate_compute(model, surr_name, test_loader, conf)
+        metrics["compute"] = evaluate_compute(
+            model, surr_name, test_loader, timesteps, conf
+        )
 
     # Interpolation benchmark
     if conf["interpolation"]["enabled"]:
@@ -318,7 +324,7 @@ def time_inference(
 
 
 def evaluate_compute(
-    model, surr_name: str, test_loader: DataLoader, conf: Dict
+    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
 ) -> Dict[str, Any]:
     """
     Evaluate the computational resource requirements of the surrogate model.
@@ -327,6 +333,7 @@ def evaluate_compute(
         model: Instance of the surrogate model class.
         surr_name (str): The name of the surrogate model.
         test_loader (DataLoader): The DataLoader object containing the test data.
+        timesteps (np.ndarray): The timesteps array.
         conf (dict): The configuration dictionary.
 
     Returns:
@@ -341,7 +348,7 @@ def evaluate_compute(
     # Get a sample input tensor from the test_loader
     inputs = next(iter(test_loader))
     # Measure the memory footprint during forward and backward pass
-    memory_footprint = measure_memory_footprint(model, inputs)
+    memory_footprint = measure_memory_footprint(model, inputs, timesteps)
 
     # Store complexity metrics
     complexity_metrics = {

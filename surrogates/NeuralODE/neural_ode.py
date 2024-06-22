@@ -103,7 +103,7 @@ class NeuralODE(AbstractSurrogateModel):
 
         dataloader_val = None
         if dataset_val is not None:
-            dset_val = ChemDataset(dataset_val, device=self.config.device)
+            dset_val = ChemDataset(dataset_val, device=device)
             dataloader_val = DataLoader(
                 dset_val, batch_size=batch_size, shuffle=shuffle
             )
@@ -202,17 +202,17 @@ class NeuralODE(AbstractSurrogateModel):
             )
         else:
             t_range = timesteps
-        
+
         if not isinstance(data_loader, DataLoader):
             raise TypeError("data_loader must be a DataLoader object")
-        
+
         batch_size = data_loader.batch_size
         if batch_size is None:
             raise ValueError("batch_size must be provided by the DataLoader object")
-        
+
         total_loss = 0
-        predictions = torch.empty_like(data_loader.dataset.data) # type: ignore
-        targets = torch.empty_like(data_loader.dataset.data) # type: ignore
+        predictions = torch.empty_like(data_loader.dataset.data)  # type: ignore
+        targets = torch.empty_like(data_loader.dataset.data)  # type: ignore
 
         with torch.inference_mode():
             for i, x_true in enumerate(data_loader):

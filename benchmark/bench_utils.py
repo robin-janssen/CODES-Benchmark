@@ -138,6 +138,7 @@ def count_trainable_parameters(model: torch.nn.Module) -> int:
 def measure_memory_footprint(
     model: torch.nn.Module,
     inputs: tuple,
+    timesteps: np.ndarray,
 ) -> dict:
     """
     Measure the memory footprint of the model during the forward and backward pass.
@@ -161,8 +162,8 @@ def measure_memory_footprint(
     before_forward = get_memory_usage()
 
     # Forward pass
-    inputs = (i.to(model.device) for i in inputs)
-    output = model(inputs=inputs)
+    inputs = inputs.to(model.device)
+    output = model(inputs=inputs, timesteps=timesteps)
     after_forward = get_memory_usage()
 
     # Measure memory usage before the backward pass
