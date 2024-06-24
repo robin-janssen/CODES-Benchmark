@@ -144,8 +144,8 @@ class NeuralODE(AbstractSurrogateModel):
             scheduler = CosineAnnealingLR(
                 optimizer, self.config.epochs, eta_min=self.config.final_learning_rate
             )
-        losses = torch.empty((self.config.epochs, len(train_loader)))
-        test_losses = torch.empty((self.config.epochs))
+        losses = torch.empty((epochs, len(train_loader)))
+        test_losses = torch.empty((epochs))
         # TODO: calculate test loss
         progress_bar = tqdm(range(epochs), desc="Training Progress")
 

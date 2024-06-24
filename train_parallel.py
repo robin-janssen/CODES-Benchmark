@@ -1,6 +1,6 @@
 import os
 
-# os.environ["TQDM_DISABLE"] = "1"
+os.environ["TQDM_DISABLE"] = "1"
 
 from queue import Queue
 from threading import Thread
@@ -186,7 +186,7 @@ def worker(task_queue: Queue, device: str):
     while not task_queue.empty():
         try:
             task = task_queue.get_nowait()
-            print(f"Starting training for task: {task[:3]} on device {device}")
+            print(f"Starting training for task {task[:3]} on device {device}")
             train_and_save_model(*task, device)
             task_queue.task_done()
             print(f"Completed training for task: {task[:3]}")
@@ -234,9 +234,12 @@ def main():
             print(f"Surrogate {surrogate_name} not recognized. Skipping.")
 
     if len(device_list) > 1:
+        print(f"Training models in parallel on devices: {device_list}")
         parallel_training(tasks, device_list)
     else:
+        print(f"Training models sequentially on device {device_list[0]}")
         for task in tasks:
+            print(f"Starting training for task {task[:3]}")
             train_and_save_model(*task, device_list[0])
 
 
