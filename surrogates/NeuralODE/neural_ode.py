@@ -47,7 +47,7 @@ class NeuralODE(AbstractSurrogateModel):
         self.model = ModelWrapper(config=self.config).to(self.config.device)
         self.train_loss = None
 
-    def forward(self, inputs: torch.Tensor, timesteps: torch.Tensor):
+    def forward(self, inputs: torch.Tensor, timesteps: torch.Tensor | np.ndarray):
         """
         Perform a forward pass through the model.
 
@@ -113,8 +113,8 @@ class NeuralODE(AbstractSurrogateModel):
     @time_execution
     def fit(
         self,
-        train_loader: DataLoader,
-        test_loader: DataLoader,
+        train_loader: DataLoader | Tensor,
+        test_loader: DataLoader | Tensor,
         timesteps: np.ndarray | Tensor,
         epochs: int | None,
     ) -> None:
