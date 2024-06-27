@@ -1,10 +1,8 @@
-from typing import Callable
-
 import torch
 from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
-from torch import nn, Tensor
+from torch import Tensor
 from torchdiffeq import odeint, odeint_adjoint
 import numpy as np
 from tqdm import tqdm
@@ -165,15 +163,16 @@ class NeuralODE(AbstractSurrogateModel):
                         self.model.renormalize_loss_weights(x_true, x_pred)
 
             clr = optimizer.param_groups[0]["lr"]
-            progress_bar.set_postfix({"loss": losses[epoch, -1], "lr": clr})
+            progress_bar.set_postfix({"loss": losses[epoch, -1].item(), "lr": clr})
 
             if scheduler is not None:
                 scheduler.step()
 
             with torch.inference_mode():
                 self.model.eval()
-                loss, _, _ = self.predict(test_loader, self.model.total_loss, timesteps)
+                preds, targets = self.predict(test_loader, timesteps)
                 self.model.train()
+                loss = self.model.total_loss(preds, targets)
                 test_losses[epoch] = loss
 
         self.train_loss = torch.mean(losses, dim=1)
@@ -182,7 +181,6 @@ class NeuralODE(AbstractSurrogateModel):
     def predict(
         self,
         data_loader: DataLoader,
-        criterion: nn.Module | Callable,
         timesteps: np.ndarray | torch.Tensor,
     ) -> tuple[float, np.ndarray, np.ndarray]:
         """
@@ -212,23 +210,16 @@ class NeuralODE(AbstractSurrogateModel):
         if batch_size is None:
             raise ValueError("batch_size must be provided by the DataLoader object")
 
-        total_loss = 0
         predictions = torch.empty_like(data_loader.dataset.data)  # type: ignore
         targets = torch.empty_like(data_loader.dataset.data)  # type: ignore
 
         with torch.inference_mode():
             for i, x_true in enumerate(data_loader):
-                # x0 = x_true[:, 0, :]
                 x_pred = self.model.forward(x_true, t_range)
-                loss = criterion(x_true, x_pred)
-                total_loss += loss.item()
                 predictions[i * batch_size : (i + 1) * batch_size, :, :] = x_pred
                 targets[i * batch_size : (i + 1) * batch_size, :, :] = x_true
 
-        predictions = predictions.cpu().numpy()
-        targets = targets.cpu().numpy()
-
-        return total_loss, predictions, targets
+        return predictions, targets
 
 
 class ModelWrapper(torch.nn.Module):

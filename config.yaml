@@ -1,6 +1,6 @@
 # Global settings for the benchmark
-training_id: "NeuralODE_losstest"
-surrogates: ["NeuralODE"]
+training_id: "NeuralODE_workarounds2"
+surrogates: ["MultiONet", "NeuralODE"]
 dataset: "Osu2008"
 devices: ["cuda:0"]
 seed: 42
@@ -33,5 +33,5 @@ compare: False # Whether to compare the surrogates
 # Optional global settings
 # Leave empty if the quantities should be set per surrogate
 
-batch_size: 128
-epochs: 250
+batch_size: [128, 256]
+epochs: [2, 3]

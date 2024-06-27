@@ -1,13 +1,13 @@
 import os
 
-os.environ["TQDM_DISABLE"] = "1"
+# os.environ["TQDM_DISABLE"] = "1"
 
 from queue import Queue
 from threading import Thread
 
-from surrogates.surrogate_classes import surrogate_classes
-from utils import load_and_save_config, set_random_seeds, nice_print
+from utils import load_and_save_config, set_random_seeds
 from data import check_and_load_data, get_data_subset
+from benchmark.bench_utils import get_surrogate
 
 
 def train_and_save_model(
@@ -39,9 +39,15 @@ def train_and_save_model(
 
     # Set the device for the model
     model = surrogate_class(device=device)
+    surr_idx = config["surrogates"].index(surrogate_name)
 
     # Determine the batch size and number of epochs
-    batch_size = int(metric) if mode == "batch_size" else config["batch_size"]
+    batch_size = (
+        config["batch_size"][surr_idx]
+        if isinstance(config["batch_size"], list)
+        else config["batch_size"]
+    )
+    batch_size = int(metric) if mode == "batch_size" else batch_size
     epochs = epochs if epochs is not None else config["epochs"]
 
     # Load full data
@@ -94,7 +100,12 @@ def train_surrogate(config, surrogate_class, surrogate_name):
 
     tasks = []
     seed = config["seed"]
-    epochs = config["epochs"]
+    surr_idx = config["surrogates"].index(surrogate_name)
+    epochs = (
+        config["epochs"][surr_idx]
+        if isinstance(config["epochs"], list)
+        else config["epochs"]
+    )
 
     if config["accuracy"]:
         tasks.append(
@@ -168,7 +179,7 @@ def train_surrogate(config, surrogate_class, surrogate_name):
                     surrogate_class,
                     config,
                     seed + batch_size,
-                    config["batch_scaling"]["epochs"],
+                    epochs,
                 )
             )
 
@@ -226,9 +237,8 @@ def main():
     device_list = [device_list] if isinstance(device_list, str) else device_list
 
     for surrogate_name in config["surrogates"]:
-        if surrogate_name in surrogate_classes:
-            nice_print(f"Training surrogate model: {surrogate_name}")
-            surrogate_class = surrogate_classes[surrogate_name]
+        surrogate_class = get_surrogate(surrogate_name)
+        if surrogate_class is not None:
             tasks += train_surrogate(config, surrogate_class, surrogate_name)
         else:
             print(f"Surrogate {surrogate_name} not recognized. Skipping.")

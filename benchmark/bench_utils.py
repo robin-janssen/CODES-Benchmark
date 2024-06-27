@@ -4,10 +4,12 @@ from copy import deepcopy
 import yaml
 import torch
 import psutil
-from typing import Dict
+
+from surrogates.surrogate_classes import surrogate_classes
+from surrogates.surrogates import SurrogateModel
 
 
-def check_surrogate(surrogate: str, conf: Dict) -> None:
+def check_surrogate(surrogate: str, conf: dict) -> None:
     """
     Check whether the required models for the benchmark are present in the expected directories.
 
@@ -34,7 +36,7 @@ def check_surrogate(surrogate: str, conf: Dict) -> None:
     print(f"All required models for surrogate {surrogate} are present.")
 
 
-def get_required_models_list(surrogate: str, conf: Dict) -> list:
+def get_required_models_list(surrogate: str, conf: dict) -> list:
     """
     Generate a list of required models based on the configuration settings.
 
@@ -84,7 +86,7 @@ def get_required_models_list(surrogate: str, conf: Dict) -> list:
     return required_models
 
 
-def read_yaml_config(config_path: str) -> Dict:
+def read_yaml_config(config_path: str) -> dict:
     """
     Read the YAML configuration file.
 
@@ -162,7 +164,11 @@ def measure_memory_footprint(
     before_forward = get_memory_usage()
 
     # Forward pass
-    inputs = inputs.to(model.device)
+    inputs = (
+        (i.to(model.device) for i in inputs)
+        if isinstance(inputs, list) or isinstance(inputs, tuple)
+        else inputs.to(model.device)
+    )
     output = model(inputs=inputs, timesteps=timesteps)
     after_forward = get_memory_usage()
 
@@ -269,3 +275,20 @@ def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
         f"results/{conf['training_id']}/{surr_name.lower()}_metrics.yaml", "w"
     ) as f:
         yaml.dump(write_metrics, f, sort_keys=False)
+
+
+def get_surrogate(surrogate_name: str) -> SurrogateModel | None:
+    """
+    Check if the surrogate model exists.
+
+    Args:
+        surrogate_name (str): The name of the surrogate model.
+
+    Returns:
+        bool: True if the surrogate model exists, False otherwise.
+    """
+    for surrogate in surrogate_classes:
+        if surrogate_name == surrogate.__name__:
+            return surrogate
+
+    return None

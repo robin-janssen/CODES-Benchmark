@@ -8,10 +8,10 @@ from torch.utils.data import DataLoader, TensorDataset
 def create_dataloader_deeponet(
     data,
     timesteps,
-    fraction=1,
     batch_size=32,
     shuffle=False,
     normalize=False,
+    fraction=1,
 ):
     """
     Create a DataLoader with optional fractional subsampling for chemical evolution data for DeepONet.

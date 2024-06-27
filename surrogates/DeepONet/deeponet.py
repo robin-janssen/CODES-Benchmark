@@ -1,12 +1,9 @@
-import dataclasses
-import os
 import torch
 import torch.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from typing import Tuple, Optional, TypeVar
-import yaml
 
 from surrogates.surrogates import AbstractSurrogateModel
 
@@ -14,7 +11,7 @@ from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.DeepONet.deeponet_config import OChemicalTrainConfig as MultiONetConfig
 from data import create_dataloader_deeponet
 
-from utils import time_execution, create_model_dir
+from utils import time_execution
 from .utils import mass_conservation_loss
 
 
@@ -112,7 +109,9 @@ class MultiONet(OperatorNetwork):
         ).to(config.device)
 
     def forward(
-        self, inputs: Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
+        self,
+        inputs: Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+        timesteps: np.ndarray | None = None,
     ) -> torch.Tensor:
         """
         Forward pass for the MultiONet model.
@@ -141,16 +140,21 @@ class MultiONet(OperatorNetwork):
 
     def prepare_data(
         self,
-        dataset: np.ndarray,
+        dataset_train: np.ndarray,
+        dataset_test: np.ndarray,
+        dataset_val: np.ndarray | None,
         timesteps: np.ndarray,
         batch_size: int | None = None,
         shuffle: bool = True,
     ) -> DataLoader:
         """
         Prepare the data for the predict or fit methods.
+        Note: All datasets must have shape (N_samples, N_timesteps, N_chemicals).
 
         Args:
-            dataset (np.ndarray): The dataset to prepare (should be of shape (n_samples, n_timesteps, n_features)).
+            dataset_train (np.ndarray): The training data.
+            dataset_test (np.ndarray): The test data.
+            dataset_val (np.ndarray, optional): The validation data.
             timesteps (np.ndarray): The timesteps.
             batch_size (int, optional): The batch size.
             shuffle (bool, optional): Whether to shuffle the data.
@@ -162,14 +166,22 @@ class MultiONet(OperatorNetwork):
         if batch_size is None:
             batch_size = self.config.batch_size
 
-        # Create the DataLoader object
-        dataloader = create_dataloader_deeponet(
-            dataset,
-            timesteps,
-            batch_size=batch_size,
-            shuffle=shuffle,
-        )
-        return dataloader
+        # Create the DataLoaders
+        dataloaders = []
+        for dataset in [dataset_train, dataset_test, dataset_val]:
+            if dataset is not None:
+                dataloader = create_dataloader_deeponet(
+                    dataset,
+                    timesteps,
+                    batch_size,
+                    shuffle,
+                    self.device,
+                )
+                dataloaders.append(dataloader)
+            else:
+                dataloaders.append(None)
+
+        return dataloaders[0], dataloaders[1], dataloaders[2]
 
     @time_execution
     def fit(
@@ -212,11 +224,11 @@ class MultiONet(OperatorNetwork):
             scheduler.step()
 
             if test_loader is not None:
-                test_loss_hist[epoch], _, _ = self.predict(
+                preds, targets = self.predict(
                     test_loader,
-                    criterion,
                     timesteps,
                 )
+                test_loss_hist[epoch] = criterion(preds, targets).item()
 
         self.train_loss = train_loss_hist
         self.test_loss = test_loss_hist
@@ -224,7 +236,6 @@ class MultiONet(OperatorNetwork):
     def predict(
         self,
         data_loader: DataLoader,
-        criterion: nn.Module,
         timesteps: np.ndarray,
     ) -> Tuple[float, np.ndarray, np.ndarray]:
         """
@@ -243,7 +254,6 @@ class MultiONet(OperatorNetwork):
         self.eval()
         self.to(device)
 
-        total_loss = 0
         dataset_size = len(data_loader.dataset)
 
         # Pre-allocate buffers for predictions and targets
@@ -263,8 +273,6 @@ class MultiONet(OperatorNetwork):
                     batch_targets.to(device),
                 )
                 outputs = self((branch_inputs, trunk_inputs, batch_targets))
-                loss = criterion(outputs, batch_targets)
-                total_loss += loss.item()
 
                 # Write predictions and targets to the pre-allocated buffers
                 preds[start_idx : start_idx + batch_size] = outputs
@@ -272,68 +280,62 @@ class MultiONet(OperatorNetwork):
 
                 start_idx += batch_size
 
-        preds = preds.cpu().numpy()
-        targets = targets.cpu().numpy()
-
-        # Calculate relative error
-        total_loss /= dataset_size * self.N
-
         preds = preds.reshape(-1, N_timesteps, self.N)
         targets = targets.reshape(-1, N_timesteps, self.N)
 
-        return total_loss, preds, targets
+        return preds, targets
 
-    def save(
-        self,
-        model_name: str,
-        subfolder: str = "trained",
-        training_id: str = "run_1",
-        dataset_name: str = "dataset",
-    ) -> None:
-        """
-        Save the trained model and hyperparameters.
+    # def save(
+    #     self,
+    #     model_name: str,
+    #     subfolder: str = "trained",
+    #     training_id: str = "run_1",
+    #     dataset_name: str = "dataset",
+    # ) -> None:
+    #     """
+    #     Save the trained model and hyperparameters.
 
-        Args:
-            model_name (str): The name of the model.
-            subfolder (str): The subfolder to save the model in.
-            training_id (str): A unique identifier to include in the directory name.
-            dataset_name (str): The name of the dataset.
-        """
-        base_dir = os.getcwd()
-        subfolder = os.path.join(subfolder, training_id, "DeepONet")
-        model_dir = create_model_dir(base_dir, subfolder)
-        self.dataset_name = dataset_name
+    #     Args:
+    #         model_name (str): The name of the model.
+    #         subfolder (str): The subfolder to save the model in.
+    #         training_id (str): A unique identifier to include in the directory name.
+    #         dataset_name (str): The name of the dataset.
+    #     """
+    #     base_dir = os.getcwd()
+    #     subfolder = os.path.join(subfolder, training_id, "DeepONet")
+    #     model_dir = create_model_dir(base_dir, subfolder)
+    #     self.dataset_name = dataset_name
 
-        # Save the model state dict
-        model_path = os.path.join(model_dir, f"{model_name}.pth")
-        torch.save(self.state_dict(), model_path)
+    #     # Save the model state dict
+    #     model_path = os.path.join(model_dir, f"{model_name}.pth")
+    #     torch.save(self.state_dict(), model_path)
 
-        # Create the hyperparameters dictionary from the config dataclass
-        hyperparameters = dataclasses.asdict(self.config)
+    #     # Create the hyperparameters dictionary from the config dataclass
+    #     hyperparameters = dataclasses.asdict(self.config)
 
-        # Remove the masses list from the hyperparameters
-        hyperparameters.pop("masses", None)
+    #     # Remove the masses list from the hyperparameters
+    #     hyperparameters.pop("masses", None)
 
-        # Append the train time to the hyperparameters
-        hyperparameters["train_duration"] = self.fit.duration
-        hyperparameters["N_train_samples"] = self.N_train_samples
-        hyperparameters["N_timesteps"] = self.N_timesteps
-        hyperparameters["dataset_name"] = self.dataset_name
+    #     # Append the train time to the hyperparameters
+    #     hyperparameters["train_duration"] = self.fit.duration
+    #     hyperparameters["N_train_samples"] = self.N_train_samples
+    #     hyperparameters["N_timesteps"] = self.N_timesteps
+    #     hyperparameters["dataset_name"] = self.dataset_name
 
-        # Save hyperparameters as a YAML file
-        hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
-        with open(hyperparameters_path, "w") as file:
-            yaml.dump(hyperparameters, file)
+    #     # Save hyperparameters as a YAML file
+    #     hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
+    #     with open(hyperparameters_path, "w") as file:
+    #         yaml.dump(hyperparameters, file)
 
-        # Save the losses as a numpy file
-        if self.train_loss is None:
-            self.train_loss = np.array([])
-        if self.test_loss is None:
-            self.test_loss = np.array([])
-        losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
-        np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
+    #     # Save the losses as a numpy file
+    #     if self.train_loss is None:
+    #         self.train_loss = np.array([])
+    #     if self.test_loss is None:
+    #         self.test_loss = np.array([])
+    #     losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
+    #     np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
 
-        print(f"Model, losses and hyperparameters saved to {model_dir}")
+    #     print(f"Model, losses and hyperparameters saved to {model_dir}")
 
     def setup_criterion(self) -> callable:
         """

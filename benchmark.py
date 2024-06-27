@@ -1,10 +1,9 @@
 from argparse import ArgumentParser
 
 from benchmark.bench_fcts import run_benchmark, compare_models
-from benchmark.bench_utils import check_surrogate
+from benchmark.bench_utils import check_surrogate, get_surrogate
 
 from utils import read_yaml_config, nice_print
-from surrogates.surrogate_classes import surrogate_classes
 
 
 def main(args):
@@ -16,9 +15,9 @@ def main(args):
 
     # Run benchmark for each surrogate model
     for surrogate_name in surrogates:
-        if surrogate_name in surrogate_classes:
+        surrogate_class = get_surrogate(surrogate_name)
+        if surrogate_class is not None:
             nice_print(f"Running benchmark for {surrogate_name}")
-            surrogate_class = surrogate_classes[surrogate_name]
             check_surrogate(surrogate_name, config)
             metrics = run_benchmark(surrogate_name, surrogate_class, config)
             all_metrics[surrogate_name] = metrics

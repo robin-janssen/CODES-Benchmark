@@ -44,24 +44,25 @@ def check_and_load_data(dataset_name: str, verbose: bool = True):
         #     raise Exception(
         #         f"'{mode}' data not found in {data_file_path}. Available data: {', '.join(list(f.keys()))}"
         #     )
-        for mode in ("train", "test"):
+        for mode in ("train", "test", "val"):
             if mode not in f:
                 raise Exception(
                     f"'{mode}' data not found in {data_file_path}. Available data: {', '.join(list(f.keys()))}"
                 )
 
-        train_data = f["train"][:]
-        test_data = f["test"][:]
-        # val_data = f["val"][:]
+        train_data = np.asarray(f["train"])
+        test_data = np.asarray(f["test"])
+        val_data = np.asarray(f["val"])
 
         # Check data shape
-        for data in (train_data, test_data):
+        for data in (train_data, test_data, val_data):
             if data.ndim != 3:
                 raise Exception(
                     "Data does not have the required shape (n_samples, n_timesteps, n_chemicals)."
                 )
 
-        n_samples, n_timesteps, n_chemicals = data.shape
+        _, n_timesteps, n_chemicals = data.shape
+        n_samples = train_data.shape[0] + test_data.shape[0] + val_data.shape[0]
         if verbose:
             print(
                 f"{mode.capitalize()} data loaded: {n_samples} samples, {n_timesteps} timesteps, {n_chemicals} chemicals."
@@ -90,12 +91,13 @@ def check_and_load_data(dataset_name: str, verbose: bool = True):
             if verbose:
                 print("Number of training samples not found in metadata.")
 
-    return train_data, test_data, None, timesteps, n_train_samples
+    return train_data, test_data, val_data, timesteps, n_train_samples
 
 
 def create_hdf5_dataset(
     train_data: np.ndarray,
     test_data: np.ndarray,
+    val_data: np.ndarray,
     dataset_name: str,
     data_dir: str = "data",
     timesteps: np.ndarray = None,
@@ -107,6 +109,7 @@ def create_hdf5_dataset(
     Args:
         train_data (np.ndarray): The training data array of shape (n_samples, n_timesteps, n_chemicals).
         test_data (np.ndarray): The test data array of shape (n_samples, n_timesteps, n_chemicals).
+        val_data (np.ndarray): The validation data array of shape (n_samples, n_timesteps, n_chemicals).
         dataset_name (str): The name of the dataset.
         data_dir (str): The directory to save the dataset in.
         timesteps (np.ndarray, optional): The timesteps array. If None, integer timesteps will be generated.
@@ -122,6 +125,10 @@ def create_hdf5_dataset(
     if test_data.ndim != 3:
         raise ValueError(
             "Test data does not have the required shape (n_samples, n_timesteps, n_chemicals)."
+        )
+    if val_data.ndim != 3:
+        raise ValueError(
+            "Validation data does not have the required shape (n_samples, n_timesteps, n_chemicals)."
         )
 
     # Generate timesteps if not provided
@@ -143,11 +150,15 @@ def create_hdf5_dataset(
     with h5py.File(data_file_path, "w") as f:
         f.create_dataset("train", data=train_data)
         f.create_dataset("test", data=test_data)
+        f.create_dataset("val", data=val_data)
         if timesteps is not None:
             f.create_dataset("timesteps", data=timesteps)
 
         # Store metadata
         f.attrs["n_train_samples"] = train_data.shape[0]
+        f.attrs["n_test_samples"] = test_data.shape[0]
+        f.attrs["n_val_samples"] = val_data.shape[0]
+        f.attrs["n_timesteps"] = train_data.shape[1]
         f.attrs["n_chemicals"] = train_data.shape[2]
 
     print(f"HDF5 dataset created at {data_file_path}")

@@ -173,11 +173,11 @@ class FullyConnected(AbstractSurrogateModel):
             scheduler.step()
 
             if test_loader is not None:
-                test_loss_hist[epoch], _, _ = self.predict(
+                preds, targets = self.predict(
                     test_loader,
-                    criterion,
                     timesteps,
                 )
+                test_loss_hist[epoch] = criterion(preds, targets).item()
 
         self.train_loss = train_loss_hist
         self.test_loss = test_loss_hist

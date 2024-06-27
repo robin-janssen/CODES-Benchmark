@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
+from typing import TypeVar
 import os
 import dataclasses
 import yaml
-from typing import Callable
 
 # from typing import Optional, Union
 
@@ -23,7 +23,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         self.test_loss = None
 
     @abstractmethod
-    def forward(self, inputs: tuple[Tensor, Tensor, Tensor]) -> Tensor:
+    def forward(self, inputs, timesteps: np.ndarray) -> Tensor:
         pass
 
     @abstractmethod
@@ -52,7 +52,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
     def predict(
         self,
         data_loader: DataLoader | Tensor,
-        criterion: nn.Module | Callable,
         timesteps: np.ndarray,
     ) -> tuple[float, np.ndarray, np.ndarray]:
         pass
@@ -75,9 +74,29 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
         hyperparameters = dataclasses.asdict(self.config)
         hyperparameters["dataset_name"] = dataset_name
+        # Clean up the hyperparameters
+        remove_keys = ["masses"]
+        for key in remove_keys:
+            hyperparameters.pop(key, None)
         for key in hyperparameters.keys():
             if isinstance(hyperparameters[key], nn.Module):
                 hyperparameters[key] = hyperparameters[key].__class__.__name__
+
+        # Check if the model has some attributes. If so, add them to the hyperparameters
+        check_attributes = [
+            "fit.duration",
+            "N_train_samples",
+            "N_timesteps",
+            "dataset_name",
+        ]
+        for attr in check_attributes:
+            if hasattr(self, attr):
+                hyperparameters[attr] = getattr(self, attr)
+
+        # hyperparameters["train_duration"] = self.fit.duration
+        # hyperparameters["N_train_samples"] = self.N_train_samples
+        # hyperparameters["N_timesteps"] = self.N_timesteps
+        # hyperparameters["dataset_name"] = self.dataset_name
 
         hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
         with open(hyperparameters_path, "w") as file:
@@ -111,3 +130,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
         )
         self.load_state_dict(torch.load(statedict_path))
         self.eval()
+
+
+SurrogateModel = TypeVar("SurrogateModel", bound=AbstractSurrogateModel)
