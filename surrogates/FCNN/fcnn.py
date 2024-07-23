@@ -1,19 +1,17 @@
-import dataclasses
-import os
 import torch
 import torch.nn as nn
-from torch.profiler import ProfilerActivity, record_function
+
+# from torch.profiler import ProfilerActivity, record_function
 import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
 from tqdm import tqdm
 from typing import Tuple, Optional
-import yaml
 
 from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.FCNN.fcnn_config import OConfig
 
-from utils import time_execution, create_model_dir
+from utils import time_execution
 
 
 class FullyConnectedNet(nn.Module):
@@ -30,7 +28,7 @@ class FullyConnectedNet(nn.Module):
 
 
 class FullyConnected(AbstractSurrogateModel):
-    def __init__(self, device: str = None):
+    def __init__(self, device: str | None = None):
         """
         Initialize the FullyConnected model with a configuration.
 
@@ -48,6 +46,7 @@ class FullyConnected(AbstractSurrogateModel):
         if device is not None:
             config.device = device
         self.device = config.device
+        self.N = config.output_size
         self.model = FullyConnectedNet(
             config.input_size,
             config.hidden_size,
@@ -71,66 +70,44 @@ class FullyConnected(AbstractSurrogateModel):
 
     def prepare_data(
         self,
-        dataset: np.ndarray,
+        dataset_train: np.ndarray,
+        dataset_test: np.ndarray,
+        dataset_val: np.ndarray | None,
         timesteps: np.ndarray,
         batch_size: int | None = None,
         shuffle: bool = True,
-    ) -> DataLoader:
+    ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
         """
         Prepare the data for the predict or fit methods.
+        Note: All datasets must have shape (N_samples, N_timesteps, N_chemicals).
 
         Args:
-            dataset (np.ndarray): The dataset to prepare (should be of shape (n_samples, n_timesteps, n_features)).
+            dataset_train (np.ndarray): The training data.
+            dataset_test (np.ndarray): The test data.
+            dataset_val (np.ndarray, optional): The validation data.
             timesteps (np.ndarray): The timesteps.
             batch_size (int, optional): The batch size.
             shuffle (bool, optional): Whether to shuffle the data.
 
         Returns:
-            dataloader: The DataLoader object containing the prepared data.
+            tuple: The training, test, and validation DataLoaders.
         """
         # Use batch size from the config if not provided
-        batch_size = self.config.batch_size if batch_size is None else batch_size
+        if batch_size is None:
+            batch_size = self.config.batch_size
 
-        # Concatenate timesteps to the dataset as an additional feature
-        n_samples, n_timesteps, n_features = dataset.shape
-        dataset_with_time = np.concatenate(
-            [
-                dataset,
-                np.tile(timesteps, (n_samples, 1)).reshape(n_samples, n_timesteps, 1),
-            ],
-            axis=2,
-        )
+        # Create the DataLoaders
+        dataloaders = []
+        for dataset in [dataset_train, dataset_test, dataset_val]:
+            if dataset is not None:
+                dataloader = self.create_dataloader(
+                    dataset, timesteps, batch_size, shuffle
+                )
+                dataloaders.append(dataloader)
+            else:
+                dataloaders.append(None)
 
-        # Flatten the dataset for FCNN
-        flattened_data = dataset_with_time.reshape(-1, n_features + 1)
-        flattened_targets = dataset.reshape(-1, n_features)
-
-        # Convert to PyTorch tensors
-        inputs_tensor = torch.tensor(flattened_data, dtype=torch.float32)
-        targets_tensor = torch.tensor(flattened_targets, dtype=torch.float32)
-
-        # Create a TensorDataset and DataLoader
-        # dataset = TensorDataset(
-        #     inputs_tensor.to(self.device), targets_tensor.to(self.device)
-        # )
-        dataset = TensorDataset(inputs_tensor, targets_tensor)
-
-        def worker_init_fn(worker_id):
-            torch_seed = torch.initial_seed()
-            np_seed = torch_seed // 2**32 - 1
-            np.random.seed(np_seed)
-
-        dataloader = DataLoader(
-            dataset,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            worker_init_fn=worker_init_fn,
-            num_workers=4,
-        )
-
-        self.dataset_size = len(dataloader.dataset)
-
-        return dataloader
+        return dataloaders[0], dataloaders[1], dataloaders[2]
 
     @time_execution
     def fit(
@@ -158,18 +135,16 @@ class FullyConnected(AbstractSurrogateModel):
         criterion = self.setup_criterion()
         optimizer, scheduler = self.setup_optimizer_and_scheduler()
 
-        train_loss_hist, test_loss_hist = self.setup_losses(
-            prev_train_loss=None, prev_test_loss=None, epochs=epochs
-        )
+        train_losses, test_losses, accuracies = self.setup_losses(epochs=epochs)
 
         epochs = self.config.num_epochs if epochs is None else epochs
 
         progress_bar = tqdm(range(epochs), desc="Training Progress")
         for epoch in progress_bar:
-            train_loss_hist[epoch] = self.epoch(train_loader, criterion, optimizer)
+            train_losses[epoch] = self.epoch(train_loader, criterion, optimizer)
 
             clr = optimizer.param_groups[0]["lr"]
-            progress_bar.set_postfix({"loss": train_loss_hist[epoch], "lr": clr})
+            progress_bar.set_postfix({"loss": train_losses[epoch], "lr": clr})
             scheduler.step()
 
             if test_loader is not None:
@@ -177,15 +152,20 @@ class FullyConnected(AbstractSurrogateModel):
                     test_loader,
                     timesteps,
                 )
-                test_loss_hist[epoch] = criterion(preds, targets).item()
+                test_losses[epoch] = criterion(preds, targets).item() / torch.numel(
+                    targets
+                )
+                accuracies[epoch] = 1.0 - torch.mean(
+                    torch.abs(preds - targets) / torch.abs(targets)
+                )
 
-        self.train_loss = train_loss_hist
-        self.test_loss = test_loss_hist
+        self.train_loss = train_losses
+        self.test_loss = test_losses
+        self.accuracy = accuracies
 
     def predict(
         self,
         data_loader: DataLoader,
-        criterion: nn.Module,
         timesteps: np.ndarray,
     ) -> Tuple[float, np.ndarray, np.ndarray]:
         """
@@ -193,7 +173,6 @@ class FullyConnected(AbstractSurrogateModel):
 
         Args:
             data_loader (DataLoader): The DataLoader object containing the test data.
-            criterion (nn.Module): The loss function.
             timesteps (np.ndarray): The timesteps array.
 
         Returns:
@@ -204,15 +183,12 @@ class FullyConnected(AbstractSurrogateModel):
         self.eval()
         self.to(device)
 
-        total_loss = 0
         dataset_size = len(data_loader.dataset)
 
         # Pre-allocate buffers for predictions and targets
-        preds = torch.zeros(
-            (dataset_size, self.config.output_size), dtype=torch.float32, device=device
-        )
+        preds = torch.zeros((dataset_size, self.N), dtype=torch.float32, device=device)
         targets = torch.zeros(
-            (dataset_size, self.config.output_size), dtype=torch.float32, device=device
+            (dataset_size, self.N), dtype=torch.float32, device=device
         )
 
         start_idx = 0
@@ -225,8 +201,6 @@ class FullyConnected(AbstractSurrogateModel):
                     batch_targets.to(device),
                 )
                 outputs = self((inputs, batch_targets))
-                loss = criterion(outputs, batch_targets)
-                total_loss += loss.item()
 
                 # Write predictions and targets to the pre-allocated buffers
                 preds[start_idx : start_idx + batch_size] = outputs
@@ -234,83 +208,77 @@ class FullyConnected(AbstractSurrogateModel):
 
                 start_idx += batch_size
 
-        preds = preds.cpu().numpy()
-        targets = targets.cpu().numpy()
+        preds = preds.reshape(-1, N_timesteps, self.N)
+        targets = targets.reshape(-1, N_timesteps, self.N)
 
-        # Calculate relative error
-        total_loss /= dataset_size * self.config.output_size
+        return preds, targets
 
-        preds = preds.reshape(-1, N_timesteps, self.config.output_size)
-        targets = targets.reshape(-1, N_timesteps, self.config.output_size)
+    # def save(
+    #     self,
+    #     model_name: str,
+    #     subfolder: str = "trained",
+    #     training_id: str = "run_1",
+    #     dataset_name: str = "dataset",
+    # ) -> None:
+    #     """
+    #     Save the trained model and hyperparameters.
 
-        return total_loss, preds, targets
+    #     Args:
+    #         model_name (str): The name of the model.
+    #         subfolder (str): The subfolder to save the model in.
+    #         training_id (str): A unique identifier to include in the directory name.
+    #         dataset_name (str): The name of the dataset.
+    #     """
+    #     base_dir = os.getcwd()
+    #     subfolder = os.path.join(subfolder, training_id, "FCNN")
+    #     model_dir = create_model_dir(base_dir, subfolder)
+    #     self.dataset_name = dataset_name
 
-    def save(
-        self,
-        model_name: str,
-        subfolder: str = "trained",
-        training_id: str = "run_1",
-        dataset_name: str = "dataset",
-    ) -> None:
-        """
-        Save the trained model and hyperparameters.
+    #     # Save the model state dict
+    #     model_path = os.path.join(model_dir, f"{model_name}.pth")
+    #     torch.save(self.state_dict(), model_path)
 
-        Args:
-            model_name (str): The name of the model.
-            subfolder (str): The subfolder to save the model in.
-            training_id (str): A unique identifier to include in the directory name.
-            dataset_name (str): The name of the dataset.
-        """
-        base_dir = os.getcwd()
-        subfolder = os.path.join(subfolder, training_id, "FCNN")
-        model_dir = create_model_dir(base_dir, subfolder)
-        self.dataset_name = dataset_name
+    #     # Create the hyperparameters dictionary from the config dataclass
+    #     hyperparameters = dataclasses.asdict(self.config)
 
-        # Save the model state dict
-        model_path = os.path.join(model_dir, f"{model_name}.pth")
-        torch.save(self.state_dict(), model_path)
+    #     # Append the train time to the hyperparameters
+    #     hyperparameters["train_duration"] = self.fit.duration
+    #     hyperparameters["N_train_samples"] = self.N_train_samples
+    #     hyperparameters["N_timesteps"] = self.N_timesteps
+    #     hyperparameters["dataset_name"] = self.dataset_name
 
-        # Create the hyperparameters dictionary from the config dataclass
-        hyperparameters = dataclasses.asdict(self.config)
+    #     # Save hyperparameters as a YAML file
+    #     hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
+    #     with open(hyperparameters_path, "w") as file:
+    #         yaml.dump(hyperparameters, file)
 
-        # Append the train time to the hyperparameters
-        hyperparameters["train_duration"] = self.fit.duration
-        hyperparameters["N_train_samples"] = self.N_train_samples
-        hyperparameters["N_timesteps"] = self.N_timesteps
-        hyperparameters["dataset_name"] = self.dataset_name
+    #     if self.train_loss is not None and self.test_loss is not None:
+    #         # Save the losses as a numpy file
+    #         losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
+    #         np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
 
-        # Save hyperparameters as a YAML file
-        hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
-        with open(hyperparameters_path, "w") as file:
-            yaml.dump(hyperparameters, file)
+    #     print(f"Model, losses and hyperparameters saved to {model_dir}")
 
-        if self.train_loss is not None and self.test_loss is not None:
-            # Save the losses as a numpy file
-            losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
-            np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
+    # def load(
+    #     self, training_id: str, surr_name: str, model_identifier: str
+    # ) -> torch.nn.Module:
+    #     """
+    #     Load a trained surrogate model.
 
-        print(f"Model, losses and hyperparameters saved to {model_dir}")
+    #     Args:
+    #         model: Instance of the surrogate model class.
+    #         training_id (str): The training identifier.
+    #         surr_name (str): The name of the surrogate model.
+    #         model_identifier (str): The identifier of the model (e.g., 'main').
 
-    def load(
-        self, training_id: str, surr_name: str, model_identifier: str
-    ) -> torch.nn.Module:
-        """
-        Load a trained surrogate model.
-
-        Args:
-            model: Instance of the surrogate model class.
-            training_id (str): The training identifier.
-            surr_name (str): The name of the surrogate model.
-            model_identifier (str): The identifier of the model (e.g., 'main').
-
-        Returns:
-            The loaded surrogate model.
-        """
-        statedict_path = os.path.join(
-            "trained", training_id, surr_name, f"{model_identifier}.pth"
-        )
-        self.load_state_dict(torch.load(statedict_path))
-        self.eval()
+    #     Returns:
+    #         The loaded surrogate model.
+    #     """
+    #     statedict_path = os.path.join(
+    #         "trained", training_id, surr_name, f"{model_identifier}.pth"
+    #     )
+    #     self.load_state_dict(torch.load(statedict_path))
+    #     self.eval()
 
     def setup_criterion(self) -> callable:
         """
@@ -356,6 +324,7 @@ class FullyConnected(AbstractSurrogateModel):
         self,
         prev_train_loss: Optional[np.ndarray] = None,
         prev_test_loss: Optional[np.ndarray] = None,
+        prev_accuracy: Optional[np.ndarray] = None,
         epochs: int | None = None,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -364,19 +333,23 @@ class FullyConnected(AbstractSurrogateModel):
         Args:
             prev_train_loss (np.ndarray): Previous training loss history.
             prev_test_loss (np.ndarray): Previous test loss history.
+            prev_accuracy (np.ndarray): Previous accuracy history.
+            epochs (int, optional): The number of epochs to train the model.
 
         Returns:
             tuple: The training and testing loss history arrays (both np.ndarrays).
         """
         epochs = self.config.num_epochs if epochs is None else epochs
         if self.config.pretrained_model_path is None:
-            train_loss_hist = np.zeros(epochs)
-            test_loss_hist = np.zeros(epochs)
+            train_losses = np.zeros(epochs)
+            test_losses = np.zeros(epochs)
+            accuracies = np.zeros(epochs)
         else:
-            train_loss_hist = np.concatenate((prev_train_loss, np.zeros(epochs)))
-            test_loss_hist = np.concatenate((prev_test_loss, np.zeros(epochs)))
+            train_losses = np.concatenate((prev_train_loss, np.zeros(epochs)))
+            test_losses = np.concatenate((prev_test_loss, np.zeros(epochs)))
+            accuracies = np.concatenate((prev_accuracy, np.zeros(epochs)))
 
-        return train_loss_hist, test_loss_hist
+        return train_losses, test_losses, accuracies
 
     def epoch(
         self,
@@ -398,7 +371,7 @@ class FullyConnected(AbstractSurrogateModel):
         self.train()
         total_loss = 0
         dataset_size = len(data_loader.dataset)
-        N_outputs = self.config.output_size
+
         for batch in data_loader:
             inputs, targets = batch
             inputs, targets = (
@@ -410,69 +383,119 @@ class FullyConnected(AbstractSurrogateModel):
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
-
             total_loss += loss.item()
 
-        total_loss /= dataset_size * N_outputs
+        total_loss /= dataset_size * self.N
         return total_loss
 
-    def epoch_profiled(
+    # def epoch_profiled(
+    #     self,
+    #     data_loader: DataLoader,
+    #     criterion: nn.Module,
+    #     optimizer: torch.optim.Optimizer,
+    # ) -> float:
+    #     """
+    #     Perform a single training step on the model.
+
+    #     Args:
+    #         data_loader (DataLoader): The DataLoader object containing the training data.
+    #         criterion (nn.Module): The loss function.
+    #         optimizer (torch.optim.Optimizer): The optimizer.
+
+    #     Returns:
+    #         float: The total loss for the training step.
+    #     """
+    #     self.train()
+    #     total_loss = 0
+
+    #     with torch.profiler.profile(
+    #         activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+    #         schedule=torch.profiler.schedule(wait=5, warmup=2, active=5, repeat=1),
+    #         on_trace_ready=torch.profiler.tensorboard_trace_handler("./log/HTA2"),
+    #         record_shapes=True,
+    #         profile_memory=True,
+    #         with_stack=True,
+    #         experimental_config=torch._C._profiler._ExperimentalConfig(verbose=True),
+    #     ) as prof:
+    #         i = 0
+    #         for batch in data_loader:
+    #             i += 1
+    #             if i >= 30:
+    #                 break
+    #             inputs, targets = batch
+    #             inputs, targets = inputs.to(self.device), targets.to(self.device)
+    #             optimizer.zero_grad()
+
+    #             with record_function("model_inference"):
+    #                 outputs = self.forward((inputs, targets))
+    #             torch.cuda.synchronize()
+
+    #             with record_function("loss_calculation"):
+    #                 loss = criterion(outputs, targets)
+
+    #             with record_function("backward_pass"):
+    #                 loss.backward()
+    #             torch.cuda.synchronize()
+
+    #             with record_function("optimizer_step"):
+    #                 optimizer.step()
+    #             torch.cuda.synchronize()
+
+    #             total_loss += loss.item()
+
+    #             prof.step()
+
+    #     total_loss /= self.dataset_size * self.N
+    #     return total_loss, prof
+
+    def create_dataloader(
         self,
-        data_loader: DataLoader,
-        criterion: nn.Module,
-        optimizer: torch.optim.Optimizer,
-    ) -> float:
+        dataset: np.ndarray,
+        timesteps: np.ndarray,
+        batch_size: int,
+        shuffle: bool = True,
+    ) -> DataLoader:
         """
-        Perform a single training step on the model.
+        Create a DataLoader from a dataset.
 
         Args:
-            data_loader (DataLoader): The DataLoader object containing the training data.
-            criterion (nn.Module): The loss function.
-            optimizer (torch.optim.Optimizer): The optimizer.
+            dataset (np.ndarray): The dataset.
+            timesteps (np.ndarray): The timesteps.
+            batch_size (int): The batch size.
+            shuffle (bool, optional): Whether to shuffle the data.
 
         Returns:
-            float: The total loss for the training step.
+            DataLoader: The DataLoader object.
         """
-        self.train()
-        total_loss = 0
-        N_outputs = self.config.output_size
+        # Concatenate timesteps to the dataset as an additional feature
+        n_samples, n_timesteps, n_features = dataset.shape
+        dataset_with_time = np.concatenate(
+            [
+                dataset,
+                np.tile(timesteps, (n_samples, 1)).reshape(n_samples, n_timesteps, 1),
+            ],
+            axis=2,
+        )
 
-        with torch.profiler.profile(
-            activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-            schedule=torch.profiler.schedule(wait=5, warmup=2, active=5, repeat=1),
-            on_trace_ready=torch.profiler.tensorboard_trace_handler("./log/HTA2"),
-            record_shapes=True,
-            profile_memory=True,
-            with_stack=True,
-            experimental_config=torch._C._profiler._ExperimentalConfig(verbose=True),
-        ) as prof:
-            i = 0
-            for batch in data_loader:
-                i += 1
-                if i >= 30:
-                    break
-                inputs, targets = batch
-                inputs, targets = inputs.to(self.device), targets.to(self.device)
-                optimizer.zero_grad()
+        # Flatten the dataset for FCNN
+        flattened_data = dataset_with_time.reshape(-1, n_features + 1)
+        flattened_targets = dataset.reshape(-1, n_features)
 
-                with record_function("model_inference"):
-                    outputs = self.forward((inputs, targets))
-                torch.cuda.synchronize()
+        # Convert to PyTorch tensors
+        inputs_tensor = torch.tensor(flattened_data, dtype=torch.float32)
+        targets_tensor = torch.tensor(flattened_targets, dtype=torch.float32)
 
-                with record_function("loss_calculation"):
-                    loss = criterion(outputs, targets)
+        dataset = TensorDataset(inputs_tensor, targets_tensor)
 
-                with record_function("backward_pass"):
-                    loss.backward()
-                torch.cuda.synchronize()
+        def worker_init_fn(worker_id):
+            torch_seed = torch.initial_seed()
+            np_seed = torch_seed // 2**32 - 1
+            np.random.seed(np_seed)
 
-                with record_function("optimizer_step"):
-                    optimizer.step()
-                torch.cuda.synchronize()
-
-                total_loss += loss.item()
-
-                prof.step()
-
-        total_loss /= self.dataset_size * N_outputs
-        return total_loss, prof
+        return DataLoader(
+            dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            worker_init_fn=worker_init_fn,
+            num_workers=4,
+        )

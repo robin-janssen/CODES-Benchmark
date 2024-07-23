@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from typing import Optional
 import numpy as np
+from scipy.spatial.distance import cdist
 import os
 
 
@@ -161,83 +162,6 @@ def plot_dynamic_correlation(
     # plt.show()
 
     plt.close()
-
-
-# def plot_generalization_errors(
-#     surr_name: str,
-#     conf: dict,
-#     metrics: np.array,
-#     model_errors: np.array,
-#     interpolate: bool = True,
-#     save: bool = False,
-# ) -> None:
-#     """
-#     Plot the interpolation or extrapolation errors of a model.
-
-#     Args:
-#         surr_name (str): The name of the surrogate model.
-#         conf (dict): The configuration dictionary.
-#         metrics (np.array): The interpolation intervals or extrapolation cutoffs.
-#         model_errors (np.array): The mean absolute errors of the model.
-#         interpolate (bool): Whether to plot interpolation errors. If False, extrapolation errors are plotted.
-#         save (bool): Whether to save the plot.
-
-#     Returns:
-#         None
-#     """
-#     xlabel = "Interpolation Interval" if interpolate else "Extrapolation Cutoff"
-#     title = "Interpolation Errors" if interpolate else "Extrapolation Errors"
-#     filename = "interpolation_errors.png" if interpolate else "extrapolation_errors.png"
-#     plt.scatter(metrics, model_errors)
-#     plt.xlabel(xlabel)
-#     plt.ylabel("Mean Absolute Error")
-#     plt.yscale("log")
-#     plt.title(title)
-
-#     if save and conf:
-#         save_plot(plt, filename, conf, surr_name)
-
-#     # plt.show()
-
-#     plt.close()
-
-
-# def plot_sparse_errors(
-#     surr_name: str,
-#     conf: dict,
-#     n_train_samples: np.ndarray,
-#     model_errors: np.ndarray,
-#     title: Optional[str] = None,
-#     save: bool = False,
-# ) -> None:
-#     """
-#     Plot the sparse training errors of a model.
-
-#     Args:
-#         surr_name: The name of the surrogate model.
-#         conf: The configuration dictionary.
-#         n_train_samples: Numpy array containing the number of training samples.
-#         model_errors: Numpy array containing the model errors.
-#         title: Optional title for the plot.
-#         save: Whether to save the plot as a file.
-
-#     Returns:
-#         None
-#     """
-#     plt.scatter(n_train_samples, model_errors)
-#     plt.xlabel("Number of Training Samples")
-#     plt.ylabel("Mean Absolute Error")
-#     plt.yscale("log")
-#     if title is None:
-#         title = "Sparse Training Errors"
-#     plt.title(title)
-
-#     if save and conf:
-#         save_plot(plt, "sparse_errors.png", conf, surr_name)
-
-#     # plt.show()
-
-#     plt.close()
 
 
 def plot_generalization_errors(
@@ -739,6 +663,72 @@ def plot_loss_comparison(
     plt.show()
 
 
+def plot_accuracy_comparison(
+    accuracies: tuple[np.ndarray, ...],
+    labels: tuple[str, ...],
+    config: dict,
+    save: bool = True,
+) -> None:
+    """
+    Plot the accuracies for different surrogate models.
+
+    Args:
+        accuracies (tuple): Tuple of accuracy arrays for each surrogate model.
+        labels (tuple): Tuple of labels for each surrogate model.
+        config (dict): Configuration dictionary.
+        save (bool): Whether to save the plot.
+    """
+    plt.figure(figsize=(12, 6))
+
+    for accuracy, label in zip(accuracies, labels):
+        plt.plot(accuracy, label=label)
+
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.title("Comparison of Model Accuracies")
+    plt.legend()
+    plt.grid(True)
+
+    if save and config:
+        save_plot(plt, "comparison_main_model_accuracies.png", config)
+
+    plt.show()
+
+
+def plot_accuracy_comparison_train_duration(
+    accuracies: tuple[np.ndarray, ...],
+    labels: tuple[str, ...],
+    train_durations: tuple[float, ...],
+    config: dict,
+    save: bool = True,
+) -> None:
+    """
+    Plot the accuracies for different surrogate models.
+
+    Args:
+        accuracies (tuple): Tuple of accuracy arrays for each surrogate model.
+        labels (tuple): Tuple of labels for each surrogate model.
+        config (dict): Configuration dictionary.
+        save (bool): Whether to save the plot.
+    """
+    plt.figure(figsize=(12, 6))
+
+    for accuracy, label, train_duration in zip(accuracies, labels, train_durations):
+        epoch_times = np.linspace(0, train_duration, len(accuracy))
+        plt.plot(epoch_times, accuracy, label=label)
+
+    plt.xlabel("Time (s)")
+    plt.ylabel("Accuracy")
+    plt.title("Comparison of Model Accuracies over Training Duration")
+    plt.legend()
+    plt.grid(True)
+
+    if save and config:
+        save_plot(plt, "comparison_main_model_accuracies_time.png", config)
+
+    plt.show()
+
+
 def plot_relative_errors(
     mean_errors: dict[str, np.ndarray],
     median_errors: dict[str, np.ndarray],
@@ -870,4 +860,163 @@ def plot_generalization_error_comparison(
         save_plot(plt, filename, config)
 
     plt.show()
+    plt.close()
+
+
+def plot_error_correlation_heatmap(
+    surr_name: str,
+    conf: dict,
+    preds_std: np.ndarray,
+    errors: np.ndarray,
+    save: bool = False,
+) -> None:
+    """
+    Plot the correlation between predictive uncertainty and prediction errors using a heatmap.
+
+    Args:
+        surr_name (str): The name of the surrogate model.
+        conf (dict): The configuration dictionary.
+        preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
+        errors (np.ndarray): Prediction errors.
+        save (bool, optional): Whether to save the plot as a file.
+    """
+    # Normalize the errors
+    # errors = errors / np.abs(errors).max()
+
+    plt.figure(figsize=(10, 6))
+    heatmap, xedges, yedges = np.histogram2d(
+        preds_std.flatten(), errors.flatten(), bins=50
+    )
+    plt.imshow(
+        np.log10(heatmap.T + 1.0),
+        origin="lower",
+        aspect="auto",
+        extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]],
+        cmap="viridis",
+    )
+    plt.colorbar(label=r"$\log_{10}$(Counts + 1)")
+    plt.xlabel("Predictive Uncertainty")
+    plt.ylabel("Prediction Error")
+    plt.title(
+        "Correlation between Predictive Uncertainty and Prediction Errors (Heatmap)"
+    )
+
+    if save and conf:
+        save_plot(plt, "uncertainty_vs_errors_heatmap.png", conf, surr_name)
+
+    plt.close()
+
+
+def plot_dynamic_correlation_heatmap(
+    surr_name: str,
+    conf: dict,
+    preds_std: np.ndarray,
+    errors: np.ndarray,
+    save: bool = False,
+) -> None:
+    """
+    Plot the correlation between predictive uncertainty and prediction errors using a heatmap.
+
+    Args:
+        surr_name (str): The name of the surrogate model.
+        conf (dict): The configuration dictionary.
+        preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
+        errors (np.ndarray): Prediction errors.
+        save (bool, optional): Whether to save the plot as a file.
+    """
+    # Normalize the errors
+    # errors = errors / np.abs(errors).max()
+
+    plt.figure(figsize=(10, 6))
+    heatmap, xedges, yedges = np.histogram2d(
+        preds_std.flatten(), errors.flatten(), bins=50
+    )
+    plt.imshow(
+        np.log10(heatmap.T + 1.0),
+        origin="lower",
+        aspect="auto",
+        extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]],
+        cmap="viridis",
+    )
+    plt.colorbar(label=r"$\log_{10}$(Counts + 1)")
+    plt.xlabel("Predictive Uncertainty")
+    plt.ylabel("Prediction Error (Normalized)")
+    plt.title("Correlation between Gradients and prediction errors")
+
+    if save and conf:
+        save_plot(plt, "dynamic_correlation_heatmap.png", conf, surr_name)
+
+    plt.close()
+
+
+def rbf_kernel(x, y, bandwidth):
+    """
+    Compute the RBF (Gaussian) kernel between two arrays.
+
+    Args:
+        x (np.ndarray): First array.
+        y (np.ndarray): Second array.
+        bandwidth (float): Bandwidth parameter for the RBF kernel.
+
+    Returns:
+        np.ndarray: The RBF kernel matrix.
+    """
+    sq_dists = cdist(x, y, "sqeuclidean")
+    return np.exp(-sq_dists / (2 * bandwidth**2))
+
+
+def plot_correlation_KDE(
+    surr_name: str,
+    conf: dict,
+    preds_std: np.ndarray,
+    errors: np.ndarray,
+    save: bool = False,
+    bandwidth: float = 0.01,
+) -> None:
+    """
+    Plot the correlation between predictive uncertainty and prediction errors using a KDE plot.
+
+    Args:
+        surr_name (str): The name of the surrogate model.
+        conf (dict): The configuration dictionary.
+        preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
+        errors (np.ndarray): Prediction errors.
+        save (bool, optional): Whether to save the plot as a file.
+        bandwidth (float, optional): Bandwidth for the RBF kernel.
+    """
+    # Normalize the errors
+    errors = errors / np.abs(errors).max()
+
+    # Prepare data
+    data = np.vstack([preds_std.flatten(), errors.flatten()]).T
+
+    # Create grid for evaluation
+    x_min, x_max = data[:, 0].min(), data[:, 0].max()
+    y_min, y_max = data[:, 1].min(), data[:, 1].max()
+    x_grid, y_grid = np.linspace(x_min, x_max, 50), np.linspace(y_min, y_max, 50)
+    x_mesh, y_mesh = np.meshgrid(x_grid, y_grid)
+    grid_points = np.vstack([x_mesh.ravel(), y_mesh.ravel()]).T
+
+    # Compute KDE
+    kde_values = (
+        rbf_kernel(grid_points, data, bandwidth).mean(axis=1).reshape(x_mesh.shape)
+    )
+
+    # Plot KDE
+    plt.figure(figsize=(10, 6))
+    plt.imshow(
+        np.log10(kde_values.T),
+        origin="lower",
+        aspect="auto",
+        extent=[x_min, x_max, y_min, y_max],
+        cmap="viridis",
+    )
+    plt.colorbar(label=r"$\log_{10}$(Density)")
+    plt.xlabel("Predictive Uncertainty")
+    plt.ylabel("Prediction Error (Normalized)")
+    plt.title("Correlation between Predictive Uncertainty and Prediction Errors (KDE)")
+
+    if save and conf:
+        save_plot(plt, "correlation_KDE.png", conf, surr_name)
+
     plt.close()

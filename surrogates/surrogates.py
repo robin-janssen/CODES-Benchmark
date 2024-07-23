@@ -84,7 +84,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
         # Check if the model has some attributes. If so, add them to the hyperparameters
         check_attributes = [
-            "fit.duration",
             "N_train_samples",
             "N_timesteps",
             "dataset_name",
@@ -93,10 +92,9 @@ class AbstractSurrogateModel(ABC, nn.Module):
             if hasattr(self, attr):
                 hyperparameters[attr] = getattr(self, attr)
 
-        # hyperparameters["train_duration"] = self.fit.duration
-        # hyperparameters["N_train_samples"] = self.N_train_samples
-        # hyperparameters["N_timesteps"] = self.N_timesteps
-        # hyperparameters["dataset_name"] = self.dataset_name
+        self.train_duration = self.fit.duration
+
+        hyperparameters["train_duration"] = self.train_duration
 
         hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
         with open(hyperparameters_path, "w") as file:
@@ -107,8 +105,16 @@ class AbstractSurrogateModel(ABC, nn.Module):
             self.train_loss = np.array([])
         if self.test_loss is None:
             self.test_loss = np.array([])
+        if self.accuracy is None:
+            self.accuracy = np.array([])
         losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
-        np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
+        np.savez(
+            losses_path,
+            train_loss=self.train_loss,
+            test_loss=self.test_loss,
+            accuracy=self.accuracy,
+            train_duration=self.train_duration,
+        )
 
         print(f"Model, losses and hyperparameters saved to {model_dir}")
 

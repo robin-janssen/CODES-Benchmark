@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 from typing import Tuple, Optional, TypeVar
 
@@ -9,7 +9,6 @@ from surrogates.surrogates import AbstractSurrogateModel
 
 # Use the below import to adjust the config class to the specific model
 from surrogates.DeepONet.deeponet_config import OChemicalTrainConfig as MultiONetConfig
-from data import create_dataloader_deeponet
 
 from utils import time_execution
 from .utils import mass_conservation_loss
@@ -146,7 +145,7 @@ class MultiONet(OperatorNetwork):
         timesteps: np.ndarray,
         batch_size: int | None = None,
         shuffle: bool = True,
-    ) -> DataLoader:
+    ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
         """
         Prepare the data for the predict or fit methods.
         Note: All datasets must have shape (N_samples, N_timesteps, N_chemicals).
@@ -160,7 +159,7 @@ class MultiONet(OperatorNetwork):
             shuffle (bool, optional): Whether to shuffle the data.
 
         Returns:
-            dataloader: The DataLoader object containing the prepared data.
+            tuple: The training, test, and validation DataLoaders.
         """
         # Use batch size from the config if not provided
         if batch_size is None:
@@ -170,7 +169,7 @@ class MultiONet(OperatorNetwork):
         dataloaders = []
         for dataset in [dataset_train, dataset_test, dataset_val]:
             if dataset is not None:
-                dataloader = create_dataloader_deeponet(
+                dataloader = self.create_dataloader(
                     dataset,
                     timesteps,
                     batch_size,
@@ -209,18 +208,16 @@ class MultiONet(OperatorNetwork):
         criterion = self.setup_criterion()
         optimizer, scheduler = self.setup_optimizer_and_scheduler()
 
-        train_loss_hist, test_loss_hist = self.setup_losses(
-            prev_train_loss=None, prev_test_loss=None, epochs=epochs
-        )
+        train_losses, test_losses, accuracies = self.setup_losses(epochs=epochs)
 
         epochs = self.config.num_epochs if epochs is None else epochs
 
         progress_bar = tqdm(range(epochs), desc="Training Progress")
         for epoch in progress_bar:
-            train_loss_hist[epoch] = self.epoch(train_loader, criterion, optimizer)
+            train_losses[epoch] = self.epoch(train_loader, criterion, optimizer)
 
             clr = optimizer.param_groups[0]["lr"]
-            progress_bar.set_postfix({"loss": train_loss_hist[epoch], "lr": clr})
+            progress_bar.set_postfix({"loss": train_losses[epoch], "lr": clr})
             scheduler.step()
 
             if test_loader is not None:
@@ -228,26 +225,31 @@ class MultiONet(OperatorNetwork):
                     test_loader,
                     timesteps,
                 )
-                test_loss_hist[epoch] = criterion(preds, targets).item()
+                test_losses[epoch] = criterion(preds, targets).item() / torch.numel(
+                    targets
+                )
+                accuracies[epoch] = 1.0 - torch.mean(
+                    torch.abs(preds - targets) / torch.abs(targets)
+                )
 
-        self.train_loss = train_loss_hist
-        self.test_loss = test_loss_hist
+        self.train_loss = train_losses
+        self.test_loss = test_losses
+        self.accuracy = accuracies
 
     def predict(
         self,
         data_loader: DataLoader,
         timesteps: np.ndarray,
-    ) -> Tuple[float, np.ndarray, np.ndarray]:
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Evaluate the model on the test data.
 
         Args:
             data_loader (DataLoader): The DataLoader object containing the test data.
-            criterion (nn.Module): The loss function.
             N_timesteps (int): The number of timesteps.
 
         Returns:
-            tuple: The total loss, outputs, and targets.
+            tuple: The predictions and targets.
         """
         N_timesteps = len(timesteps)
         device = self.device
@@ -284,58 +286,6 @@ class MultiONet(OperatorNetwork):
         targets = targets.reshape(-1, N_timesteps, self.N)
 
         return preds, targets
-
-    # def save(
-    #     self,
-    #     model_name: str,
-    #     subfolder: str = "trained",
-    #     training_id: str = "run_1",
-    #     dataset_name: str = "dataset",
-    # ) -> None:
-    #     """
-    #     Save the trained model and hyperparameters.
-
-    #     Args:
-    #         model_name (str): The name of the model.
-    #         subfolder (str): The subfolder to save the model in.
-    #         training_id (str): A unique identifier to include in the directory name.
-    #         dataset_name (str): The name of the dataset.
-    #     """
-    #     base_dir = os.getcwd()
-    #     subfolder = os.path.join(subfolder, training_id, "DeepONet")
-    #     model_dir = create_model_dir(base_dir, subfolder)
-    #     self.dataset_name = dataset_name
-
-    #     # Save the model state dict
-    #     model_path = os.path.join(model_dir, f"{model_name}.pth")
-    #     torch.save(self.state_dict(), model_path)
-
-    #     # Create the hyperparameters dictionary from the config dataclass
-    #     hyperparameters = dataclasses.asdict(self.config)
-
-    #     # Remove the masses list from the hyperparameters
-    #     hyperparameters.pop("masses", None)
-
-    #     # Append the train time to the hyperparameters
-    #     hyperparameters["train_duration"] = self.fit.duration
-    #     hyperparameters["N_train_samples"] = self.N_train_samples
-    #     hyperparameters["N_timesteps"] = self.N_timesteps
-    #     hyperparameters["dataset_name"] = self.dataset_name
-
-    #     # Save hyperparameters as a YAML file
-    #     hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
-    #     with open(hyperparameters_path, "w") as file:
-    #         yaml.dump(hyperparameters, file)
-
-    #     # Save the losses as a numpy file
-    #     if self.train_loss is None:
-    #         self.train_loss = np.array([])
-    #     if self.test_loss is None:
-    #         self.test_loss = np.array([])
-    #     losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
-    #     np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
-
-    #     print(f"Model, losses and hyperparameters saved to {model_dir}")
 
     def setup_criterion(self) -> callable:
         """
@@ -390,6 +340,7 @@ class MultiONet(OperatorNetwork):
         self,
         prev_train_loss: Optional[np.ndarray] = None,
         prev_test_loss: Optional[np.ndarray] = None,
+        prev_accuracy: Optional[np.ndarray] = None,
         epochs: int | None = None,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -398,6 +349,7 @@ class MultiONet(OperatorNetwork):
         Args:
             prev_train_loss (np.ndarray): Previous training loss history.
             prev_test_loss (np.ndarray): Previous test loss history.
+            prev_accuracy (np.ndarray): Previous accuracy history.
             epochs (int, optional): The number of epochs to train the model.
 
         Returns:
@@ -405,13 +357,15 @@ class MultiONet(OperatorNetwork):
         """
         epochs = self.config.num_epochs if epochs is None else epochs
         if self.config.pretrained_model_path is None:
-            train_loss_hist = np.zeros(epochs)
-            test_loss_hist = np.zeros(epochs)
+            train_losses = np.zeros(epochs)
+            test_losses = np.zeros(epochs)
+            accuracies = np.zeros(epochs)
         else:
-            train_loss_hist = np.concatenate((prev_train_loss, np.zeros(epochs)))
-            test_loss_hist = np.concatenate((prev_test_loss, np.zeros(epochs)))
+            train_losses = np.concatenate((prev_train_loss, np.zeros(epochs)))
+            test_losses = np.concatenate((prev_test_loss, np.zeros(epochs)))
+            accuracies = np.concatenate((prev_accuracy, np.zeros(epochs)))
 
-        return train_loss_hist, test_loss_hist
+        return train_losses, test_losses, accuracies
 
     def epoch(
         self,
@@ -433,7 +387,6 @@ class MultiONet(OperatorNetwork):
         self.train()
         total_loss = 0
         dataset_size = len(data_loader.dataset)
-        N_outputs = self.config.N_outputs
 
         for batch in data_loader:
             branch_input, trunk_input, targets = batch
@@ -442,14 +395,89 @@ class MultiONet(OperatorNetwork):
                 trunk_input.to(self.device),
                 targets.to(self.device),
             )
-
             optimizer.zero_grad()
             outputs = self((branch_input, trunk_input, targets))
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
-
             total_loss += loss.item()
 
-        total_loss /= dataset_size * N_outputs
+        total_loss /= dataset_size * self.N
         return total_loss
+
+    def create_dataloader(
+        self,
+        data,
+        timesteps,
+        batch_size=32,
+        shuffle=False,
+        normalize=False,
+        fraction=1,
+    ):
+        """
+        Create a DataLoader with optional fractional subsampling for chemical evolution data for DeepONet.
+
+        :param data: 3D numpy array with shape (num_samples, len(timesteps), num_chemicals)
+        :param timesteps: 1D numpy array of timesteps.
+        :param fraction: Fraction of the grid points to sample.
+        :param batch_size: Batch size for the DataLoader.
+        :param shuffle: Whether to shuffle the data.
+        :param normalize: Whether to normalize the data.#
+        :param device: Device to use.
+        :return: A DataLoader object.
+        """
+        # Initialize lists to store the inputs and targets
+        branch_inputs = []
+        trunk_inputs = []
+        targets = []
+
+        # Iterate through the grid to select the samples
+        if fraction == 1:
+            for i in range(data.shape[0]):
+                for j in range(data.shape[1]):
+                    branch_inputs.append(data[i, 0, :])
+                    trunk_inputs.append([timesteps[j]])
+                    targets.append(data[i, j, :])
+        else:
+            for i in range(data.shape[0]):
+                for j in range(data.shape[1]):
+                    if np.random.uniform(0, 1) < fraction:
+                        branch_inputs.append(data[i, :, 0])
+                        trunk_inputs.append([timesteps[j]])
+                        targets.append(data[i, :, j])
+
+        # Convert to PyTorch tensors
+        branch_inputs_tensor = torch.tensor(
+            np.array(branch_inputs), dtype=torch.float32
+        )
+        trunk_inputs_tensor = torch.tensor(np.array(trunk_inputs), dtype=torch.float32)
+        targets_tensor = torch.tensor(np.array(targets), dtype=torch.float32)
+
+        if normalize:
+            branch_inputs_tensor = (
+                branch_inputs_tensor - branch_inputs_tensor.mean()
+            ) / branch_inputs_tensor.std()
+            trunk_inputs_tensor = (
+                trunk_inputs_tensor - trunk_inputs_tensor.mean()
+            ) / trunk_inputs_tensor.std()
+            targets_tensor = (
+                targets_tensor - targets_tensor.mean()
+            ) / targets_tensor.std()
+
+        # Create a TensorDataset and DataLoader
+        dataset = TensorDataset(
+            branch_inputs_tensor, trunk_inputs_tensor, targets_tensor
+        )
+
+        def worker_init_fn(worker_id):
+            torch_seed = torch.initial_seed()
+            np_seed = torch_seed // 2**32 - 1
+            np.random.seed(np_seed)
+
+        return DataLoader(
+            dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            worker_init_fn=worker_init_fn,
+            num_workers=4,
+        )

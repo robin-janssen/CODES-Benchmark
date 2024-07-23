@@ -16,9 +16,13 @@ from .bench_plots import (
     plot_uncertainty_vs_errors,
     plot_surr_losses,
     plot_loss_comparison,
+    # plot_accuracy_comparison,
+    plot_accuracy_comparison_train_duration,
     plot_relative_errors,
     inference_time_bar_plot,
     plot_generalization_error_comparison,
+    plot_error_correlation_heatmap,
+    plot_dynamic_correlation_heatmap,
 )
 from .bench_utils import (
     count_trainable_parameters,
@@ -247,6 +251,9 @@ def evaluate_dynamic_accuracy(
 
     # Plot correlation for averaged species
     plot_dynamic_correlation(surr_name, conf, avg_gradient, avg_error, save=True)
+    plot_dynamic_correlation_heatmap(
+        surr_name, conf, gradients, prediction_errors, save=True
+    )
 
     # Ensure species names are provided
     species_names = (
@@ -677,6 +684,7 @@ def evaluate_UQ(
     )
     plot_average_uncertainty_over_time(surr_name, conf, preds_std, timesteps, save=True)
     plot_uncertainty_vs_errors(surr_name, conf, preds_std, errors, save=True)
+    plot_error_correlation_heatmap(surr_name, conf, preds_std, errors, save=True)
 
     # Store metrics
     UQ_metrics = {
@@ -692,6 +700,7 @@ def compare_models(metrics: dict, config: dict):
     # Compare accuracies
     if config["accuracy"]:
         compare_relative_errors(metrics, config)
+        compare_accuracies(metrics, config)
         if config["losses"]:
             compare_main_losses(metrics, config)
 
@@ -735,7 +744,7 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
     test_losses = []
     labels = []
 
-    for surrogate, surrogate_metrics in metrics.items():
+    for surrogate, _ in metrics.items():
         training_id = config["training_id"]
         base_dir = f"trained/{training_id}/{surrogate}"
 
@@ -754,6 +763,38 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
 
     # Plot the comparison of main model losses
     plot_loss_comparison(tuple(train_losses), tuple(test_losses), tuple(labels), config)
+
+
+def compare_accuracies(metrics: dict, config: dict) -> None:
+    """
+    Compare the accuracies of different surrogate models over the course of training.
+
+    Args:
+        metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
+
+    Returns:
+        None
+    """
+    accuracies = []
+    labels = []
+    train_durations = []
+
+    for surrogate, surrogate_metrics in metrics.items():
+        training_id = config["training_id"]
+        base_dir = f"trained/{training_id}/{surrogate}"
+
+        loss_path = os.path.join(base_dir, f"{surrogate.lower()}_main_losses.npz")
+        with np.load(loss_path) as data:
+            accuracy = data["accuracy"]
+            train_duration = data["train_duration"]
+
+        accuracies.append(accuracy)
+        labels.append(surrogate)
+        train_durations.append(train_duration)
+
+    # plot_accuracy_comparison(accuracies, labels, config)
+    plot_accuracy_comparison_train_duration(accuracies, labels, train_durations, config)
 
 
 def compare_relative_errors(metrics: Dict[str, dict], config: dict) -> None:

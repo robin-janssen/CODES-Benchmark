@@ -144,6 +144,7 @@ class NeuralODE(AbstractSurrogateModel):
             )
         losses = torch.empty((epochs, len(train_loader)))
         test_losses = torch.empty((epochs))
+        accuracy = torch.empty((epochs))
         # TODO: calculate test loss
         progress_bar = tqdm(range(epochs), desc="Training Progress")
 
@@ -174,25 +175,28 @@ class NeuralODE(AbstractSurrogateModel):
                 self.model.train()
                 loss = self.model.total_loss(preds, targets)
                 test_losses[epoch] = loss
+                accuracy[epoch] = 1.0 - torch.mean(
+                    torch.abs(preds - targets) / torch.abs(targets)
+                )
 
         self.train_loss = torch.mean(losses, dim=1)
         self.test_loss = test_losses
+        self.accuracy = accuracy
 
     def predict(
         self,
         data_loader: DataLoader,
         timesteps: np.ndarray | torch.Tensor,
-    ) -> tuple[float, np.ndarray, np.ndarray]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Makes predictions using the trained model.
 
         Args:
             data_loader (DataLoader): The DataLoader object containing the data.
-            criterion (nn.Module | Callable): The loss function to use for prediction.
             timesteps (np.ndarray | torch.Tensor): The array of timesteps.
 
         Returns:
-            tuple[float, np.ndarray, np.ndarray]: The total loss, the predictions, and the targets.
+            tuple[torch.Tensor, torch.Tensor]: A tuple containing the predictions and the targets.
         """
 
         self.model = self.model.to(self.config.device)
