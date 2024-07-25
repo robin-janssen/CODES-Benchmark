@@ -53,7 +53,12 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
     metrics = {}
 
     full_train_data, full_test_data, full_val_data, timesteps, N_train_samples = (
-        check_and_load_data(conf["dataset"])
+        check_and_load_data(
+            conf["dataset"]["name"],
+            verbose=False,
+            log=conf["dataset"]["log_transform"],
+            normalisation_mode=conf["dataset"]["normalise"],
+        )
     )
 
     # Create dataloader for the test data

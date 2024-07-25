@@ -3,13 +3,20 @@ import h5py
 import numpy as np
 
 
-def check_and_load_data(dataset_name: str, verbose: bool = True):
+def check_and_load_data(
+    dataset_name: str,
+    verbose: bool = True,
+    log: bool = True,
+    normalisation_mode: str = "standardise",
+):
     """
     Check the specified dataset and load the data based on the mode (train or test).
 
     Args:
         dataset_name (str): The name of the dataset.
         verbose (bool): Whether to print information about the loaded data.
+        log (bool): Whether to log-transform the data (log10).
+        normalisation_mode (str): The normalization mode, either "disable", "minmax", or "standardise".
 
     Returns:
         tuple: Loaded data and timesteps.
@@ -50,9 +57,34 @@ def check_and_load_data(dataset_name: str, verbose: bool = True):
                     f"'{mode}' data not found in {data_file_path}. Available data: {', '.join(list(f.keys()))}"
                 )
 
+        # Load data
         train_data = np.asarray(f["train"])
         test_data = np.asarray(f["test"])
         val_data = np.asarray(f["val"])
+
+        # Log transformation
+        if log:
+            try:
+                train_data = np.log10(train_data)
+                test_data = np.log10(test_data)
+                val_data = np.log10(val_data)
+                if verbose:
+                    print("Data log-transformed.")
+            except ValueError:
+                print(
+                    "Data contains non-positive values and cannot be log-transformed."
+                )
+
+        if normalisation_mode not in ["disable", "minmax", "standardise"]:
+            raise ValueError(
+                "Normalization mode must be either 'disable', 'minmax' or 'standardise'"
+            )
+        if not normalisation_mode == "disable":
+            train_data, test_data, val_data = normalize_data(
+                train_data, test_data, val_data, mode=normalisation_mode
+            )
+            if verbose:
+                print(f"Data normalized (mode: {normalisation_mode}).")
 
         # Check data shape
         for data in (train_data, test_data, val_data):
@@ -76,7 +108,7 @@ def check_and_load_data(dataset_name: str, verbose: bool = True):
                     f"Timesteps loaded from data.hdf5: {timesteps.shape[0]} timesteps."
                 )
         else:
-            timesteps = np.linspace(0, n_timesteps - 1, n_timesteps)
+            timesteps = np.linspace(0, 1, n_timesteps)
             if verbose:
                 print(
                     f"Timesteps not found in data.hdf5. Generated integer timesteps: {n_timesteps} timesteps."
@@ -92,6 +124,76 @@ def check_and_load_data(dataset_name: str, verbose: bool = True):
                 print("Number of training samples not found in metadata.")
 
     return train_data, test_data, val_data, timesteps, n_train_samples
+
+
+def normalize_data(
+    train_data: np.ndarray,
+    test_data: np.ndarray = None,
+    val_data: np.ndarray = None,
+    mode: str = "standardise",
+) -> tuple:
+    """
+    Normalize the data based on the training data statistics.
+
+    Args:
+        train_data (np.ndarray): Training data array.
+        test_data (np.ndarray, optional): Test data array.
+        val_data (np.ndarray, optional): Validation data array.
+        mode (str): Normalization mode, either "minmax" or "standardise".
+
+    Returns:
+        tuple: Normalized training data, test data, and validation data.
+    """
+    if mode not in ["minmax", "standardise"]:
+        raise ValueError("Mode must be either 'minmax' or 'standardise'")
+
+    if mode == "minmax":
+        # Compute min and max on the training data
+        data_min = np.min(train_data, axis=0)
+        data_max = np.max(train_data, axis=0)
+
+        # Normalize the training data
+        train_data_normalized = 2 * (train_data - data_min) / (data_max - data_min)
+
+        if test_data is not None:
+            test_data_normalized = 2 * (test_data - data_min) / (data_max - data_min)
+        else:
+            test_data_normalized = None
+
+        if val_data is not None:
+            val_data_normalized = 2 * (val_data - data_min) / (data_max - data_min)
+        else:
+            val_data_normalized = None
+
+    elif mode == "standardise":
+        # Compute mean and std on the training data
+        mean = np.mean(train_data, axis=0)
+        std = np.std(train_data, axis=0)
+
+        # Standardize the training data
+        train_data_normalized = (train_data - mean) / std
+
+        if test_data is not None:
+            test_data_normalized = (test_data - mean) / std
+        else:
+            test_data_normalized = None
+
+        if val_data is not None:
+            val_data_normalized = (val_data - mean) / std
+        else:
+            val_data_normalized = None
+
+    return train_data_normalized, test_data_normalized, val_data_normalized
+
+
+# Example usage
+train_data = np.random.rand(100, 10)
+test_data = np.random.rand(20, 10)
+val_data = np.random.rand(10, 10)
+
+train_data_norm, test_data_norm, val_data_norm = normalize_data(
+    train_data, test_data, val_data, mode="standardise"
+)
 
 
 def create_hdf5_dataset(
@@ -171,7 +273,7 @@ def get_data_subset(full_train_data, full_test_data, timesteps, mode, metric, co
     Args:
         full_train_data (np.ndarray): The full training data.
         full_test_data (np.ndarray): The full test data.
-        osu_timesteps (np.ndarray): The timesteps.
+        timesteps (np.ndarray): The timesteps.
         mode (str): The benchmark mode (e.g., "accuracy", "interpolation", "extrapolation", "sparse", "UQ").
         metric (str): The specific metric for the mode (e.g., interval, cutoff, factor, batch size).
         config (dict): The configuration dictionary.

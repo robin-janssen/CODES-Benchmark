@@ -52,7 +52,10 @@ def train_and_save_model(
 
     # Load full data
     full_train_data, full_test_data, _, timesteps, _ = check_and_load_data(
-        config["dataset"], verbose=False
+        config["dataset"]["name"],
+        verbose=False,
+        log=config["dataset"]["log_transform"],
+        normalisation_mode=config["dataset"]["normalise"],
     )
 
     # Get the appropriate data subset
@@ -84,7 +87,7 @@ def train_and_save_model(
         model_name=model_name,
         training_id=config["training_id"],
         subfolder="trained",
-        dataset_name=config["dataset"],
+        dataset_name=config["dataset"]["name"],
     )
 
 
