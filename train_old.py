@@ -66,7 +66,7 @@ def train_and_save_model(
     model.save(
         model_name=model_name,
         training_id=config["training_id"],
-        dataset_name=config["dataset"],
+        dataset_name=config["dataset"]["name"],
     )
 
 
@@ -81,8 +81,8 @@ def train_surrogate(config, surrogate_class, surrogate_name):
     """
 
     # Load data
-    full_train_data, full_test_data, _, osu_timesteps, _ = check_and_load_data(
-        config["dataset"]
+    full_train_data, full_test_data, _, timesteps, _ = check_and_load_data(
+        config["dataset"]["name"], verbose=False, log=config["log"]
     )
 
     # Just for testing purposes
@@ -99,7 +99,7 @@ def train_surrogate(config, surrogate_class, surrogate_name):
             surrogate_name,
             full_train_data,
             full_test_data,
-            osu_timesteps,
+            timesteps,
             surrogate_class,
             config,
         )
@@ -115,7 +115,7 @@ def train_surrogate(config, surrogate_class, surrogate_name):
                 surrogate_name,
                 train_data,
                 test_data,
-                osu_timesteps[::interval],
+                timesteps[::interval],
                 surrogate_class,
                 config,
                 extra_info=str(interval),
@@ -132,7 +132,7 @@ def train_surrogate(config, surrogate_class, surrogate_name):
                 surrogate_name,
                 train_data,
                 test_data,
-                osu_timesteps[:cutoff],
+                timesteps[:cutoff],
                 surrogate_class,
                 config,
                 extra_info=str(cutoff),
@@ -149,7 +149,7 @@ def train_surrogate(config, surrogate_class, surrogate_name):
                 surrogate_name,
                 train_data,
                 test_data,
-                osu_timesteps,
+                timesteps,
                 surrogate_class,
                 config,
                 extra_info=str(factor),
@@ -169,7 +169,7 @@ def train_surrogate(config, surrogate_class, surrogate_name):
                 surrogate_name,
                 shuffled_train_data,
                 full_test_data,
-                osu_timesteps,
+                timesteps,
                 surrogate_class,
                 config,
                 extra_info=str(i + 1),
