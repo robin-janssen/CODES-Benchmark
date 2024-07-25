@@ -118,6 +118,8 @@ class MultiONet(OperatorNetwork):
         Args:
             inputs (tuple): The input tuple containing branch_input, trunk_input, and targets.
             Note: The targets are not used in the forward pass, but are included for compatibility with DataLoader.
+            timesteps (np.ndarray, optional): The timesteps.
+            Note: The timesteps are not used in the forward pass, but are included for compatibility with the benchmarking code.
 
         Returns:
             torch.Tensor: Output tensor of the model.
@@ -165,16 +167,25 @@ class MultiONet(OperatorNetwork):
         if batch_size is None:
             batch_size = self.config.batch_size
 
-        # Create the DataLoaders
         dataloaders = []
-        for dataset in [dataset_train, dataset_test, dataset_val]:
+        # Create the train dataloader
+        dataloader_train = self.create_dataloader(
+            dataset_train,
+            timesteps,
+            batch_size,
+            shuffle,
+            train=True,
+        )
+        dataloaders.append(dataloader_train)
+
+        # Create the test and validation dataloaders
+        for dataset in [dataset_test, dataset_val]:
             if dataset is not None:
                 dataloader = self.create_dataloader(
                     dataset,
                     timesteps,
                     batch_size,
                     shuffle,
-                    self.device,
                 )
                 dataloaders.append(dataloader)
             else:
@@ -410,9 +421,10 @@ class MultiONet(OperatorNetwork):
         data,
         timesteps,
         batch_size=32,
-        shuffle=False,
-        normalize=False,
-        fraction=1,
+        shuffle: bool = False,
+        normalize: bool = True,
+        fraction: float = 1,
+        train: bool = False,
     ):
         """
         Create a DataLoader with optional fractional subsampling for chemical evolution data for DeepONet.
@@ -424,6 +436,7 @@ class MultiONet(OperatorNetwork):
         :param shuffle: Whether to shuffle the data.
         :param normalize: Whether to normalize the data.#
         :param device: Device to use.
+        :param train: Whether the provided data is training data. If so, the mean and standard deviation are computed.
         :return: A DataLoader object.
         """
         # Initialize lists to store the inputs and targets
@@ -453,16 +466,15 @@ class MultiONet(OperatorNetwork):
         trunk_inputs_tensor = torch.tensor(np.array(trunk_inputs), dtype=torch.float32)
         targets_tensor = torch.tensor(np.array(targets), dtype=torch.float32)
 
+        if train:
+            self.b_mean = branch_inputs_tensor.mean()
+            self.b_std = branch_inputs_tensor.std()
+            self.target_mean = targets_tensor.mean()
+            self.target_std = targets_tensor.std()
+
         if normalize:
-            branch_inputs_tensor = (
-                branch_inputs_tensor - branch_inputs_tensor.mean()
-            ) / branch_inputs_tensor.std()
-            trunk_inputs_tensor = (
-                trunk_inputs_tensor - trunk_inputs_tensor.mean()
-            ) / trunk_inputs_tensor.std()
-            targets_tensor = (
-                targets_tensor - targets_tensor.mean()
-            ) / targets_tensor.std()
+            branch_inputs_tensor = (branch_inputs_tensor - self.b_mean) / self.b_std
+            targets_tensor = (targets_tensor - self.target_mean) / self.target_std
 
         # Create a TensorDataset and DataLoader
         dataset = TensorDataset(

@@ -160,7 +160,7 @@ def evaluate_accuracy(
     # Use the model's predict method
     criterion = torch.nn.MSELoss(reduction="sum")
     preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
-    mean_squared_error = criterion(preds, targets).item()
+    mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
     preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
 
     # preds = preds.transpose(0, 2, 1)
@@ -395,7 +395,7 @@ def evaluate_interpolation(
         )
         model.load(training_id, surr_name, model_identifier=model_id)
         preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
-        mean_squared_error = criterion(preds, targets).item()
+        mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         interpolation_metrics[f"interval {interval}"] = {"MSE": mean_squared_error}
 
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
@@ -464,7 +464,7 @@ def evaluate_extrapolation(
         )
         model.load(training_id, surr_name, model_identifier=model_id)
         preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
-        mean_squared_error = criterion(preds, targets).item()
+        mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         extrapolation_metrics[f"cutoff {cutoff}"] = {"MSE": mean_squared_error}
 
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
@@ -537,7 +537,7 @@ def evaluate_sparse(
         )
         model.load(training_id, surr_name, model_identifier=model_id)
         preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
-        mean_squared_error = criterion(preds, targets).item()
+        mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         n_train_samples = N_train_samples // factor
         sparse_metrics[f"factor {factor}"] = {
             "MSE": mean_squared_error,
@@ -606,12 +606,12 @@ def evaluate_batchsize(
         model_id = f"{surr_name.lower()}_batchsize_{batch_size}"
         model.load(training_id, surr_name, model_identifier=model_id)
         preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
-        mean_squared_error = criterion(preds, targets).item()
+        mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         batch_metrics[f"batch_size {batch_size}"] = {"MSE": mean_squared_error}
 
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
-        mean_absolute_errors = np.mean(np.abs(preds - targets), axis=(0, 2))
-        errors[i] = mean_absolute_errors
+        mean_relative_errors = np.mean(np.abs((preds - targets) / targets), axis=(0, 2))
+        errors[i] = mean_relative_errors
 
     # Extract metrics and errors for plotting
     model_errors = np.array([metric["MSE"] for metric in batch_metrics.values()])

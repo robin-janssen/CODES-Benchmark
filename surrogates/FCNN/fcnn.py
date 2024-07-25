@@ -23,8 +23,20 @@ class FullyConnectedNet(nn.Module):
         layers.append(nn.Linear(hidden_size, output_size))
         self.network = nn.Sequential(*layers)
 
-    def forward(self, x):
-        return self.network(x)
+    def forward(
+        self,
+        inputs: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        One forward pass through the network.
+
+        Args:
+            inputs (torch.Tensor): The input tensor.
+
+        Returns:
+            torch.Tensor: The output tensor of the model.
+        """
+        return self.network(inputs)
 
 
 class FullyConnected(AbstractSurrogateModel):
@@ -54,13 +66,19 @@ class FullyConnected(AbstractSurrogateModel):
             config.num_hidden_layers,
         ).to(config.device)
 
-    def forward(self, inputs: Tuple) -> torch.Tensor:
+    def forward(
+        self,
+        inputs: Tuple,
+        timesteps: np.ndarray | None = None,
+    ) -> torch.Tensor:
         """
         Forward pass for the FullyConnected model.
 
         Args:
-            inputs: Tuple containing the input tensor and the target tensor.
+            inputs (Tuple[torch.Tensor, torch.Tensor]): The input tensor and the target tensor.
             Note: The targets are not used in the forward pass but are included for compatibility with the DataLoader.
+            timesteps (np.ndarray, optional): The timesteps array.
+            Note: The timesteps are not used in the forward pass but are included for compatibility with the benchmarking code.
 
         Returns:
             torch.Tensor: Output tensor of the model.
@@ -453,7 +471,8 @@ class FullyConnected(AbstractSurrogateModel):
         dataset: np.ndarray,
         timesteps: np.ndarray,
         batch_size: int,
-        shuffle: bool = True,
+        shuffle: bool = False,
+        normalize: bool = True,
     ) -> DataLoader:
         """
         Create a DataLoader from a dataset.
@@ -484,6 +503,12 @@ class FullyConnected(AbstractSurrogateModel):
         # Convert to PyTorch tensors
         inputs_tensor = torch.tensor(flattened_data, dtype=torch.float32)
         targets_tensor = torch.tensor(flattened_targets, dtype=torch.float32)
+
+        if normalize:
+            inputs_tensor = (inputs_tensor - inputs_tensor.mean()) / inputs_tensor.std()
+            targets_tensor = (
+                targets_tensor - targets_tensor.mean()
+            ) / targets_tensor.std()
 
         dataset = TensorDataset(inputs_tensor, targets_tensor)
 

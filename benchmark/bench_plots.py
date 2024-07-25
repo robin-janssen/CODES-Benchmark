@@ -212,8 +212,9 @@ def plot_generalization_errors(
     plt.xlabel(xlabel)
     if mode == "sparse" or mode == "batchsize":
         plt.xscale("log")
-    plt.ylabel("Mean Absolute Error")
+    plt.ylabel("Mean Squared Error")
     plt.yscale("log")
+    plt.grid(True, which="major", linestyle="--", linewidth=0.5)
     plt.title(title)
     plt.legend()
 
@@ -259,17 +260,19 @@ def plot_average_errors_over_time(
             "Invalid mode. Choose from 'interpolation', 'extrapolation', 'sparse', 'batchsize'."
         )
 
+    colors = plt.cm.viridis(np.linspace(0, 1, errors.shape[0]))
+
     if mode == "sparse":
         for i, metric in enumerate(metrics):
             label = f"{metric} {labels[mode]}"
-            plt.plot(timesteps, errors[i], label=label)
+            plt.plot(timesteps, errors[i], label=label, color=colors[i])
     else:
         for i, metric in enumerate(metrics):
             label = f"{labels[mode]} {metric}"
-            plt.plot(timesteps, errors[i], label=label)
+            plt.plot(timesteps, errors[i], label=label, color=colors[i])
 
     plt.xlabel("Timesteps")
-    plt.ylabel("Errors")
+    plt.ylabel("Mean Squared Error")
     title = f"{mode.capitalize()} Errors Over Time"
     filename = f"{mode}_errors_over_time.png"
 
@@ -939,7 +942,7 @@ def plot_dynamic_correlation_heatmap(
         cmap="viridis",
     )
     plt.colorbar(label=r"$\log_{10}$(Counts + 1)")
-    plt.xlabel("Predictive Uncertainty")
+    plt.xlabel("Absolute Gradient (Normalized)")
     plt.ylabel("Prediction Error (Normalized)")
     plt.title("Correlation between Gradients and prediction errors")
 
