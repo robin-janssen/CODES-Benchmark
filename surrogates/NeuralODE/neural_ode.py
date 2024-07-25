@@ -39,7 +39,8 @@ class NeuralODE(AbstractSurrogateModel):
     def __init__(self, device: str | None = None):
         super().__init__()
         self.config: Config = Config()
-        # TODO find out why the config is loaded incorrectly after the first training
+        # TODO find out why the config is loaded incorrectly after the first
+        # training and fix! The list is ordered the other way around...
         self.config.coder_layers = [32, 16, 8]
         if device is not None:
             self.config.device = device
