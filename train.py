@@ -1,7 +1,7 @@
 import os
 import time
 
-os.environ["TQDM_DISABLE"] = "1"
+# os.environ["TQDM_DISABLE"] = "1"
 
 from queue import Queue
 from threading import Thread

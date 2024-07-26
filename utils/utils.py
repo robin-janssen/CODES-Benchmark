@@ -111,3 +111,9 @@ def nice_print(message: str, width: int = 80) -> None:
     print(
         f"\n{border}\n|{' ' * padding_left}{message}{' ' * padding_right}|\n{border}\n"
     )
+
+
+def worker_init_fn(worker_id):
+    torch_seed = torch.initial_seed()
+    np_seed = torch_seed // 2**32 - 1
+    np.random.seed(np_seed)

@@ -11,7 +11,7 @@ from typing import Tuple, Optional
 from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.FCNN.fcnn_config import OConfig
 
-from utils import time_execution
+from utils import time_execution, worker_init_fn
 
 
 class FullyConnectedNet(nn.Module):
@@ -511,11 +511,6 @@ class FullyConnected(AbstractSurrogateModel):
             ) / targets_tensor.std()
 
         dataset = TensorDataset(inputs_tensor, targets_tensor)
-
-        def worker_init_fn(worker_id):
-            torch_seed = torch.initial_seed()
-            np_seed = torch_seed // 2**32 - 1
-            np.random.seed(np_seed)
 
         return DataLoader(
             dataset,
