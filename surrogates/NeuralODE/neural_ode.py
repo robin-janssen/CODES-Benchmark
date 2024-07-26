@@ -10,7 +10,7 @@ from tqdm import tqdm
 from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.NeuralODE.neural_ode_config import NeuralODEConfigOSU as Config
 from surrogates.NeuralODE.utilities import ChemDataset
-from utils import time_execution
+from utils import time_execution, worker_init_fn
 
 
 class NeuralODE(AbstractSurrogateModel):
@@ -92,21 +92,30 @@ class NeuralODE(AbstractSurrogateModel):
 
         dset_train = ChemDataset(dataset_train, device=self.config.device)
         dataloader_train = DataLoader(
-            dset_train, batch_size=batch_size, shuffle=shuffle
+            dset_train,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            worker_init_fn=worker_init_fn,
         )
 
         dataloader_test = None
         if dataset_test is not None:
             dset_test = ChemDataset(dataset_test, device=self.config.device)
             dataloader_test = DataLoader(
-                dset_test, batch_size=batch_size, shuffle=shuffle
+                dset_test,
+                batch_size=batch_size,
+                shuffle=shuffle,
+                worker_init_fn=worker_init_fn,
             )
 
         dataloader_val = None
         if dataset_val is not None:
             dset_val = ChemDataset(dataset_val, device=device)
             dataloader_val = DataLoader(
-                dset_val, batch_size=batch_size, shuffle=shuffle
+                dset_val,
+                batch_size=batch_size,
+                shuffle=shuffle,
+                worker_init_fn=worker_init_fn,
             )
 
         return dataloader_train, dataloader_test, dataloader_val

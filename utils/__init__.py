@@ -5,6 +5,7 @@ from .utils import (
     load_and_save_config,
     set_random_seeds,
     nice_print,
+    worker_init_fn,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "load_and_save_config",
     "set_random_seeds",
     "nice_print",
+    "worker_init_fn",
 ]

@@ -10,7 +10,7 @@ from surrogates.surrogates import AbstractSurrogateModel
 # Use the below import to adjust the config class to the specific model
 from surrogates.DeepONet.deeponet_config import OChemicalTrainConfig as MultiONetConfig
 
-from utils import time_execution
+from utils import time_execution, worker_init_fn
 from .utils import mass_conservation_loss
 
 
@@ -480,11 +480,6 @@ class MultiONet(OperatorNetwork):
         dataset = TensorDataset(
             branch_inputs_tensor, trunk_inputs_tensor, targets_tensor
         )
-
-        def worker_init_fn(worker_id):
-            torch_seed = torch.initial_seed()
-            np_seed = torch_seed // 2**32 - 1
-            np.random.seed(np_seed)
 
         return DataLoader(
             dataset,
