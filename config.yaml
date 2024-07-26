@@ -1,9 +1,9 @@
 # Global settings for the benchmark
-training_id: "investigate_normalization"
-surrogates: ["MultiONet", "NeuralODE"]
+training_id: "normalisation_test"
+surrogates: ["FullyConnected", "MultiONet", "NeuralODE"]
 dataset: 
   name: "osu2008"
-  log10_transform: True
+  log10_transform: False
   normalise: "standardise" # "standardise", "minmax", "disable"
 devices: ["cuda:5"] # ["cuda:5", "cuda:6", "cuda:7", "cuda:8"]
 seed: 42
@@ -11,29 +11,29 @@ seed: 42
 # Details of the benchmarking
 losses: True
 accuracy: True
-dynamic_accuracy: True
-timing: True
-compute: True
+dynamic_accuracy: False
+timing: False
+compute: False
 interpolation: 
-  enabled: True
+  enabled: False
   intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
 extrapolation: 
-  enabled: True
+  enabled: False
   cutoffs: [50, 60, 70, 80, 90]
 sparse: 
-  enabled: True
+  enabled: False
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
   enabled: False
   sizes: [16, 64, 256, 1024, 4096]
   subset: 1  # Factor by which to slice the dataset (just for faster training)
 UQ: 
-  enabled: True
+  enabled: False
   n_models: 5  # Number of models for deep ensemble
 compare: True # Whether to compare the surrogates
 
 # Optional global settings
 # Leave empty if the quantities should be set per surrogate
 
-batch_size: [16]
-epochs: [200, 200, 2000]
+batch_size: 16
+epochs: [3, 3, 3] #[200, 300, 10000]

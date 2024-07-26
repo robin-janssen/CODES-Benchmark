@@ -439,28 +439,21 @@ def plot_uncertainty_vs_errors(
     plt.close()
 
 
-def plot_surr_losses(surr_name: str, conf: dict, timesteps: np.ndarray) -> None:
+def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -> None:
     """
     Plot the training and test losses for the surrogate model.
 
     Args:
+        model: Instance of the surrogate model class.
         surr_name (str): The name of the surrogate model.
         conf (dict): The configuration dictionary.
         timesteps (np.ndarray): The timesteps array.
     """
     training_id = conf["training_id"]
-    base_dir = f"trained/{training_id}/{surr_name}"
 
     def load_losses(model_identifier: str):
-        loss_path = os.path.join(base_dir, f"{model_identifier}_losses.npz")
-        with np.load(loss_path) as data:
-            train_loss = data["train_loss"]
-            test_loss = data["test_loss"]
-            if train_loss.size == 0:
-                train_loss = None
-            if test_loss.size == 0:
-                test_loss = None
-        return train_loss, test_loss
+        model.load(training_id, surr_name, model_identifier=model_identifier)
+        return model.train_loss, model.test_loss
 
     # Main model losses
     if conf["accuracy"]:
