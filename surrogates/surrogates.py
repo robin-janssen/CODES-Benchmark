@@ -61,20 +61,16 @@ class AbstractSurrogateModel(ABC, nn.Module):
         model_name: str,
         subfolder: str,
         training_id: str,
-        dataset_name: str,
+        data_params: dict,
     ) -> None:
 
+        # Make the model directory
         base_dir = os.getcwd()
         subfolder = os.path.join(subfolder, training_id, self.__class__.__name__)
         model_dir = create_model_dir(base_dir, subfolder)
 
-        # Save the model state dict
-        model_path = os.path.join(model_dir, f"{model_name}.pth")
-        torch.save(self.state_dict(), model_path)
-
+        # Load and clean the hyperparameters
         hyperparameters = dataclasses.asdict(self.config)
-        hyperparameters["dataset_name"] = dataset_name
-        # Clean up the hyperparameters
         remove_keys = ["masses"]
         for key in remove_keys:
             hyperparameters.pop(key, None)
@@ -86,35 +82,48 @@ class AbstractSurrogateModel(ABC, nn.Module):
         check_attributes = [
             "N_train_samples",
             "N_timesteps",
-            "dataset_name",
         ]
         for attr in check_attributes:
             if hasattr(self, attr):
                 hyperparameters[attr] = getattr(self, attr)
 
+        # Add some additional information to the model and hyperparameters
         self.train_duration = self.fit.duration
-
         hyperparameters["train_duration"] = self.train_duration
+        for key, value in data_params.items():
+            setattr(self, key, value)
+            hyperparameters[key] = value
 
+        # Save the hyperparameters as a yaml file
         hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
         with open(hyperparameters_path, "w") as file:
             yaml.dump(hyperparameters, file)
 
-        # Save the losses as a numpy file
-        if self.train_loss is None:
-            self.train_loss = np.array([])
-        if self.test_loss is None:
-            self.test_loss = np.array([])
-        if self.accuracy is None:
-            self.accuracy = np.array([])
-        losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
-        np.savez(
-            losses_path,
-            train_loss=self.train_loss,
-            test_loss=self.test_loss,
-            accuracy=self.accuracy,
-            train_duration=self.train_duration,
-        )
+        # # Save the losses as a numpy file
+        # if self.train_loss is None:
+        #     self.train_loss = np.array([])
+        # if self.test_loss is None:
+        #     self.test_loss = np.array([])
+        # if self.accuracy is None:
+        #     self.accuracy = np.array([])
+        # losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
+        # np.savez(
+        #     losses_path,
+        #     train_loss=self.train_loss,
+        #     test_loss=self.test_loss,
+        #     accuracy=self.accuracy,
+        #     train_duration=self.train_duration,
+        # )
+
+        save_attributes = {
+            k: v
+            for k, v in self.__dict__.items()
+            if k != "state_dict" and not k.startswith("_")
+        }
+        model_dict = {"state_dict": self.state_dict(), "attributes": save_attributes}
+
+        model_path = os.path.join(model_dir, f"{model_name}.pth")
+        torch.save(model_dict, model_path)
 
         print(f"Model, losses and hyperparameters saved to {model_dir}")
 
@@ -131,10 +140,13 @@ class AbstractSurrogateModel(ABC, nn.Module):
         Returns:
             The loaded surrogate model.
         """
-        statedict_path = os.path.join(
+        model_dict_path = os.path.join(
             "trained", training_id, surr_name, f"{model_identifier}.pth"
         )
-        self.load_state_dict(torch.load(statedict_path))
+        model_dict = torch.load(model_dict_path)
+        self.load_state_dict(model_dict["state_dict"])
+        for key, value in model_dict["attributes"].items():
+            setattr(self, key, value)
         self.eval()
 
 

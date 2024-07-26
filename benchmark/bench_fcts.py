@@ -28,6 +28,7 @@ from .bench_utils import (
     count_trainable_parameters,
     measure_memory_footprint,
     write_metrics_to_yaml,
+    get_surrogate,
 )
 from data import check_and_load_data
 
@@ -52,11 +53,11 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
     # Placeholder for metrics
     metrics = {}
 
-    full_train_data, full_test_data, full_val_data, timesteps, N_train_samples = (
+    full_train_data, full_test_data, full_val_data, timesteps, N_train_samples, _ = (
         check_and_load_data(
             conf["dataset"]["name"],
             verbose=False,
-            log=conf["dataset"]["log_transform"],
+            log=conf["dataset"]["log10_transform"],
             normalisation_mode=conf["dataset"]["normalise"],
         )
     )
@@ -72,7 +73,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
 
     # Plot training losses
     if conf["losses"]:
-        plot_surr_losses(surr_name, conf, timesteps)
+        plot_surr_losses(model, surr_name, conf, timesteps)
 
     # Accuracy benchmark
     if conf["accuracy"]:
@@ -748,23 +749,23 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
     train_losses = []
     test_losses = []
     labels = []
+    device = config["devices"]
+    device = device[0] if isinstance(device, list) else device
 
-    for surrogate, _ in metrics.items():
+    for surr_name, _ in metrics.items():
         training_id = config["training_id"]
-        base_dir = f"trained/{training_id}/{surrogate}"
+        surrogate_class = get_surrogate(surr_name)
+        model = surrogate_class(device=device)
 
         def load_losses(model_identifier: str):
-            loss_path = os.path.join(base_dir, f"{model_identifier}_losses.npz")
-            with np.load(loss_path) as data:
-                train_loss = data["train_loss"]
-                test_loss = data["test_loss"]
-            return train_loss, test_loss
+            model.load(training_id, surr_name, model_identifier=model_identifier)
+            return model.train_loss, model.test_loss
 
         # Load main model losses
-        main_train_loss, main_test_loss = load_losses(f"{surrogate.lower()}_main")
+        main_train_loss, main_test_loss = load_losses(f"{surr_name.lower()}_main")
         train_losses.append(main_train_loss)
         test_losses.append(main_test_loss)
-        labels.append(surrogate)
+        labels.append(surr_name)
 
     # Plot the comparison of main model losses
     plot_loss_comparison(tuple(train_losses), tuple(test_losses), tuple(labels), config)
@@ -784,19 +785,18 @@ def compare_accuracies(metrics: dict, config: dict) -> None:
     accuracies = []
     labels = []
     train_durations = []
+    device = config["devices"]
+    device = device[0] if isinstance(device, list) else device
 
-    for surrogate, surrogate_metrics in metrics.items():
+    for surr_name, _ in metrics.items():
         training_id = config["training_id"]
-        base_dir = f"trained/{training_id}/{surrogate}"
-
-        loss_path = os.path.join(base_dir, f"{surrogate.lower()}_main_losses.npz")
-        with np.load(loss_path) as data:
-            accuracy = data["accuracy"]
-            train_duration = data["train_duration"]
-
-        accuracies.append(accuracy)
-        labels.append(surrogate)
-        train_durations.append(train_duration)
+        surrogate_class = get_surrogate(surr_name)
+        model = surrogate_class(device=device)
+        model_identifier = f"{surr_name.lower()}_main"
+        model.load(training_id, surr_name, model_identifier=model_identifier)
+        accuracies.append(model.accuracy)
+        labels.append(surr_name)
+        train_durations.append(model.train_duration)
 
     # plot_accuracy_comparison(accuracies, labels, config)
     plot_accuracy_comparison_train_duration(accuracies, labels, train_durations, config)

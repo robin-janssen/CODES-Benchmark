@@ -1,4 +1,5 @@
 import os
+import time
 
 os.environ["TQDM_DISABLE"] = "1"
 
@@ -42,21 +43,27 @@ def train_and_save_model(
     surr_idx = config["surrogates"].index(surrogate_name)
 
     # Determine the batch size and number of epochs
-    batch_size = (
-        config["batch_size"][surr_idx]
-        if isinstance(config["batch_size"], list)
-        else config["batch_size"]
-    )
+    if isinstance(config["batch_size"], list):
+        if len(config["batch_size"]) != len(config["surrogates"]):
+            raise ValueError(
+                "The number of provided batch sizes must match the number of surrogate models."
+            )
+        else:
+            batch_size = config["batch_size"][surr_idx]
+    else:
+        batch_size = config["batch_size"]
     batch_size = int(metric) if mode == "batch_size" else batch_size
     epochs = epochs if epochs is not None else config["epochs"]
 
     # Load full data
-    full_train_data, full_test_data, _, timesteps, _ = check_and_load_data(
+    t0 = time.time()
+    full_train_data, full_test_data, _, timesteps, _, data_params = check_and_load_data(
         config["dataset"]["name"],
         verbose=False,
-        log=config["dataset"]["log_transform"],
+        log=config["dataset"]["log10_transform"],
         normalisation_mode=config["dataset"]["normalise"],
     )
+    print(f"Data loaded in {time.time() - t0:.2f} seconds")
 
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(
@@ -87,7 +94,7 @@ def train_and_save_model(
         model_name=model_name,
         training_id=config["training_id"],
         subfolder="trained",
-        dataset_name=config["dataset"]["name"],
+        data_params=data_params,
     )
 
 

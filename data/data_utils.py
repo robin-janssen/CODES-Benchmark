@@ -75,12 +75,13 @@ def check_and_load_data(
                     "Data contains non-positive values and cannot be log-transformed."
                 )
 
+        # Normalization
         if normalisation_mode not in ["disable", "minmax", "standardise"]:
             raise ValueError(
                 "Normalization mode must be either 'disable', 'minmax' or 'standardise'"
             )
         if not normalisation_mode == "disable":
-            train_data, test_data, val_data = normalize_data(
+            data_params, train_data, test_data, val_data = normalize_data(
                 train_data, test_data, val_data, mode=normalisation_mode
             )
             if verbose:
@@ -123,7 +124,9 @@ def check_and_load_data(
             if verbose:
                 print("Number of training samples not found in metadata.")
 
-    return train_data, test_data, val_data, timesteps, n_train_samples
+        data_params["dataset_name"] = dataset_name
+
+    return train_data, test_data, val_data, timesteps, n_train_samples, data_params
 
 
 def normalize_data(
@@ -152,6 +155,8 @@ def normalize_data(
         data_min = np.min(train_data, axis=0)
         data_max = np.max(train_data, axis=0)
 
+        data_params = {"min": data_min, "max": data_max, "mode": mode}
+
         # Normalize the training data
         train_data_normalized = 2 * (train_data - data_min) / (data_max - data_min)
 
@@ -170,6 +175,8 @@ def normalize_data(
         mean = np.mean(train_data, axis=0)
         std = np.std(train_data, axis=0)
 
+        data_params = {"mean": mean, "std": std, "mode": mode}
+
         # Standardize the training data
         train_data_normalized = (train_data - mean) / std
 
@@ -183,17 +190,7 @@ def normalize_data(
         else:
             val_data_normalized = None
 
-    return train_data_normalized, test_data_normalized, val_data_normalized
-
-
-# Example usage
-train_data = np.random.rand(100, 10)
-test_data = np.random.rand(20, 10)
-val_data = np.random.rand(10, 10)
-
-train_data_norm, test_data_norm, val_data_norm = normalize_data(
-    train_data, test_data, val_data, mode="standardise"
-)
+    return data_params, train_data_normalized, test_data_normalized, val_data_normalized
 
 
 def create_hdf5_dataset(
