@@ -22,6 +22,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         super().__init__()
         self.train_loss = None
         self.test_loss = None
+        self.accuracy = None
 
     @abstractmethod
     def forward(self, inputs, timesteps: np.ndarray) -> Tensor:
@@ -74,7 +75,9 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
         # Load and clean the hyperparameters
         hyperparameters = dataclasses.asdict(self.config)
-        remove_keys = ["masses"]
+        hyperparameters["dataset_name"] = dataset_name
+        # Clean up the hyperparameters
+        remove_keys = ["masses", "coder_layers"] # fields with default factory
         for key in remove_keys:
             hyperparameters.pop(key, None)
         for key in hyperparameters.keys():

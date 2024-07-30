@@ -1,53 +1,29 @@
 import torch
-from torch.optim import Adam
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch import nn
 from torch.utils.data import DataLoader
 from torch import Tensor
-from torchdiffeq import odeint, odeint_adjoint
+from torch.optim import Adam
 import numpy as np
+from tqdm import tqdm
 
 from surrogates.surrogates import AbstractSurrogateModel
-from surrogates.NeuralODE.neural_ode_config import NeuralODEConfigOSU as Config
+from surrogates.LatentPolynomial.latent_poly_config import LatentPolynomialConfigOSU
 from surrogates.NeuralODE.utilities import ChemDataset
-from utils import time_execution, worker_init_fn
+from surrogates.NeuralODE.neural_ode import Encoder, Decoder
+from utils import time_execution
 
 
-class NeuralODE(AbstractSurrogateModel):
-    """
-    NeuralODE is a class that represents a neural ordinary differential equation model.
-
-    It inherits from the AbstractSurrogateModel class and implements methods for training,
-    predicting, and saving the model.
-
-    Attributes:
-        model (ModelWrapper): The neural network model wrapped in a ModelWrapper object.
-        train_loss (torch.Tensor): The training loss of the model.
-
-    Methods:
-        __init__(self, config: Config = Config()): Initializes a NeuralODE object.
-        forward(self, inputs: torch.Tensor, timesteps: torch.Tensor):
-            Performs a forward pass of the model.
-        prepare_data(self, raw_data: np.ndarray, batch_size: int, shuffle: bool):
-            Prepares the data for training and returns a Dataloader.
-        fit(self, conf, data_loader, test_loader, timesteps, epochs): Trains the model.
-        predict(self, data_loader): Makes predictions using the trained model.
-        save(self, model_name: str, subfolder: str, training_id: str) -> None:
-            Saves the model, losses, and hyperparameters.
-    """
+class LatentPoly(AbstractSurrogateModel):
 
     def __init__(self, device: str | None = None):
         super().__init__()
-        self.config: Config = Config()
-        # TODO find out why the config is loaded incorrectly after the first
-        # training and fix! The list is ordered the other way around...
-        self.config.coder_layers = [32, 16, 8]
+        self.config: LatentPolynomialConfigOSU = LatentPolynomialConfigOSU()
         if device is not None:
             self.config.device = device
         self.device = self.config.device
-        self.model = ModelWrapper(config=self.config).to(self.device)
-        self.train_loss = None
+        self.model = PolynomialModelWrapper(config=self.config)
 
-    def forward(self, inputs: torch.Tensor, timesteps: torch.Tensor | np.ndarray):
+    def forward(self, inputs: Tensor, timesteps: Tensor | np.ndarray):
         """
         Perform a forward pass through the model.
 
@@ -58,8 +34,10 @@ class NeuralODE(AbstractSurrogateModel):
         Returns:
             torch.Tensor: The output tensor.
         """
-        if not isinstance(timesteps, torch.Tensor):
-            timesteps = torch.tensor(timesteps, dtype=torch.float64).to(self.device)
+        if not isinstance(timesteps, Tensor):
+            timesteps = torch.tensor(timesteps, dtype=torch.float64).to(
+                self.device
+            )
         return self.model.forward(inputs, timesteps)
 
     def prepare_data(
@@ -89,30 +67,21 @@ class NeuralODE(AbstractSurrogateModel):
 
         dset_train = ChemDataset(dataset_train, device=self.device)
         dataloader_train = DataLoader(
-            dset_train,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            worker_init_fn=worker_init_fn,
+            dset_train, batch_size=batch_size, shuffle=shuffle
         )
 
         dataloader_test = None
         if dataset_test is not None:
             dset_test = ChemDataset(dataset_test, device=self.device)
             dataloader_test = DataLoader(
-                dset_test,
-                batch_size=batch_size,
-                shuffle=shuffle,
-                worker_init_fn=worker_init_fn,
+                dset_test, batch_size=batch_size, shuffle=shuffle
             )
 
         dataloader_val = None
         if dataset_val is not None:
             dset_val = ChemDataset(dataset_val, device=device)
             dataloader_val = DataLoader(
-                dset_val,
-                batch_size=batch_size,
-                shuffle=shuffle,
-                worker_init_fn=worker_init_fn,
+                dset_val, batch_size=batch_size, shuffle=shuffle
             )
 
         return dataloader_train, dataloader_test, dataloader_val
@@ -124,8 +93,6 @@ class NeuralODE(AbstractSurrogateModel):
         test_loader: DataLoader | Tensor,
         timesteps: np.ndarray | Tensor,
         epochs: int | None,
-        position: int = 0,
-        description: str = "Training NeuralODE",
     ) -> None:
         """
         Fits the model to the training data. Sets the train_loss and test_loss attributes.
@@ -135,8 +102,6 @@ class NeuralODE(AbstractSurrogateModel):
             test_loader (DataLoader): The data loader for the test data.
             timesteps (np.ndarray | Tensor): The array of timesteps.
             epochs (int | None): The number of epochs to train the model. If None, uses the value from the config.
-            position (int): The position of the progress bar.
-            description (str): The description for the progress bar.
 
         Returns:
             None
@@ -148,22 +113,16 @@ class NeuralODE(AbstractSurrogateModel):
         # TODO: make Optimizer and scheduler configable
         optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
 
-        scheduler = None
-        if self.config.final_learning_rate is not None:
-            scheduler = CosineAnnealingLR(
-                optimizer, self.config.epochs, eta_min=self.config.final_learning_rate
-            )
-
         losses = torch.empty((epochs, len(train_loader)))
         test_losses = torch.empty((epochs))
         accuracy = torch.empty((epochs))
 
-        progress_bar = self.setup_progress_bar(epochs, position, description)
+        progress_bar = tqdm(range(epochs), desc="Training Progress")
 
         for epoch in progress_bar:
+
             for i, x_true in enumerate(train_loader):
                 optimizer.zero_grad()
-                # x0 = x_true[:, 0, :]
                 x_pred = self.model.forward(x_true, timesteps)
                 loss = self.model.total_loss(x_true, x_pred)
                 loss.backward()
@@ -176,11 +135,7 @@ class NeuralODE(AbstractSurrogateModel):
                         self.model.renormalize_loss_weights(x_true, x_pred)
 
             clr = optimizer.param_groups[0]["lr"]
-            print_loss = f"{losses[epoch, -1].item():.2e}"
-            progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
-
-            if scheduler is not None:
-                scheduler.step()
+            progress_bar.set_postfix({"loss": losses[epoch, -1].item(), "lr": clr})
 
             with torch.inference_mode():
                 self.model.eval()
@@ -191,8 +146,6 @@ class NeuralODE(AbstractSurrogateModel):
                 accuracy[epoch] = 1.0 - torch.mean(
                     torch.abs(preds - targets) / torch.abs(targets)
                 )
-
-        progress_bar.close()
 
         self.train_loss = torch.mean(losses, dim=1)
         self.test_loss = test_losses
@@ -213,15 +166,11 @@ class NeuralODE(AbstractSurrogateModel):
         Returns:
             tuple[torch.Tensor, torch.Tensor]: A tuple containing the predictions and the targets.
         """
-
         self.model = self.model.to(self.device)
         if not isinstance(timesteps, torch.Tensor):
-            t_range = torch.tensor(timesteps, dtype=torch.float64).to(self.device)
+            t_range = torch.tensor(timesteps).to(self.device)
         else:
             t_range = timesteps
-
-        if not isinstance(data_loader, DataLoader):
-            raise TypeError("data_loader must be a DataLoader object")
 
         batch_size = data_loader.batch_size
         if batch_size is None:
@@ -239,7 +188,7 @@ class NeuralODE(AbstractSurrogateModel):
         return predictions, targets
 
 
-class ModelWrapper(torch.nn.Module):
+class PolynomialModelWrapper(nn.Module):
 
     def __init__(self, config):
         super().__init__()
@@ -252,50 +201,25 @@ class ModelWrapper(torch.nn.Module):
             n_hidden=config.coder_hidden,
             width_list=config.coder_layers,
             activation=config.coder_activation,
-        )
+        ).to(self.device)
         self.decoder = Decoder(
             out_features=config.in_features,
             latent_features=config.latent_features,
             n_hidden=config.coder_hidden,
             width_list=config.coder_layers,
             activation=config.coder_activation,
-        )
-        self.ode = ODE(
-            input_shape=config.latent_features,
-            output_shape=config.latent_features,
-            activation=config.ode_activation,
-            n_hidden=config.ode_hidden,
-            layer_width=config.ode_layer_width,
-            tanh_reg=config.ode_tanh_reg,
-        )
+        ).to(self.device)
+        self.poly = Polynomial(
+            degree=self.config.degree, dimension=self.config.latent_features
+        ).to(self.device)
 
-    # def forward(self, x0, t_range):
     def forward(self, x, t_range):
+        current_batch_size = x.shape[0]
         x0 = x[:, 0, :]
         z0 = self.encoder(x0)  # x(t=0)
-        if self.config.use_adjoint:
-            result = odeint_adjoint(
-                func=self.ode,
-                y0=z0,
-                t=t_range,
-                adjoint_rtol=self.config.rtol,
-                adjoint_atol=self.config.atol,
-                adjoint_method=self.config.method,
-            )
-            if not isinstance(result, torch.Tensor):
-                raise TypeError("odeint_adjoint must return tensor, check inputs")
-            return self.decoder(torch.permute(result, dims=(1, 0, 2)))
-        result = odeint(
-            func=self.ode,
-            y0=z0,
-            t=t_range,
-            rtol=self.config.rtol,
-            atol=self.config.atol,
-            method=self.config.method,
-        )
-        if not isinstance(result, torch.Tensor):
-            raise TypeError("odeint must return tensor, check inputs")
-        return self.decoder(torch.permute(result, dims=(1, 0, 2)))
+        t = t_range.unsqueeze(0).repeat(current_batch_size, 1)
+        z_pred = self.poly(t) + z0.unsqueeze(1)
+        return self.decoder(z_pred)
 
     def renormalize_loss_weights(self, x_true, x_pred):
         self.loss_weights[0] = 1 / self.l2_loss(x_true, x_pred).item() * 100
@@ -339,117 +263,29 @@ class ModelWrapper(torch.nn.Module):
         return cls.deriv(cls.deriv(x))
 
 
-class ODE(torch.nn.Module):
+class Polynomial(nn.Module):
+    """
+    Polynomial class with learnable parameters
 
-    def __init__(
-        self,
-        input_shape: int,
-        output_shape: int,
-        activation: torch.nn.Module,
-        n_hidden: int,
-        layer_width: int,
-        tanh_reg: bool,
-    ):
+    Attributes:
+        degree (int): the degree of the polynomial
+        dimension (int): The dimension of the in- and output variables
+    """
+
+    def __init__(self, degree: int, dimension: int):
         super().__init__()
-
-        self.tanh_reg = tanh_reg
-        self.reg_factor = torch.nn.Parameter(torch.tensor(1.0))
-        self.activation = activation
-
-        self.mlp = torch.nn.Sequential()
-        self.mlp.append(torch.nn.Linear(input_shape, layer_width, dtype=torch.float64))
-        self.mlp.append(self.activation)
-        for i in range(n_hidden):
-            self.mlp.append(
-                torch.nn.Linear(layer_width, layer_width, dtype=torch.float64)
-            )
-            self.mlp.append(self.activation)
-        self.mlp.append(torch.nn.Linear(layer_width, output_shape, dtype=torch.float64))
-
-    def forward(self, t, x):
-        if self.tanh_reg:
-            return self.reg_factor * torch.tanh(self.mlp(x) / self.reg_factor)
-        return self.mlp(x)
-
-
-class Encoder(torch.nn.Module):
-
-    def __init__(
-        self,
-        in_features: int = 29,
-        latent_features: int = 5,
-        n_hidden: int = 4,
-        width_list: list = [32, 16, 8],
-        activation: torch.nn.Module = torch.nn.ReLU(),
-    ):
-        super().__init__()
-        assert (
-            n_hidden == len(width_list) + 1
-        ), "n_hidden must equal length of width_list"
-        self.in_features = in_features
-        self.latent_features = latent_features
-        self.n_hidden = n_hidden
-        self.width_list = width_list
-        self.activation = activation
-
-        self.mlp = torch.nn.Sequential()
-        self.mlp.append(
-            torch.nn.Linear(self.in_features, self.width_list[0], dtype=torch.float64)
+        self.coef = nn.Linear(
+            in_features=degree, out_features=dimension, bias=False, dtype=torch.float64
         )
-        self.mlp.append(self.activation)
-        for i, width in enumerate(self.width_list[1:]):
-            self.mlp.append(
-                torch.nn.Linear(self.width_list[i], width, dtype=torch.float64)
-            )
-            self.mlp.append(self.activation)
-        self.mlp.append(
-            torch.nn.Linear(
-                self.width_list[-1], self.latent_features, dtype=torch.float64
-            )
-        )
-        self.mlp.append(torch.nn.Tanh())
+        self.degree = degree
+        self.dimension = dimension
+        self.t_matrix = None
 
-    def forward(self, x):
-        return self.mlp(x)
+    def forward(self, t: torch.Tensor):
+        if self.t_matrix is None or self.t_matrix.shape[0] != t.shape[0]:
+            self.t_matrix = self._prepare_t(t)
+        return self.coef(self.t_matrix)
 
-
-class Decoder(torch.nn.Module):
-
-    def __init__(
-        self,
-        out_features: int,
-        latent_features: int,
-        n_hidden: int,
-        width_list: list,
-        activation: torch.nn.Module,
-    ):
-        super().__init__()
-        assert (
-            n_hidden == len(width_list) + 1
-        ), "n_hidden must equal length of width_list"
-        self.out_features = out_features
-        self.latent_features = latent_features
-        self.n_hidden = n_hidden
-        self.width_list = width_list
-        self.activation = activation
-        self.width_list.reverse()
-
-        self.mlp = torch.nn.Sequential()
-        self.mlp.append(
-            torch.nn.Linear(
-                self.latent_features, self.width_list[0], dtype=torch.float64
-            )
-        )
-        self.mlp.append(self.activation)
-        for i, width in enumerate(self.width_list[1:]):
-            self.mlp.append(
-                torch.nn.Linear(self.width_list[i], width, dtype=torch.float64)
-            )
-            self.mlp.append(self.activation)
-        self.mlp.append(
-            torch.nn.Linear(self.width_list[-1], self.out_features, dtype=torch.float64)
-        )
-        self.mlp.append(torch.nn.Tanh())
-
-    def forward(self, x):
-        return self.mlp(x)
+    def _prepare_t(self, t):
+        t = t[:, None]
+        return torch.hstack([t**i for i in range(1, self.degree + 1)]).permute(0, 2, 1)
