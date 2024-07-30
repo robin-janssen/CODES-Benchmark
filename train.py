@@ -1,12 +1,15 @@
-import os
-import time
-
-# os.environ["TQDM_DISABLE"] = "1"
-
+from tqdm import tqdm
 from queue import Queue
 from threading import Thread
+from datetime import timedelta
 
-from utils import load_and_save_config, set_random_seeds
+from utils import (
+    load_and_save_config,
+    set_random_seeds,
+    make_description,
+    get_progress_bar,
+    nice_print,
+)
 from data import check_and_load_data, get_data_subset
 from benchmark.bench_utils import get_surrogate
 
@@ -20,6 +23,7 @@ def train_and_save_model(
     seed: int | None = None,
     epochs: int | None = None,
     device: str = "cpu",
+    position: int = 1,
 ):
     """
     Train and save a model for a specific benchmark mode.
@@ -33,6 +37,7 @@ def train_and_save_model(
         seed (int): The seed for initializing the model and shuffling the data.
         epochs (int): The number of epochs to train the model.
         device (str): The device to use for training (e.g., 'cuda:0').
+        position (int): The position of the progress bar.
     """
     # Set the seed for the training
     if seed is not None:
@@ -56,14 +61,12 @@ def train_and_save_model(
     epochs = epochs if epochs is not None else config["epochs"]
 
     # Load full data
-    t0 = time.time()
     full_train_data, full_test_data, _, timesteps, _, data_params = check_and_load_data(
         config["dataset"]["name"],
         verbose=False,
         log=config["dataset"]["log10_transform"],
         normalisation_mode=config["dataset"]["normalise"],
     )
-    print(f"Data loaded in {time.time() - t0:.2f} seconds")
 
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(
@@ -79,12 +82,16 @@ def train_and_save_model(
         shuffle=True,
     )
 
+    description = make_description(mode, device, metric, surrogate_name)
+
     # Train the model
     model.fit(
         train_loader=train_loader,
         test_loader=test_loader,
         timesteps=timesteps,
         epochs=epochs,
+        position=position,
+        description=description,
     )
 
     # Save the model (making the name lowercase and removing any underscores)
@@ -196,24 +203,28 @@ def train_surrogate(config, surrogate_class, surrogate_name):
     return tasks
 
 
-def worker(task_queue: Queue, device: str):
+def worker(task_queue: Queue, device: str, device_idx: int, overall_progress_bar: tqdm):
     """
     Worker function to process tasks from the task queue on the given device.
 
     Args:
         task_queue (Queue): The queue containing tasks to be processed.
         device (str): The device to use for processing tasks.
+        device_idx (int): The index of the device.
+        overall_progress_bar (tqdm): The overall progress bar.
     """
     while not task_queue.empty():
         try:
             task = task_queue.get_nowait()
-            print(f"Starting training for task {task[:3]} on device {device}")
-            train_and_save_model(*task, device)
+            # print(f"Starting training for task {task[:3]} on device {device}")
+            train_and_save_model(*task, device, position=device_idx + 1)
             task_queue.task_done()
-            print(f"Completed training for task: {task[:3]}")
+            # print(f"Completed training for task: {task[:3]}")
+            overall_progress_bar.update(1)
         except Exception as e:
-            print(f"Exception for task {task[:3]}: {e}")
+            tqdm.write(f"Exception for task {task[:3]}: {e}")
             task_queue.task_done()
+            overall_progress_bar.update(1)
 
 
 def parallel_training(tasks, device_list):
@@ -224,20 +235,27 @@ def parallel_training(tasks, device_list):
         tasks (list): A list of tasks to execute in parallel.
         device_list (list): A list of devices to use for parallel training.
     """
-    os.environ["TQDM_DISABLE"] = "1"
-
     task_queue = Queue()
     for task in tasks:
         task_queue.put(task)
 
+    # Create the overall progress bar
+    overall_progress_bar = get_progress_bar(tasks)
     threads = []
-    for device in device_list:
-        thread = Thread(target=worker, args=(task_queue, device))
+    for i, device in enumerate(device_list):
+        thread = Thread(
+            target=worker, args=(task_queue, device, i, overall_progress_bar)
+        )
         thread.start()
         threads.append(thread)
 
     for thread in threads:
         thread.join()
+
+    overall_progress_bar.close()
+    elapsed_time = overall_progress_bar.format_dict["elapsed"]
+
+    return elapsed_time
 
 
 def main():
@@ -246,21 +264,33 @@ def main():
     device_list = config["devices"]
     device_list = [device_list] if isinstance(device_list, str) else device_list
 
+    nice_print("Starting training")
+
     for surrogate_name in config["surrogates"]:
         surrogate_class = get_surrogate(surrogate_name)
         if surrogate_class is not None:
             tasks += train_surrogate(config, surrogate_class, surrogate_name)
         else:
-            print(f"Surrogate {surrogate_name} not recognized. Skipping.")
+            tqdm.write(f"Surrogate {surrogate_name} not recognized. Skipping.")
 
     if len(device_list) > 1:
-        print(f"Training models in parallel on devices: {device_list}")
-        parallel_training(tasks, device_list)
+        tqdm.write(f"Training models in parallel on devices  : {device_list} \n")
+        elapsed_time = parallel_training(tasks, device_list)
     else:
-        print(f"Training models sequentially on device {device_list[0]}")
+        tqdm.write(f"Training models sequentially on device {device_list[0]}")
+        overall_progress_bar = get_progress_bar(tasks)
         for task in tasks:
-            print(f"Starting training for task {task[:3]}")
             train_and_save_model(*task, device_list[0])
+            overall_progress_bar.update(1)
+        elapsed_time = overall_progress_bar.format_dict["elapsed"]
+        overall_progress_bar.close()
+
+    print("\n")
+
+    nice_print("Training completed")
+
+    print(f"{len(tasks)} Models saved in /trained/{config['training_id']}/")
+    print(f"Total training time: {timedelta(seconds=int(elapsed_time))}")
 
 
 if __name__ == "__main__":

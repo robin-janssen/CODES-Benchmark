@@ -5,7 +5,6 @@ import torch.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
-from tqdm import tqdm
 from typing import Tuple, Optional
 
 from surrogates.surrogates import AbstractSurrogateModel
@@ -134,6 +133,8 @@ class FullyConnected(AbstractSurrogateModel):
         test_loader: DataLoader,
         timesteps: np.ndarray,
         epochs: int | None = None,
+        position: int = 0,
+        description: str = "Training FullyConnected",
     ) -> None:
         """
         Train the FullyConnected model.
@@ -143,6 +144,8 @@ class FullyConnected(AbstractSurrogateModel):
             test_loader (DataLoader): The DataLoader object containing the test data.
             timesteps (np.ndarray): The timesteps.
             epochs (int, optional): The number of epochs to train the model.
+            position (int): The position of the progress bar.
+            description (str): The description for the progress bar.
 
         Returns:
             None
@@ -157,12 +160,14 @@ class FullyConnected(AbstractSurrogateModel):
 
         epochs = self.config.num_epochs if epochs is None else epochs
 
-        progress_bar = tqdm(range(epochs), desc="Training Progress")
+        progress_bar = self.setup_progress_bar(epochs, position, description)
+
         for epoch in progress_bar:
             train_losses[epoch] = self.epoch(train_loader, criterion, optimizer)
 
             clr = optimizer.param_groups[0]["lr"]
-            progress_bar.set_postfix({"loss": train_losses[epoch], "lr": clr})
+            print_loss = f"{train_losses[epoch].item():.2e}"
+            progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
             scheduler.step()
 
             if test_loader is not None:
@@ -176,6 +181,8 @@ class FullyConnected(AbstractSurrogateModel):
                 accuracies[epoch] = 1.0 - torch.mean(
                     torch.abs(preds - targets) / torch.abs(targets)
                 )
+
+        progress_bar.close()
 
         self.train_loss = train_losses
         self.test_loss = test_losses
