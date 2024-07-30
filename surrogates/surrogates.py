@@ -93,9 +93,8 @@ class AbstractSurrogateModel(ABC, nn.Module):
         # Add some additional information to the model and hyperparameters
         self.train_duration = self.fit.duration
         hyperparameters["train_duration"] = self.train_duration
-        for key, value in data_params.items():
-            setattr(self, key, value)
-            hyperparameters[key] = value
+        setattr(self, "normalisation", data_params)
+        hyperparameters["normalisation"] = data_params
 
         # Save the hyperparameters as a yaml file
         hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
@@ -125,7 +124,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             model_identifier (str): The identifier of the model (e.g., 'main').
 
         Returns:
-            The loaded surrogate model.
+            None. Tje model is loaded in place.
         """
         model_dict_path = os.path.join(
             "trained", training_id, surr_name, f"{model_identifier}.pth"
@@ -138,6 +137,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
                 continue
             else:
                 setattr(self, key, value)
+        self.to(self.device)
         self.eval()
 
     def setup_progress_bar(self, epochs: int, position: int, description: str):
@@ -153,6 +153,32 @@ class AbstractSurrogateModel(ABC, nn.Module):
             {"loss": f"{0:.2e}", "lr": f"{self.config.learning_rate:.1e}"}
         )
         return progress_bar
+
+    def denormalize(self, data: torch.Tensor) -> torch.Tensor:
+        """
+        Denormalize the data.
+
+        Args:
+            data (np.ndarray): The data to denormalize.
+
+        Returns:
+            np.ndarray: The denormalized data.
+        """
+        if self.normalisation["mode"] == "disabled":
+            data = data
+        elif self.normalisation["mode"] == "minmax":
+            dmax = self.normalisation["max"]
+            dmin = self.normalisation["min"]
+            data = (data + 1) * (dmax - dmin) / 2 + dmin
+        elif self.normalisation["mode"] == "standardize":
+            mean = self.normalisation["mean"]
+            std = self.normalisation["std"]
+            data = data * std + mean
+
+        if self.normalisation["log10_transform"]:
+            data = 10**data
+
+        return data
 
 
 SurrogateModel = TypeVar("SurrogateModel", bound=AbstractSurrogateModel)

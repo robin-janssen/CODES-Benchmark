@@ -43,7 +43,7 @@ class NeuralODE(AbstractSurrogateModel):
         if device is not None:
             self.config.device = device
         self.device = self.config.device
-        self.model = ModelWrapper(config=self.config).to(self.config.device)
+        self.model = ModelWrapper(config=self.config).to(self.device)
         self.train_loss = None
 
     def forward(self, inputs: torch.Tensor, timesteps: torch.Tensor | np.ndarray):
@@ -58,9 +58,7 @@ class NeuralODE(AbstractSurrogateModel):
             torch.Tensor: The output tensor.
         """
         if not isinstance(timesteps, torch.Tensor):
-            timesteps = torch.tensor(timesteps, dtype=torch.float64).to(
-                self.config.device
-            )
+            timesteps = torch.tensor(timesteps, dtype=torch.float64).to(self.device)
         return self.model.forward(inputs, timesteps)
 
     def prepare_data(
@@ -86,9 +84,9 @@ class NeuralODE(AbstractSurrogateModel):
         """
 
         batch_size = self.config.batch_size if batch_size is None else batch_size
-        device = self.config.device
+        device = self.device
 
-        dset_train = ChemDataset(dataset_train, device=self.config.device)
+        dset_train = ChemDataset(dataset_train, device=self.device)
         dataloader_train = DataLoader(
             dset_train,
             batch_size=batch_size,
@@ -98,7 +96,7 @@ class NeuralODE(AbstractSurrogateModel):
 
         dataloader_test = None
         if dataset_test is not None:
-            dset_test = ChemDataset(dataset_test, device=self.config.device)
+            dset_test = ChemDataset(dataset_test, device=self.device)
             dataloader_test = DataLoader(
                 dset_test,
                 batch_size=batch_size,
@@ -143,7 +141,7 @@ class NeuralODE(AbstractSurrogateModel):
             None
         """
         if not isinstance(timesteps, torch.Tensor):
-            timesteps = torch.tensor(timesteps).to(self.config.device)
+            timesteps = torch.tensor(timesteps).to(self.device)
         epochs = self.config.epochs if epochs is None else epochs
 
         # TODO: make Optimizer and scheduler configable
@@ -214,11 +212,9 @@ class NeuralODE(AbstractSurrogateModel):
             tuple[torch.Tensor, torch.Tensor]: A tuple containing the predictions and the targets.
         """
 
-        self.model = self.model.to(self.config.device)
+        self.model = self.model.to(self.device)
         if not isinstance(timesteps, torch.Tensor):
-            t_range = torch.tensor(timesteps, dtype=torch.float64).to(
-                self.config.device
-            )
+            t_range = torch.tensor(timesteps, dtype=torch.float64).to(self.device)
         else:
             t_range = timesteps
 

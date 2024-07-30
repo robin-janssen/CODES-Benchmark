@@ -86,6 +86,11 @@ def check_and_load_data(
             )
             if verbose:
                 print(f"Data normalized (mode: {normalisation_mode}).")
+        else:  # No normalization
+            data_params = {"mode": "disable"}
+
+        if log:
+            data_params["log10_transform"] = True
 
         # Check data shape
         for data in (train_data, test_data, val_data):
@@ -152,45 +157,45 @@ def normalize_data(
 
     if mode == "minmax":
         # Compute min and max on the training data
-        data_min = np.min(train_data, axis=0)
-        data_max = np.max(train_data, axis=0)
+        data_min = np.min(train_data)
+        data_max = np.max(train_data)
 
-        data_params = {"min": data_min, "max": data_max, "mode": mode}
+        data_params = {"min": float(data_min), "max": float(data_max), "mode": mode}
 
         # Normalize the training data
-        train_data_normalized = 2 * (train_data - data_min) / (data_max - data_min)
+        train_data_norm = 2 * (train_data - data_min) / (data_max - data_min) - 1
 
         if test_data is not None:
-            test_data_normalized = 2 * (test_data - data_min) / (data_max - data_min)
+            test_data_norm = 2 * (test_data - data_min) / (data_max - data_min) - 1
         else:
-            test_data_normalized = None
+            test_data_norm = None
 
         if val_data is not None:
-            val_data_normalized = 2 * (val_data - data_min) / (data_max - data_min)
+            val_data_norm = 2 * (val_data - data_min) / (data_max - data_min) - 1
         else:
-            val_data_normalized = None
+            val_data_norm = None
 
     elif mode == "standardise":
         # Compute mean and std on the training data
-        mean = np.mean(train_data, axis=0)
-        std = np.std(train_data, axis=0)
+        mean = np.mean(train_data)
+        std = np.std(train_data)
 
-        data_params = {"mean": mean, "std": std, "mode": mode}
+        data_params = {"mean": float(mean), "std": float(std), "mode": mode}
 
         # Standardize the training data
-        train_data_normalized = (train_data - mean) / std
+        train_data_norm = (train_data - mean) / std
 
         if test_data is not None:
-            test_data_normalized = (test_data - mean) / std
+            test_data_norm = (test_data - mean) / std
         else:
-            test_data_normalized = None
+            test_data_norm = None
 
         if val_data is not None:
-            val_data_normalized = (val_data - mean) / std
+            val_data_norm = (val_data - mean) / std
         else:
-            val_data_normalized = None
+            val_data_norm = None
 
-    return data_params, train_data_normalized, test_data_normalized, val_data_normalized
+    return data_params, train_data_norm, test_data_norm, val_data_norm
 
 
 def create_hdf5_dataset(
