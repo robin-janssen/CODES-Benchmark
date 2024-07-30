@@ -36,7 +36,7 @@ class LatentPoly(AbstractSurrogateModel):
         """
         if not isinstance(timesteps, Tensor):
             timesteps = torch.tensor(timesteps, dtype=torch.float64).to(
-                self.config.device
+                self.device
             )
         return self.model.forward(inputs, timesteps)
 
@@ -63,16 +63,16 @@ class LatentPoly(AbstractSurrogateModel):
         """
 
         batch_size = self.config.batch_size if batch_size is None else batch_size
-        device = self.config.device
+        device = self.device
 
-        dset_train = ChemDataset(dataset_train, device=self.config.device)
+        dset_train = ChemDataset(dataset_train, device=self.device)
         dataloader_train = DataLoader(
             dset_train, batch_size=batch_size, shuffle=shuffle
         )
 
         dataloader_test = None
         if dataset_test is not None:
-            dset_test = ChemDataset(dataset_test, device=self.config.device)
+            dset_test = ChemDataset(dataset_test, device=self.device)
             dataloader_test = DataLoader(
                 dset_test, batch_size=batch_size, shuffle=shuffle
             )
@@ -107,7 +107,7 @@ class LatentPoly(AbstractSurrogateModel):
             None
         """
         if not isinstance(timesteps, torch.Tensor):
-            timesteps = torch.tensor(timesteps).to(self.config.device)
+            timesteps = torch.tensor(timesteps).to(self.device)
         epochs = self.config.epochs if epochs is None else epochs
 
         # TODO: make Optimizer and scheduler configable
@@ -166,9 +166,9 @@ class LatentPoly(AbstractSurrogateModel):
         Returns:
             tuple[torch.Tensor, torch.Tensor]: A tuple containing the predictions and the targets.
         """
-        self.model = self.model.to(self.config.device)
+        self.model = self.model.to(self.device)
         if not isinstance(timesteps, torch.Tensor):
-            t_range = torch.tensor(timesteps).to(self.config.device)
+            t_range = torch.tensor(timesteps).to(self.device)
         else:
             t_range = timesteps
 
@@ -201,17 +201,17 @@ class PolynomialModelWrapper(nn.Module):
             n_hidden=config.coder_hidden,
             width_list=config.coder_layers,
             activation=config.coder_activation,
-        ).to(self.config.device)
+        ).to(self.device)
         self.decoder = Decoder(
             out_features=config.in_features,
             latent_features=config.latent_features,
             n_hidden=config.coder_hidden,
             width_list=config.coder_layers,
             activation=config.coder_activation,
-        ).to(self.config.device)
+        ).to(self.device)
         self.poly = Polynomial(
             degree=self.config.degree, dimension=self.config.latent_features
-        ).to(self.config.device)
+        ).to(self.device)
 
     def forward(self, x, t_range):
         current_batch_size = x.shape[0]
