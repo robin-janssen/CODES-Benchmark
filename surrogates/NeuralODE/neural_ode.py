@@ -54,7 +54,7 @@ class NeuralODE(AbstractSurrogateModel):
 
         Args:
             inputs (torch.Tensor): The input tensor.
-            timesteps (torch.Tensor): The tensor representing the timesteps.
+            timesteps (torch.Tensor | np.ndarray): The tensor/array representing the timesteps.
 
         Returns:
             torch.Tensor: The output tensor.

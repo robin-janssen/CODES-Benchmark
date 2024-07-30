@@ -21,6 +21,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         super().__init__()
         self.train_loss = None
         self.test_loss = None
+        self.accuracy = None
 
     @abstractmethod
     def forward(self, inputs, timesteps: np.ndarray) -> Tensor:
