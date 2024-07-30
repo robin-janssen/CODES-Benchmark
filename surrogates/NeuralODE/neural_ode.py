@@ -236,7 +236,10 @@ class NeuralODE(AbstractSurrogateModel):
                 predictions[i * batch_size : (i + 1) * batch_size, :, :] = x_pred
                 targets[i * batch_size : (i + 1) * batch_size, :, :] = x_true
 
-        return predictions, targets
+        preds = self.denormalize(predictions)
+        targets = self.denormalize(targets)
+
+        return preds, targets
 
 
 class ModelWrapper(torch.nn.Module):

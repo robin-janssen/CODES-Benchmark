@@ -4,7 +4,6 @@ from torch.utils.data import DataLoader
 from torch import Tensor
 from torch.optim import Adam
 import numpy as np
-from tqdm import tqdm
 
 from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.LatentPolynomial.latent_poly_config import LatentPolynomialConfigOSU
@@ -35,9 +34,7 @@ class LatentPoly(AbstractSurrogateModel):
             torch.Tensor: The output tensor.
         """
         if not isinstance(timesteps, Tensor):
-            timesteps = torch.tensor(timesteps, dtype=torch.float64).to(
-                self.device
-            )
+            timesteps = torch.tensor(timesteps, dtype=torch.float64).to(self.device)
         return self.model.forward(inputs, timesteps)
 
     def prepare_data(
@@ -93,6 +90,8 @@ class LatentPoly(AbstractSurrogateModel):
         test_loader: DataLoader | Tensor,
         timesteps: np.ndarray | Tensor,
         epochs: int | None,
+        position: int = 0,
+        description: str = "Training LatentPoly",
     ) -> None:
         """
         Fits the model to the training data. Sets the train_loss and test_loss attributes.
@@ -117,7 +116,7 @@ class LatentPoly(AbstractSurrogateModel):
         test_losses = torch.empty((epochs))
         accuracy = torch.empty((epochs))
 
-        progress_bar = tqdm(range(epochs), desc="Training Progress")
+        progress_bar = self.setup_progress_bar(epochs, position, description)
 
         for epoch in progress_bar:
 
@@ -135,7 +134,8 @@ class LatentPoly(AbstractSurrogateModel):
                         self.model.renormalize_loss_weights(x_true, x_pred)
 
             clr = optimizer.param_groups[0]["lr"]
-            progress_bar.set_postfix({"loss": losses[epoch, -1].item(), "lr": clr})
+            print_loss = f"{losses[epoch, -1].item():.2e}"
+            progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
 
             with torch.inference_mode():
                 self.model.eval()
@@ -146,6 +146,8 @@ class LatentPoly(AbstractSurrogateModel):
                 accuracy[epoch] = 1.0 - torch.mean(
                     torch.abs(preds - targets) / torch.abs(targets)
                 )
+
+        progress_bar.close()
 
         self.train_loss = torch.mean(losses, dim=1)
         self.test_loss = test_losses
@@ -185,7 +187,10 @@ class LatentPoly(AbstractSurrogateModel):
                 predictions[i * batch_size : (i + 1) * batch_size, :, :] = x_pred
                 targets[i * batch_size : (i + 1) * batch_size, :, :] = x_true
 
-        return predictions, targets
+        preds = self.denormalize(predictions)
+        targets = self.denormalize(targets)
+
+        return preds, targets
 
 
 class PolynomialModelWrapper(nn.Module):
@@ -194,6 +199,7 @@ class PolynomialModelWrapper(nn.Module):
         super().__init__()
         self.config = config
         self.loss_weights = [100.0, 1.0, 1.0, 1.0]
+        self.device = config.device
 
         self.encoder = Encoder(
             in_features=config.in_features,

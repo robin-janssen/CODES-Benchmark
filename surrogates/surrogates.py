@@ -23,6 +23,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         self.train_loss = None
         self.test_loss = None
         self.accuracy = None
+        self.normalisation = None
 
     @abstractmethod
     def forward(self, inputs, timesteps: np.ndarray) -> Tensor:
@@ -75,9 +76,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
         # Load and clean the hyperparameters
         hyperparameters = dataclasses.asdict(self.config)
-        hyperparameters["dataset_name"] = dataset_name
-        # Clean up the hyperparameters
-        remove_keys = ["masses", "coder_layers"] # fields with default factory
+        remove_keys = ["masses"]
         for key in remove_keys:
             hyperparameters.pop(key, None)
         for key in hyperparameters.keys():
@@ -167,19 +166,20 @@ class AbstractSurrogateModel(ABC, nn.Module):
         Returns:
             np.ndarray: The denormalized data.
         """
-        if self.normalisation["mode"] == "disabled":
-            data = data
-        elif self.normalisation["mode"] == "minmax":
-            dmax = self.normalisation["max"]
-            dmin = self.normalisation["min"]
-            data = (data + 1) * (dmax - dmin) / 2 + dmin
-        elif self.normalisation["mode"] == "standardize":
-            mean = self.normalisation["mean"]
-            std = self.normalisation["std"]
-            data = data * std + mean
+        if self.normalisation is not None:
+            if self.normalisation["mode"] == "disabled":
+                data = data
+            elif self.normalisation["mode"] == "minmax":
+                dmax = self.normalisation["max"]
+                dmin = self.normalisation["min"]
+                data = (data + 1) * (dmax - dmin) / 2 + dmin
+            elif self.normalisation["mode"] == "standardize":
+                mean = self.normalisation["mean"]
+                std = self.normalisation["std"]
+                data = data * std + mean
 
-        if self.normalisation["log10_transform"]:
-            data = 10**data
+            if self.normalisation["log10_transform"]:
+                data = 10**data
 
         return data
 

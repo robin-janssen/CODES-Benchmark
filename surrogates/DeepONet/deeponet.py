@@ -303,6 +303,9 @@ class MultiONet(OperatorNetwork):
         preds = preds.reshape(-1, N_timesteps, self.N)
         targets = targets.reshape(-1, N_timesteps, self.N)
 
+        preds = self.denormalize(preds)
+        targets = self.denormalize(targets)
+
         return preds, targets
 
     def setup_criterion(self) -> callable:

@@ -236,74 +236,10 @@ class FullyConnected(AbstractSurrogateModel):
         preds = preds.reshape(-1, N_timesteps, self.N)
         targets = targets.reshape(-1, N_timesteps, self.N)
 
+        preds = self.denormalize(preds)
+        targets = self.denormalize(targets)
+
         return preds, targets
-
-    # def save(
-    #     self,
-    #     model_name: str,
-    #     subfolder: str = "trained",
-    #     training_id: str = "run_1",
-    #     dataset_name: str = "dataset",
-    # ) -> None:
-    #     """
-    #     Save the trained model and hyperparameters.
-
-    #     Args:
-    #         model_name (str): The name of the model.
-    #         subfolder (str): The subfolder to save the model in.
-    #         training_id (str): A unique identifier to include in the directory name.
-    #         dataset_name (str): The name of the dataset.
-    #     """
-    #     base_dir = os.getcwd()
-    #     subfolder = os.path.join(subfolder, training_id, "FCNN")
-    #     model_dir = create_model_dir(base_dir, subfolder)
-    #     self.dataset_name = dataset_name
-
-    #     # Save the model state dict
-    #     model_path = os.path.join(model_dir, f"{model_name}.pth")
-    #     torch.save(self.state_dict(), model_path)
-
-    #     # Create the hyperparameters dictionary from the config dataclass
-    #     hyperparameters = dataclasses.asdict(self.config)
-
-    #     # Append the train time to the hyperparameters
-    #     hyperparameters["train_duration"] = self.fit.duration
-    #     hyperparameters["N_train_samples"] = self.N_train_samples
-    #     hyperparameters["N_timesteps"] = self.N_timesteps
-    #     hyperparameters["dataset_name"] = self.dataset_name
-
-    #     # Save hyperparameters as a YAML file
-    #     hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
-    #     with open(hyperparameters_path, "w") as file:
-    #         yaml.dump(hyperparameters, file)
-
-    #     if self.train_loss is not None and self.test_loss is not None:
-    #         # Save the losses as a numpy file
-    #         losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
-    #         np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
-
-    #     print(f"Model, losses and hyperparameters saved to {model_dir}")
-
-    # def load(
-    #     self, training_id: str, surr_name: str, model_identifier: str
-    # ) -> torch.nn.Module:
-    #     """
-    #     Load a trained surrogate model.
-
-    #     Args:
-    #         model: Instance of the surrogate model class.
-    #         training_id (str): The training identifier.
-    #         surr_name (str): The name of the surrogate model.
-    #         model_identifier (str): The identifier of the model (e.g., 'main').
-
-    #     Returns:
-    #         The loaded surrogate model.
-    #     """
-    #     statedict_path = os.path.join(
-    #         "trained", training_id, surr_name, f"{model_identifier}.pth"
-    #     )
-    #     self.load_state_dict(torch.load(statedict_path))
-    #     self.eval()
 
     def setup_criterion(self) -> callable:
         """
@@ -412,66 +348,6 @@ class FullyConnected(AbstractSurrogateModel):
 
         total_loss /= dataset_size * self.N
         return total_loss
-
-    # def epoch_profiled(
-    #     self,
-    #     data_loader: DataLoader,
-    #     criterion: nn.Module,
-    #     optimizer: torch.optim.Optimizer,
-    # ) -> float:
-    #     """
-    #     Perform a single training step on the model.
-
-    #     Args:
-    #         data_loader (DataLoader): The DataLoader object containing the training data.
-    #         criterion (nn.Module): The loss function.
-    #         optimizer (torch.optim.Optimizer): The optimizer.
-
-    #     Returns:
-    #         float: The total loss for the training step.
-    #     """
-    #     self.train()
-    #     total_loss = 0
-
-    #     with torch.profiler.profile(
-    #         activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-    #         schedule=torch.profiler.schedule(wait=5, warmup=2, active=5, repeat=1),
-    #         on_trace_ready=torch.profiler.tensorboard_trace_handler("./log/HTA2"),
-    #         record_shapes=True,
-    #         profile_memory=True,
-    #         with_stack=True,
-    #         experimental_config=torch._C._profiler._ExperimentalConfig(verbose=True),
-    #     ) as prof:
-    #         i = 0
-    #         for batch in data_loader:
-    #             i += 1
-    #             if i >= 30:
-    #                 break
-    #             inputs, targets = batch
-    #             inputs, targets = inputs.to(self.device), targets.to(self.device)
-    #             optimizer.zero_grad()
-
-    #             with record_function("model_inference"):
-    #                 outputs = self.forward((inputs, targets))
-    #             torch.cuda.synchronize()
-
-    #             with record_function("loss_calculation"):
-    #                 loss = criterion(outputs, targets)
-
-    #             with record_function("backward_pass"):
-    #                 loss.backward()
-    #             torch.cuda.synchronize()
-
-    #             with record_function("optimizer_step"):
-    #                 optimizer.step()
-    #             torch.cuda.synchronize()
-
-    #             total_loss += loss.item()
-
-    #             prof.step()
-
-    #     total_loss /= self.dataset_size * self.N
-    #     return total_loss, prof
 
     def create_dataloader(
         self,
