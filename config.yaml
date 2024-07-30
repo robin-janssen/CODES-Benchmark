@@ -1,11 +1,8 @@
 # Global settings for the benchmark
-training_id: "test_pbar"
-surrogates: ["NeuralODE"] # ["FullyConnected", "MultiONet", "NeuralODE"]
-dataset: 
-  name: "osu2008"
-  log10_transform: False
-  normalise: "standardise" # "standardise", "minmax", "disable"
-devices: ["cuda:5", "cuda:6", "cuda:7", "cuda:8"]
+training_id: "investigate_normalization"
+surrogates: ["LatentPolynomial"] #["MultiONet", "NeuralODE"]
+dataset: "Osu2008"
+devices: ["cuda:6"] # ["cuda:5", "cuda:6", "cuda:7", "cuda:8"]
 seed: 42
 
 # Details of the benchmarking
@@ -35,5 +32,5 @@ compare: True # Whether to compare the surrogates
 # Optional global settings
 # Leave empty if the quantities should be set per surrogate
 
-batch_size: 128 # [1024, 1024, 16] 
-epochs: 10 # [200, 400, 10000]
+batch_size: 256
+epochs: 3
