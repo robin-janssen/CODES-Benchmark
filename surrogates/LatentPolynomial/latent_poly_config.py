@@ -1,6 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
-form torch import nn
+from torch import nn
 
 @dataclass
 class LatentPolynomialConfigOSU:
@@ -10,7 +10,7 @@ class LatentPolynomialConfigOSU:
     degree: int = 2
     latent_dim: int = 5
     coder_hidden: int = 4
-    coder_layers: list[int] = [32, 16, 8]
+    coder_layers: list[int] = field(default_factory=lambda: [32, 16, 8])
     coder_activation: nn.Module = nn.ReLU()
     
     learning_rate: float = 1e-3

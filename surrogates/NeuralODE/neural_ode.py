@@ -160,6 +160,7 @@ class NeuralODE(AbstractSurrogateModel):
                 optimizer.step()
                 losses[epoch, i] = loss.item()
 
+                # TODO: make configable
                 if epoch == 10 and i == 0:
                     with torch.no_grad():
                         self.model.renormalize_loss_weights(x_true, x_pred)

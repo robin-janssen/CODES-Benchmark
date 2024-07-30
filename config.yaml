@@ -1,8 +1,8 @@
 # Global settings for the benchmark
 training_id: "investigate_normalization"
-surrogates: ["MultiONet", "NeuralODE"]
+surrogates: ["LatentPolynomial"] #["MultiONet", "NeuralODE"]
 dataset: "Osu2008"
-devices: ["cuda:5"] # ["cuda:5", "cuda:6", "cuda:7", "cuda:8"]
+devices: ["cuda:6"] # ["cuda:5", "cuda:6", "cuda:7", "cuda:8"]
 seed: 42
 
 # Details of the benchmarking
@@ -33,4 +33,4 @@ compare: True # Whether to compare the surrogates
 # Leave empty if the quantities should be set per surrogate
 
 batch_size: 256
-epochs: [200, 200, 2000]
+epochs: 3

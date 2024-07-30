@@ -20,6 +20,7 @@ class LatentPolynomial(AbstractSurrogateModel):
         self.config: LatentPolynomialConfigOSU = LatentPolynomialConfigOSU()
         if device is not None:
             self.config.device = device
+        self.device = self.config.device
         self.model = PolynomialModelWrapper(config=self.config)
 
     def forward(self, inputs: Tensor, timesteps: Tensor | np.ndarray):
@@ -34,7 +35,9 @@ class LatentPolynomial(AbstractSurrogateModel):
             torch.Tensor: The output tensor.
         """
         if not isinstance(timesteps, Tensor):
-            timesteps = torch.tensor(timesteps).to(self.config.device)
+            timesteps = torch.tensor(timesteps, dtype=torch.float64).to(
+                self.config.device
+            )
         return self.model.forward(inputs, timesteps)
 
     def prepare_data(
@@ -126,6 +129,11 @@ class LatentPolynomial(AbstractSurrogateModel):
                 optimizer.step()
                 losses[epoch, i] = loss.item()
 
+                # TODO: make configable
+                if epoch == 10 and i == 0:
+                    with torch.no_grad():
+                        self.model.renormalize_loss_weights(x_true, x_pred)
+
             clr = optimizer.param_groups[0]["lr"]
             progress_bar.set_postfix({"loss": losses[epoch, -1].item(), "lr": clr})
 
@@ -167,7 +175,7 @@ class LatentPolynomial(AbstractSurrogateModel):
         batch_size = data_loader.batch_size
         if batch_size is None:
             raise ValueError("batch_size must be provided by the DataLoader object")
-        
+
         predictions = torch.empty_like(data_loader.dataset.data)  # type: ignore
         targets = torch.empty_like(data_loader.dataset.data)  # type: ignore
 
@@ -179,11 +187,13 @@ class LatentPolynomial(AbstractSurrogateModel):
 
         return predictions, targets
 
+
 class PolynomialModelWrapper(nn.Module):
 
     def __init__(self, config):
         super().__init__()
         self.config = config
+        self.loss_weights = [100.0, 1.0, 1.0, 1.0]
 
         self.encoder = Encoder(
             in_features=config.in_features,
@@ -191,25 +201,66 @@ class PolynomialModelWrapper(nn.Module):
             n_hidden=config.coder_hidden,
             width_list=config.coder_layers,
             activation=config.coder_activation,
-        )
+        ).to(self.config.device)
         self.decoder = Decoder(
             out_features=config.in_features,
             latent_features=config.latent_features,
             n_hidden=config.coder_hidden,
             width_list=config.coder_layers,
             activation=config.coder_activation,
-        )
+        ).to(self.config.device)
         self.poly = Polynomial(
             degree=self.config.degree, dimension=self.config.latent_features
-        )
+        ).to(self.config.device)
 
     def forward(self, x, t_range):
         current_batch_size = x.shape[0]
         x0 = x[:, 0, :]
         z0 = self.encoder(x0)  # x(t=0)
         t = t_range.unsqueeze(0).repeat(current_batch_size, 1)
-        z_pred = self.poly(t) + x0.unsqueeze(1)
+        z_pred = self.poly(t) + z0.unsqueeze(1)
         return self.decoder(z_pred)
+
+    def renormalize_loss_weights(self, x_true, x_pred):
+        self.loss_weights[0] = 1 / self.l2_loss(x_true, x_pred).item() * 100
+        self.loss_weights[1] = 1 / self.identity_loss(x_true).item()
+        self.loss_weights[2] = 1 / self.deriv_loss(x_true, x_pred).item()
+        self.loss_weights[3] = 1 / self.deriv2_loss(x_true, x_pred).item()
+
+    def total_loss(self, x_true, x_pred):
+        return (
+            self.loss_weights[0] * self.l2_loss(x_true, x_pred)
+            + self.loss_weights[1] * self.identity_loss(x_true)
+            + self.loss_weights[2] * self.deriv_loss(x_true, x_pred)
+            + self.loss_weights[3] * self.deriv2_loss(x_true, x_pred)
+        )
+
+    def identity_loss(self, x: torch.Tensor):
+        return self.l2_loss(x, self.decoder(self.encoder(x)))
+
+    @classmethod
+    def l2_loss(cls, x_true: torch.Tensor, x_pred: torch.Tensor):
+        return torch.mean(torch.abs(x_true - x_pred) ** 2)
+
+    @classmethod
+    def mass_conservation_loss(cls):
+        raise NotImplementedError("Don't use yet please")
+
+    @classmethod
+    def deriv_loss(cls, x_true, x_pred):
+        return cls.l2_loss(cls.deriv(x_pred), cls.deriv(x_true))
+
+    @classmethod
+    def deriv2_loss(cls, x_true, x_pred):
+        return cls.l2_loss(cls.deriv2(x_pred), cls.deriv2(x_true))
+
+    @classmethod
+    def deriv(cls, x):
+        return torch.gradient(x, dim=1)[0].squeeze(0)
+
+    @classmethod
+    def deriv2(cls, x):
+        return cls.deriv(cls.deriv(x))
 
 
 class Polynomial(nn.Module):
@@ -224,14 +275,14 @@ class Polynomial(nn.Module):
     def __init__(self, degree: int, dimension: int):
         super().__init__()
         self.coef = nn.Linear(
-            in_features=degree, out_features=dimension, bias=False, dtype=torch.float32
+            in_features=degree, out_features=dimension, bias=False, dtype=torch.float64
         )
         self.degree = degree
         self.dimension = dimension
         self.t_matrix = None
 
     def forward(self, t: torch.Tensor):
-        if self.t_matrix is None:
+        if self.t_matrix is None or self.t_matrix.shape[0] != t.shape[0]:
             self.t_matrix = self._prepare_t(t)
         return self.coef(self.t_matrix)
 

@@ -76,7 +76,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         hyperparameters = dataclasses.asdict(self.config)
         hyperparameters["dataset_name"] = dataset_name
         # Clean up the hyperparameters
-        remove_keys = ["masses"]
+        remove_keys = ["masses", "coder_layers"] # fields with default factory
         for key in remove_keys:
             hyperparameters.pop(key, None)
         for key in hyperparameters.keys():
