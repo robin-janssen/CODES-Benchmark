@@ -7,6 +7,7 @@ import yaml
 # from typing import Optional, Union
 
 import torch
+from tqdm import tqdm
 from torch import nn, Tensor
 from torch.utils.data import DataLoader
 import numpy as np
@@ -45,6 +46,8 @@ class AbstractSurrogateModel(ABC, nn.Module):
         test_loader: DataLoader | Tensor,
         timesteps: np.ndarray,
         epochs: int | None,
+        position: int,
+        description: str,
     ) -> None:
         pass
 
@@ -99,22 +102,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
         with open(hyperparameters_path, "w") as file:
             yaml.dump(hyperparameters, file)
 
-        # # Save the losses as a numpy file
-        # if self.train_loss is None:
-        #     self.train_loss = np.array([])
-        # if self.test_loss is None:
-        #     self.test_loss = np.array([])
-        # if self.accuracy is None:
-        #     self.accuracy = np.array([])
-        # losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
-        # np.savez(
-        #     losses_path,
-        #     train_loss=self.train_loss,
-        #     test_loss=self.test_loss,
-        #     accuracy=self.accuracy,
-        #     train_duration=self.train_duration,
-        # )
-
         save_attributes = {
             k: v
             for k, v in self.__dict__.items()
@@ -125,7 +112,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         model_path = os.path.join(model_dir, f"{model_name}.pth")
         torch.save(model_dict, model_path)
 
-        print(f"Model, losses and hyperparameters saved to {model_dir}")
+        # tqdm.write(f"Model, losses and hyperparameters saved to {model_dir}")
 
     def load(self, training_id: str, surr_name: str, model_identifier: str) -> None:
         """
@@ -146,8 +133,26 @@ class AbstractSurrogateModel(ABC, nn.Module):
         model_dict = torch.load(model_dict_path)
         self.load_state_dict(model_dict["state_dict"])
         for key, value in model_dict["attributes"].items():
-            setattr(self, key, value)
+            # remove self.device from the attributes
+            if key == "device":
+                continue
+            else:
+                setattr(self, key, value)
         self.eval()
+
+    def setup_progress_bar(self, epochs: int, position: int, description: str):
+        bar_format = "{l_bar}{bar}| {n_fmt:>5}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt} {postfix}]"
+        progress_bar = tqdm(
+            range(epochs),
+            desc=description,
+            position=position,
+            leave=False,
+            bar_format=bar_format,
+        )
+        progress_bar.set_postfix(
+            {"loss": f"{0:.2e}", "lr": f"{self.config.learning_rate:.1e}"}
+        )
+        return progress_bar
 
 
 SurrogateModel = TypeVar("SurrogateModel", bound=AbstractSurrogateModel)

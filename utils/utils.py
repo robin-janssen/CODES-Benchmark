@@ -6,6 +6,7 @@ import shutil
 import random
 import numpy as np
 import torch
+from tqdm import tqdm
 
 
 def read_yaml_config(config_path):
@@ -26,7 +27,7 @@ def time_execution(func):
         result = func(*args, **kwargs)
         end_time = time.time()
         wrapper.duration = end_time - start_time
-        print(f"{func.__name__} executed in {wrapper.duration:.2f} seconds.")
+        # tqdm.write(f"{func.__name__} executed in {wrapper.duration:.2f} seconds.")
         return result
 
     wrapper.duration = None
@@ -111,6 +112,51 @@ def nice_print(message: str, width: int = 80) -> None:
     print(
         f"\n{border}\n|{' ' * padding_left}{message}{' ' * padding_right}|\n{border}\n"
     )
+
+
+def make_description(mode: str, device: str, metric: str, surrogate_name: str) -> str:
+    """
+    Create a formatted description for the progress bar that ensures consistent alignment.
+
+    Args:
+        mode (str): The benchmark mode (e.g., "accuracy", "interpolation", "extrapolation", "sparse", "UQ").
+        device (str): The device to use for training (e.g., 'cuda:0').
+        metric (str): The specific metric for the mode (e.g., interval, cutoff, factor, batch size).
+        surrogate_name (str): The name of the surrogate model.
+
+    Returns:
+        str: A formatted description string for the progress bar.
+    """
+    surrogate_name = surrogate_name.ljust(14)
+    mode = mode.ljust(13)
+    metric = metric.ljust(2)
+    if device == "":
+        device = device.ljust(6)
+    else:
+        device = f"({device})".ljust(8)
+
+    description = f"{surrogate_name} {mode} {metric} {device}"
+    return description
+
+
+def get_progress_bar(tasks: list) -> tqdm:
+    """
+    Create a progress bar with a specific description.
+
+    Args:
+        tasks (list): The list of tasks to be executed.
+
+    Returns:
+        tqdm: The created progress bar.
+    """
+    overall_progress_bar = tqdm(
+        total=len(tasks),
+        desc=make_description("", "", "", "Overall Progress"),
+        position=0,
+        leave=True,
+        bar_format="{l_bar}{bar} | {n_fmt:>3}/{total_fmt} models trained [elapsed time: {elapsed}]",
+    )
+    return overall_progress_bar
 
 
 def worker_init_fn(worker_id):

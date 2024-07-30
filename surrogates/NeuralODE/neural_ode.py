@@ -5,7 +5,6 @@ from torch.utils.data import DataLoader
 from torch import Tensor
 from torchdiffeq import odeint, odeint_adjoint
 import numpy as np
-from tqdm import tqdm
 
 from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.NeuralODE.neural_ode_config import NeuralODEConfigOSU as Config
@@ -126,6 +125,8 @@ class NeuralODE(AbstractSurrogateModel):
         test_loader: DataLoader | Tensor,
         timesteps: np.ndarray | Tensor,
         epochs: int | None,
+        position: int = 0,
+        description: str = "Training NeuralODE",
     ) -> None:
         """
         Fits the model to the training data. Sets the train_loss and test_loss attributes.
@@ -135,6 +136,8 @@ class NeuralODE(AbstractSurrogateModel):
             test_loader (DataLoader): The data loader for the test data.
             timesteps (np.ndarray | Tensor): The array of timesteps.
             epochs (int | None): The number of epochs to train the model. If None, uses the value from the config.
+            position (int): The position of the progress bar.
+            description (str): The description for the progress bar.
 
         Returns:
             None
@@ -151,14 +154,14 @@ class NeuralODE(AbstractSurrogateModel):
             scheduler = CosineAnnealingLR(
                 optimizer, self.config.epochs, eta_min=self.config.final_learning_rate
             )
+
         losses = torch.empty((epochs, len(train_loader)))
         test_losses = torch.empty((epochs))
         accuracy = torch.empty((epochs))
-        # TODO: calculate test loss
-        progress_bar = tqdm(range(epochs), desc="Training Progress")
+
+        progress_bar = self.setup_progress_bar(epochs, position, description)
 
         for epoch in progress_bar:
-
             for i, x_true in enumerate(train_loader):
                 optimizer.zero_grad()
                 # x0 = x_true[:, 0, :]
@@ -173,7 +176,8 @@ class NeuralODE(AbstractSurrogateModel):
                         self.model.renormalize_loss_weights(x_true, x_pred)
 
             clr = optimizer.param_groups[0]["lr"]
-            progress_bar.set_postfix({"loss": losses[epoch, -1].item(), "lr": clr})
+            print_loss = f"{losses[epoch, -1].item():.2e}"
+            progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
 
             if scheduler is not None:
                 scheduler.step()
@@ -187,6 +191,8 @@ class NeuralODE(AbstractSurrogateModel):
                 accuracy[epoch] = 1.0 - torch.mean(
                     torch.abs(preds - targets) / torch.abs(targets)
                 )
+
+        progress_bar.close()
 
         self.train_loss = torch.mean(losses, dim=1)
         self.test_loss = test_losses
