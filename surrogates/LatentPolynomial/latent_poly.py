@@ -13,7 +13,7 @@ from surrogates.NeuralODE.neural_ode import Encoder, Decoder
 from utils import time_execution
 
 
-class LatentPolynomial(AbstractSurrogateModel):
+class LatentPoly(AbstractSurrogateModel):
 
     def __init__(self, device: str | None = None):
         super().__init__()

@@ -1,6 +1,6 @@
 # Global settings for the benchmark
 training_id: "investigate_normalization"
-surrogates: ["LatentPolynomial"] #["MultiONet", "NeuralODE"]
+surrogates: ["LatentPoly"] #["MultiONet", "NeuralODE"]
 dataset: "Osu2008"
 devices: ["cuda:6"] # ["cuda:5", "cuda:6", "cuda:7", "cuda:8"]
 seed: 42
