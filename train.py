@@ -38,11 +38,21 @@ def train_and_save_model(
     if seed is not None:
         set_random_seeds(seed)
 
+    # Load full data
+    full_train_data, full_test_data, _, timesteps, _, data_params = check_and_load_data(
+        config["dataset"]["name"],
+        verbose=False,
+        log=config["dataset"]["log10_transform"],
+        normalisation_mode=config["dataset"]["normalise"],
+    )
+
     # Get the surrogate class
     surrogate_class = get_surrogate(surr_name)
 
+    N_chemicals = full_train_data.shape[2]
+
     # Set the device for the model
-    model = surrogate_class(device=device)
+    model = surrogate_class(device=device, N_chemicals=N_chemicals)
     surr_idx = config["surrogates"].index(surr_name)
 
     # Determine the batch size and number of epochs
@@ -57,14 +67,6 @@ def train_and_save_model(
         batch_size = config["batch_size"]
     batch_size = metric if mode == "batch_size" else batch_size
     epochs = epochs if epochs is not None else config["epochs"]
-
-    # Load full data
-    full_train_data, full_test_data, _, timesteps, _, data_params = check_and_load_data(
-        config["dataset"]["name"],
-        verbose=False,
-        log=config["dataset"]["log10_transform"],
-        normalisation_mode=config["dataset"]["normalise"],
-    )
 
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(

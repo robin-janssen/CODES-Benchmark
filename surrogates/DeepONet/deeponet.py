@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 from surrogates.surrogates import AbstractSurrogateModel
 
@@ -40,8 +40,8 @@ class TrunkNet(nn.Module):
 
 
 class OperatorNetwork(AbstractSurrogateModel):
-    def __init__(self):
-        super(OperatorNetwork, self).__init__()
+    def __init__(self, device: str, N_chemicals: int = 29):
+        super().__init__(device=device, N_chemicals=N_chemicals)
 
     def post_init_check(self):
         if not hasattr(self, "branch_net") or not hasattr(self, "trunk_net"):
@@ -69,13 +69,12 @@ OperatorNetworkType = TypeVar("OperatorNetworkType", bound=OperatorNetwork)
 
 
 class MultiONet(OperatorNetwork):
-    def __init__(self, device: str | None = None):
+    def __init__(self, device: str | None = None, N_chemicals: int = 29):
         """
         Initialize the MultiONet model with a configuration.
 
         The configuration must provide the following information:
 
-        - branch_input_size (int): The input size for the branch network.
         - trunk_input_size (int): The input size for the trunk network.
         - hidden_size (int): The number of hidden units in each layer of the branch and trunk networks.
         - branch_hidden_layers (int): The number of hidden layers in the branch network.
@@ -85,26 +84,27 @@ class MultiONet(OperatorNetwork):
         - device (str): The device to use for training (e.g., 'cpu', 'cuda:0').
         """
         config = MultiONetConfig()  # Load the specific config for DeepONet
-        super(MultiONet, self).__init__()
+        # super(MultiONet, self).__init__()
+        super().__init__(device=device, N_chemicals=N_chemicals)
 
         self.config = config
-        if device is not None:
-            config.device = device
-        self.device = config.device
-        self.N = config.N_outputs  # Number of outputs
-        self.outputs = config.output_neurons  # Number of neurons in the last layer
+        self.device = device
+        self.N = N_chemicals  # Number of chemicals
+        self.outputs = (
+            N_chemicals * config.output_factor
+        )  # Number of neurons in the last layer
         self.branch_net = BranchNet(
-            config.branch_input_size,
+            N_chemicals - config.trunk_input_size + 1,  # +1 due to time
             config.hidden_size,
-            config.output_neurons,
+            self.outputs,
             config.branch_hidden_layers,
-        ).to(config.device)
+        ).to(device)
         self.trunk_net = TrunkNet(
-            config.trunk_input_size,
+            config.trunk_input_size,  # = time + optional additional quantities
             config.hidden_size,
-            config.output_neurons,
+            self.outputs,
             config.trunk_hidden_layers,
-        ).to(config.device)
+        ).to(device)
 
     def forward(
         self,
@@ -144,7 +144,7 @@ class MultiONet(OperatorNetwork):
         dataset_test: np.ndarray,
         dataset_val: np.ndarray | None,
         timesteps: np.ndarray,
-        batch_size: int | None = None,
+        batch_size: int,
         shuffle: bool = True,
     ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
         """
@@ -162,10 +162,6 @@ class MultiONet(OperatorNetwork):
         Returns:
             tuple: The training, test, and validation DataLoaders.
         """
-        # Use batch size from the config if not provided
-        if batch_size is None:
-            batch_size = self.config.batch_size
-
         dataloaders = []
         # Create the train dataloader
         dataloader_train = self.create_dataloader(
@@ -198,7 +194,7 @@ class MultiONet(OperatorNetwork):
         train_loader: DataLoader,
         test_loader: DataLoader,
         timesteps: np.ndarray,
-        epochs: int | None = None,
+        epochs: int,
         position: int = 0,
         description: str = "Training DeepONet",
     ) -> None:
@@ -220,11 +216,9 @@ class MultiONet(OperatorNetwork):
         self.N_train_samples = int(len(train_loader.dataset) / self.N_timesteps)
 
         criterion = self.setup_criterion()
-        optimizer, scheduler = self.setup_optimizer_and_scheduler()
+        optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
 
-        train_losses, test_losses, accuracies = self.setup_losses(epochs=epochs)
-
-        epochs = self.config.num_epochs if epochs is None else epochs
+        train_losses, test_losses, accuracies = (np.zeros(epochs),) * 3
 
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
@@ -319,19 +313,19 @@ class MultiONet(OperatorNetwork):
         if hasattr(self.config, "masses") and self.config.masses is not None:
             weights = (1.0, self.config.massloss_factor)
             crit = mass_conservation_loss(
-                self.config.masses, crit, weights, self.config.device
+                self.config.masses, crit, weights, self.device
             )
         return crit
 
     def setup_optimizer_and_scheduler(
         self,
+        epochs: int,
     ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
         """
         Utility function to set up the optimizer and scheduler for training.
 
         Args:
-            conf (dataclasses.dataclass): The configuration dataclass.
-            deeponet (OperatorNetworkType): The model to train.
+            epochs (int): The number of epochs to train the model.
 
         Returns:
             tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler): The optimizer and scheduler.
@@ -343,50 +337,13 @@ class MultiONet(OperatorNetwork):
         )
         if self.config.schedule:
             scheduler = torch.optim.lr_scheduler.LinearLR(
-                optimizer,
-                start_factor=1,
-                end_factor=0.3,
-                total_iters=self.config.num_epochs,
+                optimizer, start_factor=1, end_factor=0.3, total_iters=epochs
             )
         else:
             scheduler = torch.optim.lr_scheduler.LinearLR(
-                optimizer,
-                start_factor=1,
-                end_factor=1,
-                total_iters=self.config.num_epochs,
+                optimizer, start_factor=1, end_factor=1, total_iters=epochs
             )
         return optimizer, scheduler
-
-    def setup_losses(
-        self,
-        prev_train_loss: Optional[np.ndarray] = None,
-        prev_test_loss: Optional[np.ndarray] = None,
-        prev_accuracy: Optional[np.ndarray] = None,
-        epochs: int | None = None,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Set up the loss history arrays for training.
-
-        Args:
-            prev_train_loss (np.ndarray): Previous training loss history.
-            prev_test_loss (np.ndarray): Previous test loss history.
-            prev_accuracy (np.ndarray): Previous accuracy history.
-            epochs (int, optional): The number of epochs to train the model.
-
-        Returns:
-            tuple: The training and testing loss history arrays (both np.ndarrays).
-        """
-        epochs = self.config.num_epochs if epochs is None else epochs
-        if self.config.pretrained_model_path is None:
-            train_losses = np.zeros(epochs)
-            test_losses = np.zeros(epochs)
-            accuracies = np.zeros(epochs)
-        else:
-            train_losses = np.concatenate((prev_train_loss, np.zeros(epochs)))
-            test_losses = np.concatenate((prev_test_loss, np.zeros(epochs)))
-            accuracies = np.concatenate((prev_accuracy, np.zeros(epochs)))
-
-        return train_losses, test_losses, accuracies
 
     def epoch(
         self,

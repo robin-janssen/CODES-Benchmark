@@ -18,12 +18,14 @@ from utils import create_model_dir
 # Define abstract base class for surrogate models
 class AbstractSurrogateModel(ABC, nn.Module):
 
-    def __init__(self):
+    def __init__(self, device: str | None = None, N_chemicals: int = 29):
         super().__init__()
         self.train_loss = None
         self.test_loss = None
         self.accuracy = None
         self.normalisation = None
+        self.device = device
+        self.N_chemicals = N_chemicals
 
     @abstractmethod
     def forward(self, inputs, timesteps: np.ndarray) -> Tensor:
@@ -101,9 +103,11 @@ class AbstractSurrogateModel(ABC, nn.Module):
         # Reduce the precision of the losses and accuracy
         for attribute in ["train_loss", "test_loss", "accuracy"]:
             value = getattr(self, attribute)
+            if isinstance(value, torch.Tensor):
+                value = value.cpu().detach().numpy()
             if value is not None:
                 value = value.astype(np.float16)
-                setattr(self, attribute)
+                setattr(self, attribute, value)
 
         # Save the hyperparameters as a yaml file
         hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")

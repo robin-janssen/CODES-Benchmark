@@ -5,7 +5,6 @@ import torch.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
-from typing import Optional
 
 from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.FCNN.fcnn_config import OConfig
@@ -39,7 +38,7 @@ class FullyConnectedNet(nn.Module):
 
 
 class FullyConnected(AbstractSurrogateModel):
-    def __init__(self, device: str | None = None):
+    def __init__(self, device: str | None = None, N_chemicals: int = 29):
         """
         Initialize the FullyConnected model with a configuration.
 
@@ -51,19 +50,17 @@ class FullyConnected(AbstractSurrogateModel):
         - device (str): The device to use for training (e.g., 'cpu', 'cuda:0').
         """
         config = OConfig()  # Load the specific config for FullyConnected
-        super(FullyConnected, self).__init__()
+        super().__init__(device=device, N_chemicals=N_chemicals)
 
         self.config = config
-        if device is not None:
-            config.device = device
-        self.device = config.device
-        self.N = config.output_size
+        self.device = device
+        self.N = N_chemicals
         self.model = FullyConnectedNet(
-            config.input_size,
+            self.N + 1,  # 29 chemicals + 1 time input
             config.hidden_size,
-            config.output_size,
+            self.N,
             config.num_hidden_layers,
-        ).to(config.device)
+        ).to(device)
 
     def forward(
         self,
@@ -91,7 +88,7 @@ class FullyConnected(AbstractSurrogateModel):
         dataset_test: np.ndarray,
         dataset_val: np.ndarray | None,
         timesteps: np.ndarray,
-        batch_size: int | None = None,
+        batch_size: int,
         shuffle: bool = True,
     ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
         """
@@ -109,9 +106,6 @@ class FullyConnected(AbstractSurrogateModel):
         Returns:
             tuple: The training, test, and validation DataLoaders.
         """
-        # Use batch size from the config if not provided
-        if batch_size is None:
-            batch_size = self.config.batch_size
 
         # Create the DataLoaders
         dataloaders = []
@@ -132,7 +126,7 @@ class FullyConnected(AbstractSurrogateModel):
         train_loader: DataLoader,
         test_loader: DataLoader,
         timesteps: np.ndarray,
-        epochs: int | None = None,
+        epochs: int,
         position: int = 0,
         description: str = "Training FullyConnected",
     ) -> None:
@@ -154,11 +148,9 @@ class FullyConnected(AbstractSurrogateModel):
         self.N_train_samples = int(len(train_loader.dataset) / self.N_timesteps)
 
         criterion = self.setup_criterion()
-        optimizer, scheduler = self.setup_optimizer_and_scheduler()
+        optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
 
-        train_losses, test_losses, accuracies = self.setup_losses(epochs=epochs)
-
-        epochs = self.config.num_epochs if epochs is None else epochs
+        train_losses, test_losses, accuracies = (np.zeros(epochs),) * 3
 
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
@@ -253,9 +245,13 @@ class FullyConnected(AbstractSurrogateModel):
 
     def setup_optimizer_and_scheduler(
         self,
+        epochs: int,
     ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
         """
         Utility function to set up the optimizer and scheduler for training.
+
+        Args:
+            epochs (int): The number of epochs to train the model.
 
         Returns:
             tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler): The optimizer and scheduler.
@@ -270,47 +266,16 @@ class FullyConnected(AbstractSurrogateModel):
                 optimizer,
                 start_factor=1,
                 end_factor=0.3,
-                total_iters=self.config.num_epochs,
+                total_iters=epochs,
             )
         else:
             scheduler = torch.optim.lr_scheduler.LinearLR(
                 optimizer,
                 start_factor=1,
                 end_factor=1,
-                total_iters=self.config.num_epochs,
+                total_iters=epochs,
             )
         return optimizer, scheduler
-
-    def setup_losses(
-        self,
-        prev_train_loss: Optional[np.ndarray] = None,
-        prev_test_loss: Optional[np.ndarray] = None,
-        prev_accuracy: Optional[np.ndarray] = None,
-        epochs: int | None = None,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Set up the loss history arrays for training.
-
-        Args:
-            prev_train_loss (np.ndarray): Previous training loss history.
-            prev_test_loss (np.ndarray): Previous test loss history.
-            prev_accuracy (np.ndarray): Previous accuracy history.
-            epochs (int, optional): The number of epochs to train the model.
-
-        Returns:
-            tuple: The training and testing loss history arrays (both np.ndarrays).
-        """
-        epochs = self.config.num_epochs if epochs is None else epochs
-        if self.config.pretrained_model_path is None:
-            train_losses = np.zeros(epochs)
-            test_losses = np.zeros(epochs)
-            accuracies = np.zeros(epochs)
-        else:
-            train_losses = np.concatenate((prev_train_loss, np.zeros(epochs)))
-            test_losses = np.concatenate((prev_test_loss, np.zeros(epochs)))
-            accuracies = np.concatenate((prev_accuracy, np.zeros(epochs)))
-
-        return train_losses, test_losses, accuracies
 
     def epoch(
         self,

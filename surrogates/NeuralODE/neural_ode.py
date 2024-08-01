@@ -35,17 +35,15 @@ class NeuralODE(AbstractSurrogateModel):
             Saves the model, losses, and hyperparameters.
     """
 
-    def __init__(self, device: str | None = None):
-        super().__init__()
+    def __init__(self, device: str | None = None, N_chemicals: int = 29):
+        super().__init__(device=device, N_chemicals=N_chemicals)
         self.config: Config = Config()
         # TODO find out why the config is loaded incorrectly after the first
         # training and fix! The list is ordered the other way around...
-        self.config.coder_layers = [32, 16, 8]
-        if device is not None:
-            self.config.device = device
-        self.device = self.config.device
-        self.model = ModelWrapper(config=self.config).to(self.device)
-        self.train_loss = None
+        # self.config.coder_layers = [32, 16, 8]
+        self.model = ModelWrapper(config=self.config, N_chemicals=N_chemicals).to(
+            device
+        )
 
     def forward(self, inputs: torch.Tensor, timesteps: torch.Tensor | np.ndarray):
         """
@@ -68,7 +66,7 @@ class NeuralODE(AbstractSurrogateModel):
         dataset_train: np.ndarray,
         dataset_test: np.ndarray | None = None,
         dataset_val: np.ndarray | None = None,
-        batch_size: int | None = None,
+        batch_size: int = 128,
         shuffle: bool = True,
     ) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
         """
@@ -83,8 +81,6 @@ class NeuralODE(AbstractSurrogateModel):
         Returns:
             DataLoader: The DataLoader object containing the prepared data.
         """
-
-        batch_size = self.config.batch_size if batch_size is None else batch_size
         device = self.device
 
         dset_train = ChemDataset(dataset_train, device=self.device)
@@ -123,7 +119,7 @@ class NeuralODE(AbstractSurrogateModel):
         train_loader: DataLoader | Tensor,
         test_loader: DataLoader | Tensor,
         timesteps: np.ndarray | Tensor,
-        epochs: int | None,
+        epochs: int,
         position: int = 0,
         description: str = "Training NeuralODE",
     ) -> None:
@@ -143,7 +139,6 @@ class NeuralODE(AbstractSurrogateModel):
         """
         if not isinstance(timesteps, torch.Tensor):
             timesteps = torch.tensor(timesteps).to(self.device)
-        epochs = self.config.epochs if epochs is None else epochs
 
         # TODO: make Optimizer and scheduler configable
         optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
@@ -151,7 +146,7 @@ class NeuralODE(AbstractSurrogateModel):
         scheduler = None
         if self.config.final_learning_rate is not None:
             scheduler = CosineAnnealingLR(
-                optimizer, self.config.epochs, eta_min=self.config.final_learning_rate
+                optimizer, epochs, eta_min=self.config.final_learning_rate
             )
 
         losses = torch.empty((epochs, len(train_loader)))
@@ -244,20 +239,20 @@ class NeuralODE(AbstractSurrogateModel):
 
 class ModelWrapper(torch.nn.Module):
 
-    def __init__(self, config):
+    def __init__(self, config, N_chemicals):
         super().__init__()
         self.config = config
         self.loss_weights = [100.0, 1.0, 1.0, 1.0]
 
         self.encoder = Encoder(
-            in_features=config.in_features,
+            in_features=N_chemicals,
             latent_features=config.latent_features,
             n_hidden=config.coder_hidden,
             width_list=config.coder_layers,
             activation=config.coder_activation,
         )
         self.decoder = Decoder(
-            out_features=config.in_features,
+            out_features=N_chemicals,
             latent_features=config.latent_features,
             n_hidden=config.coder_hidden,
             width_list=config.coder_layers,
@@ -272,7 +267,6 @@ class ModelWrapper(torch.nn.Module):
             tanh_reg=config.ode_tanh_reg,
         )
 
-    # def forward(self, x0, t_range):
     def forward(self, x, t_range):
         x0 = x[:, 0, :]
         z0 = self.encoder(x0)  # x(t=0)
