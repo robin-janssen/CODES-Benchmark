@@ -353,24 +353,6 @@ def plot_example_predictions_with_uncertainty(
     plt.close()
 
 
-# def save_plot(filename: str, conf: dict, surr_name: str) -> None:
-#     """
-#     Save a plot to the specified directory based on the configuration.
-
-#     Args:
-#         filename (str): The name of the file to save.
-#         conf (Dict): Configuration dictionary.
-#         surr_name (str): The name of the surrogate model.
-#     """
-#     training_id = conf["training_id"]
-#     plot_dir = os.path.join("plots", training_id, surr_name)
-#     if not os.path.exists(plot_dir):
-#         os.makedirs(plot_dir)
-#     filepath = os.path.join(plot_dir, filename)
-#     plt.savefig(filepath)
-#     print(f"Plot saved as: {filepath}")
-
-
 def plot_average_uncertainty_over_time(
     surr_name: str,
     conf: dict,
@@ -736,8 +718,8 @@ def plot_relative_errors(
     Plot the relative errors over time for different surrogate models.
 
     Args:
-        mean_errors (dict): Dictionary containing the mean relative errors for each surrogate model.
-        median_errors (dict): Dictionary containing the median relative errors for each surrogate model.
+        mean_errors (dict): dictionary containing the mean relative errors for each surrogate model.
+        median_errors (dict): dictionary containing the median relative errors for each surrogate model.
         timesteps (np.ndarray): Array of timesteps.
         config (dict): Configuration dictionary.
         save (bool): Whether to save the plot.
@@ -792,7 +774,7 @@ def inference_time_bar_plot(
         surrogates (List[str]): List of surrogate model names.
         means (List[float]): List of mean inference times for each surrogate model.
         stds (List[float]): List of standard deviation of inference times for each surrogate model.
-        config (Dict): Configuration dictionary.
+        config (dict): Configuration dictionary.
         save (bool, optional): Whether to save the plot. Defaults to True.
 
     Returns:

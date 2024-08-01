@@ -3,7 +3,7 @@ import numpy as np
 import time
 
 # import os
-from typing import Dict, Any
+from typing import Any
 from torch.utils.data import DataLoader
 from scipy.stats import pearsonr
 
@@ -34,7 +34,7 @@ from .bench_utils import (
 from data import check_and_load_data
 
 
-def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]:
+def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]:
     """
     Run benchmarks for a given surrogate model.
 
@@ -145,8 +145,8 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
 
 
 def evaluate_accuracy(
-    model, surr_name: str, test_loader: DataLoader, timesteps, conf: Dict
-) -> Dict[str, Any]:
+    model, surr_name: str, test_loader: DataLoader, timesteps, conf: dict
+) -> dict[str, Any]:
     """
     Evaluate the accuracy of the surrogate model.
 
@@ -286,7 +286,7 @@ def time_inference(
     timesteps: np.ndarray,
     conf: dict,
     n_runs: int = 5,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Time the inference of the surrogate model.
 
@@ -330,8 +330,8 @@ def time_inference(
 
 
 def evaluate_compute(
-    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
-) -> Dict[str, Any]:
+    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: dict
+) -> dict[str, Any]:
     """
     Evaluate the computational resource requirements of the surrogate model.
 
@@ -366,8 +366,8 @@ def evaluate_compute(
 
 
 def evaluate_interpolation(
-    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
-) -> Dict[str, Any]:
+    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: dict
+) -> dict[str, Any]:
     """
     Evaluate the interpolation performance of the surrogate model.
 
@@ -434,8 +434,8 @@ def evaluate_interpolation(
 
 
 def evaluate_extrapolation(
-    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
-) -> Dict[str, Any]:
+    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: dict
+) -> dict[str, Any]:
     """
     Evaluate the extrapolation performance of the surrogate model.
 
@@ -508,8 +508,8 @@ def evaluate_sparse(
     test_loader: DataLoader,
     timesteps: np.ndarray,
     N_train_samples: int,
-    conf: Dict,
-) -> Dict[str, Any]:
+    conf: dict,
+) -> dict[str, Any]:
     """
     Evaluate the performance of the surrogate model with sparse training data.
 
@@ -585,8 +585,8 @@ def evaluate_batchsize(
     surr_name: str,
     test_loader: DataLoader,
     timesteps: np.ndarray,
-    conf: Dict,
-) -> Dict[str, Any]:
+    conf: dict,
+) -> dict[str, Any]:
     """
     Evaluate the performance of the surrogate model with different batch sizes.
 
@@ -644,8 +644,8 @@ def evaluate_batchsize(
 
 
 def evaluate_UQ(
-    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
-) -> Dict[str, Any]:
+    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: dict
+) -> dict[str, Any]:
     """
     Evaluate the uncertainty quantification (UQ) performance of the surrogate model.
 
@@ -741,7 +741,7 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
     Compare the training and test losses of the main models for different surrogate models.
 
     Args:
-        metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:
@@ -777,7 +777,7 @@ def compare_accuracies(metrics: dict, config: dict) -> None:
     Compare the accuracies of different surrogate models over the course of training.
 
     Args:
-        metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:
@@ -803,12 +803,12 @@ def compare_accuracies(metrics: dict, config: dict) -> None:
     plot_accuracy_comparison_train_duration(accuracies, labels, train_durations, config)
 
 
-def compare_relative_errors(metrics: Dict[str, dict], config: dict) -> None:
+def compare_relative_errors(metrics: dict[str, dict], config: dict) -> None:
     """
     Compare the relative errors over time for different surrogate models.
 
     Args:
-        metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:
@@ -836,14 +836,14 @@ def compare_relative_errors(metrics: Dict[str, dict], config: dict) -> None:
 
 
 def compare_inference_time(
-    metrics: Dict[str, Dict], config: Dict, save: bool = True
+    metrics: dict[str, dict], config: dict, save: bool = True
 ) -> None:
     """
     Compare the mean inference time of different surrogate models.
 
     Args:
-        metrics (Dict[str, Dict]): Dictionary containing the benchmark metrics for each surrogate model.
-        config (Dict): Configuration dictionary.
+        metrics (dict[str, dict]): dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
         save (bool, optional): Whether to save the plot. Defaults to True.
 
     Returns:
@@ -876,7 +876,7 @@ def compare_interpolation(all_metrics: dict, config: dict) -> None:
     Compare the interpolation errors of different surrogate models.
 
     Args:
-        all_metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:
@@ -906,7 +906,7 @@ def compare_extrapolation(all_metrics: dict, config: dict) -> None:
     Compare the extrapolation errors of different surrogate models.
 
     Args:
-        all_metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:
@@ -936,7 +936,7 @@ def compare_sparse(all_metrics: dict, config: dict) -> None:
     Compare the sparse training errors of different surrogate models.
 
     Args:
-        all_metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:
@@ -966,7 +966,7 @@ def compare_batchsize(all_metrics: dict, config: dict) -> None:
     Compare the batch size training errors of different surrogate models.
 
     Args:
-        all_metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:

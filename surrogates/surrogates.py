@@ -98,6 +98,13 @@ class AbstractSurrogateModel(ABC, nn.Module):
         setattr(self, "normalisation", data_params)
         hyperparameters["normalisation"] = data_params
 
+        # Reduce the precision of the losses and accuracy
+        for attribute in ["train_loss", "test_loss", "accuracy"]:
+            value = getattr(self, attribute)
+            if value is not None:
+                value = value.astype(np.float16)
+                setattr(self, attribute)
+
         # Save the hyperparameters as a yaml file
         hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
         with open(hyperparameters_path, "w") as file:

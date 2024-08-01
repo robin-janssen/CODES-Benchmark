@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
-from typing import Tuple, Optional, TypeVar
+from typing import Optional, TypeVar
 
 from surrogates.surrogates import AbstractSurrogateModel
 
@@ -108,7 +108,7 @@ class MultiONet(OperatorNetwork):
 
     def forward(
         self,
-        inputs: Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+        inputs: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
         timesteps: np.ndarray | None = None,
     ) -> torch.Tensor:
         """
@@ -258,7 +258,7 @@ class MultiONet(OperatorNetwork):
         self,
         data_loader: DataLoader,
         timesteps: np.ndarray,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Evaluate the model on the test data.
 
@@ -325,7 +325,7 @@ class MultiONet(OperatorNetwork):
 
     def setup_optimizer_and_scheduler(
         self,
-    ) -> Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
+    ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
         """
         Utility function to set up the optimizer and scheduler for training.
 
@@ -363,7 +363,7 @@ class MultiONet(OperatorNetwork):
         prev_test_loss: Optional[np.ndarray] = None,
         prev_accuracy: Optional[np.ndarray] = None,
         epochs: int | None = None,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Set up the loss history arrays for training.
 

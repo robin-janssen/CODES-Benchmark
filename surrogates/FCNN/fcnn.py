@@ -5,7 +5,7 @@ import torch.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
-from typing import Tuple, Optional
+from typing import Optional
 
 from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.FCNN.fcnn_config import OConfig
@@ -67,14 +67,14 @@ class FullyConnected(AbstractSurrogateModel):
 
     def forward(
         self,
-        inputs: Tuple,
+        inputs: tuple,
         timesteps: np.ndarray | None = None,
     ) -> torch.Tensor:
         """
         Forward pass for the FullyConnected model.
 
         Args:
-            inputs (Tuple[torch.Tensor, torch.Tensor]): The input tensor and the target tensor.
+            inputs (tuple[torch.Tensor, torch.Tensor]): The input tensor and the target tensor.
             Note: The targets are not used in the forward pass but are included for compatibility with the DataLoader.
             timesteps (np.ndarray, optional): The timesteps array.
             Note: The timesteps are not used in the forward pass but are included for compatibility with the benchmarking code.
@@ -192,7 +192,7 @@ class FullyConnected(AbstractSurrogateModel):
         self,
         data_loader: DataLoader,
         timesteps: np.ndarray,
-    ) -> Tuple[float, np.ndarray, np.ndarray]:
+    ) -> tuple[float, np.ndarray, np.ndarray]:
         """
         Evaluate the model on the test data.
 
@@ -253,7 +253,7 @@ class FullyConnected(AbstractSurrogateModel):
 
     def setup_optimizer_and_scheduler(
         self,
-    ) -> Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
+    ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
         """
         Utility function to set up the optimizer and scheduler for training.
 
@@ -287,7 +287,7 @@ class FullyConnected(AbstractSurrogateModel):
         prev_test_loss: Optional[np.ndarray] = None,
         prev_accuracy: Optional[np.ndarray] = None,
         epochs: int | None = None,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Set up the loss history arrays for training.
 

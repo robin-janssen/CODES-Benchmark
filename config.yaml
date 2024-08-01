@@ -36,4 +36,5 @@ compare: True # Whether to compare the surrogates
 # Leave empty if the quantities should be set per surrogate
 
 batch_size: [64, 64, 1024, 1024] 
-epochs: [10000, 20000, 200, 400]
+epochs: [4000, 10000, 200, 400]
+
