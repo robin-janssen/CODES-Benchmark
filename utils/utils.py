@@ -1,6 +1,8 @@
 import yaml
 import functools
 import time
+import json
+import sys
 import os
 import shutil
 import random
@@ -54,12 +56,13 @@ def create_model_dir(
     return full_path
 
 
-def load_and_save_config(config_path: str = "config.yaml") -> dict:
+def load_and_save_config(config_path: str = "config.yaml", save: bool = True) -> dict:
     """
     Load configuration from a YAML file and save a copy to the specified directory.
 
     Args:
         config_path (str): The path to the configuration YAML file.
+        save (bool): Whether to save a copy of the configuration file. Default is True.
 
     Returns:
         dict: The loaded configuration dictionary.
@@ -68,16 +71,17 @@ def load_and_save_config(config_path: str = "config.yaml") -> dict:
     with open(config_path, "r") as file:
         config = yaml.safe_load(file)
 
-    # Get training ID from the config
-    training_id = config["training_id"]
+    if save:
+        # Get training ID from the config
+        training_id = config["training_id"]
 
-    # Create the directory if it does not exist
-    save_dir = os.path.join("trained", training_id)
-    os.makedirs(save_dir, exist_ok=True)
+        # Create the directory if it does not exist
+        save_dir = os.path.join("trained", training_id)
+        os.makedirs(save_dir, exist_ok=True)
 
-    # Copy the config file to the directory
-    config_save_path = os.path.join(save_dir, "config.yaml")
-    shutil.copyfile(config_path, config_save_path)
+        # Copy the config file to the directory
+        config_save_path = os.path.join(save_dir, "config.yaml")
+        shutil.copyfile(config_path, config_save_path)
 
     return config
 
@@ -163,3 +167,29 @@ def worker_init_fn(worker_id):
     torch_seed = torch.initial_seed()
     np_seed = torch_seed // 2**32 - 1
     np.random.seed(np_seed)
+
+
+def save_task_list(tasks: list, filepath: str) -> None:
+    with open(filepath, "w") as f:
+        json.dump(tasks, f)
+
+
+def load_task_list(filepath: str) -> list:
+    if os.path.exists(filepath):
+        with open(filepath, "r") as f:
+            tasks = json.load(f)
+        return tasks
+    else:
+        return []
+
+
+def check_training_status(training_id: str):
+    task_list_filepath = os.path.join(f"trained/{training_id}/train_tasks.json")
+    completion_marker_filepath = os.path.join(f"trained/{training_id}/completed.txt")
+
+    # Check if training is already complete
+    if os.path.exists(completion_marker_filepath):
+        print("Training is already completed. Exiting.")
+        sys.exit()
+
+    return task_list_filepath

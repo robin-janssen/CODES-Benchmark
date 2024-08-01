@@ -277,24 +277,24 @@ def get_data_subset(full_train_data, full_test_data, timesteps, mode, metric, co
         full_test_data (np.ndarray): The full test data.
         timesteps (np.ndarray): The timesteps.
         mode (str): The benchmark mode (e.g., "accuracy", "interpolation", "extrapolation", "sparse", "UQ").
-        metric (str): The specific metric for the mode (e.g., interval, cutoff, factor, batch size).
+        metric (int): The specific metric for the mode (e.g., interval, cutoff, factor, batch size).
         config (dict): The configuration dictionary.
 
     Returns:
         tuple: The training data, test data, and timesteps subset.
     """
     if mode == "interpolation":
-        interval = int(metric)
+        interval = metric
         train_data = full_train_data[:, ::interval]
         test_data = full_test_data[:, ::interval]
         timesteps = timesteps[::interval]
     elif mode == "extrapolation":
-        cutoff = int(metric)
+        cutoff = metric
         train_data = full_train_data[:, :cutoff]
         test_data = full_test_data[:, :cutoff]
         timesteps = timesteps[:cutoff]
     elif mode == "sparse":
-        factor = int(metric)
+        factor = metric
         train_data = full_train_data[::factor]
         test_data = full_test_data[::factor]
         timesteps = timesteps
