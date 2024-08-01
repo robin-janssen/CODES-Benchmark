@@ -1,3 +1,6 @@
+import sys
+sys.path.append("/export/data/isulzer/DON-vs-NODE/")
+
 import torch
 from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -6,8 +9,10 @@ from torch import Tensor
 import numpy as np
 import optuna
 
-from neural_ode_config import NeuralODEConfigOSU as Config
-from neural_ode import NeuralODE
+
+
+from surrogates.NeuralODE.neural_ode_config import NeuralODEConfigOSU as Config
+from surrogates.NeuralODE.neural_ode import NeuralODE
 from data import check_and_load_data
 from utils import time_execution
 
@@ -17,7 +22,7 @@ class NeuralODESub(NeuralODE):
     @time_execution
     def fit(
         self,
-        trial: optuna.Trial,
+        trial,
         train_loader: DataLoader | Tensor,
         test_loader: DataLoader | Tensor,
         timesteps: np.ndarray | Tensor,
@@ -84,7 +89,7 @@ class NeuralODESub(NeuralODE):
                 self.model.eval()
                 preds, targets = self.predict(test_loader, timesteps)
                 self.model.train()
-                loss = self.model.total_loss(preds, targets)
+                loss = self.model.l2_loss(preds, targets)
                 test_losses[epoch] = loss
                 accuracy[epoch] = 1.0 - torch.mean(
                     torch.abs(preds - targets) / torch.abs(targets)
@@ -99,22 +104,42 @@ class NeuralODESub(NeuralODE):
         self.accuracy = accuracy
 
 
-DEVICE = "cuda:123"
+DEVICE = "cuda:2"
 EPOCHS = 1000
 
-def objective(trial: optuna.Trial):
+
+def objective(trial):
 
     config = Config()
+
+    choices = ["relu", "tanh", "leaky_relu"]
 
     learning_rate = trial.suggest_float("learning_rate", 1e-6, 1e-2, log=True)
     coder_activation = trial.suggest_categorical(
         "coder_activation",
-        choices=(torch.nn.ReLU(), torch.nn.Tanh(), torch.nn.LeakyReLU()),
+        choices=choices,
     )
     ode_activation = trial.suggest_categorical(
         "ode_activation",
-        choices=(torch.nn.ReLU(), torch.nn.Tanh(), torch.nn.LeakyReLU()),
+        choices=choices,
     )
+
+    match coder_activation:
+        case "relu":
+            coder_activation = torch.nn.ReLU()
+        case "tanh":
+            coder_activation = torch.nn.Tanh()
+        case "leaky_relu":
+            coder_activation = torch.nn.LeakyReLU()
+
+    match ode_activation:
+        case "relu":
+            ode_activation = torch.nn.ReLU()
+        case "tanh":
+            ode_activation = torch.nn.Tanh()
+        case "leaky_relu":
+            ode_activation = torch.nn.LeakyReLU()
+
     ode_layer_width = trial.suggest_categorical("ode_layer_width", (32, 64, 128, 256))
     ode_depth = trial.suggest_categorical("ode_depth", (3, 4, 5, 6))
 
@@ -124,7 +149,7 @@ def objective(trial: optuna.Trial):
     config.ode_layer_width = ode_layer_width
     config.ode_hidden = ode_depth
 
-    model = NeuralODE(device=DEVICE)
+    model = NeuralODESub(device=DEVICE)
 
     train_data, test_data, _, timesteps, _, data_params = check_and_load_data(
         dataset_name="osu2008",
@@ -144,12 +169,16 @@ def objective(trial: optuna.Trial):
 
     model.fit(trial, train_loader, test_loader, timesteps, EPOCHS)
 
-    return model.accuracy[-1]
+    return model.test_loss[-20:].mean()
+
 
 study = optuna.create_study(
     direction="minimize",
     study_name="NeuralODE Optimization",
-    pruner=optuna.pruners.PatientPruner(optuna.pruners.PercentilePruner(percentile=0.7), patience=10),
-    storage="sqlite:///end_to_end.db",)
+    pruner=optuna.pruners.PatientPruner(
+        optuna.pruners.PercentilePruner(percentile=0.7), patience=10
+    ),
+    # storage="sqlite:///end_to_end.db",
+)
 study.optimize(objective, n_trials=100)
 print(study.best_params)
