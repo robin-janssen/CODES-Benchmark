@@ -244,12 +244,14 @@ class ChemDataset(torch.utils.data.Dataset):
         if not self.data.dtype == torch.float64:
             self.data = torch.tensor(self.data, dtype=torch.float64)
         self.data = self.data.to(device)
+        self.timesteps = torch.linspace(0, 1, 100).to(device)
 
     def __getitem__(self, index):
-        return self.data[index, :, :]
+        return self.data[index, :, :], self.timesteps
 
-    # def __getitems__(self, index_list: list[int]):
-    #     return self.data[index_list, :, :]
+    def __getitems__(self, index_list: list[int]):
+        return self.data[index_list, :, :], self.timesteps
 
     def __len__(self):
         return self.length
+    

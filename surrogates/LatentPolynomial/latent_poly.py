@@ -22,20 +22,18 @@ class LatentPoly(AbstractSurrogateModel):
         self.device = self.config.device
         self.model = PolynomialModelWrapper(config=self.config)
 
-    def forward(self, inputs: Tensor, timesteps: Tensor | np.ndarray):
+    def forward(self, inputs) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Perform a forward pass through the model.
 
         Args:
             inputs (torch.Tensor): The input tensor.
-            timesteps (torch.Tensor | np.ndarray): The tensor/array representing the timesteps.
 
         Returns:
-            torch.Tensor: The output tensor.
+            tuple[torch.Tensor, torch.Tensor]: predictions and targets
         """
-        if not isinstance(timesteps, Tensor):
-            timesteps = torch.tensor(timesteps, dtype=torch.float64).to(self.device)
-        return self.model.forward(inputs, timesteps)
+        targets, timesteps = inputs[0], inputs[1]
+        return self.model(targets, timesteps), targets
 
     def prepare_data(
         self,
@@ -64,21 +62,30 @@ class LatentPoly(AbstractSurrogateModel):
 
         dset_train = ChemDataset(dataset_train, device=self.device)
         dataloader_train = DataLoader(
-            dset_train, batch_size=batch_size, shuffle=shuffle
+            dset_train,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            collate_fn=lambda x: (x[0], x[1]),
         )
 
         dataloader_test = None
         if dataset_test is not None:
             dset_test = ChemDataset(dataset_test, device=self.device)
             dataloader_test = DataLoader(
-                dset_test, batch_size=batch_size, shuffle=shuffle
+                dset_test,
+                batch_size=batch_size,
+                shuffle=shuffle,
+                collate_fn=lambda x: (x[0], x[1]),
             )
 
         dataloader_val = None
         if dataset_val is not None:
             dset_val = ChemDataset(dataset_val, device=device)
             dataloader_val = DataLoader(
-                dset_val, batch_size=batch_size, shuffle=shuffle
+                dset_val,
+                batch_size=batch_size,
+                shuffle=shuffle,
+                collate_fn=lambda x: (x[0], x[1]),
             )
 
         return dataloader_train, dataloader_test, dataloader_val
@@ -86,8 +93,8 @@ class LatentPoly(AbstractSurrogateModel):
     @time_execution
     def fit(
         self,
-        train_loader: DataLoader | Tensor,
-        test_loader: DataLoader | Tensor,
+        train_loader: DataLoader,
+        test_loader: DataLoader,
         timesteps: np.ndarray | Tensor,
         epochs: int | None,
         position: int = 0,
@@ -120,7 +127,7 @@ class LatentPoly(AbstractSurrogateModel):
 
         for epoch in progress_bar:
 
-            for i, x_true in enumerate(train_loader):
+            for i, (x_true, timesteps) in enumerate(train_loader):
                 optimizer.zero_grad()
                 x_pred = self.model.forward(x_true, timesteps)
                 loss = self.model.total_loss(x_true, x_pred)
@@ -139,7 +146,7 @@ class LatentPoly(AbstractSurrogateModel):
 
             with torch.inference_mode():
                 self.model.eval()
-                preds, targets = self.predict(test_loader, timesteps)
+                preds, targets = self.predict(test_loader)
                 self.model.train()
                 loss = self.model.total_loss(preds, targets)
                 test_losses[epoch] = loss
@@ -156,7 +163,6 @@ class LatentPoly(AbstractSurrogateModel):
     def predict(
         self,
         data_loader: DataLoader,
-        timesteps: np.ndarray | torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Makes predictions using the trained model.
@@ -168,29 +174,31 @@ class LatentPoly(AbstractSurrogateModel):
         Returns:
             tuple[torch.Tensor, torch.Tensor]: A tuple containing the predictions and the targets.
         """
-        self.model = self.model.to(self.device)
-        if not isinstance(timesteps, torch.Tensor):
-            t_range = torch.tensor(timesteps).to(self.device)
-        else:
-            t_range = timesteps
+        return super().predict(data_loader)
 
-        batch_size = data_loader.batch_size
-        if batch_size is None:
-            raise ValueError("batch_size must be provided by the DataLoader object")
+        # self.model = self.model.to(self.device)
+        # if not isinstance(timesteps, torch.Tensor):
+        #     t_range = torch.tensor(timesteps).to(self.device)
+        # else:
+        #     t_range = timesteps
 
-        predictions = torch.empty_like(data_loader.dataset.data)  # type: ignore
-        targets = torch.empty_like(data_loader.dataset.data)  # type: ignore
+        # batch_size = data_loader.batch_size
+        # if batch_size is None:
+        #     raise ValueError("batch_size must be provided by the DataLoader object")
 
-        with torch.inference_mode():
-            for i, x_true in enumerate(data_loader):
-                x_pred = self.model.forward(x_true, t_range)
-                predictions[i * batch_size : (i + 1) * batch_size, :, :] = x_pred
-                targets[i * batch_size : (i + 1) * batch_size, :, :] = x_true
+        # predictions = torch.empty_like(data_loader.dataset.data)  # type: ignore
+        # targets = torch.empty_like(data_loader.dataset.data)  # type: ignore
 
-        preds = self.denormalize(predictions)
-        targets = self.denormalize(targets)
+        # with torch.inference_mode():
+        #     for i, x_true in enumerate(data_loader):
+        #         x_pred = self.model.forward(x_true, t_range)
+        #         predictions[i * batch_size : (i + 1) * batch_size, :, :] = x_pred
+        #         targets[i * batch_size : (i + 1) * batch_size, :, :] = x_true
 
-        return preds, targets
+        # preds = self.denormalize(predictions)
+        # targets = self.denormalize(targets)
+
+        # return preds, targets
 
 
 class PolynomialModelWrapper(nn.Module):
@@ -281,7 +289,7 @@ class Polynomial(nn.Module):
     def __init__(self, degree: int, dimension: int):
         super().__init__()
         self.coef = nn.Linear(
-            in_features=degree, out_features=dimension, bias=False, dtype=torch.float64
+            in_features=degree, out_features=dimension, bias=False, dtype=torch.float32
         )
         self.degree = degree
         self.dimension = dimension

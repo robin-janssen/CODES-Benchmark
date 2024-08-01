@@ -166,7 +166,7 @@ def evaluate_accuracy(
 
     # Use the model's predict method
     criterion = torch.nn.MSELoss(reduction="sum")
-    preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
+    preds, targets = model.predict(data_loader=test_loader)
     mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
     preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
 
@@ -230,7 +230,7 @@ def evaluate_dynamic_accuracy(
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
 
     # Obtain predictions and targets
-    preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
+    preds, targets = model.predict(data_loader=test_loader)
     preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
 
     # Calculate gradients of the target data w.r.t time
@@ -308,7 +308,7 @@ def time_inference(
     inference_times = []
     for _ in range(n_runs):
         start_time = time.time()
-        _, _ = model.predict(data_loader=test_loader, timesteps=timesteps)
+        _, _ = model.predict(data_loader=test_loader)
         end_time = time.time()
         inference_times.append(end_time - start_time)
 
@@ -401,7 +401,7 @@ def evaluate_interpolation(
             else f"{surr_name.lower()}_interpolation_{interval}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
+        preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         interpolation_metrics[f"interval {interval}"] = {"MSE": mean_squared_error}
 
@@ -470,7 +470,7 @@ def evaluate_extrapolation(
             else f"{surr_name.lower()}_extrapolation_{cutoff}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
+        preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         extrapolation_metrics[f"cutoff {cutoff}"] = {"MSE": mean_squared_error}
 
@@ -543,7 +543,7 @@ def evaluate_sparse(
             else f"{surr_name.lower()}_sparse_{factor}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
+        preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         n_train_samples = N_train_samples // factor
         sparse_metrics[f"factor {factor}"] = {
@@ -612,7 +612,7 @@ def evaluate_batchsize(
     for i, batch_size in enumerate(batch_sizes):
         model_id = f"{surr_name.lower()}_batchsize_{batch_size}"
         model.load(training_id, surr_name, model_identifier=model_id)
-        preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
+        preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         batch_metrics[f"batch_size {batch_size}"] = {"MSE": mean_squared_error}
 
@@ -670,7 +670,7 @@ def evaluate_UQ(
             f"{surr_name.lower()}_main" if i == 0 else f"{surr_name.lower()}_UQ_{i}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
+        preds, targets = model.predict(data_loader=test_loader)
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
         all_predictions.append(preds)
 

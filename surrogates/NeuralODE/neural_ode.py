@@ -47,20 +47,19 @@ class NeuralODE(AbstractSurrogateModel):
         self.model = ModelWrapper(config=self.config).to(self.device)
         self.train_loss = None
 
-    def forward(self, inputs: torch.Tensor, timesteps: torch.Tensor | np.ndarray):
+    def forward(self, inputs):
         """
-        Perform a forward pass through the model.
+        Takes whatever the dataloader outputs, performs a forward pass through the
+        model and returns the predictions with the respective targets.
 
         Args:
-            inputs (torch.Tensor): The input tensor.
-            timesteps (torch.Tensor | np.ndarray): The tensor/array representing the timesteps.
+            inputs (Any): the data from the dataloader
 
         Returns:
-            torch.Tensor: The output tensor.
+            tuple[torch.Tensor, torch.Tensor]: predictions and targets
         """
-        if not isinstance(timesteps, torch.Tensor):
-            timesteps = torch.tensor(timesteps, dtype=torch.float64).to(self.device)
-        return self.model.forward(inputs, timesteps)
+        targets, timesteps = inputs[0], inputs[1]
+        return self.model(targets, timesteps), targets
 
     def prepare_data(
         self,
@@ -77,7 +76,8 @@ class NeuralODE(AbstractSurrogateModel):
         Args:
             dataset (np.ndarray): The input dataset.
             timesteps (np.ndarray): The timesteps for the dataset.
-            batch_size (int | None): The batch size for the DataLoader. If None, the entire dataset is loaded as a single batch.
+            batch_size (int | None): The batch size for the DataLoader.
+                If None, the entire dataset is loaded as a single batch.
             shuffle (bool): Whether to shuffle the data during training.
 
         Returns:
@@ -93,6 +93,7 @@ class NeuralODE(AbstractSurrogateModel):
             batch_size=batch_size,
             shuffle=shuffle,
             worker_init_fn=worker_init_fn,
+            collate_fn=lambda x: (x[0], x[1]),
         )
 
         dataloader_test = None
@@ -103,6 +104,7 @@ class NeuralODE(AbstractSurrogateModel):
                 batch_size=batch_size,
                 shuffle=shuffle,
                 worker_init_fn=worker_init_fn,
+                collate_fn=lambda x: (x[0], x[1]),
             )
 
         dataloader_val = None
@@ -113,6 +115,7 @@ class NeuralODE(AbstractSurrogateModel):
                 batch_size=batch_size,
                 shuffle=shuffle,
                 worker_init_fn=worker_init_fn,
+                collate_fn=lambda x: (x[0], x[1]),
             )
 
         return dataloader_train, dataloader_test, dataloader_val
@@ -120,8 +123,8 @@ class NeuralODE(AbstractSurrogateModel):
     @time_execution
     def fit(
         self,
-        train_loader: DataLoader | Tensor,
-        test_loader: DataLoader | Tensor,
+        train_loader: DataLoader,
+        test_loader: DataLoader,
         timesteps: np.ndarray | Tensor,
         epochs: int | None,
         position: int = 0,
@@ -161,7 +164,7 @@ class NeuralODE(AbstractSurrogateModel):
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
         for epoch in progress_bar:
-            for i, x_true in enumerate(train_loader):
+            for i, (x_true, timesteps) in enumerate(train_loader):
                 optimizer.zero_grad()
                 # x0 = x_true[:, 0, :]
                 x_pred = self.model.forward(x_true, timesteps)
@@ -184,7 +187,7 @@ class NeuralODE(AbstractSurrogateModel):
 
             with torch.inference_mode():
                 self.model.eval()
-                preds, targets = self.predict(test_loader, timesteps)
+                preds, targets = self.predict(test_loader)
                 self.model.train()
                 loss = self.model.total_loss(preds, targets)
                 test_losses[epoch] = loss
@@ -201,7 +204,6 @@ class NeuralODE(AbstractSurrogateModel):
     def predict(
         self,
         data_loader: DataLoader,
-        timesteps: np.ndarray | torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Makes predictions using the trained model.
@@ -213,33 +215,34 @@ class NeuralODE(AbstractSurrogateModel):
         Returns:
             tuple[torch.Tensor, torch.Tensor]: A tuple containing the predictions and the targets.
         """
+        return super().predict(data_loader)
+    
+        # self.model = self.model.to(self.device)
+        # if not isinstance(timesteps, torch.Tensor):
+        #     t_range = torch.tensor(timesteps, dtype=torch.float64).to(self.device)
+        # else:
+        #     t_range = timesteps
 
-        self.model = self.model.to(self.device)
-        if not isinstance(timesteps, torch.Tensor):
-            t_range = torch.tensor(timesteps, dtype=torch.float64).to(self.device)
-        else:
-            t_range = timesteps
+        # if not isinstance(data_loader, DataLoader):
+        #     raise TypeError("data_loader must be a DataLoader object")
 
-        if not isinstance(data_loader, DataLoader):
-            raise TypeError("data_loader must be a DataLoader object")
+        # batch_size = data_loader.batch_size
+        # if batch_size is None:
+        #     raise ValueError("batch_size must be provided by the DataLoader object")
 
-        batch_size = data_loader.batch_size
-        if batch_size is None:
-            raise ValueError("batch_size must be provided by the DataLoader object")
+        # predictions = torch.empty_like(data_loader.dataset.data)  # type: ignore
+        # targets = torch.empty_like(data_loader.dataset.data)  # type: ignore
 
-        predictions = torch.empty_like(data_loader.dataset.data)  # type: ignore
-        targets = torch.empty_like(data_loader.dataset.data)  # type: ignore
+        # with torch.inference_mode():
+        #     for i, x_true in enumerate(data_loader):
+        #         x_pred = self.model.forward(x_true, t_range)
+        #         predictions[i * batch_size : (i + 1) * batch_size, :, :] = x_pred
+        #         targets[i * batch_size : (i + 1) * batch_size, :, :] = x_true
 
-        with torch.inference_mode():
-            for i, x_true in enumerate(data_loader):
-                x_pred = self.model.forward(x_true, t_range)
-                predictions[i * batch_size : (i + 1) * batch_size, :, :] = x_pred
-                targets[i * batch_size : (i + 1) * batch_size, :, :] = x_true
+        # preds = self.denormalize(predictions)
+        # targets = self.denormalize(targets)
 
-        preds = self.denormalize(predictions)
-        targets = self.denormalize(targets)
-
-        return preds, targets
+        # return preds, targets
 
 
 class ModelWrapper(torch.nn.Module):

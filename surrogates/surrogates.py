@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar
+from typing import TypeVar, Any
 import os
 import dataclasses
 import yaml
@@ -26,7 +26,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         self.normalisation = None
 
     @abstractmethod
-    def forward(self, inputs, timesteps: np.ndarray) -> Tensor:
+    def forward(self, inputs: Any) -> Tensor:
         pass
 
     @abstractmethod
@@ -44,8 +44,8 @@ class AbstractSurrogateModel(ABC, nn.Module):
     @abstractmethod
     def fit(
         self,
-        train_loader: DataLoader | Tensor,
-        test_loader: DataLoader | Tensor,
+        train_loader: DataLoader,
+        test_loader: DataLoader,
         timesteps: np.ndarray,
         epochs: int | None,
         position: int,
@@ -53,13 +53,46 @@ class AbstractSurrogateModel(ABC, nn.Module):
     ) -> None:
         pass
 
-    @abstractmethod
     def predict(
         self,
-        data_loader: DataLoader | Tensor,
-        timesteps: np.ndarray,
-    ) -> tuple[float, np.ndarray, np.ndarray]:
-        pass
+        data_loader: DataLoader,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Evaluate the model on the given dataloader.
+
+        Args:
+            data_loader (DataLoader): The DataLoader object containing the data the
+                model is evaluated on.
+
+        Returns:
+            tuple[torch.Tensor, torch.Tensor]: The predictions and targets.
+        """
+
+        # infer output size
+        with torch.inference_mode():
+            dummy_inputs = next(iter(data_loader))
+            dummy_outputs, _ = self.forward(dummy_inputs)
+            batch_size, out_shape = (
+                dummy_outputs.shape[0],
+                dummy_outputs.shape[-(dummy_outputs.ndim - 1) :],
+            )
+
+        # pre-allocate buffers for predictions and targets
+        size = (batch_size * len(data_loader), *out_shape)
+        predictions = torch.zeros(size, dtype=dummy_outputs.dtype).to(self.device)
+        targets = torch.zeros(size, dtype=dummy_outputs.dtype).to(self.device)
+
+        with torch.inference_mode():
+            for i, inputs in enumerate(data_loader):
+                preds, targs = self.forward(inputs)
+                batch_size = preds.shape[0]
+                predictions[i * batch_size : (i + 1) * batch_size, ...] = preds
+                targets[i * batch_size : (i + 1) * batch_size, ...] = targs
+
+        predictions = self.denormalize(predictions)
+        targets = self.denormalize(targets)
+
+        return predictions, targets
 
     def save(
         self,
@@ -102,8 +135,11 @@ class AbstractSurrogateModel(ABC, nn.Module):
         for attribute in ["train_loss", "test_loss", "accuracy"]:
             value = getattr(self, attribute)
             if value is not None:
-                value = value.astype(np.float16)
-                setattr(self, attribute)
+                if isinstance(value, torch.Tensor):
+                    value = value.type(torch.float16)
+                if isinstance(value, np.ndarray):
+                    value = value.astype(np.float16)
+                setattr(self, attribute, value)
 
         # Save the hyperparameters as a yaml file
         hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
@@ -133,7 +169,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             model_identifier (str): The identifier of the model (e.g., 'main').
 
         Returns:
-            None. Tje model is loaded in place.
+            None. The model is loaded in place.
         """
         model_dict_path = os.path.join(
             "trained", training_id, surr_name, f"{model_identifier}.pth"

@@ -106,11 +106,7 @@ class MultiONet(OperatorNetwork):
             config.trunk_hidden_layers,
         ).to(config.device)
 
-    def forward(
-        self,
-        inputs: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
-        timesteps: np.ndarray | None = None,
-    ) -> torch.Tensor:
+    def forward(self, inputs) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Forward pass for the MultiONet model.
 
@@ -123,7 +119,7 @@ class MultiONet(OperatorNetwork):
         Returns:
             torch.Tensor: Output tensor of the model.
         """
-        branch_input, trunk_input, _ = inputs
+        branch_input, trunk_input, targets = inputs
         branch_output = self.branch_net(branch_input)
         trunk_output = self.trunk_net(trunk_input)
 
@@ -136,7 +132,7 @@ class MultiONet(OperatorNetwork):
         for b_split, t_split in zip(branch_splits, trunk_splits):
             result.append(torch.sum(b_split * t_split, dim=1, keepdim=True))
 
-        return torch.cat(result, dim=1)
+        return torch.cat(result, dim=1), targets
 
     def prepare_data(
         self,
@@ -237,10 +233,7 @@ class MultiONet(OperatorNetwork):
             scheduler.step()
 
             if test_loader is not None:
-                preds, targets = self.predict(
-                    test_loader,
-                    timesteps,
-                )
+                preds, targets = self.predict(test_loader)
                 test_losses[epoch] = criterion(preds, targets).item() / torch.numel(
                     targets
                 )
@@ -257,7 +250,6 @@ class MultiONet(OperatorNetwork):
     def predict(
         self,
         data_loader: DataLoader,
-        timesteps: np.ndarray,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Evaluate the model on the test data.
@@ -269,44 +261,46 @@ class MultiONet(OperatorNetwork):
         Returns:
             tuple: The predictions and targets.
         """
-        N_timesteps = len(timesteps)
-        device = self.device
-        self.eval()
-        self.to(device)
+        return super().predict(data_loader)
 
-        dataset_size = len(data_loader.dataset)
+        # N_timesteps = len(timesteps)
+        # device = self.device
+        # self.eval()
+        # self.to(device)
 
-        # Pre-allocate buffers for predictions and targets
-        preds = torch.zeros((dataset_size, self.N), dtype=torch.float32, device=device)
-        targets = torch.zeros(
-            (dataset_size, self.N), dtype=torch.float32, device=device
-        )
+        # dataset_size = len(data_loader.dataset)
 
-        start_idx = 0
+        # # Pre-allocate buffers for predictions and targets
+        # preds = torch.zeros((dataset_size, self.N), dtype=torch.float32, device=device)
+        # targets = torch.zeros(
+        #     (dataset_size, self.N), dtype=torch.float32, device=device
+        # )
 
-        with torch.no_grad():
-            for branch_inputs, trunk_inputs, batch_targets in data_loader:
-                batch_size = branch_inputs.size(0)
-                branch_inputs, trunk_inputs, batch_targets = (
-                    branch_inputs.to(device),
-                    trunk_inputs.to(device),
-                    batch_targets.to(device),
-                )
-                outputs = self((branch_inputs, trunk_inputs, batch_targets))
+        # start_idx = 0
 
-                # Write predictions and targets to the pre-allocated buffers
-                preds[start_idx : start_idx + batch_size] = outputs
-                targets[start_idx : start_idx + batch_size] = batch_targets
+        # with torch.no_grad():
+        #     for branch_inputs, trunk_inputs, batch_targets in data_loader:
+        #         batch_size = branch_inputs.size(0)
+        #         branch_inputs, trunk_inputs, batch_targets = (
+        #             branch_inputs.to(device),
+        #             trunk_inputs.to(device),
+        #             batch_targets.to(device),
+        #         )
+        #         outputs = self((branch_inputs, trunk_inputs, batch_targets))
 
-                start_idx += batch_size
+        #         # Write predictions and targets to the pre-allocated buffers
+        #         preds[start_idx : start_idx + batch_size] = outputs
+        #         targets[start_idx : start_idx + batch_size] = batch_targets
 
-        preds = preds.reshape(-1, N_timesteps, self.N)
-        targets = targets.reshape(-1, N_timesteps, self.N)
+        #         start_idx += batch_size
 
-        preds = self.denormalize(preds)
-        targets = self.denormalize(targets)
+        # preds = preds.reshape(-1, N_timesteps, self.N)
+        # targets = targets.reshape(-1, N_timesteps, self.N)
 
-        return preds, targets
+        # preds = self.denormalize(preds)
+        # targets = self.denormalize(targets)
+
+        # return preds, targets
 
     def setup_criterion(self) -> callable:
         """
@@ -417,7 +411,7 @@ class MultiONet(OperatorNetwork):
                 targets.to(self.device),
             )
             optimizer.zero_grad()
-            outputs = self((branch_input, trunk_input, targets))
+            outputs, targets = self((branch_input, trunk_input, targets))
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
@@ -487,6 +481,9 @@ class MultiONet(OperatorNetwork):
             targets_tensor = (targets_tensor - self.target_mean) / self.target_std
 
         # Create a TensorDataset and DataLoader
+        branch_inputs_tensor = branch_inputs_tensor.to(self.device)
+        trunk_inputs_tensor = trunk_inputs_tensor.to(self.device)
+        targets_tensor = targets_tensor.to(self.device)
         dataset = TensorDataset(
             branch_inputs_tensor, trunk_inputs_tensor, targets_tensor
         )
@@ -496,5 +493,5 @@ class MultiONet(OperatorNetwork):
             batch_size=batch_size,
             shuffle=shuffle,
             worker_init_fn=worker_init_fn,
-            num_workers=4,
+            # num_workers=4,
         )

@@ -68,7 +68,6 @@ class FullyConnected(AbstractSurrogateModel):
     def forward(
         self,
         inputs: tuple,
-        timesteps: np.ndarray | None = None,
     ) -> torch.Tensor:
         """
         Forward pass for the FullyConnected model.
@@ -82,8 +81,8 @@ class FullyConnected(AbstractSurrogateModel):
         Returns:
             torch.Tensor: Output tensor of the model.
         """
-        x, _ = inputs
-        return self.model(x)
+        x, targets = inputs
+        return self.model(x), targets
 
     def prepare_data(
         self,
@@ -171,10 +170,7 @@ class FullyConnected(AbstractSurrogateModel):
             scheduler.step()
 
             if test_loader is not None:
-                preds, targets = self.predict(
-                    test_loader,
-                    timesteps,
-                )
+                preds, targets = self.predict(test_loader)
                 test_losses[epoch] = criterion(preds, targets).item() / torch.numel(
                     targets
                 )
@@ -191,8 +187,7 @@ class FullyConnected(AbstractSurrogateModel):
     def predict(
         self,
         data_loader: DataLoader,
-        timesteps: np.ndarray,
-    ) -> tuple[float, np.ndarray, np.ndarray]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Evaluate the model on the test data.
 
@@ -203,43 +198,45 @@ class FullyConnected(AbstractSurrogateModel):
         Returns:
             tuple: The total loss, outputs, and targets.
         """
-        N_timesteps = len(timesteps)
-        device = self.device
-        self.eval()
-        self.to(device)
+        return super().predict(data_loader)
 
-        dataset_size = len(data_loader.dataset)
+        # N_timesteps = len(timesteps)
+        # device = self.device
+        # self.eval()
+        # self.to(device)
 
-        # Pre-allocate buffers for predictions and targets
-        preds = torch.zeros((dataset_size, self.N), dtype=torch.float32, device=device)
-        targets = torch.zeros(
-            (dataset_size, self.N), dtype=torch.float32, device=device
-        )
+        # dataset_size = len(data_loader.dataset)
 
-        start_idx = 0
+        # # Pre-allocate buffers for predictions and targets
+        # preds = torch.zeros((dataset_size, self.N), dtype=torch.float32, device=device)
+        # targets = torch.zeros(
+        #     (dataset_size, self.N), dtype=torch.float32, device=device
+        # )
 
-        with torch.no_grad():
-            for inputs, batch_targets in data_loader:
-                batch_size = inputs.size(0)
-                inputs, batch_targets = (
-                    inputs.to(device),
-                    batch_targets.to(device),
-                )
-                outputs = self((inputs, batch_targets))
+        # start_idx = 0
 
-                # Write predictions and targets to the pre-allocated buffers
-                preds[start_idx : start_idx + batch_size] = outputs
-                targets[start_idx : start_idx + batch_size] = batch_targets
+        # with torch.no_grad():
+        #     for inputs, batch_targets in data_loader:
+        #         batch_size = inputs.size(0)
+        #         inputs, batch_targets = (
+        #             inputs.to(device),
+        #             batch_targets.to(device),
+        #         )
+        #         outputs = self((inputs, batch_targets))
 
-                start_idx += batch_size
+        #         # Write predictions and targets to the pre-allocated buffers
+        #         preds[start_idx : start_idx + batch_size] = outputs
+        #         targets[start_idx : start_idx + batch_size] = batch_targets
 
-        preds = preds.reshape(-1, N_timesteps, self.N)
-        targets = targets.reshape(-1, N_timesteps, self.N)
+        #         start_idx += batch_size
 
-        preds = self.denormalize(preds)
-        targets = self.denormalize(targets)
+        # preds = preds.reshape(-1, N_timesteps, self.N)
+        # targets = targets.reshape(-1, N_timesteps, self.N)
 
-        return preds, targets
+        # preds = self.denormalize(preds)
+        # targets = self.denormalize(targets)
+
+        # return preds, targets
 
     def setup_criterion(self) -> callable:
         """
@@ -340,7 +337,7 @@ class FullyConnected(AbstractSurrogateModel):
                 targets.to(self.device),
             )
             optimizer.zero_grad()
-            outputs = self.forward((inputs, targets))
+            outputs, targets = self.forward((inputs, targets))
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
@@ -393,6 +390,8 @@ class FullyConnected(AbstractSurrogateModel):
                 targets_tensor - targets_tensor.mean()
             ) / targets_tensor.std()
 
+        inputs_tensor = inputs_tensor.to(self.device)
+        targets_tensor = targets_tensor.to(self.device)
         dataset = TensorDataset(inputs_tensor, targets_tensor)
 
         return DataLoader(
@@ -400,5 +399,5 @@ class FullyConnected(AbstractSurrogateModel):
             batch_size=batch_size,
             shuffle=shuffle,
             worker_init_fn=worker_init_fn,
-            num_workers=4,
+            # num_workers=4,
         )
