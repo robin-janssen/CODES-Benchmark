@@ -119,8 +119,7 @@ def train_surrogate(config, surr_name: str):
         else config["epochs"]
     )
 
-    if config["accuracy"]:
-        tasks.append((surr_name, "main", "", id, seed, epochs))
+    tasks.append((surr_name, "main", "", id, seed, epochs))
 
     if config["interpolation"]["enabled"]:
         mode = "interpolation"

@@ -89,8 +89,7 @@ def check_and_load_data(
         else:  # No normalization
             data_params = {"mode": "disable"}
 
-        if log:
-            data_params["log10_transform"] = True
+        data_params["log10_transform"] = True if log else False
 
         # Check data shape
         for data in (train_data, test_data, val_data):

@@ -5,7 +5,7 @@ dataset:
   name: "osu2008"
   log10_transform: False
   normalise: "minmax" # "standardise", "minmax", "disable"
-devices: ["cuda:4"]
+devices: ["cuda:4", "cuda:5"]
 seed: 42
 
 # Details of the benchmarking
@@ -15,7 +15,7 @@ dynamic_accuracy: True
 timing: True
 compute: True
 interpolation: 
-  enabled: False
+  enabled: True
   intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
 extrapolation: 
   enabled: False
@@ -36,5 +36,5 @@ compare: True # Whether to compare the surrogates
 # Leave empty if the quantities should be set per surrogate
 
 batch_size: [64, 64, 1024, 1024] 
-epochs: 2 # [4000, 10000, 200, 400]
+epochs: 3 # [4000, 10000, 200, 400]
 

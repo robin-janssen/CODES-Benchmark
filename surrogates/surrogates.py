@@ -124,8 +124,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
         model_path = os.path.join(model_dir, f"{model_name}.pth")
         torch.save(model_dict, model_path)
 
-        # tqdm.write(f"Model, losses and hyperparameters saved to {model_dir}")
-
     def load(self, training_id: str, surr_name: str, model_identifier: str) -> None:
         """
         Load a trained surrogate model.
