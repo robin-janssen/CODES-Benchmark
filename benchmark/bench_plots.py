@@ -270,6 +270,19 @@ def plot_average_errors_over_time(
         for i, metric in enumerate(metrics):
             label = f"{labels[mode]} {metric}"
             plt.plot(timesteps, errors[i], label=label, color=colors[i])
+            if mode == "extrapolation":
+                cutoff_point = timesteps[metric - 1]
+                plt.axvline(
+                    x=cutoff_point, color=colors[i], linestyle="--", linewidth=0.8
+                )
+                plt.text(
+                    cutoff_point,
+                    errors[i, metric - 1],
+                    f"{metric}",
+                    color=colors[i],
+                    verticalalignment="bottom",
+                    horizontalalignment="right",
+                )
 
     plt.xlabel("Timesteps")
     plt.ylabel("Mean Squared Error")
@@ -929,7 +942,7 @@ def plot_dynamic_correlation_heatmap(
     plt.colorbar(label=r"$\log_{10}$(Counts + 1)")
     plt.xlabel("Absolute Gradient (Normalized)")
     plt.ylabel("Prediction Error (Normalized)")
-    plt.title("Correlation between Gradients and prediction errors")
+    plt.title("Correlation between Gradients and Prediction Errors")
 
     if save and conf:
         save_plot(plt, "dynamic_correlation_heatmap.png", conf, surr_name)

@@ -9,12 +9,12 @@ from scipy.stats import pearsonr
 
 from .bench_plots import (
     plot_relative_errors_over_time,
-    plot_dynamic_correlation,
+    # plot_dynamic_correlation,
     plot_generalization_errors,
     plot_average_errors_over_time,
     plot_average_uncertainty_over_time,
     plot_example_predictions_with_uncertainty,
-    plot_uncertainty_vs_errors,
+    # plot_uncertainty_vs_errors,
     plot_surr_losses,
     plot_loss_comparison,
     # plot_MAE_comparison,
@@ -263,7 +263,7 @@ def evaluate_dynamic_accuracy(
     avg_correlation, _ = pearsonr(avg_gradient, avg_error)
 
     # Plot correlation for averaged species
-    plot_dynamic_correlation(surr_name, conf, avg_gradient, avg_error, save=True)
+    # plot_dynamic_correlation(surr_name, conf, avg_gradient, avg_error, save=True)
     plot_dynamic_correlation_heatmap(
         surr_name, conf, gradients, prediction_errors, save=True
     )
@@ -694,7 +694,7 @@ def evaluate_UQ(
         surr_name, conf, preds_mean, preds_std, targets, timesteps, save=True
     )
     plot_average_uncertainty_over_time(surr_name, conf, preds_std, timesteps, save=True)
-    plot_uncertainty_vs_errors(surr_name, conf, preds_std, errors, save=True)
+    # plot_uncertainty_vs_errors(surr_name, conf, preds_std, errors, save=True)
     plot_error_correlation_heatmap(surr_name, conf, preds_std, errors, save=True)
 
     # Store metrics

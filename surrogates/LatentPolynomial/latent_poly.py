@@ -60,7 +60,9 @@ class LatentPoly(AbstractSurrogateModel):
         """
         device = self.device
 
-        dset_train = ChemDataset(dataset_train, device=self.device)
+        timesteps = torch.tensor(timesteps).to(device)
+
+        dset_train = ChemDataset(dataset_train, timesteps, device=self.device)
         dataloader_train = DataLoader(
             dset_train,
             batch_size=batch_size,
@@ -70,7 +72,7 @@ class LatentPoly(AbstractSurrogateModel):
 
         dataloader_test = None
         if dataset_test is not None:
-            dset_test = ChemDataset(dataset_test, device=self.device)
+            dset_test = ChemDataset(dataset_train, timesteps, device=self.device)
             dataloader_test = DataLoader(
                 dset_test,
                 batch_size=batch_size,
@@ -80,7 +82,7 @@ class LatentPoly(AbstractSurrogateModel):
 
         dataloader_val = None
         if dataset_val is not None:
-            dset_val = ChemDataset(dataset_val, device=device)
+            dset_val = ChemDataset(dataset_train, timesteps, device=self.device)
             dataloader_val = DataLoader(
                 dset_val,
                 batch_size=batch_size,
@@ -246,7 +248,7 @@ class Polynomial(nn.Module):
     def __init__(self, degree: int, dimension: int):
         super().__init__()
         self.coef = nn.Linear(
-            in_features=degree, out_features=dimension, bias=False, dtype=torch.float32
+            in_features=degree, out_features=dimension, bias=False, dtype=torch.float64
         )
         self.degree = degree
         self.dimension = dimension

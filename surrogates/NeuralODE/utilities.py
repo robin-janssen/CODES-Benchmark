@@ -235,7 +235,7 @@ def deriv2(x):
 
 class ChemDataset(torch.utils.data.Dataset):
 
-    def __init__(self, raw_data, device, xmin=None, xmax=None):
+    def __init__(self, raw_data, timesteps, device):
         self.data = torch.tensor(raw_data, dtype=torch.float64)
         # self.xmin = self.data.min() if xmin is None else xmin
         # self.xmax = self.data.max() if xmax is None else xmax
@@ -244,7 +244,7 @@ class ChemDataset(torch.utils.data.Dataset):
         if not self.data.dtype == torch.float64:
             self.data = torch.tensor(self.data, dtype=torch.float64)
         self.data = self.data.to(device)
-        self.timesteps = torch.linspace(0, 1, 100).to(device)
+        self.timesteps = timesteps
 
     def __getitem__(self, index):
         return self.data[index, :, :], self.timesteps
@@ -254,4 +254,3 @@ class ChemDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return self.length
-    

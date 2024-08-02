@@ -87,7 +87,9 @@ class NeuralODE(AbstractSurrogateModel):
         """
         device = self.device
 
-        dset_train = ChemDataset(dataset_train, device=self.device)
+        timesteps = torch.tensor(timesteps).to(device)
+
+        dset_train = ChemDataset(dataset_train, timesteps, device=self.device)
         dataloader_train = DataLoader(
             dset_train,
             batch_size=batch_size,
@@ -98,7 +100,7 @@ class NeuralODE(AbstractSurrogateModel):
 
         dataloader_test = None
         if dataset_test is not None:
-            dset_test = ChemDataset(dataset_test, device=self.device)
+            dset_test = ChemDataset(dataset_test, timesteps, device=self.device)
             dataloader_test = DataLoader(
                 dset_test,
                 batch_size=batch_size,
@@ -109,7 +111,7 @@ class NeuralODE(AbstractSurrogateModel):
 
         dataloader_val = None
         if dataset_val is not None:
-            dset_val = ChemDataset(dataset_val, device=device)
+            dset_val = ChemDataset(dataset_val, timesteps, device=device)
             dataloader_val = DataLoader(
                 dset_val,
                 batch_size=batch_size,
