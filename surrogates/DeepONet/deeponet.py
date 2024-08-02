@@ -40,8 +40,12 @@ class TrunkNet(nn.Module):
 
 
 class OperatorNetwork(AbstractSurrogateModel):
-    def __init__(self, device: str, N_chemicals: int = 29):
-        super().__init__(device=device, N_chemicals=N_chemicals)
+    def __init__(
+        self, device: str | None = None, n_chemicals: int = 29, n_timesteps: int = 100
+    ):
+        super().__init__(
+            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+        )
 
     def post_init_check(self):
         if not hasattr(self, "branch_net") or not hasattr(self, "trunk_net"):
@@ -69,7 +73,9 @@ OperatorNetworkType = TypeVar("OperatorNetworkType", bound=OperatorNetwork)
 
 
 class MultiONet(OperatorNetwork):
-    def __init__(self, device: str | None = None, N_chemicals: int = 29):
+    def __init__(
+        self, device: str | None = None, n_chemicals: int = 29, n_timesteps: int = 100
+    ):
         """
         Initialize the MultiONet model with a configuration.
 
@@ -85,16 +91,18 @@ class MultiONet(OperatorNetwork):
         """
         config = MultiONetConfig()  # Load the specific config for DeepONet
         # super(MultiONet, self).__init__()
-        super().__init__(device=device, N_chemicals=N_chemicals)
+        super().__init__(
+            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+        )
 
         self.config = config
         self.device = device
-        self.N = N_chemicals  # Number of chemicals
+        self.N = n_chemicals  # Number of chemicals
         self.outputs = (
-            N_chemicals * config.output_factor
+            n_chemicals * config.output_factor
         )  # Number of neurons in the last layer
         self.branch_net = BranchNet(
-            N_chemicals - config.trunk_input_size + 1,  # +1 due to time
+            n_chemicals - config.trunk_input_size + 1,  # +1 due to time
             config.hidden_size,
             self.outputs,
             config.branch_hidden_layers,
@@ -145,7 +153,7 @@ class MultiONet(OperatorNetwork):
     ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
         """
         Prepare the data for the predict or fit methods.
-        Note: All datasets must have shape (N_samples, N_timesteps, N_chemicals).
+        Note: All datasets must have shape (n_samples, n_timesteps, n_chemicals).
 
         Args:
             dataset_train (np.ndarray): The training data.
@@ -208,13 +216,13 @@ class MultiONet(OperatorNetwork):
         Returns:
             None
         """
-        self.N_timesteps = len(timesteps)
-        self.N_train_samples = int(len(train_loader.dataset) / self.N_timesteps)
+        self.n_timesteps = len(timesteps)
+        self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
 
         criterion = self.setup_criterion()
         optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
 
-        train_losses, test_losses, accuracies = (np.zeros(epochs),) * 3
+        train_losses, test_losses, MAEs = [np.zeros(epochs) for _ in range(3)]
 
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
@@ -231,70 +239,13 @@ class MultiONet(OperatorNetwork):
                 test_losses[epoch] = criterion(preds, targets).item() / torch.numel(
                     targets
                 )
-                accuracies[epoch] = 1.0 - torch.mean(
-                    torch.abs(preds - targets) / torch.abs(targets)
-                )
+                MAEs[epoch] = self.L1(preds, targets).item()
 
         progress_bar.close()
 
         self.train_loss = train_losses
         self.test_loss = test_losses
-        self.accuracy = accuracies
-
-    def predict(
-        self,
-        data_loader: DataLoader,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """
-        Evaluate the model on the test data.
-
-        Args:
-            data_loader (DataLoader): The DataLoader object containing the test data.
-            N_timesteps (int): The number of timesteps.
-
-        Returns:
-            tuple: The predictions and targets.
-        """
-        return super().predict(data_loader)
-
-        # N_timesteps = len(timesteps)
-        # device = self.device
-        # self.eval()
-        # self.to(device)
-
-        # dataset_size = len(data_loader.dataset)
-
-        # # Pre-allocate buffers for predictions and targets
-        # preds = torch.zeros((dataset_size, self.N), dtype=torch.float32, device=device)
-        # targets = torch.zeros(
-        #     (dataset_size, self.N), dtype=torch.float32, device=device
-        # )
-
-        # start_idx = 0
-
-        # with torch.no_grad():
-        #     for branch_inputs, trunk_inputs, batch_targets in data_loader:
-        #         batch_size = branch_inputs.size(0)
-        #         branch_inputs, trunk_inputs, batch_targets = (
-        #             branch_inputs.to(device),
-        #             trunk_inputs.to(device),
-        #             batch_targets.to(device),
-        #         )
-        #         outputs = self((branch_inputs, trunk_inputs, batch_targets))
-
-        #         # Write predictions and targets to the pre-allocated buffers
-        #         preds[start_idx : start_idx + batch_size] = outputs
-        #         targets[start_idx : start_idx + batch_size] = batch_targets
-
-        #         start_idx += batch_size
-
-        # preds = preds.reshape(-1, N_timesteps, self.N)
-        # targets = targets.reshape(-1, N_timesteps, self.N)
-
-        # preds = self.denormalize(preds)
-        # targets = self.denormalize(targets)
-
-        # return preds, targets
+        self.MAE = MAEs
 
     def setup_criterion(self) -> callable:
         """

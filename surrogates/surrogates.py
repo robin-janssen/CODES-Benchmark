@@ -18,14 +18,18 @@ from utils import create_model_dir
 # Define abstract base class for surrogate models
 class AbstractSurrogateModel(ABC, nn.Module):
 
-    def __init__(self, device: str | None = None, N_chemicals: int = 29):
+    def __init__(
+        self, device: str | None = None, n_chemicals: int = 29, n_timesteps: int = 100
+    ):
         super().__init__()
         self.train_loss = None
         self.test_loss = None
-        self.accuracy = None
+        self.MAE = None
         self.normalisation = None
         self.device = device
-        self.N_chemicals = N_chemicals
+        self.n_chemicals = n_chemicals
+        self.n_timesteps = n_timesteps
+        self.L1 = nn.L1Loss()
 
     @abstractmethod
     def forward(self, inputs: Any) -> Tensor:
@@ -34,12 +38,12 @@ class AbstractSurrogateModel(ABC, nn.Module):
     @abstractmethod
     def prepare_data(
         self,
-        timesteps: np.ndarray,
         dataset_train: np.ndarray,
-        dataset_test: np.ndarray | None = None,
-        dataset_val: np.ndarray | None = None,
-        batch_size: int | None = None,
-        shuffle: bool = True,
+        dataset_test: np.ndarray | None,
+        dataset_val: np.ndarray | None,
+        timesteps: np.ndarray,
+        batch_size: int,
+        shuffle: bool,
     ) -> tuple[DataLoader, DataLoader, DataLoader]:
         pass
 
@@ -84,15 +88,25 @@ class AbstractSurrogateModel(ABC, nn.Module):
         predictions = torch.zeros(size, dtype=dummy_outputs.dtype).to(self.device)
         targets = torch.zeros(size, dtype=dummy_outputs.dtype).to(self.device)
 
+        processed_samples = 0
+
         with torch.inference_mode():
             for i, inputs in enumerate(data_loader):
                 preds, targs = self.forward(inputs)
                 batch_size = preds.shape[0]
                 predictions[i * batch_size : (i + 1) * batch_size, ...] = preds
                 targets[i * batch_size : (i + 1) * batch_size, ...] = targs
+                processed_samples += batch_size
+
+        # Slice the buffers to include only the processed samples
+        predictions = predictions[:processed_samples, ...]
+        targets = targets[:processed_samples, ...]
 
         predictions = self.denormalize(predictions)
         targets = self.denormalize(targets)
+
+        predictions = predictions.reshape(-1, self.n_timesteps, self.n_chemicals)
+        targets = targets.reshape(-1, self.n_timesteps, self.n_chemicals)
 
         return predictions, targets
 
@@ -120,8 +134,8 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
         # Check if the model has some attributes. If so, add them to the hyperparameters
         check_attributes = [
-            "N_train_samples",
-            "N_timesteps",
+            "n_train_samples",
+            "n_timesteps",
         ]
         for attr in check_attributes:
             if hasattr(self, attr):
@@ -134,7 +148,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         hyperparameters["normalisation"] = data_params
 
         # Reduce the precision of the losses and accuracy
-        for attribute in ["train_loss", "test_loss", "accuracy"]:
+        for attribute in ["train_loss", "test_loss", "MAE"]:
             value = getattr(self, attribute)
             if value is not None:
                 if isinstance(value, torch.Tensor):

@@ -14,10 +14,14 @@ from utils import time_execution
 
 class LatentPoly(AbstractSurrogateModel):
 
-    def __init__(self, device: str | None = None, N_chemicals: int = 29):
-        super().__init__(device=device, N_chemicals=N_chemicals)
+    def __init__(
+        self, device: str | None = None, n_chemicals: int = 29, n_timesteps: int = 100
+    ):
+        super().__init__(
+            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+        )
         self.config: LatentPolynomialConfigOSU = LatentPolynomialConfigOSU()
-        self.config.in_features = N_chemicals
+        self.config.in_features = n_chemicals
         self.model = PolynomialModelWrapper(config=self.config, device=self.device)
 
     def forward(self, inputs) -> tuple[torch.Tensor, torch.Tensor]:
@@ -35,10 +39,10 @@ class LatentPoly(AbstractSurrogateModel):
 
     def prepare_data(
         self,
-        timesteps: np.ndarray,
         dataset_train: np.ndarray,
-        dataset_test: np.ndarray | None = None,
-        dataset_val: np.ndarray | None = None,
+        dataset_test: np.ndarray | None,
+        dataset_val: np.ndarray | None,
+        timesteps: np.ndarray,
         batch_size: int = 128,
         shuffle: bool = True,
     ) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
@@ -116,7 +120,7 @@ class LatentPoly(AbstractSurrogateModel):
 
         losses = torch.empty((epochs, len(train_loader)))
         test_losses = torch.empty((epochs))
-        accuracy = torch.empty((epochs))
+        MAEs = torch.empty((epochs))
 
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
@@ -145,55 +149,13 @@ class LatentPoly(AbstractSurrogateModel):
                 self.model.train()
                 loss = self.model.total_loss(preds, targets)
                 test_losses[epoch] = loss
-                accuracy[epoch] = 1.0 - torch.mean(
-                    torch.abs(preds - targets) / torch.abs(targets)
-                )
+                MAEs[epoch] = self.L1(preds, targets).item()
 
         progress_bar.close()
 
         self.train_loss = torch.mean(losses, dim=1)
         self.test_loss = test_losses
-        self.accuracy = accuracy
-
-    def predict(
-        self,
-        data_loader: DataLoader,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """
-        Makes predictions using the trained model.
-
-        Args:
-            data_loader (DataLoader): The DataLoader object containing the data.
-            timesteps (np.ndarray | torch.Tensor): The array of timesteps.
-
-        Returns:
-            tuple[torch.Tensor, torch.Tensor]: A tuple containing the predictions and the targets.
-        """
-        return super().predict(data_loader)
-
-        # self.model = self.model.to(self.device)
-        # if not isinstance(timesteps, torch.Tensor):
-        #     t_range = torch.tensor(timesteps).to(self.device)
-        # else:
-        #     t_range = timesteps
-
-        # batch_size = data_loader.batch_size
-        # if batch_size is None:
-        #     raise ValueError("batch_size must be provided by the DataLoader object")
-
-        # predictions = torch.empty_like(data_loader.dataset.data)  # type: ignore
-        # targets = torch.empty_like(data_loader.dataset.data)  # type: ignore
-
-        # with torch.inference_mode():
-        #     for i, x_true in enumerate(data_loader):
-        #         x_pred = self.model.forward(x_true, t_range)
-        #         predictions[i * batch_size : (i + 1) * batch_size, :, :] = x_pred
-        #         targets[i * batch_size : (i + 1) * batch_size, :, :] = x_true
-
-        # preds = self.denormalize(predictions)
-        # targets = self.denormalize(targets)
-
-        # return preds, targets
+        self.MAE = MAEs
 
 
 class PolynomialModelWrapper(nn.Module):

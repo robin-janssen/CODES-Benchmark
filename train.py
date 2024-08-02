@@ -49,13 +49,13 @@ def train_and_save_model(
     # Get the surrogate class
     surrogate_class = get_surrogate(surr_name)
 
-    N_chemicals = full_train_data.shape[2]
+    n_chemicals = full_train_data.shape[2]
 
     # Set the device for the model
-    model = surrogate_class(device=device, N_chemicals=N_chemicals)
+    model = surrogate_class(device=device, n_chemicals=n_chemicals)
     surr_idx = config["surrogates"].index(surr_name)
 
-    # Determine the batch size and number of epochs
+    # Determine the batch size
     if isinstance(config["batch_size"], list):
         if len(config["batch_size"]) != len(config["surrogates"]):
             raise ValueError(
@@ -66,7 +66,7 @@ def train_and_save_model(
     else:
         batch_size = config["batch_size"]
     batch_size = metric if mode == "batch_size" else batch_size
-    epochs = epochs if epochs is not None else config["epochs"]
+    # epochs = epochs if epochs is not None else config["epochs"]
 
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(
@@ -248,7 +248,7 @@ def main():
         nice_print("Training completed")
 
         print(f"{len(tasks)} Models saved in /trained/{config['training_id']}/")
-        print(f"Total training time: {timedelta(seconds=int(elapsed_time))}")
+        print(f"Total training time: {timedelta(seconds=int(elapsed_time))} \n")
 
     else:
         print("No tasks remaining. Training is already completed.")

@@ -27,15 +27,15 @@ The methods are:
   * inputs (tuple): Tuple of N torch.tensors as returned by the dataloader (i.e. inputs = next(iter(dataloader))). This means that inputs will contain, in addition to the initial conditions and the times, the targets. The targets can be discarded here, as they are not needed for the forward pass. This handling is for compatibility with the training and benchmarking scripts.
 
   Returns:
-  * preds (torch.tensor): Predicted (chemical) quantities at the specified times, shape [batch_size, N_chemicals]
+  * preds (torch.tensor): Predicted (chemical) quantities at the specified times, shape [batch_size, n_chemicals]
 
 - prepare_data(data, timesteps, shuffle=True):
 
   This function should prepare the provided data for use with the predict function. This usually means creating a (torch) DataLoader from the given data. The shuffling is optional since we also want to use this to prepare test data, where the order of the predictions does not matter (it could be advantageous to not have the test data shuffled, e.g. for plotting).
 
   Inputs:
-  * data (numpy.ndarray): Data to prepare, shape [N_samples, N_chemicals, N_timesteps].
-  * timesteps (np.ndarray): Timesteps corresponding to the data, shape [N_timesteps].
+  * data (numpy.ndarray): Data to prepare, shape [n_samples, n_chemicals, n_timesteps].
+  * timesteps (np.ndarray): Timesteps corresponding to the data, shape [n_timesteps].
   * shuffle (bool): Whether to shuffle the data before returning it. Default is True. Note: When using a DataLoader, the shuffle option should be passed on to the DataLoader rather than shuffling the numpy array and then creating the DataLoader.
 
   Returns:
@@ -48,7 +48,7 @@ The methods are:
   Inputs:
   * train_loader (torch.utils.data.DataLoader): DataLoader with the training data.
   * test_loader (torch.utils.data.DataLoader): DataLoader with the test data.
-  * timesteps (np.ndarray): Timesteps corresponding to the data, shape [N_timesteps].
+  * timesteps (np.ndarray): Timesteps corresponding to the data, shape [n_timesteps].
 
   Returns:
   * None (the model is trained in place).
@@ -74,12 +74,12 @@ This method is used to save the model. In addition to the model parameters (the 
   Inputs:
   * dataloader (torch.utils.data.DataLoader): DataLoader with the data to make predictions on.
   * criterion (torch.nn.Module): Loss function to use for comparing the predictions to the true values.
-  * timesteps (np.ndarray): Timesteps corresponding to the data, shape [N_timesteps].
+  * timesteps (np.ndarray): Timesteps corresponding to the data, shape [n_timesteps].
 
   Returns:
   * total_loss (float): Total loss of the predictions.
-  * preds (torch.tensor): Predictions made by the model, shape [N_samples, N_chemicals, N_timesteps].
-  * targets (torch.tensor): True values to compare the predictions to, shape [N_samples, N_chemicals, N_timesteps].
+  * preds (torch.tensor): Predictions made by the model, shape [n_samples, n_chemicals, n_timesteps].
+  * targets (torch.tensor): True values to compare the predictions to, shape [n_samples, n_chemicals, n_timesteps].
 
 
 </details>
@@ -92,14 +92,14 @@ It is easy to add a new dataset to the benchmark. To do so, you can use the func
 
 The function takes five inputs:
 
-* train_data (numpy.ndarray): Training data to save, shape [N_samples, N_chemicals, N_timesteps].
-* test_data (numpy.ndarray): Test data to save, shape [N_samples, N_chemicals, N_timesteps].
+* train_data (numpy.ndarray): Training data to save, shape [n_samples, n_chemicals, n_timesteps].
+* test_data (numpy.ndarray): Test data to save, shape [n_samples, n_chemicals, n_timesteps].
 * dataset_name (str): Name of the dataset to save.
 * data_dir (str): Directory to save the dataset in.
-* timesteps (np.ndarray): Timesteps corresponding to the data, shape [N_timesteps].
+* timesteps (np.ndarray): Timesteps corresponding to the data, shape [n_timesteps].
 
-It is important that the train and test data have the correct shape, i.e. [N_samples, N_chemicals, N_timesteps]. 
-The default data_dir is data, which is a subdirectory of the root directory of the repository. The timesteps are an optional input, if they are not provided, the check_and_load_data function will automatically create a numpy array with the timesteps from 0 to N_timesteps - 1.
+It is important that the train and test data have the correct shape, i.e. [n_samples, n_chemicals, n_timesteps]. 
+The default data_dir is data, which is a subdirectory of the root directory of the repository. The timesteps are an optional input, if they are not provided, the check_and_load_data function will automatically create a numpy array with the timesteps from 0 to n_timesteps - 1.
 
 The data is stored as provided in the numpy arrays. Please ensure that the data is clean and has a reasonable range. Ideally, it should be normalized. The data is stored in the path data_dir/dataset_name/data.hdf5.  
 

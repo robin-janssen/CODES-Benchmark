@@ -140,7 +140,6 @@ def count_trainable_parameters(model: torch.nn.Module) -> int:
 def measure_memory_footprint(
     model: torch.nn.Module,
     inputs: tuple,
-    timesteps: np.ndarray,
 ) -> dict:
     """
     Measure the memory footprint of the model during the forward and backward pass.
@@ -164,16 +163,22 @@ def measure_memory_footprint(
     before_forward = get_memory_usage()
 
     # Forward pass
+    # istuple = isinstance(inputs, tuple)
+    # islist = isinstance(inputs, list)
+    # if istuple or islist:
+    #     inputs = tuple(i.to(model.device) for i in inputs)
+    # else:
+    #     inputs = inputs.to(model.device)
     inputs = (
-        (i.to(model.device) for i in inputs)
+        tuple(i.to(model.device) for i in inputs)
         if isinstance(inputs, list) or isinstance(inputs, tuple)
         else inputs.to(model.device)
     )
-    output = model(inputs=inputs, timesteps=timesteps)
+    preds, targets = model(inputs=inputs)
     after_forward = get_memory_usage()
 
     # Measure memory usage before the backward pass
-    loss = output.sum()  # Example loss function
+    loss = (preds - targets).sum()  # Example loss function
     loss.backward()
     after_backward = get_memory_usage()
 
@@ -258,7 +263,7 @@ def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
         write_metrics["extrapolation"].pop("cutoffs", None)
     if conf["sparse"]["enabled"]:
         write_metrics["sparse"].pop("model_errors", None)
-        write_metrics["sparse"].pop("N_train_samples", None)
+        write_metrics["sparse"].pop("n_train_samples", None)
 
     # Convert metrics to standard types
     write_metrics = convert_to_standard_types(write_metrics)
