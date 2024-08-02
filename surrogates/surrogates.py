@@ -18,12 +18,14 @@ from utils import create_model_dir
 # Define abstract base class for surrogate models
 class AbstractSurrogateModel(ABC, nn.Module):
 
-    def __init__(self):
+    def __init__(self, device: str | None = None, N_chemicals: int = 29):
         super().__init__()
         self.train_loss = None
         self.test_loss = None
         self.accuracy = None
         self.normalisation = None
+        self.device = device
+        self.N_chemicals = N_chemicals
 
     @abstractmethod
     def forward(self, inputs: Any) -> Tensor:
@@ -136,7 +138,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             value = getattr(self, attribute)
             if value is not None:
                 if isinstance(value, torch.Tensor):
-                    value = value.type(torch.float16)
+                    value = value.cpu().detach().numpy()
                 if isinstance(value, np.ndarray):
                     value = value.astype(np.float16)
                 setattr(self, attribute, value)
@@ -155,8 +157,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
         model_path = os.path.join(model_dir, f"{model_name}.pth")
         torch.save(model_dict, model_path)
-
-        # tqdm.write(f"Model, losses and hyperparameters saved to {model_dir}")
 
     def load(self, training_id: str, surr_name: str, model_identifier: str) -> None:
         """

@@ -49,10 +49,6 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     # Instantiate the model
     device = conf["devices"]
     device = device[0] if isinstance(device, list) else device
-    model = surrogate_class(device=device)
-
-    # Placeholder for metrics
-    metrics = {}
 
     full_train_data, full_test_data, full_val_data, timesteps, N_train_samples, _ = (
         check_and_load_data(
@@ -62,6 +58,11 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
             normalisation_mode=conf["dataset"]["normalise"],
         )
     )
+    N_chemicals = full_train_data.shape[2]
+    model = surrogate_class(device=device, N_chemicals=N_chemicals)
+
+    # Placeholder for metrics
+    metrics = {}
 
     # Create dataloader for the test data
     _, _, val_loader = model.prepare_data(

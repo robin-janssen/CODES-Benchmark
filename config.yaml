@@ -1,11 +1,11 @@
 # Global settings for the benchmark
-training_id: "all4_testrun_1"
+training_id: "config_tests"
 surrogates: ["NeuralODE", "LatentPoly", "FullyConnected", "MultiONet"]
 dataset: 
   name: "osu2008"
   log10_transform: False
   normalise: "minmax" # "standardise", "minmax", "disable"
-devices: ["cuda:2", "cuda:6", "cuda:7", "cuda:8"]
+devices: ["cuda:4", "cuda:5"]
 seed: 42
 
 # Details of the benchmarking
@@ -18,17 +18,17 @@ interpolation:
   enabled: True
   intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
 extrapolation: 
-  enabled: True
+  enabled: False
   cutoffs: [50, 60, 70, 80, 90]
 sparse: 
-  enabled: True
+  enabled: False
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
   enabled: False
   sizes: [16, 64, 256, 1024, 4096]
   subset: 1  # Factor by which to slice the dataset (just for faster training)
 UQ: 
-  enabled: True
+  enabled: False
   n_models: 5  # Number of models for deep ensemble
 compare: True # Whether to compare the surrogates
 
@@ -36,5 +36,5 @@ compare: True # Whether to compare the surrogates
 # Leave empty if the quantities should be set per surrogate
 
 batch_size: [64, 64, 1024, 1024] 
-epochs: [4000, 10000, 200, 400]
+epochs: 3 # [4000, 10000, 200, 400]
 

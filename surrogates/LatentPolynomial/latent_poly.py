@@ -14,13 +14,11 @@ from utils import time_execution
 
 class LatentPoly(AbstractSurrogateModel):
 
-    def __init__(self, device: str | None = None):
-        super().__init__()
+    def __init__(self, device: str | None = None, N_chemicals: int = 29):
+        super().__init__(device=device, N_chemicals=N_chemicals)
         self.config: LatentPolynomialConfigOSU = LatentPolynomialConfigOSU()
-        if device is not None:
-            self.config.device = device
-        self.device = self.config.device
-        self.model = PolynomialModelWrapper(config=self.config)
+        self.config.in_features = N_chemicals
+        self.model = PolynomialModelWrapper(config=self.config, device=self.device)
 
     def forward(self, inputs) -> tuple[torch.Tensor, torch.Tensor]:
         """
@@ -41,7 +39,7 @@ class LatentPoly(AbstractSurrogateModel):
         dataset_train: np.ndarray,
         dataset_test: np.ndarray | None = None,
         dataset_val: np.ndarray | None = None,
-        batch_size: int | None = None,
+        batch_size: int = 128,
         shuffle: bool = True,
     ) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
         """
@@ -56,8 +54,6 @@ class LatentPoly(AbstractSurrogateModel):
         Returns:
             DataLoader: The DataLoader object containing the prepared data.
         """
-
-        batch_size = self.config.batch_size if batch_size is None else batch_size
         device = self.device
 
         dset_train = ChemDataset(dataset_train, device=self.device)
@@ -96,7 +92,7 @@ class LatentPoly(AbstractSurrogateModel):
         train_loader: DataLoader,
         test_loader: DataLoader,
         timesteps: np.ndarray | Tensor,
-        epochs: int | None,
+        epochs: int,
         position: int = 0,
         description: str = "Training LatentPoly",
     ) -> None:
@@ -114,7 +110,6 @@ class LatentPoly(AbstractSurrogateModel):
         """
         if not isinstance(timesteps, torch.Tensor):
             timesteps = torch.tensor(timesteps).to(self.device)
-        epochs = self.config.epochs if epochs is None else epochs
 
         # TODO: make Optimizer and scheduler configable
         optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
@@ -203,11 +198,11 @@ class LatentPoly(AbstractSurrogateModel):
 
 class PolynomialModelWrapper(nn.Module):
 
-    def __init__(self, config):
+    def __init__(self, config, device):
         super().__init__()
         self.config = config
         self.loss_weights = [100.0, 1.0, 1.0, 1.0]
-        self.device = config.device
+        self.device = device
 
         self.encoder = Encoder(
             in_features=config.in_features,
