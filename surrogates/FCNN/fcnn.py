@@ -5,7 +5,6 @@ import torch.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
-from typing import Tuple, Optional
 
 from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.FCNN.fcnn_config import OConfig
@@ -39,7 +38,9 @@ class FullyConnectedNet(nn.Module):
 
 
 class FullyConnected(AbstractSurrogateModel):
-    def __init__(self, device: str | None = None):
+    def __init__(
+        self, device: str | None = None, n_chemicals: int = 29, n_timesteps: int = 100
+    ):
         """
         Initialize the FullyConnected model with a configuration.
 
@@ -51,30 +52,29 @@ class FullyConnected(AbstractSurrogateModel):
         - device (str): The device to use for training (e.g., 'cpu', 'cuda:0').
         """
         config = OConfig()  # Load the specific config for FullyConnected
-        super(FullyConnected, self).__init__()
+        super().__init__(
+            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+        )
 
         self.config = config
-        if device is not None:
-            config.device = device
-        self.device = config.device
-        self.N = config.output_size
+        self.device = device
+        self.N = n_chemicals
         self.model = FullyConnectedNet(
-            config.input_size,
+            self.N + 1,  # 29 chemicals + 1 time input
             config.hidden_size,
-            config.output_size,
+            self.N,
             config.num_hidden_layers,
-        ).to(config.device)
+        ).to(device)
 
     def forward(
         self,
-        inputs: Tuple,
-        timesteps: np.ndarray | None = None,
+        inputs: tuple,
     ) -> torch.Tensor:
         """
         Forward pass for the FullyConnected model.
 
         Args:
-            inputs (Tuple[torch.Tensor, torch.Tensor]): The input tensor and the target tensor.
+            inputs (tuple[torch.Tensor, torch.Tensor]): The input tensor and the target tensor.
             Note: The targets are not used in the forward pass but are included for compatibility with the DataLoader.
             timesteps (np.ndarray, optional): The timesteps array.
             Note: The timesteps are not used in the forward pass but are included for compatibility with the benchmarking code.
@@ -82,8 +82,8 @@ class FullyConnected(AbstractSurrogateModel):
         Returns:
             torch.Tensor: Output tensor of the model.
         """
-        x, _ = inputs
-        return self.model(x)
+        x, targets = inputs
+        return self.model(x), targets
 
     def prepare_data(
         self,
@@ -91,12 +91,12 @@ class FullyConnected(AbstractSurrogateModel):
         dataset_test: np.ndarray,
         dataset_val: np.ndarray | None,
         timesteps: np.ndarray,
-        batch_size: int | None = None,
+        batch_size: int,
         shuffle: bool = True,
     ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
         """
         Prepare the data for the predict or fit methods.
-        Note: All datasets must have shape (N_samples, N_timesteps, N_chemicals).
+        Note: All datasets must have shape (n_samples, n_timesteps, n_chemicals).
 
         Args:
             dataset_train (np.ndarray): The training data.
@@ -109,9 +109,6 @@ class FullyConnected(AbstractSurrogateModel):
         Returns:
             tuple: The training, test, and validation DataLoaders.
         """
-        # Use batch size from the config if not provided
-        if batch_size is None:
-            batch_size = self.config.batch_size
 
         # Create the DataLoaders
         dataloaders = []
@@ -132,7 +129,7 @@ class FullyConnected(AbstractSurrogateModel):
         train_loader: DataLoader,
         test_loader: DataLoader,
         timesteps: np.ndarray,
-        epochs: int | None = None,
+        epochs: int,
         position: int = 0,
         description: str = "Training FullyConnected",
     ) -> None:
@@ -150,15 +147,13 @@ class FullyConnected(AbstractSurrogateModel):
         Returns:
             None
         """
-        self.N_timesteps = len(timesteps)
-        self.N_train_samples = int(len(train_loader.dataset) / self.N_timesteps)
+        self.n_timesteps = len(timesteps)
+        self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
 
         criterion = self.setup_criterion()
-        optimizer, scheduler = self.setup_optimizer_and_scheduler()
+        optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
 
-        train_losses, test_losses, accuracies = self.setup_losses(epochs=epochs)
-
-        epochs = self.config.num_epochs if epochs is None else epochs
+        train_losses, test_losses, MAEs = [np.zeros(epochs) for _ in range(3)]
 
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
@@ -171,139 +166,17 @@ class FullyConnected(AbstractSurrogateModel):
             scheduler.step()
 
             if test_loader is not None:
-                preds, targets = self.predict(
-                    test_loader,
-                    timesteps,
-                )
+                preds, targets = self.predict(test_loader)
                 test_losses[epoch] = criterion(preds, targets).item() / torch.numel(
                     targets
                 )
-                accuracies[epoch] = 1.0 - torch.mean(
-                    torch.abs(preds - targets) / torch.abs(targets)
-                )
+                MAEs[epoch] = self.L1(preds, targets).item()
 
         progress_bar.close()
 
         self.train_loss = train_losses
         self.test_loss = test_losses
-        self.accuracy = accuracies
-
-    def predict(
-        self,
-        data_loader: DataLoader,
-        timesteps: np.ndarray,
-    ) -> Tuple[float, np.ndarray, np.ndarray]:
-        """
-        Evaluate the model on the test data.
-
-        Args:
-            data_loader (DataLoader): The DataLoader object containing the test data.
-            timesteps (np.ndarray): The timesteps array.
-
-        Returns:
-            tuple: The total loss, outputs, and targets.
-        """
-        N_timesteps = len(timesteps)
-        device = self.device
-        self.eval()
-        self.to(device)
-
-        dataset_size = len(data_loader.dataset)
-
-        # Pre-allocate buffers for predictions and targets
-        preds = torch.zeros((dataset_size, self.N), dtype=torch.float32, device=device)
-        targets = torch.zeros(
-            (dataset_size, self.N), dtype=torch.float32, device=device
-        )
-
-        start_idx = 0
-
-        with torch.no_grad():
-            for inputs, batch_targets in data_loader:
-                batch_size = inputs.size(0)
-                inputs, batch_targets = (
-                    inputs.to(device),
-                    batch_targets.to(device),
-                )
-                outputs = self((inputs, batch_targets))
-
-                # Write predictions and targets to the pre-allocated buffers
-                preds[start_idx : start_idx + batch_size] = outputs
-                targets[start_idx : start_idx + batch_size] = batch_targets
-
-                start_idx += batch_size
-
-        preds = preds.reshape(-1, N_timesteps, self.N)
-        targets = targets.reshape(-1, N_timesteps, self.N)
-
-        return preds, targets
-
-    # def save(
-    #     self,
-    #     model_name: str,
-    #     subfolder: str = "trained",
-    #     training_id: str = "run_1",
-    #     dataset_name: str = "dataset",
-    # ) -> None:
-    #     """
-    #     Save the trained model and hyperparameters.
-
-    #     Args:
-    #         model_name (str): The name of the model.
-    #         subfolder (str): The subfolder to save the model in.
-    #         training_id (str): A unique identifier to include in the directory name.
-    #         dataset_name (str): The name of the dataset.
-    #     """
-    #     base_dir = os.getcwd()
-    #     subfolder = os.path.join(subfolder, training_id, "FCNN")
-    #     model_dir = create_model_dir(base_dir, subfolder)
-    #     self.dataset_name = dataset_name
-
-    #     # Save the model state dict
-    #     model_path = os.path.join(model_dir, f"{model_name}.pth")
-    #     torch.save(self.state_dict(), model_path)
-
-    #     # Create the hyperparameters dictionary from the config dataclass
-    #     hyperparameters = dataclasses.asdict(self.config)
-
-    #     # Append the train time to the hyperparameters
-    #     hyperparameters["train_duration"] = self.fit.duration
-    #     hyperparameters["N_train_samples"] = self.N_train_samples
-    #     hyperparameters["N_timesteps"] = self.N_timesteps
-    #     hyperparameters["dataset_name"] = self.dataset_name
-
-    #     # Save hyperparameters as a YAML file
-    #     hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
-    #     with open(hyperparameters_path, "w") as file:
-    #         yaml.dump(hyperparameters, file)
-
-    #     if self.train_loss is not None and self.test_loss is not None:
-    #         # Save the losses as a numpy file
-    #         losses_path = os.path.join(model_dir, f"{model_name}_losses.npz")
-    #         np.savez(losses_path, train_loss=self.train_loss, test_loss=self.test_loss)
-
-    #     print(f"Model, losses and hyperparameters saved to {model_dir}")
-
-    # def load(
-    #     self, training_id: str, surr_name: str, model_identifier: str
-    # ) -> torch.nn.Module:
-    #     """
-    #     Load a trained surrogate model.
-
-    #     Args:
-    #         model: Instance of the surrogate model class.
-    #         training_id (str): The training identifier.
-    #         surr_name (str): The name of the surrogate model.
-    #         model_identifier (str): The identifier of the model (e.g., 'main').
-
-    #     Returns:
-    #         The loaded surrogate model.
-    #     """
-    #     statedict_path = os.path.join(
-    #         "trained", training_id, surr_name, f"{model_identifier}.pth"
-    #     )
-    #     self.load_state_dict(torch.load(statedict_path))
-    #     self.eval()
+        self.MAE = MAEs
 
     def setup_criterion(self) -> callable:
         """
@@ -317,9 +190,13 @@ class FullyConnected(AbstractSurrogateModel):
 
     def setup_optimizer_and_scheduler(
         self,
-    ) -> Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
+        epochs: int,
+    ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
         """
         Utility function to set up the optimizer and scheduler for training.
+
+        Args:
+            epochs (int): The number of epochs to train the model.
 
         Returns:
             tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler): The optimizer and scheduler.
@@ -334,47 +211,16 @@ class FullyConnected(AbstractSurrogateModel):
                 optimizer,
                 start_factor=1,
                 end_factor=0.3,
-                total_iters=self.config.num_epochs,
+                total_iters=epochs,
             )
         else:
             scheduler = torch.optim.lr_scheduler.LinearLR(
                 optimizer,
                 start_factor=1,
                 end_factor=1,
-                total_iters=self.config.num_epochs,
+                total_iters=epochs,
             )
         return optimizer, scheduler
-
-    def setup_losses(
-        self,
-        prev_train_loss: Optional[np.ndarray] = None,
-        prev_test_loss: Optional[np.ndarray] = None,
-        prev_accuracy: Optional[np.ndarray] = None,
-        epochs: int | None = None,
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Set up the loss history arrays for training.
-
-        Args:
-            prev_train_loss (np.ndarray): Previous training loss history.
-            prev_test_loss (np.ndarray): Previous test loss history.
-            prev_accuracy (np.ndarray): Previous accuracy history.
-            epochs (int, optional): The number of epochs to train the model.
-
-        Returns:
-            tuple: The training and testing loss history arrays (both np.ndarrays).
-        """
-        epochs = self.config.num_epochs if epochs is None else epochs
-        if self.config.pretrained_model_path is None:
-            train_losses = np.zeros(epochs)
-            test_losses = np.zeros(epochs)
-            accuracies = np.zeros(epochs)
-        else:
-            train_losses = np.concatenate((prev_train_loss, np.zeros(epochs)))
-            test_losses = np.concatenate((prev_test_loss, np.zeros(epochs)))
-            accuracies = np.concatenate((prev_accuracy, np.zeros(epochs)))
-
-        return train_losses, test_losses, accuracies
 
     def epoch(
         self,
@@ -404,7 +250,7 @@ class FullyConnected(AbstractSurrogateModel):
                 targets.to(self.device),
             )
             optimizer.zero_grad()
-            outputs = self.forward((inputs, targets))
+            outputs, targets = self.forward((inputs, targets))
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
@@ -412,66 +258,6 @@ class FullyConnected(AbstractSurrogateModel):
 
         total_loss /= dataset_size * self.N
         return total_loss
-
-    # def epoch_profiled(
-    #     self,
-    #     data_loader: DataLoader,
-    #     criterion: nn.Module,
-    #     optimizer: torch.optim.Optimizer,
-    # ) -> float:
-    #     """
-    #     Perform a single training step on the model.
-
-    #     Args:
-    #         data_loader (DataLoader): The DataLoader object containing the training data.
-    #         criterion (nn.Module): The loss function.
-    #         optimizer (torch.optim.Optimizer): The optimizer.
-
-    #     Returns:
-    #         float: The total loss for the training step.
-    #     """
-    #     self.train()
-    #     total_loss = 0
-
-    #     with torch.profiler.profile(
-    #         activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-    #         schedule=torch.profiler.schedule(wait=5, warmup=2, active=5, repeat=1),
-    #         on_trace_ready=torch.profiler.tensorboard_trace_handler("./log/HTA2"),
-    #         record_shapes=True,
-    #         profile_memory=True,
-    #         with_stack=True,
-    #         experimental_config=torch._C._profiler._ExperimentalConfig(verbose=True),
-    #     ) as prof:
-    #         i = 0
-    #         for batch in data_loader:
-    #             i += 1
-    #             if i >= 30:
-    #                 break
-    #             inputs, targets = batch
-    #             inputs, targets = inputs.to(self.device), targets.to(self.device)
-    #             optimizer.zero_grad()
-
-    #             with record_function("model_inference"):
-    #                 outputs = self.forward((inputs, targets))
-    #             torch.cuda.synchronize()
-
-    #             with record_function("loss_calculation"):
-    #                 loss = criterion(outputs, targets)
-
-    #             with record_function("backward_pass"):
-    #                 loss.backward()
-    #             torch.cuda.synchronize()
-
-    #             with record_function("optimizer_step"):
-    #                 optimizer.step()
-    #             torch.cuda.synchronize()
-
-    #             total_loss += loss.item()
-
-    #             prof.step()
-
-    #     total_loss /= self.dataset_size * self.N
-    #     return total_loss, prof
 
     def create_dataloader(
         self,
@@ -517,6 +303,8 @@ class FullyConnected(AbstractSurrogateModel):
                 targets_tensor - targets_tensor.mean()
             ) / targets_tensor.std()
 
+        inputs_tensor = inputs_tensor.to(self.device)
+        targets_tensor = targets_tensor.to(self.device)
         dataset = TensorDataset(inputs_tensor, targets_tensor)
 
         return DataLoader(
@@ -524,5 +312,5 @@ class FullyConnected(AbstractSurrogateModel):
             batch_size=batch_size,
             shuffle=shuffle,
             worker_init_fn=worker_init_fn,
-            num_workers=4,
+            # num_workers=4,
         )

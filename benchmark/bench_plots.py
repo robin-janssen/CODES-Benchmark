@@ -241,7 +241,7 @@ def plot_average_errors_over_time(
     Args:
         surr_name (str): The name of the surrogate model.
         conf (dict): The configuration dictionary.
-        errors (np.ndarray): Errors array of shape [N_metrics, N_timesteps].
+        errors (np.ndarray): Errors array of shape [N_metrics, n_timesteps].
         metrics (np.ndarray): Metrics array of shape [N_metrics].
         timesteps (np.ndarray): Timesteps array.
         mode (str): The mode of evaluation ('interpolation', 'extrapolation', 'sparse', 'batchsize').
@@ -270,6 +270,19 @@ def plot_average_errors_over_time(
         for i, metric in enumerate(metrics):
             label = f"{labels[mode]} {metric}"
             plt.plot(timesteps, errors[i], label=label, color=colors[i])
+            if mode == "extrapolation":
+                cutoff_point = timesteps[metric - 1]
+                plt.axvline(
+                    x=cutoff_point, color=colors[i], linestyle="--", linewidth=0.8
+                )
+                plt.text(
+                    cutoff_point,
+                    errors[i, metric - 1],
+                    f"{metric}",
+                    color=colors[i],
+                    verticalalignment="bottom",
+                    horizontalalignment="right",
+                )
 
     plt.xlabel("Timesteps")
     plt.ylabel("Mean Squared Error")
@@ -351,24 +364,6 @@ def plot_example_predictions_with_uncertainty(
         save_plot(plt, "UQ_predictions.png", conf, surr_name)
 
     plt.close()
-
-
-# def save_plot(filename: str, conf: dict, surr_name: str) -> None:
-#     """
-#     Save a plot to the specified directory based on the configuration.
-
-#     Args:
-#         filename (str): The name of the file to save.
-#         conf (Dict): Configuration dictionary.
-#         surr_name (str): The name of the surrogate model.
-#     """
-#     training_id = conf["training_id"]
-#     plot_dir = os.path.join("plots", training_id, surr_name)
-#     if not os.path.exists(plot_dir):
-#         os.makedirs(plot_dir)
-#     filepath = os.path.join(plot_dir, filename)
-#     plt.savefig(filepath)
-#     print(f"Plot saved as: {filepath}")
 
 
 def plot_average_uncertainty_over_time(
@@ -502,7 +497,7 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
             extra_test_losses.append(test_loss)
         plot_losses(
             tuple(extra_train_losses),
-            tuple(f"Cutoff {cutoff}" for cutoff in [len(timesteps)] + cutoffs),
+            tuple(f"Cutoff {cutoff}" for cutoff in cutoffs + [len(timesteps)]),
             title="Extrapolation Losses",
             save=True,
             conf=conf,
@@ -641,10 +636,13 @@ def plot_loss_comparison(
         None
     """
     plt.figure(figsize=(12, 6))
+    colors = plt.cm.viridis(np.linspace(0, 1, len(train_losses)))
 
-    for train_loss, test_loss, label in zip(train_losses, test_losses, labels):
-        plt.plot(train_loss, label=f"{label} Train Loss")
-        plt.plot(test_loss, label=f"{label} Test Loss", linestyle="--")
+    for i, (train_loss, test_loss, label) in enumerate(
+        zip(train_losses, test_losses, labels)
+    ):
+        plt.plot(train_loss, label=f"{label} Train Loss", color=colors[i])
+        plt.plot(test_loss, label=f"{label} Test Loss", linestyle="--", color=colors[i])
 
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
@@ -659,68 +657,72 @@ def plot_loss_comparison(
     plt.show()
 
 
-def plot_accuracy_comparison(
-    accuracies: tuple[np.ndarray, ...],
+def plot_MAE_comparison(
+    MAEs: tuple[np.ndarray, ...],
     labels: tuple[str, ...],
     config: dict,
     save: bool = True,
 ) -> None:
     """
-    Plot the accuracies for different surrogate models.
+    Plot the MAE for different surrogate models.
 
     Args:
-        accuracies (tuple): Tuple of accuracy arrays for each surrogate model.
+        MAE (tuple): Tuple of accuracy arrays for each surrogate model.
         labels (tuple): Tuple of labels for each surrogate model.
         config (dict): Configuration dictionary.
         save (bool): Whether to save the plot.
     """
     plt.figure(figsize=(12, 6))
+    colors = plt.cm.viridis(np.linspace(0, 1, len(MAEs)))
 
-    for accuracy, label in zip(accuracies, labels):
-        plt.plot(accuracy, label=label)
+    for i, (accuracy, label) in enumerate(zip(MAEs, labels)):
+        plt.plot(accuracy, label=label, color=colors[i])
 
     plt.xlabel("Epoch")
-    plt.ylabel("Accuracy")
-    plt.title("Comparison of Model Accuracies")
+    plt.ylabel("MAE")
+    plt.title("Comparison of Model Mean Absolute Errors")
     plt.legend()
     plt.grid(True)
 
     if save and config:
-        save_plot(plt, "comparison_main_model_accuracies.png", config)
+        save_plot(plt, "comparison_main_model_MAE.png", config)
 
     plt.show()
 
 
-def plot_accuracy_comparison_train_duration(
-    accuracies: tuple[np.ndarray, ...],
+def plot_MAE_comparison_train_duration(
+    MAEs: tuple[np.ndarray, ...],
     labels: tuple[str, ...],
     train_durations: tuple[float, ...],
     config: dict,
     save: bool = True,
 ) -> None:
     """
-    Plot the accuracies for different surrogate models.
+    Plot the MAE for different surrogate models.
 
     Args:
-        accuracies (tuple): Tuple of accuracy arrays for each surrogate model.
+        MAE (tuple): Tuple of accuracy arrays for each surrogate model.
         labels (tuple): Tuple of labels for each surrogate model.
         config (dict): Configuration dictionary.
         save (bool): Whether to save the plot.
     """
     plt.figure(figsize=(12, 6))
+    colors = plt.cm.viridis(np.linspace(0, 1, len(MAEs)))
 
-    for accuracy, label, train_duration in zip(accuracies, labels, train_durations):
+    for i, (accuracy, label, train_duration) in enumerate(
+        zip(MAEs, labels, train_durations)
+    ):
         epoch_times = np.linspace(0, train_duration, len(accuracy))
-        plt.plot(epoch_times, accuracy, label=label)
+        plt.plot(epoch_times, accuracy, label=label, color=colors[i])
 
     plt.xlabel("Time (s)")
-    plt.ylabel("Accuracy")
-    plt.title("Comparison of Model Accuracies over Training Duration")
+    plt.ylabel("MAE")
+    plt.title("Comparison of Model Mean Absolute Error over Training Duration")
     plt.legend()
     plt.grid(True)
 
     if save and config:
-        save_plot(plt, "comparison_main_model_accuracies_time.png", config)
+        save_plot(plt, "comparison_main_model_MAE_time.png", config)
 
     plt.show()
 
@@ -736,8 +738,8 @@ def plot_relative_errors(
     Plot the relative errors over time for different surrogate models.
 
     Args:
-        mean_errors (dict): Dictionary containing the mean relative errors for each surrogate model.
-        median_errors (dict): Dictionary containing the median relative errors for each surrogate model.
+        mean_errors (dict): dictionary containing the mean relative errors for each surrogate model.
+        median_errors (dict): dictionary containing the median relative errors for each surrogate model.
         timesteps (np.ndarray): Array of timesteps.
         config (dict): Configuration dictionary.
         save (bool): Whether to save the plot.
@@ -747,7 +749,7 @@ def plot_relative_errors(
     """
     plt.figure(figsize=(12, 6))
     colors = plt.cm.viridis(np.linspace(0, 1, len(mean_errors)))
-    linestyles = ["-", "--", ":", "-."]
+    linestyles = ["-", "--"]
 
     for i, surrogate in enumerate(mean_errors.keys()):
         plt.plot(
@@ -792,14 +794,17 @@ def inference_time_bar_plot(
         surrogates (List[str]): List of surrogate model names.
         means (List[float]): List of mean inference times for each surrogate model.
         stds (List[float]): List of standard deviation of inference times for each surrogate model.
-        config (Dict): Configuration dictionary.
+        config (dict): Configuration dictionary.
         save (bool, optional): Whether to save the plot. Defaults to True.
 
     Returns:
         None
     """
     plt.figure(figsize=(10, 6))
-    plt.bar(surrogates, means, yerr=stds, capsize=5, alpha=0.7, color="b", ecolor="r")
+    colors = plt.cm.viridis(np.linspace(0, 1, len(surrogates)))
+    plt.bar(
+        surrogates, means, yerr=stds, capsize=5, alpha=0.7, color=colors, ecolor="black"
+    )
     plt.xlabel("Surrogate Model")
     plt.ylabel("Mean Inference Time per Prediction (s)")
     plt.title("Comparison of Mean Inference Time with Standard Deviation")
@@ -937,7 +942,7 @@ def plot_dynamic_correlation_heatmap(
     plt.colorbar(label=r"$\log_{10}$(Counts + 1)")
     plt.xlabel("Absolute Gradient (Normalized)")
     plt.ylabel("Prediction Error (Normalized)")
-    plt.title("Correlation between Gradients and prediction errors")
+    plt.title("Correlation between Gradients and Prediction Errors")
 
     if save and conf:
         save_plot(plt, "dynamic_correlation_heatmap.png", conf, surr_name)

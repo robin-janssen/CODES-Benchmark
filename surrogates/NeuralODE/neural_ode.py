@@ -35,42 +35,41 @@ class NeuralODE(AbstractSurrogateModel):
             Saves the model, losses, and hyperparameters.
     """
 
-    def __init__(self, device: str | None = None):
-        super().__init__()
+    def __init__(
+        self, device: str | None = None, n_chemicals: int = 29, n_timesteps: int = 100
+    ):
+        super().__init__(
+            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+        )
         self.config: Config = Config()
         # TODO find out why the config is loaded incorrectly after the first
         # training and fix! The list is ordered the other way around...
-        self.config.coder_layers = [32, 16, 8]
-        if device is not None:
-            self.config.device = device
-        self.device = self.config.device
-        self.model = ModelWrapper(config=self.config).to(self.config.device)
-        self.train_loss = None
+        # self.config.coder_layers = [32, 16, 8]
+        self.model = ModelWrapper(config=self.config, n_chemicals=n_chemicals).to(
+            device
+        )
 
-    def forward(self, inputs: torch.Tensor, timesteps: torch.Tensor | np.ndarray):
+    def forward(self, inputs):
         """
-        Perform a forward pass through the model.
+        Takes whatever the dataloader outputs, performs a forward pass through the
+        model and returns the predictions with the respective targets.
 
         Args:
-            inputs (torch.Tensor): The input tensor.
-            timesteps (torch.Tensor | np.ndarray): The tensor/array representing the timesteps.
+            inputs (Any): the data from the dataloader
 
         Returns:
-            torch.Tensor: The output tensor.
+            tuple[torch.Tensor, torch.Tensor]: predictions and targets
         """
-        if not isinstance(timesteps, torch.Tensor):
-            timesteps = torch.tensor(timesteps, dtype=torch.float64).to(
-                self.config.device
-            )
-        return self.model.forward(inputs, timesteps)
+        targets, timesteps = inputs[0], inputs[1]
+        return self.model(targets, timesteps), targets
 
     def prepare_data(
         self,
-        timesteps: np.ndarray,
         dataset_train: np.ndarray,
-        dataset_test: np.ndarray | None = None,
-        dataset_val: np.ndarray | None = None,
-        batch_size: int | None = None,
+        dataset_test: np.ndarray | None,
+        dataset_val: np.ndarray | None,
+        timesteps: np.ndarray,
+        batch_size: int = 128,
         shuffle: bool = True,
     ) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
         """
@@ -79,42 +78,46 @@ class NeuralODE(AbstractSurrogateModel):
         Args:
             dataset (np.ndarray): The input dataset.
             timesteps (np.ndarray): The timesteps for the dataset.
-            batch_size (int | None): The batch size for the DataLoader. If None, the entire dataset is loaded as a single batch.
+            batch_size (int | None): The batch size for the DataLoader.
+                If None, the entire dataset is loaded as a single batch.
             shuffle (bool): Whether to shuffle the data during training.
 
         Returns:
             DataLoader: The DataLoader object containing the prepared data.
         """
+        device = self.device
 
-        batch_size = self.config.batch_size if batch_size is None else batch_size
-        device = self.config.device
+        timesteps = torch.tensor(timesteps).to(device)
 
-        dset_train = ChemDataset(dataset_train, device=self.config.device)
+        dset_train = ChemDataset(dataset_train, timesteps, device=self.device)
         dataloader_train = DataLoader(
             dset_train,
             batch_size=batch_size,
             shuffle=shuffle,
             worker_init_fn=worker_init_fn,
+            collate_fn=lambda x: (x[0], x[1]),
         )
 
         dataloader_test = None
         if dataset_test is not None:
-            dset_test = ChemDataset(dataset_test, device=self.config.device)
+            dset_test = ChemDataset(dataset_test, timesteps, device=self.device)
             dataloader_test = DataLoader(
                 dset_test,
                 batch_size=batch_size,
                 shuffle=shuffle,
                 worker_init_fn=worker_init_fn,
+                collate_fn=lambda x: (x[0], x[1]),
             )
 
         dataloader_val = None
         if dataset_val is not None:
-            dset_val = ChemDataset(dataset_val, device=device)
+            dset_val = ChemDataset(dataset_val, timesteps, device=device)
             dataloader_val = DataLoader(
                 dset_val,
                 batch_size=batch_size,
                 shuffle=shuffle,
                 worker_init_fn=worker_init_fn,
+                collate_fn=lambda x: (x[0], x[1]),
             )
 
         return dataloader_train, dataloader_test, dataloader_val
@@ -122,10 +125,10 @@ class NeuralODE(AbstractSurrogateModel):
     @time_execution
     def fit(
         self,
-        train_loader: DataLoader | Tensor,
-        test_loader: DataLoader | Tensor,
+        train_loader: DataLoader,
+        test_loader: DataLoader,
         timesteps: np.ndarray | Tensor,
-        epochs: int | None,
+        epochs: int,
         position: int = 0,
         description: str = "Training NeuralODE",
     ) -> None:
@@ -144,8 +147,7 @@ class NeuralODE(AbstractSurrogateModel):
             None
         """
         if not isinstance(timesteps, torch.Tensor):
-            timesteps = torch.tensor(timesteps).to(self.config.device)
-        epochs = self.config.epochs if epochs is None else epochs
+            timesteps = torch.tensor(timesteps).to(self.device)
 
         # TODO: make Optimizer and scheduler configable
         optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
@@ -153,17 +155,17 @@ class NeuralODE(AbstractSurrogateModel):
         scheduler = None
         if self.config.final_learning_rate is not None:
             scheduler = CosineAnnealingLR(
-                optimizer, self.config.epochs, eta_min=self.config.final_learning_rate
+                optimizer, epochs, eta_min=self.config.final_learning_rate
             )
 
         losses = torch.empty((epochs, len(train_loader)))
         test_losses = torch.empty((epochs))
-        accuracy = torch.empty((epochs))
+        MAEs = torch.empty((epochs))
 
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
         for epoch in progress_bar:
-            for i, x_true in enumerate(train_loader):
+            for i, (x_true, timesteps) in enumerate(train_loader):
                 optimizer.zero_grad()
                 # x0 = x_true[:, 0, :]
                 x_pred = self.model.forward(x_true, timesteps)
@@ -186,79 +188,35 @@ class NeuralODE(AbstractSurrogateModel):
 
             with torch.inference_mode():
                 self.model.eval()
-                preds, targets = self.predict(test_loader, timesteps)
+                preds, targets = self.predict(test_loader)
                 self.model.train()
                 loss = self.model.total_loss(preds, targets)
                 test_losses[epoch] = loss
-                accuracy[epoch] = 1.0 - torch.mean(
-                    torch.abs(preds - targets) / torch.abs(targets)
-                )
+                MAEs[epoch] = self.L1(preds, targets).item()
 
         progress_bar.close()
 
         self.train_loss = torch.mean(losses, dim=1)
         self.test_loss = test_losses
-        self.accuracy = accuracy
-
-    def predict(
-        self,
-        data_loader: DataLoader,
-        timesteps: np.ndarray | torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """
-        Makes predictions using the trained model.
-
-        Args:
-            data_loader (DataLoader): The DataLoader object containing the data.
-            timesteps (np.ndarray | torch.Tensor): The array of timesteps.
-
-        Returns:
-            tuple[torch.Tensor, torch.Tensor]: A tuple containing the predictions and the targets.
-        """
-
-        self.model = self.model.to(self.config.device)
-        if not isinstance(timesteps, torch.Tensor):
-            t_range = torch.tensor(timesteps, dtype=torch.float64).to(
-                self.config.device
-            )
-        else:
-            t_range = timesteps
-
-        if not isinstance(data_loader, DataLoader):
-            raise TypeError("data_loader must be a DataLoader object")
-
-        batch_size = data_loader.batch_size
-        if batch_size is None:
-            raise ValueError("batch_size must be provided by the DataLoader object")
-
-        predictions = torch.empty_like(data_loader.dataset.data)  # type: ignore
-        targets = torch.empty_like(data_loader.dataset.data)  # type: ignore
-
-        with torch.inference_mode():
-            for i, x_true in enumerate(data_loader):
-                x_pred = self.model.forward(x_true, t_range)
-                predictions[i * batch_size : (i + 1) * batch_size, :, :] = x_pred
-                targets[i * batch_size : (i + 1) * batch_size, :, :] = x_true
-
-        return predictions, targets
+        self.MAE = MAEs
 
 
 class ModelWrapper(torch.nn.Module):
 
-    def __init__(self, config):
+    def __init__(self, config, n_chemicals):
         super().__init__()
         self.config = config
         self.loss_weights = [100.0, 1.0, 1.0, 1.0]
 
         self.encoder = Encoder(
-            in_features=config.in_features,
+            in_features=n_chemicals,
             latent_features=config.latent_features,
             n_hidden=config.coder_hidden,
             width_list=config.coder_layers,
             activation=config.coder_activation,
         )
         self.decoder = Decoder(
-            out_features=config.in_features,
+            out_features=n_chemicals,
             latent_features=config.latent_features,
             n_hidden=config.coder_hidden,
             width_list=config.coder_layers,
@@ -273,7 +231,6 @@ class ModelWrapper(torch.nn.Module):
             tanh_reg=config.ode_tanh_reg,
         )
 
-    # def forward(self, x0, t_range):
     def forward(self, x, t_range):
         x0 = x[:, 0, :]
         z0 = self.encoder(x0)  # x(t=0)

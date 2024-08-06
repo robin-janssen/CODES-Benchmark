@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
-from typing import Tuple, Optional, TypeVar
+from typing import TypeVar
 
 from surrogates.surrogates import AbstractSurrogateModel
 
@@ -40,8 +40,12 @@ class TrunkNet(nn.Module):
 
 
 class OperatorNetwork(AbstractSurrogateModel):
-    def __init__(self):
-        super(OperatorNetwork, self).__init__()
+    def __init__(
+        self, device: str | None = None, n_chemicals: int = 29, n_timesteps: int = 100
+    ):
+        super().__init__(
+            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+        )
 
     def post_init_check(self):
         if not hasattr(self, "branch_net") or not hasattr(self, "trunk_net"):
@@ -69,13 +73,14 @@ OperatorNetworkType = TypeVar("OperatorNetworkType", bound=OperatorNetwork)
 
 
 class MultiONet(OperatorNetwork):
-    def __init__(self, device: str | None = None):
+    def __init__(
+        self, device: str | None = None, n_chemicals: int = 29, n_timesteps: int = 100
+    ):
         """
         Initialize the MultiONet model with a configuration.
 
         The configuration must provide the following information:
 
-        - branch_input_size (int): The input size for the branch network.
         - trunk_input_size (int): The input size for the trunk network.
         - hidden_size (int): The number of hidden units in each layer of the branch and trunk networks.
         - branch_hidden_layers (int): The number of hidden layers in the branch network.
@@ -85,32 +90,31 @@ class MultiONet(OperatorNetwork):
         - device (str): The device to use for training (e.g., 'cpu', 'cuda:0').
         """
         config = MultiONetConfig()  # Load the specific config for DeepONet
-        super(MultiONet, self).__init__()
+        # super(MultiONet, self).__init__()
+        super().__init__(
+            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+        )
 
         self.config = config
-        if device is not None:
-            config.device = device
-        self.device = config.device
-        self.N = config.N_outputs  # Number of outputs
-        self.outputs = config.output_neurons  # Number of neurons in the last layer
+        self.device = device
+        self.N = n_chemicals  # Number of chemicals
+        self.outputs = (
+            n_chemicals * config.output_factor
+        )  # Number of neurons in the last layer
         self.branch_net = BranchNet(
-            config.branch_input_size,
+            n_chemicals - config.trunk_input_size + 1,  # +1 due to time
             config.hidden_size,
-            config.output_neurons,
+            self.outputs,
             config.branch_hidden_layers,
-        ).to(config.device)
+        ).to(device)
         self.trunk_net = TrunkNet(
-            config.trunk_input_size,
+            config.trunk_input_size,  # = time + optional additional quantities
             config.hidden_size,
-            config.output_neurons,
+            self.outputs,
             config.trunk_hidden_layers,
-        ).to(config.device)
+        ).to(device)
 
-    def forward(
-        self,
-        inputs: Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
-        timesteps: np.ndarray | None = None,
-    ) -> torch.Tensor:
+    def forward(self, inputs) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Forward pass for the MultiONet model.
 
@@ -123,7 +127,7 @@ class MultiONet(OperatorNetwork):
         Returns:
             torch.Tensor: Output tensor of the model.
         """
-        branch_input, trunk_input, _ = inputs
+        branch_input, trunk_input, targets = inputs
         branch_output = self.branch_net(branch_input)
         trunk_output = self.trunk_net(trunk_input)
 
@@ -136,7 +140,7 @@ class MultiONet(OperatorNetwork):
         for b_split, t_split in zip(branch_splits, trunk_splits):
             result.append(torch.sum(b_split * t_split, dim=1, keepdim=True))
 
-        return torch.cat(result, dim=1)
+        return torch.cat(result, dim=1), targets
 
     def prepare_data(
         self,
@@ -144,12 +148,12 @@ class MultiONet(OperatorNetwork):
         dataset_test: np.ndarray,
         dataset_val: np.ndarray | None,
         timesteps: np.ndarray,
-        batch_size: int | None = None,
+        batch_size: int,
         shuffle: bool = True,
     ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
         """
         Prepare the data for the predict or fit methods.
-        Note: All datasets must have shape (N_samples, N_timesteps, N_chemicals).
+        Note: All datasets must have shape (n_samples, n_timesteps, n_chemicals).
 
         Args:
             dataset_train (np.ndarray): The training data.
@@ -162,10 +166,6 @@ class MultiONet(OperatorNetwork):
         Returns:
             tuple: The training, test, and validation DataLoaders.
         """
-        # Use batch size from the config if not provided
-        if batch_size is None:
-            batch_size = self.config.batch_size
-
         dataloaders = []
         # Create the train dataloader
         dataloader_train = self.create_dataloader(
@@ -198,7 +198,7 @@ class MultiONet(OperatorNetwork):
         train_loader: DataLoader,
         test_loader: DataLoader,
         timesteps: np.ndarray,
-        epochs: int | None = None,
+        epochs: int,
         position: int = 0,
         description: str = "Training DeepONet",
     ) -> None:
@@ -216,15 +216,13 @@ class MultiONet(OperatorNetwork):
         Returns:
             None
         """
-        self.N_timesteps = len(timesteps)
-        self.N_train_samples = int(len(train_loader.dataset) / self.N_timesteps)
+        self.n_timesteps = len(timesteps)
+        self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
 
         criterion = self.setup_criterion()
-        optimizer, scheduler = self.setup_optimizer_and_scheduler()
+        optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
 
-        train_losses, test_losses, accuracies = self.setup_losses(epochs=epochs)
-
-        epochs = self.config.num_epochs if epochs is None else epochs
+        train_losses, test_losses, MAEs = [np.zeros(epochs) for _ in range(3)]
 
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
@@ -237,73 +235,17 @@ class MultiONet(OperatorNetwork):
             scheduler.step()
 
             if test_loader is not None:
-                preds, targets = self.predict(
-                    test_loader,
-                    timesteps,
-                )
+                preds, targets = self.predict(test_loader)
                 test_losses[epoch] = criterion(preds, targets).item() / torch.numel(
                     targets
                 )
-                accuracies[epoch] = 1.0 - torch.mean(
-                    torch.abs(preds - targets) / torch.abs(targets)
-                )
+                MAEs[epoch] = self.L1(preds, targets).item()
 
         progress_bar.close()
 
         self.train_loss = train_losses
         self.test_loss = test_losses
-        self.accuracy = accuracies
-
-    def predict(
-        self,
-        data_loader: DataLoader,
-        timesteps: np.ndarray,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Evaluate the model on the test data.
-
-        Args:
-            data_loader (DataLoader): The DataLoader object containing the test data.
-            N_timesteps (int): The number of timesteps.
-
-        Returns:
-            tuple: The predictions and targets.
-        """
-        N_timesteps = len(timesteps)
-        device = self.device
-        self.eval()
-        self.to(device)
-
-        dataset_size = len(data_loader.dataset)
-
-        # Pre-allocate buffers for predictions and targets
-        preds = torch.zeros((dataset_size, self.N), dtype=torch.float32, device=device)
-        targets = torch.zeros(
-            (dataset_size, self.N), dtype=torch.float32, device=device
-        )
-
-        start_idx = 0
-
-        with torch.no_grad():
-            for branch_inputs, trunk_inputs, batch_targets in data_loader:
-                batch_size = branch_inputs.size(0)
-                branch_inputs, trunk_inputs, batch_targets = (
-                    branch_inputs.to(device),
-                    trunk_inputs.to(device),
-                    batch_targets.to(device),
-                )
-                outputs = self((branch_inputs, trunk_inputs, batch_targets))
-
-                # Write predictions and targets to the pre-allocated buffers
-                preds[start_idx : start_idx + batch_size] = outputs
-                targets[start_idx : start_idx + batch_size] = batch_targets
-
-                start_idx += batch_size
-
-        preds = preds.reshape(-1, N_timesteps, self.N)
-        targets = targets.reshape(-1, N_timesteps, self.N)
-
-        return preds, targets
+        self.MAE = MAEs
 
     def setup_criterion(self) -> callable:
         """
@@ -316,19 +258,19 @@ class MultiONet(OperatorNetwork):
         if hasattr(self.config, "masses") and self.config.masses is not None:
             weights = (1.0, self.config.massloss_factor)
             crit = mass_conservation_loss(
-                self.config.masses, crit, weights, self.config.device
+                self.config.masses, crit, weights, self.device
             )
         return crit
 
     def setup_optimizer_and_scheduler(
         self,
-    ) -> Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
+        epochs: int,
+    ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
         """
         Utility function to set up the optimizer and scheduler for training.
 
         Args:
-            conf (dataclasses.dataclass): The configuration dataclass.
-            deeponet (OperatorNetworkType): The model to train.
+            epochs (int): The number of epochs to train the model.
 
         Returns:
             tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler): The optimizer and scheduler.
@@ -340,50 +282,13 @@ class MultiONet(OperatorNetwork):
         )
         if self.config.schedule:
             scheduler = torch.optim.lr_scheduler.LinearLR(
-                optimizer,
-                start_factor=1,
-                end_factor=0.3,
-                total_iters=self.config.num_epochs,
+                optimizer, start_factor=1, end_factor=0.3, total_iters=epochs
             )
         else:
             scheduler = torch.optim.lr_scheduler.LinearLR(
-                optimizer,
-                start_factor=1,
-                end_factor=1,
-                total_iters=self.config.num_epochs,
+                optimizer, start_factor=1, end_factor=1, total_iters=epochs
             )
         return optimizer, scheduler
-
-    def setup_losses(
-        self,
-        prev_train_loss: Optional[np.ndarray] = None,
-        prev_test_loss: Optional[np.ndarray] = None,
-        prev_accuracy: Optional[np.ndarray] = None,
-        epochs: int | None = None,
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Set up the loss history arrays for training.
-
-        Args:
-            prev_train_loss (np.ndarray): Previous training loss history.
-            prev_test_loss (np.ndarray): Previous test loss history.
-            prev_accuracy (np.ndarray): Previous accuracy history.
-            epochs (int, optional): The number of epochs to train the model.
-
-        Returns:
-            tuple: The training and testing loss history arrays (both np.ndarrays).
-        """
-        epochs = self.config.num_epochs if epochs is None else epochs
-        if self.config.pretrained_model_path is None:
-            train_losses = np.zeros(epochs)
-            test_losses = np.zeros(epochs)
-            accuracies = np.zeros(epochs)
-        else:
-            train_losses = np.concatenate((prev_train_loss, np.zeros(epochs)))
-            test_losses = np.concatenate((prev_test_loss, np.zeros(epochs)))
-            accuracies = np.concatenate((prev_accuracy, np.zeros(epochs)))
-
-        return train_losses, test_losses, accuracies
 
     def epoch(
         self,
@@ -414,7 +319,7 @@ class MultiONet(OperatorNetwork):
                 targets.to(self.device),
             )
             optimizer.zero_grad()
-            outputs = self((branch_input, trunk_input, targets))
+            outputs, targets = self((branch_input, trunk_input, targets))
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
@@ -484,6 +389,9 @@ class MultiONet(OperatorNetwork):
             targets_tensor = (targets_tensor - self.target_mean) / self.target_std
 
         # Create a TensorDataset and DataLoader
+        branch_inputs_tensor = branch_inputs_tensor.to(self.device)
+        trunk_inputs_tensor = trunk_inputs_tensor.to(self.device)
+        targets_tensor = targets_tensor.to(self.device)
         dataset = TensorDataset(
             branch_inputs_tensor, trunk_inputs_tensor, targets_tensor
         )
@@ -493,5 +401,5 @@ class MultiONet(OperatorNetwork):
             batch_size=batch_size,
             shuffle=shuffle,
             worker_init_fn=worker_init_fn,
-            num_workers=4,
+            # num_workers=4,
         )

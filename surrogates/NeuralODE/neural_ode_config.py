@@ -6,7 +6,7 @@ import torch
 @dataclass
 class NeuralODEConfigOSU:
     "Model config for OSU_2008 dataset"
-    in_features: int = 29
+    # in_features: int = 29
     latent_features: int = 5
     coder_hidden: int = 4
     coder_layers: list[int] = field(default_factory=lambda: [32, 16, 8])
@@ -22,7 +22,3 @@ class NeuralODEConfigOSU:
     t_steps = 100
     learning_rate: float = 1e-3
     final_learning_rate: float = 1e-5
-    epochs: int = 10000
-
-    device: str = "cuda:0"
-    batch_size = 128

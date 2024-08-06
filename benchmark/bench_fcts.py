@@ -3,22 +3,22 @@ import numpy as np
 import time
 
 # import os
-from typing import Dict, Any
+from typing import Any
 from torch.utils.data import DataLoader
 from scipy.stats import pearsonr
 
 from .bench_plots import (
     plot_relative_errors_over_time,
-    plot_dynamic_correlation,
+    # plot_dynamic_correlation,
     plot_generalization_errors,
     plot_average_errors_over_time,
     plot_average_uncertainty_over_time,
     plot_example_predictions_with_uncertainty,
-    plot_uncertainty_vs_errors,
+    # plot_uncertainty_vs_errors,
     plot_surr_losses,
     plot_loss_comparison,
-    # plot_accuracy_comparison,
-    plot_accuracy_comparison_train_duration,
+    # plot_MAE_comparison,
+    plot_MAE_comparison_train_duration,
     plot_relative_errors,
     inference_time_bar_plot,
     plot_generalization_error_comparison,
@@ -34,7 +34,7 @@ from .bench_utils import (
 from data import check_and_load_data
 
 
-def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]:
+def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]:
     """
     Run benchmarks for a given surrogate model.
 
@@ -49,12 +49,20 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
     # Instantiate the model
     device = conf["devices"]
     device = device[0] if isinstance(device, list) else device
-    model = surrogate_class(device=device)
 
-    # Placeholder for metrics
-    metrics = {}
+    # Determine the batch size
+    surr_idx = conf["surrogates"].index(surr_name)
+    if isinstance(conf["batch_size"], list):
+        if len(conf["batch_size"]) != len(conf["surrogates"]):
+            raise ValueError(
+                "The number of provided batch sizes must match the number of surrogate models."
+            )
+        else:
+            batch_size = conf["batch_size"][surr_idx]
+    else:
+        batch_size = conf["batch_size"]
 
-    full_train_data, full_test_data, full_val_data, timesteps, N_train_samples, _ = (
+    full_train_data, full_test_data, full_val_data, timesteps, n_train_samples, _ = (
         check_and_load_data(
             conf["dataset"]["name"],
             verbose=False,
@@ -62,6 +70,11 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
             normalisation_mode=conf["dataset"]["normalise"],
         )
     )
+    n_chemicals = full_train_data.shape[2]
+    model = surrogate_class(device=device, n_chemicals=n_chemicals)
+
+    # Placeholder for metrics
+    metrics = {}
 
     # Create dataloader for the test data
     _, _, val_loader = model.prepare_data(
@@ -69,6 +82,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
         dataset_test=full_test_data,
         dataset_val=full_val_data,
         timesteps=timesteps,
+        batch_size=batch_size,
         shuffle=False,
     )
 
@@ -79,31 +93,25 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
     # Accuracy benchmark
     if conf["accuracy"]:
         print("Running accuracy benchmark...")
-        metrics["accuracy"] = evaluate_accuracy(
-            model, surr_name, val_loader, timesteps, conf
-        )
+        metrics["accuracy"] = evaluate_accuracy(model, surr_name, val_loader, conf)
 
     # Dynamic accuracy benchmark
     if conf["dynamic_accuracy"]:
         print("Running dynamic accuracy benchmark...")
         # For this benchmark, we can also use the main model
         metrics["dynamic_accuracy"] = evaluate_dynamic_accuracy(
-            model, surr_name, val_loader, timesteps, conf
+            model, surr_name, val_loader, conf
         )
 
     # Timing benchmark
     if conf["timing"]:
         print("Running timing benchmark...")
-        metrics["timing"] = time_inference(
-            model, surr_name, val_loader, timesteps, conf
-        )
+        metrics["timing"] = time_inference(model, surr_name, val_loader, conf)
 
     # Compute (resources) benchmark
     if conf["compute"]:
         print("Running compute benchmark...")
-        metrics["compute"] = evaluate_compute(
-            model, surr_name, val_loader, timesteps, conf
-        )
+        metrics["compute"] = evaluate_compute(model, surr_name, val_loader, conf)
 
     # Interpolation benchmark
     if conf["interpolation"]["enabled"]:
@@ -123,7 +131,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
     if conf["sparse"]["enabled"]:
         print("Running sparse benchmark...")
         metrics["sparse"] = evaluate_sparse(
-            model, surr_name, val_loader, timesteps, N_train_samples, conf
+            model, surr_name, val_loader, timesteps, n_train_samples, conf
         )
 
     # Batch size benchmark
@@ -145,8 +153,8 @@ def run_benchmark(surr_name: str, surrogate_class, conf: Dict) -> Dict[str, Any]
 
 
 def evaluate_accuracy(
-    model, surr_name: str, test_loader: DataLoader, timesteps, conf: Dict
-) -> Dict[str, Any]:
+    model, surr_name: str, test_loader: DataLoader, conf: dict
+) -> dict[str, Any]:
     """
     Evaluate the accuracy of the surrogate model.
 
@@ -166,7 +174,7 @@ def evaluate_accuracy(
 
     # Use the model's predict method
     criterion = torch.nn.MSELoss(reduction="sum")
-    preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
+    preds, targets = model.predict(data_loader=test_loader)
     mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
     preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
 
@@ -207,7 +215,6 @@ def evaluate_dynamic_accuracy(
     model,
     surr_name: str,
     test_loader: DataLoader,
-    timesteps: np.ndarray,
     conf: dict,
     species_names: list = None,
 ) -> dict:
@@ -218,7 +225,6 @@ def evaluate_dynamic_accuracy(
         model: Instance of the surrogate model class.
         surr_name (str): The name of the surrogate model.
         test_loader (DataLoader): The DataLoader object containing the test data.
-        timesteps (np.ndarray): The timesteps array.
         conf (dict): The configuration dictionary.
 
     Returns:
@@ -230,7 +236,7 @@ def evaluate_dynamic_accuracy(
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
 
     # Obtain predictions and targets
-    preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
+    preds, targets = model.predict(data_loader=test_loader)
     preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
 
     # Calculate gradients of the target data w.r.t time
@@ -257,7 +263,7 @@ def evaluate_dynamic_accuracy(
     avg_correlation, _ = pearsonr(avg_gradient, avg_error)
 
     # Plot correlation for averaged species
-    plot_dynamic_correlation(surr_name, conf, avg_gradient, avg_error, save=True)
+    # plot_dynamic_correlation(surr_name, conf, avg_gradient, avg_error, save=True)
     plot_dynamic_correlation_heatmap(
         surr_name, conf, gradients, prediction_errors, save=True
     )
@@ -283,10 +289,9 @@ def time_inference(
     model,
     surr_name: str,
     test_loader: DataLoader,
-    timesteps: np.ndarray,
     conf: dict,
     n_runs: int = 5,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Time the inference of the surrogate model.
 
@@ -308,7 +313,7 @@ def time_inference(
     inference_times = []
     for _ in range(n_runs):
         start_time = time.time()
-        _, _ = model.predict(data_loader=test_loader, timesteps=timesteps)
+        _, _ = model.predict(data_loader=test_loader)
         end_time = time.time()
         inference_times.append(end_time - start_time)
 
@@ -330,8 +335,8 @@ def time_inference(
 
 
 def evaluate_compute(
-    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
-) -> Dict[str, Any]:
+    model, surr_name: str, test_loader: DataLoader, conf: dict
+) -> dict[str, Any]:
     """
     Evaluate the computational resource requirements of the surrogate model.
 
@@ -339,7 +344,6 @@ def evaluate_compute(
         model: Instance of the surrogate model class.
         surr_name (str): The name of the surrogate model.
         test_loader (DataLoader): The DataLoader object containing the test data.
-        timesteps (np.ndarray): The timesteps array.
         conf (dict): The configuration dictionary.
 
     Returns:
@@ -354,7 +358,7 @@ def evaluate_compute(
     # Get a sample input tensor from the test_loader
     inputs = next(iter(test_loader))
     # Measure the memory footprint during forward and backward pass
-    memory_footprint = measure_memory_footprint(model, inputs, timesteps)
+    memory_footprint = measure_memory_footprint(model, inputs)
 
     # Store complexity metrics
     complexity_metrics = {
@@ -366,8 +370,8 @@ def evaluate_compute(
 
 
 def evaluate_interpolation(
-    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
-) -> Dict[str, Any]:
+    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: dict
+) -> dict[str, Any]:
     """
     Evaluate the interpolation performance of the surrogate model.
 
@@ -401,7 +405,7 @@ def evaluate_interpolation(
             else f"{surr_name.lower()}_interpolation_{interval}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
+        preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         interpolation_metrics[f"interval {interval}"] = {"MSE": mean_squared_error}
 
@@ -434,8 +438,8 @@ def evaluate_interpolation(
 
 
 def evaluate_extrapolation(
-    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
-) -> Dict[str, Any]:
+    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: dict
+) -> dict[str, Any]:
     """
     Evaluate the extrapolation performance of the surrogate model.
 
@@ -470,7 +474,7 @@ def evaluate_extrapolation(
             else f"{surr_name.lower()}_extrapolation_{cutoff}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
+        preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         extrapolation_metrics[f"cutoff {cutoff}"] = {"MSE": mean_squared_error}
 
@@ -507,9 +511,9 @@ def evaluate_sparse(
     surr_name: str,
     test_loader: DataLoader,
     timesteps: np.ndarray,
-    N_train_samples: int,
-    conf: Dict,
-) -> Dict[str, Any]:
+    n_train_samples: int,
+    conf: dict,
+) -> dict[str, Any]:
     """
     Evaluate the performance of the surrogate model with sparse training data.
 
@@ -517,7 +521,7 @@ def evaluate_sparse(
         model: Instance of the surrogate model class.
         surr_name (str): The name of the surrogate model.
         test_loader (DataLoader): The DataLoader object containing the test data.
-        N_train_samples (int): The number of training samples in the full dataset.
+        n_train_samples (int): The number of training samples in the full dataset.
         conf (dict): The configuration dictionary.
 
     Returns:
@@ -543,9 +547,9 @@ def evaluate_sparse(
             else f"{surr_name.lower()}_sparse_{factor}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
+        preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
-        n_train_samples = N_train_samples // factor
+        n_train_samples = n_train_samples // factor
         sparse_metrics[f"factor {factor}"] = {
             "MSE": mean_squared_error,
             "n_train_samples": n_train_samples,
@@ -561,7 +565,7 @@ def evaluate_sparse(
         [metric["n_train_samples"] for metric in sparse_metrics.values()]
     )
     sparse_metrics["model_errors"] = model_errors
-    sparse_metrics["N_train_samples"] = n_train_samples_array
+    sparse_metrics["n_train_samples"] = n_train_samples_array
 
     # Plot sparse training errors
     plot_generalization_errors(
@@ -585,8 +589,8 @@ def evaluate_batchsize(
     surr_name: str,
     test_loader: DataLoader,
     timesteps: np.ndarray,
-    conf: Dict,
-) -> Dict[str, Any]:
+    conf: dict,
+) -> dict[str, Any]:
     """
     Evaluate the performance of the surrogate model with different batch sizes.
 
@@ -612,7 +616,7 @@ def evaluate_batchsize(
     for i, batch_size in enumerate(batch_sizes):
         model_id = f"{surr_name.lower()}_batchsize_{batch_size}"
         model.load(training_id, surr_name, model_identifier=model_id)
-        preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
+        preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         batch_metrics[f"batch_size {batch_size}"] = {"MSE": mean_squared_error}
 
@@ -644,8 +648,8 @@ def evaluate_batchsize(
 
 
 def evaluate_UQ(
-    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: Dict
-) -> Dict[str, Any]:
+    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: dict
+) -> dict[str, Any]:
     """
     Evaluate the uncertainty quantification (UQ) performance of the surrogate model.
 
@@ -670,7 +674,7 @@ def evaluate_UQ(
             f"{surr_name.lower()}_main" if i == 0 else f"{surr_name.lower()}_UQ_{i}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        preds, targets = model.predict(data_loader=test_loader, timesteps=timesteps)
+        preds, targets = model.predict(data_loader=test_loader)
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
         all_predictions.append(preds)
 
@@ -690,7 +694,7 @@ def evaluate_UQ(
         surr_name, conf, preds_mean, preds_std, targets, timesteps, save=True
     )
     plot_average_uncertainty_over_time(surr_name, conf, preds_std, timesteps, save=True)
-    plot_uncertainty_vs_errors(surr_name, conf, preds_std, errors, save=True)
+    # plot_uncertainty_vs_errors(surr_name, conf, preds_std, errors, save=True)
     plot_error_correlation_heatmap(surr_name, conf, preds_std, errors, save=True)
 
     # Store metrics
@@ -704,10 +708,10 @@ def evaluate_UQ(
 
 def compare_models(metrics: dict, config: dict):
 
-    # Compare accuracies
+    # Compare MAE
     if config["accuracy"]:
         compare_relative_errors(metrics, config)
-        compare_accuracies(metrics, config)
+        compare_MAE(metrics, config)
         if config["losses"]:
             compare_main_losses(metrics, config)
 
@@ -741,7 +745,7 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
     Compare the training and test losses of the main models for different surrogate models.
 
     Args:
-        metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:
@@ -772,18 +776,18 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
     plot_loss_comparison(tuple(train_losses), tuple(test_losses), tuple(labels), config)
 
 
-def compare_accuracies(metrics: dict, config: dict) -> None:
+def compare_MAE(metrics: dict, config: dict) -> None:
     """
-    Compare the accuracies of different surrogate models over the course of training.
+    Compare the MAE of different surrogate models over the course of training.
 
     Args:
-        metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:
         None
     """
-    accuracies = []
+    MAE = []
     labels = []
     train_durations = []
     device = config["devices"]
@@ -795,20 +799,20 @@ def compare_accuracies(metrics: dict, config: dict) -> None:
         model = surrogate_class(device=device)
         model_identifier = f"{surr_name.lower()}_main"
         model.load(training_id, surr_name, model_identifier=model_identifier)
-        accuracies.append(model.accuracy)
+        MAE.append(model.MAE)
         labels.append(surr_name)
         train_durations.append(model.train_duration)
 
-    # plot_accuracy_comparison(accuracies, labels, config)
-    plot_accuracy_comparison_train_duration(accuracies, labels, train_durations, config)
+    # plot_MAE_comparison(MAE, labels, config)
+    plot_MAE_comparison_train_duration(MAE, labels, train_durations, config)
 
 
-def compare_relative_errors(metrics: Dict[str, dict], config: dict) -> None:
+def compare_relative_errors(metrics: dict[str, dict], config: dict) -> None:
     """
     Compare the relative errors over time for different surrogate models.
 
     Args:
-        metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:
@@ -836,14 +840,14 @@ def compare_relative_errors(metrics: Dict[str, dict], config: dict) -> None:
 
 
 def compare_inference_time(
-    metrics: Dict[str, Dict], config: Dict, save: bool = True
+    metrics: dict[str, dict], config: dict, save: bool = True
 ) -> None:
     """
     Compare the mean inference time of different surrogate models.
 
     Args:
-        metrics (Dict[str, Dict]): Dictionary containing the benchmark metrics for each surrogate model.
-        config (Dict): Configuration dictionary.
+        metrics (dict[str, dict]): dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
         save (bool, optional): Whether to save the plot. Defaults to True.
 
     Returns:
@@ -876,7 +880,7 @@ def compare_interpolation(all_metrics: dict, config: dict) -> None:
     Compare the interpolation errors of different surrogate models.
 
     Args:
-        all_metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:
@@ -906,7 +910,7 @@ def compare_extrapolation(all_metrics: dict, config: dict) -> None:
     Compare the extrapolation errors of different surrogate models.
 
     Args:
-        all_metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:
@@ -936,7 +940,7 @@ def compare_sparse(all_metrics: dict, config: dict) -> None:
     Compare the sparse training errors of different surrogate models.
 
     Args:
-        all_metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:
@@ -948,7 +952,7 @@ def compare_sparse(all_metrics: dict, config: dict) -> None:
 
     for surrogate in surrogates:
         if "sparse" in all_metrics[surrogate]:
-            n_train_samples.append(all_metrics[surrogate]["sparse"]["N_train_samples"])
+            n_train_samples.append(all_metrics[surrogate]["sparse"]["n_train_samples"])
             model_errors.append(all_metrics[surrogate]["sparse"]["model_errors"])
 
     plot_generalization_error_comparison(
@@ -966,7 +970,7 @@ def compare_batchsize(all_metrics: dict, config: dict) -> None:
     Compare the batch size training errors of different surrogate models.
 
     Args:
-        all_metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:

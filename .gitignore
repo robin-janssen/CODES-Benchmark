@@ -8,3 +8,5 @@
 *test.ipynb
 .vscode
 *__pycache__
+pylintrc
+.flake8
