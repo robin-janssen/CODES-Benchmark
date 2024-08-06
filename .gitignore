@@ -12,3 +12,6 @@ pylintrc
 .flake8
 profiling*
 .nfs*
+*.db
+study
+sindy
