@@ -11,3 +11,4 @@
 pylintrc
 .flake8
 profiling*
+*.db
