@@ -226,7 +226,7 @@ class NeuralODE(AbstractSurrogateModel):
                     MAEs[epoch] = self.L1(preds, targets).item()
             
             if epoch % 10 == 0:
-                torch.save(self.model.state_dict(), f"model_epoch_{epoch}.pt")
+                torch.save(self.model.state_dict(), f"/export/data/isulzer/DON-vs-NODE/profiling_models/model_epoch_{epoch}.pt")
 
         progress_bar.close()
 
