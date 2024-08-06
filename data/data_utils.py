@@ -24,7 +24,7 @@ def check_and_load_data(
     Raises:
         Exception: If the dataset or required data is missing or if the data shape is incorrect.
     """
-    data_dir = "data"
+    data_dir = "/export/data/isulzer/DON-vs-NODE/data"
     dataset_name_lower = dataset_name.lower()
 
     # Check if dataset exists

@@ -1,0 +1,20 @@
+{
+    "latent_features": 5,
+    "coder_hidden": 4,
+    "coder_layers": [
+        32,
+        16,
+        8
+    ],
+    "coder_activation": ReLU(),
+    "ode_activation": ReLU(),
+    "ode_hidden": 6,
+    "ode_layer_width": 64,
+    "ode_tanh_reg": True,
+    "use_adjoint": False,
+    "rtol": 1e-07,
+    "atol": 1e-09,
+    "method": "dopri8",
+    "learning_rate": 5.476701079165361e-06,
+    "final_learning_rate": 1e-05
+}

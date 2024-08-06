@@ -1,5 +1,7 @@
 import sys
+
 sys.path.append("/export/data/isulzer/DON-vs-NODE/")
+sys.path.reverse()
 
 import torch
 from torch.optim import Adam
@@ -10,7 +12,6 @@ import numpy as np
 import optuna
 
 
-
 from surrogates.NeuralODE.neural_ode_config import NeuralODEConfigOSU as Config
 from surrogates.NeuralODE.neural_ode import NeuralODE
 from data import check_and_load_data
@@ -18,6 +19,18 @@ from utils import time_execution
 
 
 class NeuralODESub(NeuralODE):
+
+    def __init__(
+        self,
+        device: str | None = None,
+        n_chemicals: int = 29,
+        n_timesteps: int = 100,
+        config: Config = Config(),
+    ):
+        super().__init__(
+            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+        )
+        self.config: Config = config
 
     @time_execution
     def fit(
@@ -52,19 +65,19 @@ class NeuralODESub(NeuralODE):
         optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
 
         scheduler = None
-        if self.config.final_learning_rate is not None:
-            scheduler = CosineAnnealingLR(
-                optimizer, self.config.epochs, eta_min=self.config.final_learning_rate
-            )
+        # if self.config.final_learning_rate is not None:
+        #     scheduler = CosineAnnealingLR(
+        #         optimizer, self.config.epochs, eta_min=self.config.final_learning_rate
+        #     )
 
         losses = torch.empty((epochs, len(train_loader)))
         test_losses = torch.empty((epochs))
-        accuracy = torch.empty((epochs))
+        MAEs = torch.empty((epochs))
 
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
         for epoch in progress_bar:
-            for i, x_true in enumerate(train_loader):
+            for i, (x_true, timesteps) in enumerate(train_loader):
                 optimizer.zero_grad()
                 # x0 = x_true[:, 0, :]
                 x_pred = self.model.forward(x_true, timesteps)
@@ -87,13 +100,11 @@ class NeuralODESub(NeuralODE):
 
             with torch.inference_mode():
                 self.model.eval()
-                preds, targets = self.predict(test_loader, timesteps)
+                preds, targets = self.predict(test_loader)
                 self.model.train()
                 loss = self.model.l2_loss(preds, targets)
                 test_losses[epoch] = loss
-                accuracy[epoch] = 1.0 - torch.mean(
-                    torch.abs(preds - targets) / torch.abs(targets)
-                )
+                MAEs[epoch] = self.L1(preds, targets).item()
             if trial.should_prune():
                 raise optuna.TrialPruned()
 
@@ -101,10 +112,10 @@ class NeuralODESub(NeuralODE):
 
         self.train_loss = torch.mean(losses, dim=1)
         self.test_loss = test_losses
-        self.accuracy = accuracy
+        self.MAE = MAEs
 
 
-DEVICE = "cuda:2"
+DEVICE = "cuda:0"
 EPOCHS = 1000
 
 
@@ -148,8 +159,10 @@ def objective(trial):
     config.ode_activation = ode_activation
     config.ode_layer_width = ode_layer_width
     config.ode_hidden = ode_depth
+    config.device = DEVICE
+    config.epochs = EPOCHS
 
-    model = NeuralODESub(device=DEVICE)
+    model = NeuralODESub(device=DEVICE, config=config)
 
     train_data, test_data, _, timesteps, _, data_params = check_and_load_data(
         dataset_name="osu2008",
@@ -163,7 +176,7 @@ def objective(trial):
         dataset_test=test_data,
         dataset_val=None,
         timesteps=timesteps,
-        batch_size=config.batch_size,
+        batch_size=128,
         shuffle=True,
     )
 
@@ -172,13 +185,15 @@ def objective(trial):
     return model.test_loss[-20:].mean()
 
 
+# optuna.delete_study(study_name="NeuralODE Optimization", storage="sqlite:///end_to_end.db")
+
 study = optuna.create_study(
     direction="minimize",
     study_name="NeuralODE Optimization",
     pruner=optuna.pruners.PatientPruner(
         optuna.pruners.PercentilePruner(percentile=0.7), patience=10
     ),
-    # storage="sqlite:///end_to_end.db",
+    storage="sqlite:////export/data/isulzer/DON-vs-NODE/study/end_to_end.db",
 )
 study.optimize(objective, n_trials=100)
 print(study.best_params)

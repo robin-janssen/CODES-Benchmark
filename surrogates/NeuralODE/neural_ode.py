@@ -1,3 +1,5 @@
+from time import time
+
 import torch
 from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -10,6 +12,32 @@ from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.NeuralODE.neural_ode_config import NeuralODEConfigOSU as Config
 from surrogates.NeuralODE.utilities import ChemDataset
 from utils import time_execution, worker_init_fn
+
+class Logger:
+
+    def __init__(self, path: str):
+        self.path = path
+
+    def log(self, message: str):
+        with open(self.path, "a") as f:
+            f.write(message)
+
+
+class Profiler:
+
+    def __init__(self, description: str):
+        self.logger = Logger("profiling.log")
+        self.description = description
+        self.start_time = None
+        self.end_time = None
+
+    def __enter__(self):
+        self.start_time = time()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.end_time = time()
+        self.logger.log(f"\n{self.description}: {self.end_time - self.start_time}")
 
 
 class NeuralODE(AbstractSurrogateModel):
@@ -146,38 +174,40 @@ class NeuralODE(AbstractSurrogateModel):
         Returns:
             None
         """
-        if not isinstance(timesteps, torch.Tensor):
-            timesteps = torch.tensor(timesteps).to(self.device)
+        with Profiler("Initialize training (fit function)"):
+            if not isinstance(timesteps, torch.Tensor):
+                timesteps = torch.tensor(timesteps).to(self.device)
 
-        # TODO: make Optimizer and scheduler configable
-        optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
+            # TODO: make Optimizer and scheduler configable
+            optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
 
-        scheduler = None
-        if self.config.final_learning_rate is not None:
-            scheduler = CosineAnnealingLR(
-                optimizer, epochs, eta_min=self.config.final_learning_rate
-            )
+            scheduler = None
+            if self.config.final_learning_rate is not None:
+                scheduler = CosineAnnealingLR(
+                    optimizer, epochs, eta_min=self.config.final_learning_rate
+                )
 
-        losses = torch.empty((epochs, len(train_loader)))
-        test_losses = torch.empty((epochs))
-        MAEs = torch.empty((epochs))
+            losses = torch.empty((epochs, len(train_loader)))
+            test_losses = torch.empty((epochs))
+            MAEs = torch.empty((epochs))
 
-        progress_bar = self.setup_progress_bar(epochs, position, description)
+            progress_bar = self.setup_progress_bar(epochs, position, description)
 
         for epoch in progress_bar:
-            for i, (x_true, timesteps) in enumerate(train_loader):
-                optimizer.zero_grad()
-                # x0 = x_true[:, 0, :]
-                x_pred = self.model.forward(x_true, timesteps)
-                loss = self.model.total_loss(x_true, x_pred)
-                loss.backward()
-                optimizer.step()
-                losses[epoch, i] = loss.item()
+            with Profiler(f"Epoch {epoch}"):
+                for i, (x_true, timesteps) in enumerate(train_loader):
+                    with Profiler(f"Epoch {epoch}, Batch {i}"):
+                        optimizer.zero_grad()
+                        x_pred = self.model.forward(x_true, timesteps)
+                        loss = self.model.total_loss(x_true, x_pred)
+                        loss.backward()
+                        optimizer.step()
+                        losses[epoch, i] = loss.item()
 
-                # TODO: make configable
-                if epoch == 10 and i == 0:
-                    with torch.no_grad():
-                        self.model.renormalize_loss_weights(x_true, x_pred)
+                        # TODO: make configable
+                        if epoch == 10 and i == 0:
+                            with torch.no_grad():
+                                self.model.renormalize_loss_weights(x_true, x_pred)
 
             clr = optimizer.param_groups[0]["lr"]
             print_loss = f"{losses[epoch, -1].item():.2e}"
@@ -186,13 +216,17 @@ class NeuralODE(AbstractSurrogateModel):
             if scheduler is not None:
                 scheduler.step()
 
-            with torch.inference_mode():
-                self.model.eval()
-                preds, targets = self.predict(test_loader)
-                self.model.train()
-                loss = self.model.total_loss(preds, targets)
-                test_losses[epoch] = loss
-                MAEs[epoch] = self.L1(preds, targets).item()
+            with Profiler(f"Test, epoch {epoch}"):
+                with torch.inference_mode():
+                    self.model.eval()
+                    preds, targets = self.predict(test_loader)
+                    self.model.train()
+                    loss = self.model.total_loss(preds, targets)
+                    test_losses[epoch] = loss
+                    MAEs[epoch] = self.L1(preds, targets).item()
+            
+            if epoch % 10 == 0:
+                torch.save(self.model.state_dict(), f"model_epoch_{epoch}.pt")
 
         progress_bar.close()
 
