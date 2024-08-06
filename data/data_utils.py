@@ -1,6 +1,7 @@
 import os
 import h5py
 import numpy as np
+import torch
 
 
 def check_and_load_data(
@@ -308,3 +309,94 @@ def get_data_subset(full_train_data, full_test_data, timesteps, mode, metric, co
         timesteps = timesteps
 
     return train_data, test_data, timesteps
+
+
+def create_dataset(
+    name: str,
+    train_data: np.ndarray | torch.Tensor,
+    test_data: np.ndarray | torch.Tensor | None = None,
+    val_data: np.ndarray | torch.Tensor | None = None,
+    split: tuple[float, float] | tuple[float, float, float] | None = None,
+):
+    """
+    Creates a new dataset in the data directory.
+
+    Args:
+        name (str): The name of the dataset.
+        train_data (np.ndarray | torch.Tensor): The training data.
+        test_data (np.ndarray | torch.Tensor, optional): The test data.
+        val_data (np.ndarray | torch.Tensor, optional): The validation data.
+        split (tuple(float, float) | tuple(float, float, float), optional): If test_data and val_data are not provided,
+            train_data can be split into training, test and optionally validation data.
+    """
+    base_dir = "data"
+    dataset_dir = os.path.join(base_dir, name)
+
+    if os.path.exists(dataset_dir):
+        raise FileExistsError(f"Dataset '{name}' already exists.")
+
+    if not isinstance(train_data, (np.ndarray, torch.Tensor)):
+        raise TypeError("train_data must be a numpy array or torch tensor.")
+
+    if not train_data.ndim == 3:
+        raise ValueError(
+            "train_data must have shape (n_samples, n_timesteps, n_chemicals)."
+        )
+
+    if test_data is not None:
+        if not test_data.ndim == 3:
+            raise ValueError(
+                "train_data must have shape (n_samples, n_timesteps, n_chemicals)."
+            )
+        if (
+            not train_data.shape[2] == test_data.shape[2]
+            or not train_data.shape[1] == test_data.shape[1]
+        ):
+            raise ValueError(
+                "train_data and test_data must have the same number of timesteps and chemicals."
+            )
+
+    if val_data is not None:
+        if not val_data.ndim == 3:
+            raise ValueError(
+                "train_data must have shape (n_samples, n_timesteps, n_chemicals)."
+            )
+        if (
+            not train_data.shape[2] == val_data.shape[2]
+            or not train_data.shape[1] == val_data.shape[1]
+        ):
+            raise ValueError(
+                "train_data and val_data must have the same number of timesteps and chemicals."
+            )
+
+    if split is not None:
+        if not isinstance(split, (tuple, list)):
+            raise TypeError("split must be a tuple or list of floats.")
+        if len(split) < 2 or len(split) > 3:
+            raise ValueError("split must contain 2 or 3 values.")
+        if not all(isinstance(value, float) for value in split):
+            raise TypeError("split values must be floats.")
+        if not all(0 <= value <= 1 for value in split):
+            raise ValueError("split values must be between 0 and 1.")
+
+        n_samples = train_data.shape[0]
+        n_train = int(n_samples * split[0])
+        n_test = int(n_samples * split[1])
+        if len(split) == 3:
+            n_val = n_samples - n_train - n_test
+
+        train_data = train_data[:n_train]
+        test_data = train_data[n_train : n_train + n_test]
+        if len(split) == 3:
+            val_data = train_data[n_train + n_test :]
+
+    os.mkdir(dataset_dir)
+
+    with h5py.File(os.path.join(dataset_dir, "data.hdf5"), "w") as f:
+        f.create_dataset("train", data=train_data)
+        if test_data is not None:
+            f.create_dataset("test", data=test_data)
+        if val_data is not None:
+            f.create_dataset("val", data=val_data)
+    
+    print(f"Dataset '{name}' created at {dataset_dir}")
