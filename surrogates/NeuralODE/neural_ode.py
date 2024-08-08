@@ -233,7 +233,7 @@ class ModelWrapper(torch.nn.Module):
             tanh_reg=config.ode_tanh_reg,
         )
         term = to.ODETerm(self.ode)
-        step_method = to.Dopri5(term=term)
+        step_method = to.Tsit5(term=term)
         step_size_controller = to.IntegralController(
             atol=config.atol, rtol=config.rtol, term=term
         )

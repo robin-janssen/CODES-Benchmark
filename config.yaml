@@ -1,6 +1,6 @@
 # Global settings for the benchmark
 training_id: "all4_testrun_2"
-surrogates: ["MultiONet", "FullyConnected", "NeuralODE", "LatentPoly"]
+surrogates: ["NeuralODE"]
 dataset: 
   name: "osu2008"
   log10_transform: False
@@ -35,6 +35,6 @@ compare: True # Whether to compare the surrogates
 # Optional global settings
 # Leave empty if the quantities should be set per surrogate
 
-batch_size: [1024, 1024, 64, 64]
-epochs: [200, 400, 2000, 4000]
+batch_size: [128]
+epochs: [1000]
 
