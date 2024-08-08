@@ -252,9 +252,9 @@ def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
     write_metrics = deepcopy(metrics)
 
     # Remove problematic entries
+    write_metrics.pop("timesteps", None)
     if conf["accuracy"]:
-        write_metrics["accuracy"].pop("mean_relative_error_over_time", None)
-        write_metrics["accuracy"].pop("median_relative_error_over_time", None)
+        write_metrics["accuracy"].pop("relative_errors", None)
     if conf["interpolation"]["enabled"]:
         write_metrics["interpolation"].pop("model_errors", None)
         write_metrics["interpolation"].pop("intervals", None)
@@ -264,7 +264,8 @@ def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
     if conf["sparse"]["enabled"]:
         write_metrics["sparse"].pop("model_errors", None)
         write_metrics["sparse"].pop("n_train_samples", None)
-
+    if conf["UQ"]["enabled"]:
+        write_metrics["UQ"].pop("pred_uncertainty_over_time", None)
     # Convert metrics to standard types
     write_metrics = convert_to_standard_types(write_metrics)
 

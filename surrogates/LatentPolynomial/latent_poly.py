@@ -72,7 +72,7 @@ class LatentPoly(AbstractSurrogateModel):
 
         dataloader_test = None
         if dataset_test is not None:
-            dset_test = ChemDataset(dataset_train, timesteps, device=self.device)
+            dset_test = ChemDataset(dataset_test, timesteps, device=self.device)
             dataloader_test = DataLoader(
                 dset_test,
                 batch_size=batch_size,
@@ -82,7 +82,7 @@ class LatentPoly(AbstractSurrogateModel):
 
         dataloader_val = None
         if dataset_val is not None:
-            dset_val = ChemDataset(dataset_train, timesteps, device=self.device)
+            dset_val = ChemDataset(dataset_val, timesteps, device=self.device)
             dataloader_val = DataLoader(
                 dset_val,
                 batch_size=batch_size,

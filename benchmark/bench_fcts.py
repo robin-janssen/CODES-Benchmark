@@ -16,6 +16,7 @@ from .bench_plots import (
     plot_example_predictions_with_uncertainty,
     # plot_uncertainty_vs_errors,
     plot_surr_losses,
+    plot_error_distribution_per_chemical,
     plot_loss_comparison,
     # plot_MAE_comparison,
     plot_MAE_comparison_train_duration,
@@ -24,6 +25,8 @@ from .bench_plots import (
     plot_generalization_error_comparison,
     plot_error_correlation_heatmap,
     plot_dynamic_correlation_heatmap,
+    plot_uncertainty_over_time_comparison,
+    plot_error_distribution_comparative,
 )
 from .bench_utils import (
     count_trainable_parameters,
@@ -70,11 +73,13 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
             normalisation_mode=conf["dataset"]["normalise"],
         )
     )
+    n_timesteps = full_train_data.shape[1]
     n_chemicals = full_train_data.shape[2]
-    model = surrogate_class(device=device, n_chemicals=n_chemicals)
+    model = surrogate_class(device, n_chemicals, n_timesteps)
 
     # Placeholder for metrics
     metrics = {}
+    metrics["timesteps"] = timesteps
 
     # Create dataloader for the test data
     _, _, val_loader = model.prepare_data(
@@ -171,6 +176,7 @@ def evaluate_accuracy(
 
     # Load the model
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
+    model.n_timesteps = 100
 
     # Use the model's predict method
     criterion = torch.nn.MSELoss(reduction="sum")
@@ -184,16 +190,21 @@ def evaluate_accuracy(
     # Calculate relative errors
     relative_errors = np.abs((preds - targets) / targets)
 
-    # Calculate mean and median relative errors over time
-    mean_relative_error = np.mean(relative_errors, axis=(0, 2))
-    median_relative_error = np.median(relative_errors, axis=(0, 2))
-
     # Plot relative errors over time
     plot_relative_errors_over_time(
         surr_name,
         conf,
         relative_errors,
         title=f"Relative Errors over Time for {surr_name}",
+        save=True,
+    )
+
+    plot_error_distribution_per_chemical(
+        surr_name,
+        conf,
+        relative_errors,
+        chemical_names=None,
+        num_chemicals=29,
         save=True,
     )
 
@@ -204,8 +215,7 @@ def evaluate_accuracy(
         "median_relative_error": np.median(relative_errors),
         "max_relative_error": np.max(relative_errors),
         "min_relative_error": np.min(relative_errors),
-        "mean_relative_error_over_time": mean_relative_error,
-        "median_relative_error_over_time": median_relative_error,
+        "relative_errors": relative_errors,
     }
 
     return accuracy_metrics
@@ -234,6 +244,7 @@ def evaluate_dynamic_accuracy(
 
     # Load the model
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
+    model.n_timesteps = 100
 
     # Obtain predictions and targets
     preds, targets = model.predict(data_loader=test_loader)
@@ -247,7 +258,7 @@ def evaluate_dynamic_accuracy(
     # Calculate absolute prediction errors
     prediction_errors = np.abs(preds - targets)
     # Normalize prediction errors
-    prediction_errors = prediction_errors / prediction_errors.max()
+    # prediction_errors = prediction_errors / prediction_errors.max()
 
     # Calculate correlations
     species_correlations = []
@@ -308,6 +319,7 @@ def time_inference(
     """
     training_id = conf["training_id"]
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
+    model.n_timesteps = 100
 
     # Run inference multiple times and record the durations
     inference_times = []
@@ -351,6 +363,7 @@ def evaluate_compute(
     """
     training_id = conf["training_id"]
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
+    model.n_timesteps = 100
 
     # Count the number of trainable parameters
     num_params = count_trainable_parameters(model)
@@ -405,6 +418,7 @@ def evaluate_interpolation(
             else f"{surr_name.lower()}_interpolation_{interval}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
+        model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         interpolation_metrics[f"interval {interval}"] = {"MSE": mean_squared_error}
@@ -458,7 +472,7 @@ def evaluate_extrapolation(
     cutoffs = np.sort(np.array(cutoffs, dtype=int))
     max_cut = len(timesteps)
     cutoffs = cutoffs[cutoffs < max_cut]
-    cutoffs = np.insert(cutoffs, -1, max_cut)
+    cutoffs = np.append(cutoffs, max_cut)
     extrapolation_metrics = {}
     errors = np.zeros((len(cutoffs), len(timesteps)))
 
@@ -474,6 +488,7 @@ def evaluate_extrapolation(
             else f"{surr_name.lower()}_extrapolation_{cutoff}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
+        model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         extrapolation_metrics[f"cutoff {cutoff}"] = {"MSE": mean_squared_error}
@@ -547,12 +562,13 @@ def evaluate_sparse(
             else f"{surr_name.lower()}_sparse_{factor}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
+        model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
-        n_train_samples = n_train_samples // factor
+        train_samples = n_train_samples // factor
         sparse_metrics[f"factor {factor}"] = {
             "MSE": mean_squared_error,
-            "n_train_samples": n_train_samples,
+            "n_train_samples": train_samples,
         }
 
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
@@ -616,6 +632,7 @@ def evaluate_batchsize(
     for i, batch_size in enumerate(batch_sizes):
         model_id = f"{surr_name.lower()}_batchsize_{batch_size}"
         model.load(training_id, surr_name, model_identifier=model_id)
+        model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         batch_metrics[f"batch_size {batch_size}"] = {"MSE": mean_squared_error}
@@ -674,6 +691,7 @@ def evaluate_UQ(
             f"{surr_name.lower()}_main" if i == 0 else f"{surr_name.lower()}_UQ_{i}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
+        model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
         all_predictions.append(preds)
@@ -688,12 +706,15 @@ def evaluate_UQ(
     # Correlate uncertainty with errors
     errors = np.abs(preds_mean - targets)
     correlation_metrics, _ = pearsonr(errors.flatten(), preds_std.flatten())
+    preds_std_time = np.mean(preds_std, axis=(0, 2))
 
     # Plots
     plot_example_predictions_with_uncertainty(
         surr_name, conf, preds_mean, preds_std, targets, timesteps, save=True
     )
-    plot_average_uncertainty_over_time(surr_name, conf, preds_std, timesteps, save=True)
+    plot_average_uncertainty_over_time(
+        surr_name, conf, preds_std_time, timesteps, save=True
+    )
     # plot_uncertainty_vs_errors(surr_name, conf, preds_std, errors, save=True)
     plot_error_correlation_heatmap(surr_name, conf, preds_std, errors, save=True)
 
@@ -701,6 +722,7 @@ def evaluate_UQ(
     UQ_metrics = {
         "average_uncertainty": average_uncertainty,
         "correlation_metrics": correlation_metrics,
+        "pred_uncertainty_over_time": preds_std_time,
     }
 
     return UQ_metrics
@@ -764,6 +786,7 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
 
         def load_losses(model_identifier: str):
             model.load(training_id, surr_name, model_identifier=model_identifier)
+            model.n_timesteps = 100
             return model.train_loss, model.test_loss
 
         # Load main model losses
@@ -799,6 +822,7 @@ def compare_MAE(metrics: dict, config: dict) -> None:
         model = surrogate_class(device=device)
         model_identifier = f"{surr_name.lower()}_main"
         model.load(training_id, surr_name, model_identifier=model_identifier)
+        model.n_timesteps = 100
         MAE.append(model.MAE)
         labels.append(surr_name)
         train_durations.append(model.train_duration)
@@ -818,25 +842,24 @@ def compare_relative_errors(metrics: dict[str, dict], config: dict) -> None:
     Returns:
         None
     """
+    errors = {}
     mean_errors = {}
     median_errors = {}
-    timesteps = None
 
     for surrogate, surrogate_metrics in metrics.items():
-        if "accuracy" in surrogate_metrics:
-            mean_error = surrogate_metrics["accuracy"].get(
-                "mean_relative_error_over_time"
-            )
-            median_error = surrogate_metrics["accuracy"].get(
-                "median_relative_error_over_time"
-            )
-            if mean_error is not None and median_error is not None:
-                mean_errors[surrogate] = mean_error
-                median_errors[surrogate] = median_error
-                if timesteps is None:
-                    timesteps = np.arange(len(mean_error))
+        relative_error_model = surrogate_metrics["accuracy"].get("relative_errors")
+        if relative_error_model is not None:
+            errors[surrogate] = relative_error_model
+        mean_error_model = np.mean(relative_error_model, axis=(0, 2))
+        median_error_model = np.median(relative_error_model, axis=(0, 2))
+        if mean_error_model is not None and median_error_model is not None:
+            mean_errors[surrogate] = mean_error_model
+            median_errors[surrogate] = median_error_model
+            timesteps = surrogate_metrics["timesteps"]
 
     plot_relative_errors(mean_errors, median_errors, timesteps, config)
+
+    plot_error_distribution_comparative(errors, config)
 
 
 def compare_inference_time(
@@ -997,4 +1020,19 @@ def compare_batchsize(all_metrics: dict, config: dict) -> None:
 
 
 def compare_UQ(all_metrics: dict, config: dict) -> None:
-    pass
+    """
+    Compare the uncertainty quantification (UQ) metrics of different surrogate models.
+
+    Args:
+        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
+
+    Returns:
+        None
+    """
+    pred_unc = {}
+    for surrogate, surrogate_metrics in all_metrics.items():
+        timesteps = surrogate_metrics["timesteps"]
+        pred_unc[surrogate] = surrogate_metrics["UQ"]["pred_uncertainty_over_time"]
+
+    plot_uncertainty_over_time_comparison(pred_unc, timesteps, config)

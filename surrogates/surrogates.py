@@ -140,11 +140,14 @@ class AbstractSurrogateModel(ABC, nn.Module):
         for attr in check_attributes:
             if hasattr(self, attr):
                 hyperparameters[attr] = getattr(self, attr)
+                # n_timesteps must not be saved to the model, it will cause problems in the benchmark
+                if attr == "n_timesteps":
+                    delattr(self, attr)
 
         # Add some additional information to the model and hyperparameters
         self.train_duration = self.fit.duration
         hyperparameters["train_duration"] = self.train_duration
-        setattr(self, "normalisation", data_params)
+        self.normalisation = data_params
         hyperparameters["normalisation"] = data_params
 
         # Reduce the precision of the losses and accuracy
@@ -188,7 +191,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         model_dict_path = os.path.join(
             "trained", training_id, surr_name, f"{model_identifier}.pth"
         )
-        model_dict = torch.load(model_dict_path)
+        model_dict = torch.load(model_dict_path, map_location=self.device)
         self.load_state_dict(model_dict["state_dict"])
         for key, value in model_dict["attributes"].items():
             # remove self.device from the attributes
@@ -235,8 +238,8 @@ class AbstractSurrogateModel(ABC, nn.Module):
                 std = self.normalisation["std"]
                 data = data * std + mean
 
-            if self.normalisation["log10_transform"]:
-                data = 10**data
+            # if self.normalisation["log10_transform"]:
+            #     data = 10**data
 
         return data
 

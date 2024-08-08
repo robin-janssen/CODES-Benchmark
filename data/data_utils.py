@@ -130,6 +130,7 @@ def check_and_load_data(
                 print("Number of training samples not found in metadata.")
 
         data_params["dataset_name"] = dataset_name
+        data_params["n_timesteps"] = n_timesteps
 
     return train_data, test_data, val_data, timesteps, n_train_samples, data_params
 
@@ -390,7 +391,7 @@ def create_dataset(
         if len(split) == 3:
             val_data = train_data[n_train + n_test :]
 
-    os.mkdir(dataset_dir)
+    os.mkdirs(dataset_dir)
 
     with h5py.File(os.path.join(dataset_dir, "data.hdf5"), "w") as f:
         f.create_dataset("train", data=train_data)
@@ -398,5 +399,5 @@ def create_dataset(
             f.create_dataset("test", data=test_data)
         if val_data is not None:
             f.create_dataset("val", data=val_data)
-    
+
     print(f"Dataset '{name}' created at {dataset_dir}")

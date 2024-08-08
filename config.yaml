@@ -1,11 +1,11 @@
 # Global settings for the benchmark
-training_id: "all4_testrun_1"
-surrogates: ["MultiONet", "FullyConnected"]
+training_id: "all4_testrun_2"
+surrogates: ["MultiONet", "FullyConnected", "NeuralODE", "LatentPoly"]
 dataset: 
   name: "osu2008"
   log10_transform: False
   normalise: "minmax" # "standardise", "minmax", "disable"
-devices: ["cuda:6"]
+devices: ["cuda:4"]
 seed: 42
 
 # Details of the benchmarking
@@ -15,7 +15,7 @@ dynamic_accuracy: True
 timing: True
 compute: True
 interpolation: 
-  enabled: True
+  enabled: False
   intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
 extrapolation: 
   enabled: True
@@ -35,6 +35,6 @@ compare: True # Whether to compare the surrogates
 # Optional global settings
 # Leave empty if the quantities should be set per surrogate
 
-batch_size: 64 # [64, 64, 1024, 1024] 
-epochs: 10 # [4000, 10000, 200, 400]
+batch_size: [1024, 1024, 64, 64]
+epochs: [200, 400, 2000, 4000]
 
