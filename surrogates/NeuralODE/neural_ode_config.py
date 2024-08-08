@@ -15,10 +15,8 @@ class NeuralODEConfigOSU:
     ode_hidden: int = 4
     ode_layer_width: int = 64
     ode_tanh_reg: bool = True
-    use_adjoint: bool = False
     rtol: float = 1e-7
-    atol: float = 1e-9
-    method: str = "dopri8"
+    atol: float = 1e-7
     t_steps = 100
     learning_rate: float = 1e-3
     final_learning_rate: float = 1e-5
