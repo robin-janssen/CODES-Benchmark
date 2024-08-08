@@ -26,3 +26,6 @@ class Profiler:
         self.end_time = time()
         # print(f"\n{self.description}: {self.end_time - self.start_time}")
         self.logger.log(f"\n{self.description}: {self.end_time - self.start_time}")
+
+    def get_time(self):
+        return self.end_time - self.start_time

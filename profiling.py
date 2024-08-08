@@ -3,7 +3,7 @@ from surrogates.NeuralODE.neural_ode_config import NeuralODEConfigOSU as Config
 from data import check_and_load_data
 
 DEVICE = "cuda:4"
-EPOCHS = 5
+EPOCHS = 10000
 
 model = NeuralODE(DEVICE, 29, 100)
 
