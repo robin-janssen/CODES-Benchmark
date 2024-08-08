@@ -1,14 +1,14 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass  # , field
 from typing import Optional
 
-from data.osu2008.osu_chemicals import osu_masses
+# from data.osu2008.osu_chemicals import osu_masses
 
 
 @dataclass
 class OChemicalTrainConfig:
     """Dataclass for the configuration of a multionet model for the osu chemicals dataset."""
 
-    masses: Optional[list[float]] = field(default_factory=lambda: osu_masses)
+    masses: Optional[list[float]] = None  # field(default_factory=lambda: osu_masses)
     trunk_input_size: int = 1
     hidden_size: int = 100
     branch_hidden_layers: int = 5

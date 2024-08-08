@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+from matplotlib.gridspec import GridSpec
 from typing import Optional
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -9,7 +11,9 @@ import os
 # Utility functions for plotting
 
 
-def save_plot(plt, filename: str, conf: dict, surr_name: str = "") -> None:
+def save_plot(
+    plt, filename: str, conf: dict, surr_name: str = "", dpi: int = 300
+) -> None:
     """
     Save the plot to a file, creating necessary directories if they don't exist.
 
@@ -31,7 +35,7 @@ def save_plot(plt, filename: str, conf: dict, surr_name: str = "") -> None:
         os.makedirs(plot_dir)
 
     filepath = save_plot_counter(filename, plot_dir)
-    plt.savefig(filepath)
+    plt.savefig(filepath, dpi=dpi)
     print(f"Plot saved as: {filepath}")
 
 
@@ -121,9 +125,10 @@ def plot_relative_errors_over_time(
     )
 
     plt.yscale("log")
-    plt.ylim(1e-5, 1)
+    plt.ylim(1e-6, 10)
     plt.xlabel("Timestep")
     plt.ylabel("Relative Error (Log Scale)")
+    plt.xlim(timesteps[0], timesteps[-1])
     plt.title(title)
     plt.legend()
 
@@ -216,7 +221,7 @@ def plot_generalization_errors(
         )
 
     plt.figure(figsize=(10, 6))
-    plt.scatter(metrics, model_errors, label=surr_name)
+    plt.scatter(metrics, model_errors, label=surr_name, color="#3A1A5A")
     plt.xlabel(xlabel)
     if mode == "sparse" or mode == "batchsize":
         plt.xscale("log")
@@ -293,6 +298,7 @@ def plot_average_errors_over_time(
                 )
 
     plt.xlabel("Timesteps")
+    plt.xlim(timesteps[0], timesteps[-1])
     plt.ylabel("Mean Absolute Error")
     title = f"{mode.capitalize()} Errors Over Time"
     filename = f"{mode}_errors_over_time.png"
@@ -306,6 +312,80 @@ def plot_average_errors_over_time(
     plt.close()
 
 
+# def plot_example_predictions_with_uncertainty(
+#     surr_name: str,
+#     conf: dict,
+#     preds_mean: np.ndarray,
+#     preds_std: np.ndarray,
+#     targets: np.ndarray,
+#     timesteps: np.ndarray,
+#     num_examples: int = 4,
+#     num_chemicals: int = 10,
+#     labels: list[str] | None = None,
+#     save: bool = False,
+# ) -> None:
+#     """
+#     Plot example predictions with uncertainty.
+
+#     Args:
+#         surr_name (str): The name of the surrogate model.
+#         conf (dict): The configuration dictionary.
+#         preds_mean (np.ndarray): Mean predictions from the ensemble of models.
+#         preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
+#         targets (np.ndarray): True targets.
+#         timesteps (np.ndarray): Timesteps array.
+#         num_examples (int, optional): Number of example plots to generate.
+#         num_chemicals (int, optional): Number of chemicals to plot.
+#         labels (list, optional): List of labels for the chemicals.
+#         save (bool, optional): Whether to save the plot as a file.
+#     """
+#     # colors = plt.cm.viridis(np.linspace(0, 0.9, num_chemicals))
+#     colors = get_custom_palette(num_chemicals)
+
+#     fig, axs = plt.subplots(2, 2, figsize=(15, 10))
+#     for example_idx in range(num_examples):
+#         ax = axs[example_idx // 2, example_idx % 2]
+#         for chem_idx in range(num_chemicals):
+#             gt = targets[example_idx, :, chem_idx]
+#             mean = preds_mean[example_idx, :, chem_idx]
+#             std = preds_std[example_idx, :, chem_idx]
+
+#             ax.plot(
+#                 timesteps,
+#                 gt,
+#                 color=colors[chem_idx],
+#                 label=f"GT {labels[chem_idx]}" if labels is not None else None,
+#             )
+#             ax.plot(
+#                 timesteps,
+#                 mean,
+#                 "--",
+#                 color=colors[chem_idx],
+#                 label=f"Pred {labels[chem_idx]}" if labels is not None else None,
+#             )
+
+#             # Plot standard deviations as shaded areas
+#             for sigma_multiplier in [1, 2, 3]:  # 1, 2, and 3 standard deviations
+#                 ax.fill_between(
+#                     timesteps,
+#                     mean - sigma_multiplier * std,
+#                     mean + sigma_multiplier * std,
+#                     color=colors[chem_idx],
+#                     alpha=0.5 / sigma_multiplier,
+#                 )
+
+#     plt.suptitle(
+#         r"DeepEnsemble: Examplary Predictions with Uncertainty Intervals ($\mu \pm (1,2,3) \sigma$)"
+#     )
+#     plt.legend()
+#     plt.tight_layout()
+
+#     if save and conf:
+#         save_plot(plt, "UQ_predictions.png", conf, surr_name)
+
+#     plt.close()
+
+
 def plot_example_predictions_with_uncertainty(
     surr_name: str,
     conf: dict,
@@ -313,8 +393,9 @@ def plot_example_predictions_with_uncertainty(
     preds_std: np.ndarray,
     targets: np.ndarray,
     timesteps: np.ndarray,
-    num_examples: int = 4,
-    num_chemicals: int = 8,
+    example_idx: int = 0,
+    num_chemicals: int = 100,
+    labels: list[str] | None = None,
     save: bool = False,
 ) -> None:
     """
@@ -327,33 +408,46 @@ def plot_example_predictions_with_uncertainty(
         preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
         targets (np.ndarray): True targets.
         timesteps (np.ndarray): Timesteps array.
-        num_examples (int, optional): Number of example plots to generate.
-        num_chemicals (int, optional): Number of chemicals to plot.
+        example_idx (int, optional): Index of the example to plot. Default is 0.
+        num_chemicals (int, optional): Number of chemicals to plot. Default is 10.
+        labels (list, optional): List of labels for the chemicals.
         save (bool, optional): Whether to save the plot as a file.
     """
-    colors = plt.cm.viridis(np.linspace(0, 0.9, num_chemicals))
+    # Cap the number of chemicals at 100
+    num_chemicals = min(preds_std.shape[2], num_chemicals)
 
-    fig, axs = plt.subplots(2, 2, figsize=(15, 10))
-    for example_idx in range(num_examples):
-        ax = axs[example_idx // 2, example_idx % 2]
-        for chem_idx in range(num_chemicals):
+    # Determine the number of plots needed
+    chemicals_per_plot = 10
+    num_plots = int(np.ceil(num_chemicals / chemicals_per_plot))
+
+    # Define the color palette
+    colors = get_custom_palette(chemicals_per_plot)
+
+    # Create subplots
+    fig = plt.figure(figsize=(12, 6 * num_plots))
+    gs = GridSpec(num_plots, 1, figure=fig)  # Single column of plots
+
+    for plot_idx in range(num_plots):
+        ax = fig.add_subplot(gs[plot_idx])
+
+        start_idx = plot_idx * chemicals_per_plot
+        end_idx = min((plot_idx + 1) * chemicals_per_plot, num_chemicals)
+
+        legend_lines = []  # To store the line objects for the legend
+
+        for chem_idx in range(start_idx, end_idx):
+            color = colors[chem_idx % chemicals_per_plot]
             gt = targets[example_idx, :, chem_idx]
             mean = preds_mean[example_idx, :, chem_idx]
             std = preds_std[example_idx, :, chem_idx]
 
-            ax.plot(
-                timesteps,
-                gt,
-                color=colors[chem_idx],
-                label=f"GT Chemical {chem_idx+1}",
-            )
-            ax.plot(
-                timesteps,
-                mean,
-                "--",
-                color=colors[chem_idx],
-                label=f"Pred Chemical {chem_idx+1}",
-            )
+            # Plot ground truth and store the line object
+            (gt_line,) = ax.plot(timesteps, gt, "--", color=color)
+            # Plot prediction mean and store the line object
+            ax.plot(timesteps, mean, "-", color=color)
+
+            # Store only the ground truth line in legend_lines
+            legend_lines.append(gt_line)
 
             # Plot standard deviations as shaded areas
             for sigma_multiplier in [1, 2, 3]:  # 1, 2, and 3 standard deviations
@@ -361,25 +455,58 @@ def plot_example_predictions_with_uncertainty(
                     timesteps,
                     mean - sigma_multiplier * std,
                     mean + sigma_multiplier * std,
-                    color=colors[chem_idx],
+                    color=color,
                     alpha=0.5 / sigma_multiplier,
                 )
 
-    plt.suptitle(
-        r"Examplary Predictions with Uncertainty Intervals ($\mu \pm (1,2,3) \sigma$)"
+        # Create a legend directly next to the plot using the stored line objects
+        if labels is not None:
+            legend_labels = labels[start_idx:end_idx]
+            ax.legend(
+                legend_lines,
+                legend_labels,
+                loc="center left",
+                bbox_to_anchor=(1, 0.5),  # Position legend to the right of the plot
+                bbox_transform=ax.transAxes,  # Place it relative to the axes
+                title="Chemical Labels",
+            )
+
+        # Set the x limit exactly from the lowest to the highest timestep
+        ax.set_xlim(timesteps.min(), timesteps.max())
+
+    # Create a general legend for line styles, positioned below the title
+    handles = [
+        plt.Line2D([0], [0], color="black", linestyle="--", label="Ground Truth (GT)"),
+        plt.Line2D([0], [0], color="black", linestyle="-", label="Prediction (Pred)"),
+    ]
+    fig.legend(
+        handles=handles,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.93),  # Adjust to position the legend below the title
+        ncol=2,
+        fontsize="small",
     )
-    plt.legend()
-    plt.tight_layout()
+
+    # Adjust the title to include the sample index and place additional information on a second line
+    plt.suptitle(
+        f"DeepEnsemble: Example Predictions with Uncertainty for {surr_name} \n"
+        r"Sample Index: {example_idx},  $\mu \pm (1,2,3) \sigma$ Intervals",
+        y=0.97,
+    )
+
+    plt.tight_layout(rect=[0.05, 0.03, 0.95, 0.92])
 
     if save and conf:
-        save_plot(plt, "UQ_predictions.png", conf, surr_name)
+        save_plot(plt, "UQ_predictions.png", conf, surr_name, dpi=300)
 
+    plt.show()
     plt.close()
 
 
 def plot_average_uncertainty_over_time(
     surr_name: str,
     conf: dict,
+    errors_time: np.ndarray,
     preds_std: np.ndarray,
     timesteps: np.ndarray,
     save: bool = False,
@@ -390,15 +517,18 @@ def plot_average_uncertainty_over_time(
     Args:
         surr_name (str): The name of the surrogate model.
         conf (dict): The configuration dictionary.
-        preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
+        errors_time (np.ndarray): Prediction errors over time.
+        preds_std (np.ndarray): Standard deviation over time of predictions from the ensemble of models.
         timesteps (np.ndarray): Timesteps array.
         save (bool, optional): Whether to save the plot as a file.
     """
     plt.figure(figsize=(10, 6))
-    plt.plot(timesteps, preds_std, label="Average Uncertainty")
+    plt.plot(timesteps, preds_std, label="Average Uncertainty", color="#3A1A5A")
+    plt.plot(timesteps, errors_time, label="Mean Absolute Error", color="#DA5F4D")
     plt.xlabel("Timesteps")
-    plt.ylabel("Average Uncertainty")
-    plt.title("Average Uncertainty Over Time")
+    plt.ylabel("Average Uncertainty / Mean Absolute Error")
+    plt.xlim(timesteps[0], timesteps[-1])
+    plt.title("Average Uncertainty and Mean Absolute Error Over Time")
     plt.legend()
 
     if save and conf:
@@ -574,108 +704,11 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
         )
 
 
-# def plot_error_distribution_per_chemical(
-#     surr_name: str,
-#     conf: dict,
-#     errors: np.ndarray,
-#     chemical_names: list = None,
-#     num_chemicals: int = 10,
-#     save: bool = True,
-# ) -> None:
-#     """
-#     Plot the distribution of errors for each chemical as a smoothed histogram plot.
-
-#     Args:
-#         surr_name (str): The name of the surrogate model.
-#         conf (dict): The configuration dictionary.
-#         errors (np.ndarray): Errors array of shape [num_samples, num_timesteps, num_chemicals].
-#         chemical_names (list, optional): List of chemical names for labeling the lines.
-#         num_chemicals (int, optional): Number of chemicals to plot. Default is 10.
-#         save (bool, optional): Whether to save the plot as a file.
-#     """
-#     # Reshape errors to combine samples and timesteps
-#     total_chemicals = errors.shape[2]
-#     errors = errors.reshape(-1, total_chemicals)
-#     n_errors = len(errors.reshape(-1))
-
-#     # Determine how many chemicals to plot
-#     num_chemicals = min(num_chemicals, total_chemicals)
-#     errors = errors[:, :num_chemicals]
-
-#     # Initialize list to hold log-transformed non-zero errors and count zeros
-#     log_errors = []
-#     zero_counts = 0
-
-#     # Transform error magnitudes to log-space and filter out zeros
-#     for i in range(num_chemicals):
-#         chemical_errors = errors[:, i]
-#         non_zero_chemical_errors = chemical_errors[chemical_errors > 0]
-#         log_errors.append(np.log10(non_zero_chemical_errors))
-#         zero_counts += np.sum(chemical_errors == 0)
-
-#     # Calculate the 5th and 95th percentiles in the log-space
-#     min_percentiles = [np.percentile(err, 1) for err in log_errors if len(err) > 0]
-#     max_percentiles = [np.percentile(err, 99) for err in log_errors if len(err) > 0]
-
-#     global_min = np.min(min_percentiles)
-#     global_max = np.max(max_percentiles)
-
-#     # Set up the x-axis range to nearest whole numbers in log-space
-#     x_min = np.floor(global_min)
-#     x_max = np.ceil(global_max)
-
-#     # Set up the plot
-#     plt.figure(figsize=(10, 6))
-#     colors = plt.cm.tab20b(np.linspace(0, 1, num_chemicals))
-
-#     # Define the x-axis range for plotting
-#     x_vals = np.linspace(x_min, x_max + 0.1, 100)
-
-#     for i in range(num_chemicals):
-#         # Compute histogram in log-space
-#         hist, bin_edges = np.histogram(log_errors[i], bins=x_vals, density=True)
-
-#         # Smooth the histogram with a Gaussian filter
-#         smoothed_hist = gaussian_filter1d(hist, sigma=2)
-
-#         # Normalize smoothed histogram so that the total area sums to 1
-#         # smoothed_hist /= np.trapz(smoothed_hist, bin_edges[:-1])
-
-#         # Plot the smoothed histogram
-#         plt.plot(
-#             10 ** bin_edges[:-1],
-#             smoothed_hist,
-#             label=(
-#                 chemical_names[i]
-#                 if chemical_names and len(chemical_names) > i
-#                 else None
-#             ),
-#             color=colors[i],
-#         )
-
-#     plt.xscale("log")  # Log scale for error magnitudes
-#     plt.xlim(10**x_min, 10**x_max)  # Set x-axis range based on log-space calculations
-#     plt.xlabel("Magnitude of Error")
-#     plt.ylabel("Density (PDF)")
-#     plt.title(
-#         f"Error Distribution per Chemical (Test Samples: {n_errors}, Excluded zeros: {zero_counts})"
-#     )
-
-#     if chemical_names:
-#         plt.legend()
-
-#     if save and conf:
-#         save_plot(plt, "error_distribution_per_chemical.png", conf, surr_name)
-
-#     plt.show()
-#     plt.close()
-
-
 def plot_error_distribution_per_chemical(
     surr_name: str,
     conf: dict,
     errors: np.ndarray,
-    chemical_names: list = None,
+    chemical_names: list[str] | None = None,
     num_chemicals: int = 10,
     save: bool = True,
 ) -> None:
@@ -698,7 +731,9 @@ def plot_error_distribution_per_chemical(
     # Cap the number of chemicals to plot at 50
     num_chemicals = min(num_chemicals, 50)
     errors = errors[:, :num_chemicals]
-    chemical_names = chemical_names[:num_chemicals] if chemical_names else None
+    chemical_names = (
+        chemical_names[:num_chemicals] if chemical_names is not None else None
+    )
 
     # Split the chemicals into groups of 10
     chemicals_per_plot = 10
@@ -732,7 +767,8 @@ def plot_error_distribution_per_chemical(
     if num_plots == 1:
         axes = [axes]  # Ensure axes is iterable even if there's only one plot
 
-    colors = plt.cm.magma(np.linspace(0.15, 0.85, chemicals_per_plot))
+    # colors = plt.cm.magma(np.linspace(0, 0.9, chemicals_per_plot))
+    colors = get_custom_palette(chemicals_per_plot)
 
     # Define the x-axis range for plotting
     x_vals = np.linspace(x_min, x_max + 0.1, 100)
@@ -755,7 +791,7 @@ def plot_error_distribution_per_chemical(
                 smoothed_hist,
                 label=(
                     chemical_names[i]
-                    if chemical_names and len(chemical_names) > i
+                    if chemical_names is not None and len(chemical_names) > i
                     else None
                 ),
                 color=colors[i % chemicals_per_plot],
@@ -763,7 +799,7 @@ def plot_error_distribution_per_chemical(
 
         ax.set_yscale("linear")
         ax.set_ylabel("Density (PDF)")
-        if chemical_names:
+        if chemical_names is not None:
             ax.legend()
 
     plt.xscale("log")  # Log scale for error magnitudes
@@ -817,6 +853,7 @@ def plot_losses(
             plt.plot(loss, label=label, color=colors[labels.index(label)])
             loss_plotted = True
     plt.xlabel("Epoch")
+    plt.xlim(0, len(loss_histories[0]))
     plt.ylabel("Loss")
     plt.yscale("log")
     plt.title(title)
@@ -868,6 +905,7 @@ def plot_loss_comparison(
         plt.plot(test_loss, label=f"{label} Test Loss", linestyle="--", color=colors[i])
 
     plt.xlabel("Epoch")
+    plt.xlim(0, len(train_losses[0]))
     plt.ylabel("Loss")
     plt.yscale("log")
     plt.title("Comparison of Training and Test Losses")
@@ -940,6 +978,7 @@ def plot_MAE_comparison_train_duration(
         plt.plot(epoch_times, accuracy, label=label, color=colors[i])
 
     plt.xlabel("Time (s)")
+    plt.xlim(0, max(train_durations))
     plt.ylabel("MAE")
     plt.yscale("log")
     plt.title("Comparison of Model Mean Absolute Error over Training Duration")
@@ -947,7 +986,7 @@ def plot_MAE_comparison_train_duration(
     plt.grid(True)
 
     if save and config:
-        save_plot(plt, "comparison_main_model_MAE_time.png", config)
+        save_plot(plt, "comparison_main_model_MAE.png", config)
 
     plt.show()
 
@@ -993,6 +1032,7 @@ def plot_relative_errors(
         )
 
     plt.xlabel("Timesteps")
+    plt.xlim(timesteps[0], timesteps[-1])
     plt.ylabel("Relative Error")
     plt.yscale("log")
     plt.title("Comparison of Relative Errors Over Time")
@@ -1030,6 +1070,7 @@ def plot_uncertainty_over_time_comparison(
         plt.plot(timesteps, uncertainties[surrogate], label=surrogate, color=colors[i])
 
     plt.xlabel("Timesteps")
+    plt.xlim(timesteps[0], timesteps[-1])
     plt.ylabel("Uncertainty")
     plt.title("Comparison of Predictive Uncertainty Over Time")
     plt.legend()
@@ -1442,3 +1483,49 @@ def plot_correlation_KDE(
         save_plot(plt, "correlation_KDE.png", conf, surr_name)
 
     plt.close()
+
+
+def get_custom_palette(num_colors):
+    """
+    Returns a list of colors sampled from a custom color palette.
+
+    Args:
+        num_colors (int): The number of colors needed.
+
+    Returns:
+        list: A list of RGBA color tuples.
+    """
+    # Define your custom color palette as a list of hex color codes
+    # custom_palette = [
+    #     "#1f77b4",  # blue
+    #     "#ff7f0e",  # orange
+    #     "#2ca02c",  # green
+    #     "#d62728",  # red
+    #     "#9467bd",  # purple
+    #     "#8c564b",  # brown
+    #     "#e377c2",  # pink
+    #     "#7f7f7f",  # gray
+    #     "#bcbd22",  # yellow
+    #     "#17becf",  # teal
+    # ]
+
+    custom_palette = [
+        "#10002B",  # Darkest violet
+        "#3A1A5A",  # Dark purple (slightly brighter)
+        "#6A1C75",  # Deep magenta (slightly brighter)
+        "#8A3065",  # Magenta with a hint of red
+        "#B73779",  # Deep reddish-pink
+        "#DA5F4D",  # Dark red-orange
+        "#F48842",  # Bright orange
+        "#FBC200",  # Yellow-orange (slightly more yellow)
+        "#C0CD32",  # Yellow-green (more yellowish)
+        "#D2B48C",  # Tan (brownish)
+    ]
+
+    # Create a custom colormap from the palette
+    custom_cmap = ListedColormap(custom_palette)
+
+    # Sample colors from your custom colormap
+    colors = custom_cmap(np.linspace(0, 1, num_colors))
+
+    return colors
