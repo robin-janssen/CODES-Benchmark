@@ -205,7 +205,7 @@ def create_hdf5_dataset(
     val_data: np.ndarray,
     dataset_name: str,
     data_dir: str = "data",
-    timesteps: np.ndarray = None,
+    timesteps: np.ndarray | None = None,
 ):
     """
     Create an HDF5 file for a dataset with train and test data, and optionally timesteps.
@@ -218,33 +218,7 @@ def create_hdf5_dataset(
         dataset_name (str): The name of the dataset.
         data_dir (str): The directory to save the dataset in.
         timesteps (np.ndarray, optional): The timesteps array. If None, integer timesteps will be generated.
-
-    Raises:
-        ValueError: If the data does not have the required shape.
     """
-    # Check data shapes
-    if train_data.ndim != 3:
-        raise ValueError(
-            "Train data does not have the required shape (n_samples, n_timesteps, n_chemicals)."
-        )
-    if test_data.ndim != 3:
-        raise ValueError(
-            "Test data does not have the required shape (n_samples, n_timesteps, n_chemicals)."
-        )
-    if val_data.ndim != 3:
-        raise ValueError(
-            "Validation data does not have the required shape (n_samples, n_timesteps, n_chemicals)."
-        )
-
-    # Generate timesteps if not provided
-    if timesteps is None:
-        print("Timesteps not provided and will not be saved.")
-    else:
-        # Ensure timesteps have the correct shape
-        if timesteps.ndim != 1 or timesteps.shape[0] != train_data.shape[1]:
-            raise ValueError(
-                "Timesteps must be a 1D array with length equal to the number of timesteps in the data."
-            )
 
     # Create dataset directory if it doesn't exist
     dataset_dir = os.path.join(data_dir, dataset_name.lower())
@@ -265,8 +239,6 @@ def create_hdf5_dataset(
         f.attrs["n_val_samples"] = val_data.shape[0]
         f.attrs["n_timesteps"] = train_data.shape[1]
         f.attrs["n_chemicals"] = train_data.shape[2]
-
-    print(f"HDF5 dataset created at {data_file_path}")
 
 
 def get_data_subset(full_train_data, full_test_data, timesteps, mode, metric, config):
@@ -314,10 +286,11 @@ def get_data_subset(full_train_data, full_test_data, timesteps, mode, metric, co
 
 def create_dataset(
     name: str,
-    train_data: np.ndarray | torch.Tensor,
-    test_data: np.ndarray | torch.Tensor | None = None,
-    val_data: np.ndarray | torch.Tensor | None = None,
-    split: tuple[float, float] | tuple[float, float, float] | None = None,
+    train_data: np.ndarray,
+    test_data: np.ndarray | None = None,
+    val_data: np.ndarray | None = None,
+    split: tuple[float, float, float] | None = None,
+    timesteps np.ndarray | None = None,
 ):
     """
     Creates a new dataset in the data directory.
@@ -327,8 +300,14 @@ def create_dataset(
         train_data (np.ndarray | torch.Tensor): The training data.
         test_data (np.ndarray | torch.Tensor, optional): The test data.
         val_data (np.ndarray | torch.Tensor, optional): The validation data.
-        split (tuple(float, float) | tuple(float, float, float), optional): If test_data and val_data are not provided,
+        split tuple(float, float, float), optional): If test_data and val_data are not provided,
             train_data can be split into training, test and optionally validation data.
+        timesteps (np.ndarray | torch.Tensor, optional): The timesteps array.
+
+    Raises:
+        FileExistsError: If the dataset already exists.
+        TypeError: If the train_data is not a numpy array or torch tensor.
+        ValueError: If the train_data, test_data, and val_data do not have the correct shape.
     """
     base_dir = "data"
     dataset_dir = os.path.join(base_dir, name)
@@ -336,19 +315,18 @@ def create_dataset(
     if os.path.exists(dataset_dir):
         raise FileExistsError(f"Dataset '{name}' already exists.")
 
-    if not isinstance(train_data, (np.ndarray, torch.Tensor)):
+    if not isinstance(train_data, np.ndarray):
         raise TypeError("train_data must be a numpy array or torch tensor.")
 
     if not train_data.ndim == 3:
         raise ValueError(
             "train_data must have shape (n_samples, n_timesteps, n_chemicals)."
         )
+    
+    if (test_data is None or val_data is None) and split is None:
+        raise ValueError("split must be provided if test_data and val_data are not provided.")
 
     if test_data is not None:
-        if not test_data.ndim == 3:
-            raise ValueError(
-                "train_data must have shape (n_samples, n_timesteps, n_chemicals)."
-            )
         if (
             not train_data.shape[2] == test_data.shape[2]
             or not train_data.shape[1] == test_data.shape[1]
@@ -358,16 +336,21 @@ def create_dataset(
             )
 
     if val_data is not None:
-        if not val_data.ndim == 3:
-            raise ValueError(
-                "train_data must have shape (n_samples, n_timesteps, n_chemicals)."
-            )
         if (
             not train_data.shape[2] == val_data.shape[2]
             or not train_data.shape[1] == val_data.shape[1]
         ):
             raise ValueError(
                 "train_data and val_data must have the same number of timesteps and chemicals."
+            )
+        
+    if timesteps is None:
+        print("Timesteps not provided and will not be saved.")
+    else:
+        # Ensure timesteps have the correct shape
+        if timesteps.ndim != 1 or timesteps.shape[0] != train_data.shape[1]:
+            raise ValueError(
+                "Timesteps must be a 1D array with length equal to the number of timesteps in the data."
             )
 
     if split is not None:
@@ -391,13 +374,6 @@ def create_dataset(
         if len(split) == 3:
             val_data = train_data[n_train + n_test :]
 
-    os.mkdirs(dataset_dir)
-
-    with h5py.File(os.path.join(dataset_dir, "data.hdf5"), "w") as f:
-        f.create_dataset("train", data=train_data)
-        if test_data is not None:
-            f.create_dataset("test", data=test_data)
-        if val_data is not None:
-            f.create_dataset("val", data=val_data)
-
+    create_hdf5_dataset(train_data, test_data, val_data, name, dataset_dir, timesteps)
+    
     print(f"Dataset '{name}' created at {dataset_dir}")
