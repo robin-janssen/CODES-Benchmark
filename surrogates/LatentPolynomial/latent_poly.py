@@ -15,12 +15,16 @@ from utils import time_execution
 class LatentPoly(AbstractSurrogateModel):
 
     def __init__(
-        self, device: str | None = None, n_chemicals: int = 29, n_timesteps: int = 100
+        self,
+        device: str | None = None,
+        n_chemicals: int = 29,
+        n_timesteps: int = 100,
+        config=LatentPolynomialConfigOSU(),
     ):
         super().__init__(
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
         )
-        self.config: LatentPolynomialConfigOSU = LatentPolynomialConfigOSU()
+        self.config: LatentPolynomialConfigOSU = config
         self.config.in_features = n_chemicals
         self.model = PolynomialModelWrapper(config=self.config, device=self.device)
 
