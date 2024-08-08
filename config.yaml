@@ -5,7 +5,7 @@ dataset:
   name: "osu2008"
   log10_transform: False
   normalise: "minmax" # "standardise", "minmax", "disable"
-devices: ["cuda:4"]
+devices: ["cuda:5"]
 seed: 42
 
 # Details of the benchmarking

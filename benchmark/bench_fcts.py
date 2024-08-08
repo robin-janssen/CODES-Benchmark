@@ -65,7 +65,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     else:
         batch_size = conf["batch_size"]
 
-    full_train_data, full_test_data, full_val_data, timesteps, n_train_samples, _ = (
+    train_data, test_data, val_data, timesteps, n_train_samples, _, labels = (
         check_and_load_data(
             conf["dataset"]["name"],
             verbose=False,
@@ -73,8 +73,8 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
             normalisation_mode=conf["dataset"]["normalise"],
         )
     )
-    n_timesteps = full_train_data.shape[1]
-    n_chemicals = full_train_data.shape[2]
+    n_timesteps = train_data.shape[1]
+    n_chemicals = train_data.shape[2]
     model = surrogate_class(device, n_chemicals, n_timesteps)
 
     # Placeholder for metrics
@@ -83,9 +83,9 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
 
     # Create dataloader for the test data
     _, _, val_loader = model.prepare_data(
-        dataset_train=full_train_data,
-        dataset_test=full_test_data,
-        dataset_val=full_val_data,
+        dataset_train=train_data,
+        dataset_test=test_data,
+        dataset_val=val_data,
         timesteps=timesteps,
         batch_size=batch_size,
         shuffle=False,
@@ -98,7 +98,9 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     # Accuracy benchmark
     if conf["accuracy"]:
         print("Running accuracy benchmark...")
-        metrics["accuracy"] = evaluate_accuracy(model, surr_name, val_loader, conf)
+        metrics["accuracy"] = evaluate_accuracy(
+            model, surr_name, val_loader, conf, labels
+        )
 
     # Dynamic accuracy benchmark
     if conf["dynamic_accuracy"]:
@@ -149,7 +151,9 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     # Uncertainty Quantification (UQ) benchmark
     if conf["UQ"]["enabled"]:
         print("Running UQ benchmark...")
-        metrics["UQ"] = evaluate_UQ(model, surr_name, val_loader, timesteps, conf)
+        metrics["UQ"] = evaluate_UQ(
+            model, surr_name, val_loader, timesteps, conf, labels
+        )
 
     # Write metrics to yaml
     write_metrics_to_yaml(surr_name, conf, metrics)
@@ -158,7 +162,11 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
 
 
 def evaluate_accuracy(
-    model, surr_name: str, test_loader: DataLoader, conf: dict
+    model,
+    surr_name: str,
+    test_loader: DataLoader,
+    conf: dict,
+    labels: list | None = None,
 ) -> dict[str, Any]:
     """
     Evaluate the accuracy of the surrogate model.
@@ -168,6 +176,7 @@ def evaluate_accuracy(
         surr_name (str): The name of the surrogate model.
         test_loader (DataLoader): The DataLoader object containing the test data.
         conf (dict): The configuration dictionary.
+        labels (list, optional): The labels for the chemical species.
 
     Returns:
         dict: A dictionary containing accuracy metrics.
@@ -203,7 +212,7 @@ def evaluate_accuracy(
         surr_name,
         conf,
         relative_errors,
-        chemical_names=None,
+        chemical_names=labels,
         num_chemicals=29,
         save=True,
     )
@@ -665,7 +674,12 @@ def evaluate_batchsize(
 
 
 def evaluate_UQ(
-    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: dict
+    model,
+    surr_name: str,
+    test_loader: DataLoader,
+    timesteps: np.ndarray,
+    conf: dict,
+    labels: list[str] | None = None,
 ) -> dict[str, Any]:
     """
     Evaluate the uncertainty quantification (UQ) performance of the surrogate model.
@@ -676,6 +690,7 @@ def evaluate_UQ(
         test_loader (DataLoader): The DataLoader object containing the test data.
         timesteps (np.ndarray): The timesteps array.
         conf (dict): The configuration dictionary.
+        labels (list, optional): The labels for the chemical species.
 
     Returns:
         dict: A dictionary containing UQ metrics.
@@ -705,15 +720,23 @@ def evaluate_UQ(
 
     # Correlate uncertainty with errors
     errors = np.abs(preds_mean - targets)
+    errors_time = np.mean(errors, axis=(0, 2))
     correlation_metrics, _ = pearsonr(errors.flatten(), preds_std.flatten())
     preds_std_time = np.mean(preds_std, axis=(0, 2))
 
     # Plots
     plot_example_predictions_with_uncertainty(
-        surr_name, conf, preds_mean, preds_std, targets, timesteps, save=True
+        surr_name,
+        conf,
+        preds_mean,
+        preds_std,
+        targets,
+        timesteps,
+        save=True,
+        labels=labels,
     )
     plot_average_uncertainty_over_time(
-        surr_name, conf, preds_std_time, timesteps, save=True
+        surr_name, conf, errors_time, preds_std_time, timesteps, save=True
     )
     # plot_uncertainty_vs_errors(surr_name, conf, preds_std, errors, save=True)
     plot_error_correlation_heatmap(surr_name, conf, preds_std, errors, save=True)

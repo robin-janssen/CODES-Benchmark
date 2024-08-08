@@ -39,11 +39,13 @@ def train_and_save_model(
         set_random_seeds(seed)
 
     # Load full data
-    full_train_data, full_test_data, _, timesteps, _, data_params = check_and_load_data(
-        config["dataset"]["name"],
-        verbose=False,
-        log=config["dataset"]["log10_transform"],
-        normalisation_mode=config["dataset"]["normalise"],
+    full_train_data, full_test_data, _, timesteps, _, data_params, _ = (
+        check_and_load_data(
+            config["dataset"]["name"],
+            verbose=False,
+            log=config["dataset"]["log10_transform"],
+            normalisation_mode=config["dataset"]["normalise"],
+        )
     )
 
     # Get the appropriate data subset

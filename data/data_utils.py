@@ -1,7 +1,6 @@
 import os
 import h5py
 import numpy as np
-import torch
 
 
 def check_and_load_data(
@@ -130,9 +129,23 @@ def check_and_load_data(
                 print("Number of training samples not found in metadata.")
 
         data_params["dataset_name"] = dataset_name
-        data_params["n_timesteps"] = n_timesteps
 
-    return train_data, test_data, val_data, timesteps, n_train_samples, data_params
+        if "labels" in f.attrs:
+            labels = f.attrs["labels"]
+            if len(labels) != n_chemicals:
+                raise ValueError(
+                    "The number of labels must match the number of chemicals."
+                )
+
+    return (
+        train_data,
+        test_data,
+        val_data,
+        timesteps,
+        n_train_samples,
+        data_params,
+        labels,
+    )
 
 
 def normalize_data(
@@ -206,6 +219,7 @@ def create_hdf5_dataset(
     dataset_name: str,
     data_dir: str = "data",
     timesteps: np.ndarray | None = None,
+    labels: list[str] | None = None,
 ):
     """
     Create an HDF5 file for a dataset with train and test data, and optionally timesteps.
@@ -218,6 +232,7 @@ def create_hdf5_dataset(
         dataset_name (str): The name of the dataset.
         data_dir (str): The directory to save the dataset in.
         timesteps (np.ndarray, optional): The timesteps array. If None, integer timesteps will be generated.
+        labels (list[str], optional): The labels for the chemicals.
     """
 
     # Create dataset directory if it doesn't exist
@@ -239,6 +254,7 @@ def create_hdf5_dataset(
         f.attrs["n_val_samples"] = val_data.shape[0]
         f.attrs["n_timesteps"] = train_data.shape[1]
         f.attrs["n_chemicals"] = train_data.shape[2]
+        f.attrs["labels"] = labels
 
 
 def get_data_subset(full_train_data, full_test_data, timesteps, mode, metric, config):
@@ -291,6 +307,7 @@ def create_dataset(
     val_data: np.ndarray | None = None,
     split: tuple[float, float, float] | None = None,
     timesteps: np.ndarray | None = None,
+    labels: list[str] | None = None,
 ):
     """
     Creates a new dataset in the data directory.
@@ -301,8 +318,9 @@ def create_dataset(
         test_data (np.ndarray | torch.Tensor, optional): The test data.
         val_data (np.ndarray | torch.Tensor, optional): The validation data.
         split tuple(float, float, float), optional): If test_data and val_data are not provided,
-            train_data can be split into training, test and optionally validation data.
+            train_data can be split into training, test and validation data.
         timesteps (np.ndarray | torch.Tensor, optional): The timesteps array.
+        labels (list[str], optional): The labels for the chemicals.
 
     Raises:
         FileExistsError: If the dataset already exists.
@@ -316,17 +334,21 @@ def create_dataset(
         raise FileExistsError(f"Dataset '{name}' already exists.")
 
     if not isinstance(train_data, np.ndarray):
-        raise TypeError("train_data must be a numpy array or torch tensor.")
+        raise TypeError("train_data must be a numpy array.")
 
     if not train_data.ndim == 3:
         raise ValueError(
             "train_data must have shape (n_samples, n_timesteps, n_chemicals)."
         )
-    
+
     if (test_data is None or val_data is None) and split is None:
-        raise ValueError("split must be provided if test_data and val_data are not provided.")
+        raise ValueError(
+            "split must be provided if test_data and val_data are not provided."
+        )
 
     if test_data is not None:
+        if not isinstance(test_data, np.ndarray):
+            raise TypeError("test_data must be a numpy array.")
         if (
             not train_data.shape[2] == test_data.shape[2]
             or not train_data.shape[1] == test_data.shape[1]
@@ -336,6 +358,8 @@ def create_dataset(
             )
 
     if val_data is not None:
+        if not isinstance(val_data, np.ndarray):
+            raise TypeError("val_data must be a numpy array.")
         if (
             not train_data.shape[2] == val_data.shape[2]
             or not train_data.shape[1] == val_data.shape[1]
@@ -343,7 +367,7 @@ def create_dataset(
             raise ValueError(
                 "train_data and val_data must have the same number of timesteps and chemicals."
             )
-        
+
     if timesteps is None:
         print("Timesteps not provided and will not be saved.")
     else:
@@ -356,24 +380,40 @@ def create_dataset(
     if split is not None:
         if not isinstance(split, (tuple, list)):
             raise TypeError("split must be a tuple or list of floats.")
-        if len(split) < 2 or len(split) > 3:
-            raise ValueError("split must contain 2 or 3 values.")
+        if len(split) != 3:
+            raise ValueError(
+                "split must contain three values: train, test, and validation split."
+            )
         if not all(isinstance(value, float) for value in split):
             raise TypeError("split values must be floats.")
         if not all(0 <= value <= 1 for value in split):
             raise ValueError("split values must be between 0 and 1.")
+        if not split[0] + split[1] + split[2] == 1:
+            raise ValueError("split values must sum to 1.")
 
-        n_samples = train_data.shape[0]
-        n_train = int(n_samples * split[0])
-        n_test = int(n_samples * split[1])
-        if len(split) == 3:
-            n_val = n_samples - n_train - n_test
+        if not (test_data is None and val_data is None):
+            print(
+                "Warning: split values will be ignored since test_data and val_data are provided."
+            )
+        else:
+            full_data = train_data
+            n_samples = train_data.shape[0]
+            n_train = int(n_samples * split[0])
+            n_test = int(n_samples * split[1])
+            train_data = full_data[:n_train]
+            test_data = full_data[n_train : n_train + n_test]
+            val_data = full_data[n_train + n_test :]
 
-        train_data = train_data[:n_train]
-        test_data = train_data[n_train : n_train + n_test]
-        if len(split) == 3:
-            val_data = train_data[n_train + n_test :]
+        if labels is not None:
+            if not isinstance(labels, list):
+                raise TypeError("labels must be a list of strings.")
+            if not len(labels) == train_data.shape[2]:
+                raise ValueError(
+                    "The number of labels must match the number of chemicals."
+                )
 
-    create_hdf5_dataset(train_data, test_data, val_data, name, dataset_dir, timesteps)
-    
+    create_hdf5_dataset(
+        train_data, test_data, val_data, name, timesteps=timesteps, labels=labels
+    )
+
     print(f"Dataset '{name}' created at {dataset_dir}")
