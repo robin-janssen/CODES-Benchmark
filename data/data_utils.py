@@ -290,7 +290,7 @@ def create_dataset(
     test_data: np.ndarray | None = None,
     val_data: np.ndarray | None = None,
     split: tuple[float, float, float] | None = None,
-    timesteps np.ndarray | None = None,
+    timesteps: np.ndarray | None = None,
 ):
     """
     Creates a new dataset in the data directory.
