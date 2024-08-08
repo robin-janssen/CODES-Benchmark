@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 from torch import Tensor
 from torchdiffeq import odeint, odeint_adjoint
 import numpy as np
+import torchode as to
 
 from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.NeuralODE.neural_ode_config import NeuralODEConfigOSU as Config
@@ -169,7 +170,7 @@ class NeuralODE(AbstractSurrogateModel):
             progress_bar = self.setup_progress_bar(epochs, position, description)
 
         for epoch in progress_bar:
-            with Profiler(f"Epoch {epoch}"):
+            with Profiler(f"Epoch {epoch}\n----------------"):
                 for i, (x_true, timesteps) in enumerate(train_loader):
                     with Profiler(f"Epoch {epoch}, Batch {i}"):
                         optimizer.zero_grad()
@@ -248,35 +249,44 @@ class ModelWrapper(torch.nn.Module):
             layer_width=config.ode_layer_width,
             tanh_reg=config.ode_tanh_reg,
         )
+        term = to.ODETerm(self.ode)
+        step_method = to.Dopri5(term=term)
+        step_size_controller = to.IntegralController(atol=1e-7, rtol=1e-7, term=term)
+        self.solver = to.AutoDiffAdjoint(step_method, step_size_controller)
 
     def forward(self, x, t_range):
         x0 = x[:, 0, :]
         z0 = self.encoder(x0)  # x(t=0)
-        if self.config.use_adjoint:
-            result = odeint_adjoint(
-                func=self.ode,
-                y0=z0,
-                t=t_range,
-                adjoint_rtol=self.config.rtol,
-                adjoint_atol=self.config.atol,
-                adjoint_method=self.config.method,
-            )
-            if not isinstance(result, torch.Tensor):
-                raise TypeError("odeint_adjoint must return tensor, check inputs")
-            return self.decoder(torch.permute(result, dims=(1, 0, 2)))
-        with Profiler("odeint"):
-            result = odeint(
-                func=self.ode,
-                y0=z0,
-                t=t_range,
-                rtol=self.config.rtol,
-                atol=self.config.atol,
-                method=self.config.method,
-            )
+        # if self.config.use_adjoint:
+        #     result = odeint_adjoint(
+        #         func=self.ode,
+        #         y0=z0,
+        #         t=t_range,
+        #         adjoint_rtol=self.config.rtol,
+        #         adjoint_atol=self.config.atol,
+        #         adjoint_method=self.config.method,
+        #     )
+        #     if not isinstance(result, torch.Tensor):
+        #         raise TypeError("odeint_adjoint must return tensor, check inputs")
+        #     return self.decoder(torch.permute(result, dims=(1, 0, 2)))
+        # with Profiler("odeint"):
+        #     result = odeint(
+        #         func=self.ode,
+        #         y0=z0,
+        #         t=t_range,
+        #         rtol=self.config.rtol,
+        #         atol=self.config.atol,
+        #         method=self.config.method,
+        #     )
+        t_eval = t_range.repeat(x.shape[0], 1)
+
+        result = self.solver.solve(to.InitialValueProblem(y0=z0, t_eval=t_eval)).ys
+
         if not isinstance(result, torch.Tensor):
             raise TypeError("odeint must return tensor, check inputs")
         self.z_pred = result
-        return self.decoder(torch.permute(result, dims=(1, 0, 2)))
+        return self.decoder(result)
+        # return self.decoder(torch.permute(result, dims=(1, 0, 2)))
 
     def renormalize_loss_weights(self, x_true, x_pred):
         self.loss_weights[0] = 1 / self.l2_loss(x_true, x_pred).item() * 100

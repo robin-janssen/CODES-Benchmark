@@ -18,7 +18,7 @@ class NeuralODEConfigOSU:
     use_adjoint: bool = False
     rtol: float = 1e-7
     atol: float = 1e-9
-    method: str = "dopri8"
+    method: str = "dopri5"
     t_steps = 100
     learning_rate: float = 1e-3
     final_learning_rate: float = 1e-5

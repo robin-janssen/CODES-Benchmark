@@ -9,7 +9,7 @@ from optuna.visualization import (
     plot_edf,
 )
 
-STUDY = "NeuralODE Optimization"
+STUDY = "LatentPoly Optimization"
 STORAGE = "sqlite:////export/data/isulzer/DON-vs-NODE/study/end_to_end.db"
 
 study = optuna.load_study(study_name=STUDY, storage=STORAGE)

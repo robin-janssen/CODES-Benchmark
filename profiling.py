@@ -2,8 +2,8 @@ from surrogates import NeuralODE
 from surrogates.NeuralODE.neural_ode_config import NeuralODEConfigOSU as Config
 from data import check_and_load_data
 
-DEVICE = "cuda:0"
-EPOCHS = 1000
+DEVICE = "cuda:4"
+EPOCHS = 5
 
 model = NeuralODE(DEVICE, 29, 100)
 
@@ -24,3 +24,4 @@ train_loader, test_loader, _ = model.prepare_data(
     )
 
 model.fit(train_loader, test_loader, timesteps, EPOCHS)
+print("finished")
