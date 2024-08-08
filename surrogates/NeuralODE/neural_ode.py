@@ -12,33 +12,7 @@ from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.NeuralODE.neural_ode_config import NeuralODEConfigOSU as Config
 from surrogates.NeuralODE.utilities import ChemDataset
 from utils import time_execution, worker_init_fn
-
-class Logger:
-
-    def __init__(self, path: str):
-        self.path = path
-
-    def log(self, message: str):
-        with open(self.path, "a") as f:
-           f.write(message)
-           f.flush()
-
-class Profiler:
-
-    def __init__(self, description: str):
-        self.logger = Logger("profiling.log")
-        self.description = description
-        self.start_time = None
-        self.end_time = None
-
-    def __enter__(self):
-        self.start_time = time()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.end_time = time()
-        # print(f"\n{self.description}: {self.end_time - self.start_time}")
-        self.logger.log(f"\n{self.description}: {self.end_time - self.start_time}")
+from surrogates.NeuralODE.profiler import Profiler
 
 
 class NeuralODE(AbstractSurrogateModel):
@@ -227,10 +201,13 @@ class NeuralODE(AbstractSurrogateModel):
                     loss = self.model.total_loss(preds, targets)
                     test_losses[epoch] = loss
                     MAEs[epoch] = self.L1(preds, targets).item()
-            
+
             if epoch % 10 == 0:
                 try:
-                    torch.save(self.model.state_dict(), f"/export/data/isulzer/DON-vs-NODE/profiling_models/model_epoch_{epoch}.pt")
+                    torch.save(
+                        self.model.state_dict(),
+                        f"/export/data/isulzer/DON-vs-NODE/profiling_models/model_epoch_{epoch}.pt",
+                    )
                 except Exception as e:
                     print(e)
 

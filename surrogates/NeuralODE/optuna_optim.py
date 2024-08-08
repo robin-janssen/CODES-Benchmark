@@ -125,7 +125,7 @@ def objective(trial):
 
     choices = ["relu", "tanh", "leaky_relu"]
 
-    learning_rate = trial.suggest_float("learning_rate", 1e-6, 1e-2, log=True)
+    # learning_rate = trial.suggest_float("learning_rate", 1e-6, 1e-2, log=True)
     coder_activation = trial.suggest_categorical(
         "coder_activation",
         choices=choices,
@@ -154,7 +154,7 @@ def objective(trial):
     ode_layer_width = trial.suggest_categorical("ode_layer_width", (32, 64, 128, 256))
     ode_depth = trial.suggest_categorical("ode_depth", (3, 4, 5, 6))
 
-    config.learning_rate = learning_rate
+    config.learning_rate = 1e-3
     config.coder_activation = coder_activation
     config.ode_activation = ode_activation
     config.ode_layer_width = ode_layer_width
@@ -189,7 +189,7 @@ def objective(trial):
 
 study = optuna.create_study(
     direction="minimize",
-    study_name="NeuralODE Optimization",
+    study_name="NeuralODE_optim_no_lr",
     pruner=optuna.pruners.PatientPruner(
         optuna.pruners.PercentilePruner(percentile=0.7), patience=10
     ),
