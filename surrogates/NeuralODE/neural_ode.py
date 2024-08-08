@@ -20,8 +20,8 @@ class Logger:
 
     def log(self, message: str):
         with open(self.path, "a") as f:
-            f.write(message)
-
+           f.write(message)
+           f.flush()
 
 class Profiler:
 
@@ -37,6 +37,7 @@ class Profiler:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.end_time = time()
+        # print(f"\n{self.description}: {self.end_time - self.start_time}")
         self.logger.log(f"\n{self.description}: {self.end_time - self.start_time}")
 
 
@@ -200,8 +201,10 @@ class NeuralODE(AbstractSurrogateModel):
                         optimizer.zero_grad()
                         x_pred = self.model.forward(x_true, timesteps)
                         loss = self.model.total_loss(x_true, x_pred)
-                        loss.backward()
-                        optimizer.step()
+                        with Profiler(f"Backward epoch {epoch}, batch {i}"):
+                            loss.backward()
+                        with Profiler(f"Optimizer step epoch {epoch}, batch {i}"):
+                            optimizer.step()
                         losses[epoch, i] = loss.item()
 
                         # TODO: make configable
@@ -226,7 +229,10 @@ class NeuralODE(AbstractSurrogateModel):
                     MAEs[epoch] = self.L1(preds, targets).item()
             
             if epoch % 10 == 0:
-                torch.save(self.model.state_dict(), f"/export/data/isulzer/DON-vs-NODE/profiling_models/model_epoch_{epoch}.pt")
+                try:
+                    torch.save(self.model.state_dict(), f"/export/data/isulzer/DON-vs-NODE/profiling_models/model_epoch_{epoch}.pt")
+                except Exception as e:
+                    print(e)
 
         progress_bar.close()
 
@@ -241,6 +247,7 @@ class ModelWrapper(torch.nn.Module):
         super().__init__()
         self.config = config
         self.loss_weights = [100.0, 1.0, 1.0, 1.0]
+        self.z_pred = None
 
         self.encoder = Encoder(
             in_features=n_chemicals,
@@ -280,16 +287,18 @@ class ModelWrapper(torch.nn.Module):
             if not isinstance(result, torch.Tensor):
                 raise TypeError("odeint_adjoint must return tensor, check inputs")
             return self.decoder(torch.permute(result, dims=(1, 0, 2)))
-        result = odeint(
-            func=self.ode,
-            y0=z0,
-            t=t_range,
-            rtol=self.config.rtol,
-            atol=self.config.atol,
-            method=self.config.method,
-        )
+        with Profiler("odeint"):
+            result = odeint(
+                func=self.ode,
+                y0=z0,
+                t=t_range,
+                rtol=self.config.rtol,
+                atol=self.config.atol,
+                method=self.config.method,
+            )
         if not isinstance(result, torch.Tensor):
             raise TypeError("odeint must return tensor, check inputs")
+        self.z_pred = result
         return self.decoder(torch.permute(result, dims=(1, 0, 2)))
 
     def renormalize_loss_weights(self, x_true, x_pred):
