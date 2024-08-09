@@ -48,9 +48,7 @@ def get_required_models_list(surrogate: str, conf: dict) -> list:
         list: A list of required model names.
     """
     required_models = []
-
-    if conf["accuracy"]:
-        required_models.append(f"{surrogate.lower()}_main.pth")
+    required_models.append(f"{surrogate.lower()}_main.pth")
 
     # Dynamic accuracy does not require a separate model
     if conf["dynamic_accuracy"]:
@@ -253,8 +251,13 @@ def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
 
     # Remove problematic entries
     write_metrics.pop("timesteps", None)
-    if conf["accuracy"]:
-        write_metrics["accuracy"].pop("relative_errors", None)
+    write_metrics["accuracy"].pop("absolute_errors", None)
+    write_metrics["accuracy"].pop("relative_errors", None)
+    if conf["dynamic_accuracy"]:
+        write_metrics["dynamic_accuracy"].pop("gradients", None)
+        write_metrics["dynamic_accuracy"].pop("max_counts", None)
+        write_metrics["dynamic_accuracy"].pop("max_gradient", None)
+        write_metrics["dynamic_accuracy"].pop("max_error", None)
     if conf["interpolation"]["enabled"]:
         write_metrics["interpolation"].pop("model_errors", None)
         write_metrics["interpolation"].pop("intervals", None)
@@ -265,7 +268,9 @@ def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
         write_metrics["sparse"].pop("model_errors", None)
         write_metrics["sparse"].pop("n_train_samples", None)
     if conf["UQ"]["enabled"]:
-        write_metrics["UQ"].pop("pred_uncertainty_over_time", None)
+        write_metrics["UQ"].pop("pred_uncertainty", None)
+        write_metrics["UQ"].pop("max_counts", None)
+        write_metrics["UQ"].pop("axis_max", None)
     # Convert metrics to standard types
     write_metrics = convert_to_standard_types(write_metrics)
 

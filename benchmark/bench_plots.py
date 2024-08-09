@@ -3,7 +3,6 @@ from matplotlib.colors import ListedColormap
 from matplotlib.gridspec import GridSpec
 from typing import Optional
 import numpy as np
-from scipy.spatial.distance import cdist
 from scipy.ndimage import gaussian_filter1d
 import os
 
@@ -12,7 +11,12 @@ import os
 
 
 def save_plot(
-    plt, filename: str, conf: dict, surr_name: str = "", dpi: int = 300
+    plt,
+    filename: str,
+    conf: dict,
+    surr_name: str = "",
+    dpi: int = 300,
+    verbose: bool = False,
 ) -> None:
     """
     Save the plot to a file, creating necessary directories if they don't exist.
@@ -22,6 +26,8 @@ def save_plot(
         filename (str): The desired filename for the plot.
         conf (dict): The configuration dictionary.
         surr_name (str): The name of the surrogate model.
+        dpi (int): The resolution of the saved plot.
+        verbose (bool): Whether to print the path to the saved plot.
 
     Raises:
         ValueError: If the configuration dictionary does not contain the required keys.
@@ -36,7 +42,8 @@ def save_plot(
 
     filepath = save_plot_counter(filename, plot_dir)
     plt.savefig(filepath, dpi=dpi)
-    print(f"Plot saved as: {filepath}")
+    if verbose:
+        print(f"Plot saved as: {filepath}")
 
 
 def save_plot_counter(filename: str, directory: str) -> str:
@@ -127,15 +134,13 @@ def plot_relative_errors_over_time(
     plt.yscale("log")
     plt.ylim(1e-6, 10)
     plt.xlabel("Timestep")
-    plt.ylabel("Relative Error (Log Scale)")
+    plt.ylabel("Relative Error")
     plt.xlim(timesteps[0], timesteps[-1])
     plt.title(title)
     plt.legend()
 
     if save and conf:
-        save_plot(plt, "relative_errors.png", conf, surr_name)
-
-    # plt.show()
+        save_plot(plt, "relative_errors_over_time.png", conf, surr_name)
 
     plt.close()
 
@@ -170,9 +175,7 @@ def plot_dynamic_correlation(
 
     # Save the plot
     if save and conf:
-        save_plot(plt, "dynamic_correlation.png", conf, surr_name)
-
-    # plt.show()
+        save_plot(plt, "gradient_error_correlation.png", conf, surr_name)
 
     plt.close()
 
@@ -233,8 +236,6 @@ def plot_generalization_errors(
 
     if save and conf:
         save_plot(plt, filename, conf, surr_name)
-
-    # plt.show()
 
     plt.close()
 
@@ -312,80 +313,6 @@ def plot_average_errors_over_time(
     plt.close()
 
 
-# def plot_example_predictions_with_uncertainty(
-#     surr_name: str,
-#     conf: dict,
-#     preds_mean: np.ndarray,
-#     preds_std: np.ndarray,
-#     targets: np.ndarray,
-#     timesteps: np.ndarray,
-#     num_examples: int = 4,
-#     num_chemicals: int = 10,
-#     labels: list[str] | None = None,
-#     save: bool = False,
-# ) -> None:
-#     """
-#     Plot example predictions with uncertainty.
-
-#     Args:
-#         surr_name (str): The name of the surrogate model.
-#         conf (dict): The configuration dictionary.
-#         preds_mean (np.ndarray): Mean predictions from the ensemble of models.
-#         preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
-#         targets (np.ndarray): True targets.
-#         timesteps (np.ndarray): Timesteps array.
-#         num_examples (int, optional): Number of example plots to generate.
-#         num_chemicals (int, optional): Number of chemicals to plot.
-#         labels (list, optional): List of labels for the chemicals.
-#         save (bool, optional): Whether to save the plot as a file.
-#     """
-#     # colors = plt.cm.viridis(np.linspace(0, 0.9, num_chemicals))
-#     colors = get_custom_palette(num_chemicals)
-
-#     fig, axs = plt.subplots(2, 2, figsize=(15, 10))
-#     for example_idx in range(num_examples):
-#         ax = axs[example_idx // 2, example_idx % 2]
-#         for chem_idx in range(num_chemicals):
-#             gt = targets[example_idx, :, chem_idx]
-#             mean = preds_mean[example_idx, :, chem_idx]
-#             std = preds_std[example_idx, :, chem_idx]
-
-#             ax.plot(
-#                 timesteps,
-#                 gt,
-#                 color=colors[chem_idx],
-#                 label=f"GT {labels[chem_idx]}" if labels is not None else None,
-#             )
-#             ax.plot(
-#                 timesteps,
-#                 mean,
-#                 "--",
-#                 color=colors[chem_idx],
-#                 label=f"Pred {labels[chem_idx]}" if labels is not None else None,
-#             )
-
-#             # Plot standard deviations as shaded areas
-#             for sigma_multiplier in [1, 2, 3]:  # 1, 2, and 3 standard deviations
-#                 ax.fill_between(
-#                     timesteps,
-#                     mean - sigma_multiplier * std,
-#                     mean + sigma_multiplier * std,
-#                     color=colors[chem_idx],
-#                     alpha=0.5 / sigma_multiplier,
-#                 )
-
-#     plt.suptitle(
-#         r"DeepEnsemble: Examplary Predictions with Uncertainty Intervals ($\mu \pm (1,2,3) \sigma$)"
-#     )
-#     plt.legend()
-#     plt.tight_layout()
-
-#     if save and conf:
-#         save_plot(plt, "UQ_predictions.png", conf, surr_name)
-
-#     plt.close()
-
-
 def plot_example_predictions_with_uncertainty(
     surr_name: str,
     conf: dict,
@@ -421,7 +348,8 @@ def plot_example_predictions_with_uncertainty(
     num_plots = int(np.ceil(num_chemicals / chemicals_per_plot))
 
     # Define the color palette
-    colors = get_custom_palette(chemicals_per_plot)
+    # colors = get_custom_palette(chemicals_per_plot)
+    colors = plt.cm.viridis(np.linspace(0, 1, chemicals_per_plot))
 
     # Create subplots
     fig = plt.figure(figsize=(12, 6 * num_plots))
@@ -476,8 +404,10 @@ def plot_example_predictions_with_uncertainty(
 
     # Create a general legend for line styles, positioned below the title
     handles = [
-        plt.Line2D([0], [0], color="black", linestyle="--", label="Ground Truth (GT)"),
-        plt.Line2D([0], [0], color="black", linestyle="-", label="Prediction (Pred)"),
+        plt.Line2D([0], [0], color="black", linestyle="--", label="Ground Truth"),
+        plt.Line2D(
+            [0], [0], color="black", linestyle="-", label="Prediction (Ensemble Mean)"
+        ),
     ]
     fig.legend(
         handles=handles,
@@ -490,16 +420,15 @@ def plot_example_predictions_with_uncertainty(
     # Adjust the title to include the sample index and place additional information on a second line
     plt.suptitle(
         f"DeepEnsemble: Example Predictions with Uncertainty for {surr_name} \n"
-        r"Sample Index: {example_idx},  $\mu \pm (1,2,3) \sigma$ Intervals",
+        f"Sample Index: {example_idx},  " + r"$\mu \pm (1,2,3) \sigma$ Intervals",
         y=0.97,
     )
 
     plt.tight_layout(rect=[0.05, 0.03, 0.95, 0.92])
 
     if save and conf:
-        save_plot(plt, "UQ_predictions.png", conf, surr_name, dpi=300)
+        save_plot(plt, "DeepEnsemble_UQ_preds.png", conf, surr_name, dpi=300)
 
-    plt.show()
     plt.close()
 
 
@@ -534,8 +463,6 @@ def plot_average_uncertainty_over_time(
     if save and conf:
         save_plot(plt, "uncertainty_over_time.png", conf, surr_name)
 
-    # plt.show()
-
     plt.close()
 
 
@@ -568,8 +495,6 @@ def plot_uncertainty_vs_errors(
     if save and conf:
         save_plot(plt, "uncertainty_vs_errors.png", conf, surr_name)
 
-    # plt.show()
-
     plt.close()
 
 
@@ -590,17 +515,16 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
         return model.train_loss, model.test_loss
 
     # Main model losses
-    if conf["accuracy"]:
-        main_train_loss, main_test_loss = load_losses(f"{surr_name.lower()}_main")
-        plot_losses(
-            (main_train_loss, main_test_loss),
-            ("Train Loss", "Test Loss"),
-            title="Main Model Losses",
-            save=True,
-            conf=conf,
-            surr_name=surr_name,
-            mode="main",
-        )
+    main_train_loss, main_test_loss = load_losses(f"{surr_name.lower()}_main")
+    plot_losses(
+        (main_train_loss, main_test_loss),
+        ("Train Loss", "Test Loss"),
+        title="Main Model Losses",
+        save=True,
+        conf=conf,
+        surr_name=surr_name,
+        mode="main",
+    )
 
     # Interpolation losses
     if conf["interpolation"]["enabled"]:
@@ -814,7 +738,6 @@ def plot_error_distribution_per_chemical(
     if save and conf:
         save_plot(plt, "error_distribution_per_chemical.png", conf, surr_name)
 
-    plt.show()
     plt.close()
 
 
@@ -871,7 +794,6 @@ def plot_losses(
     if save and conf and surr_name:
         save_plot(plt, "losses_" + mode.lower() + ".png", conf, surr_name)
 
-    # plt.show()
     plt.close()
 
 
@@ -904,8 +826,10 @@ def plot_loss_comparison(
         plt.plot(train_loss, label=f"{label} Train Loss", color=colors[i])
         plt.plot(test_loss, label=f"{label} Test Loss", linestyle="--", color=colors[i])
 
+    max_epochs = max(len(loss) for loss in train_losses)
+
     plt.xlabel("Epoch")
-    plt.xlim(0, len(train_losses[0]))
+    plt.xlim(0, max_epochs)
     plt.ylabel("Loss")
     plt.yscale("log")
     plt.title("Comparison of Training and Test Losses")
@@ -913,9 +837,9 @@ def plot_loss_comparison(
     plt.grid(True)
 
     if save and config:
-        save_plot(plt, "comparison_main_model_losses.png", config)
+        save_plot(plt, "losses_main_model.png", config)
 
-    plt.show()
+    plt.close()
 
 
 def plot_MAE_comparison(
@@ -937,6 +861,9 @@ def plot_MAE_comparison(
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(MAEs)))
 
     for i, (accuracy, label) in enumerate(zip(MAEs, labels)):
+        # Modify the label to include the final MAE
+        final_MAE = accuracy[-1]
+        label = f"{label} (final MAE: {final_MAE:.2e})"
         plt.plot(accuracy, label=label, color=colors[i])
 
     plt.xlabel("Epoch")
@@ -947,9 +874,9 @@ def plot_MAE_comparison(
     plt.grid(True)
 
     if save and config:
-        save_plot(plt, "comparison_main_model_MAE.png", config)
+        save_plot(plt, "MAE_main_model.png", config)
 
-    plt.show()
+    plt.close()
 
 
 def plot_MAE_comparison_train_duration(
@@ -986,9 +913,9 @@ def plot_MAE_comparison_train_duration(
     plt.grid(True)
 
     if save and config:
-        save_plot(plt, "comparison_main_model_MAE.png", config)
+        save_plot(plt, "MAE_training_main_model.png", config)
 
-    plt.show()
+    plt.close()
 
 
 def plot_relative_errors(
@@ -1040,13 +967,14 @@ def plot_relative_errors(
     # plt.grid(True)
 
     if save and config:
-        save_plot(plt, "comparison_relative_errors.png", config)
+        save_plot(plt, "relative_errors_over_time.png", config)
 
     plt.close()
 
 
 def plot_uncertainty_over_time_comparison(
     uncertainties: dict[str, np.ndarray],
+    absolute_errors: dict[str, np.ndarray],
     timesteps: np.ndarray,
     config: dict,
     save: bool = True,
@@ -1056,6 +984,7 @@ def plot_uncertainty_over_time_comparison(
 
     Args:
         uncertainties (dict): Dictionary containing the uncertainties for each surrogate model.
+        absolute_errors (dict): Dictionary containing the absolute errors for each surrogate model.
         timesteps (np.ndarray): Array of timesteps.
         config (dict): Configuration dictionary.
         save (bool): Whether to save the plot.
@@ -1067,7 +996,20 @@ def plot_uncertainty_over_time_comparison(
     plt.figure(figsize=(12, 6))
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(uncertainties)))
     for i, surrogate in enumerate(uncertainties.keys()):
-        plt.plot(timesteps, uncertainties[surrogate], label=surrogate, color=colors[i])
+        abs_errors = absolute_errors[surrogate]
+        abs_errors_time = np.mean(abs_errors, axis=(0, 2))
+        abs_error_avg = np.mean(abs_errors_time)
+        err_label = f"{surrogate} rel error (mean: {abs_error_avg:.2e})"
+        plt.plot(
+            timesteps,
+            abs_errors_time,
+            label=err_label,
+            color=colors[i],
+            linestyle="--",
+        )
+        avg_uncertainty = np.mean(uncertainties[surrogate])
+        uq_label = f"{surrogate} uncertainty (mean: {avg_uncertainty:.2e})"
+        plt.plot(timesteps, uncertainties[surrogate], label=uq_label, color=colors[i])
 
     plt.xlabel("Timesteps")
     plt.xlim(timesteps[0], timesteps[-1])
@@ -1076,7 +1018,7 @@ def plot_uncertainty_over_time_comparison(
     plt.legend()
 
     if save and config:
-        save_plot(plt, "comparison_uncertainty_over_time.png", config)
+        save_plot(plt, "uncertainty_over_time.png", config)
 
     plt.close()
 
@@ -1101,18 +1043,49 @@ def inference_time_bar_plot(
     Returns:
         None
     """
-    plt.figure(figsize=(10, 6))
+    # Determine the appropriate time unit (s, ms, or µs)
+    max_mean = max(means)
+    if max_mean < 1e-3:
+        unit = "µs"
+        means = [mean * 1e6 for mean in means]
+        stds = [std * 1e6 for std in stds]
+    elif max_mean < 1:
+        unit = "ms"
+        means = [mean * 1e3 for mean in means]
+        stds = [std * 1e3 for std in stds]
+    else:
+        unit = "s"
+
+    # Create the bar plot
+    fig, ax = plt.subplots(figsize=(10, 6))
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(surrogates)))
-    plt.bar(
+    ax.bar(
         surrogates, means, yerr=stds, capsize=5, alpha=0.7, color=colors, ecolor="black"
     )
-    plt.xlabel("Surrogate Model")
-    plt.ylabel("Mean Inference Time per Prediction (s)")
-    plt.yscale("log")
-    plt.title("Comparison of Mean Inference Time with Standard Deviation")
+
+    # Calculate the upper y-limit to provide space for text
+    max_bar = max(means[i] + stds[i] for i in range(len(means)))
+    min_bar = min(means[i] - stds[i] for i in range(len(means)))
+    ax.set_ylim(min_bar * 0.5, max_bar * 1.5)  # Set limits with some padding
+
+    # Add inference time as text to the bars
+    for i, mean in enumerate(means):
+        ax.text(
+            i,
+            mean + stds[i] * 1.2,  # Position the text above the bar
+            f"{mean:.2f} {unit}",
+            ha="center",
+            va="bottom",
+            fontsize=10,
+        )
+
+    ax.set_xlabel("Surrogate Model")
+    ax.set_ylabel(f"Mean Inference Time per Prediction ({unit})")
+    ax.set_yscale("log")
+    ax.set_title("Comparison of Mean Inference Time with Standard Deviation")
 
     if save:
-        save_plot(plt, "comparison_mean_inference_time.png", config)
+        save_plot(plt, "inference_times.png", config)
 
     plt.close()
 
@@ -1163,7 +1136,6 @@ def plot_generalization_error_comparison(
     if save:
         save_plot(plt, filename, config)
 
-    plt.show()
     plt.close()
 
 
@@ -1172,8 +1144,9 @@ def plot_error_correlation_heatmap(
     conf: dict,
     preds_std: np.ndarray,
     errors: np.ndarray,
+    average_correlation: float,
     save: bool = False,
-    threshold_factor: float = 1e-4,
+    threshold_factor: float = 1e-2,
 ) -> None:
     """
     Plot the correlation between predictive uncertainty and prediction errors using a heatmap.
@@ -1183,13 +1156,14 @@ def plot_error_correlation_heatmap(
         conf (dict): The configuration dictionary.
         preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
         errors (np.ndarray): Prediction errors.
+        average_correlation (float): The average correlation between gradients and prediction errors (pearson correlation).
         save (bool, optional): Whether to save the plot as a file.
         threshold_factor (float, optional): Fraction of max value below which cells are set to 0. Default is 0.001.
     """
 
     plt.figure(figsize=(10, 6))
     heatmap, xedges, yedges = np.histogram2d(
-        preds_std.flatten(), errors.flatten(), bins=50
+        preds_std.flatten(), errors.flatten(), bins=100
     )
 
     # Apply threshold to create a mask and determine new axis limits
@@ -1216,7 +1190,7 @@ def plot_error_correlation_heatmap(
     heatmap, xedges, yedges = np.histogram2d(
         preds_std.flatten(),
         errors.flatten(),
-        bins=50,
+        bins=100,
         range=[[axis_min, axis_max], [axis_min, axis_max]],
     )
 
@@ -1233,9 +1207,8 @@ def plot_error_correlation_heatmap(
     plt.colorbar(label=r"$\log_{10}$(Counts)")
     plt.xlabel("Predictive Uncertainty")
     plt.ylabel("Prediction Error")
-    plt.title(
-        "Correlation between Predictive Uncertainty and Prediction Errors (Heatmap)"
-    )
+    title = f"Correlation between Predictive Uncertainty and Prediction Errors (Heatmap)\nAverage Correlation: {average_correlation:.2f}"
+    plt.title(title)
 
     # Add diagonal line
     plt.plot(
@@ -1247,10 +1220,11 @@ def plot_error_correlation_heatmap(
     )
 
     if save and conf:
-        save_plot(plt, "uncertainty_vs_errors_heatmap.png", conf, surr_name)
+        save_plot(plt, "uncertainty_errors_correlation.png", conf, surr_name)
 
-    plt.show()
     plt.close()
+
+    return max_value, axis_max
 
 
 def plot_dynamic_correlation_heatmap(
@@ -1258,9 +1232,10 @@ def plot_dynamic_correlation_heatmap(
     conf: dict,
     preds_std: np.ndarray,
     errors: np.ndarray,
+    average_correlation: float,
     save: bool = False,
     threshold_factor: float = 1e-4,
-    xcut_percent: float = 1e-3,  # Default to keep 95% of the total counts in the heatmap
+    xcut_percent: float = 3e-3,  # Default to keep 95% of the total counts in the heatmap
 ) -> None:
     """
     Plot the correlation between predictive uncertainty and prediction errors using a heatmap.
@@ -1270,6 +1245,7 @@ def plot_dynamic_correlation_heatmap(
         conf (dict): The configuration dictionary.
         preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
         errors (np.ndarray): Prediction errors.
+        average_correlation (float): The average correlation between gradients and prediction errors (pearson correlation).
         save (bool, optional): Whether to save the plot as a file.
         threshold_factor (float, optional): Fraction of max value below which cells are set to 0. Default is 5e-5.
         cutoff_percent (float, optional): The percentage of total counts to include in the heatmap. Default is 0.95.
@@ -1277,7 +1253,7 @@ def plot_dynamic_correlation_heatmap(
 
     plt.figure(figsize=(10, 6))
     heatmap, xedges, yedges = np.histogram2d(
-        preds_std.flatten(), errors.flatten(), bins=50
+        preds_std.flatten(), errors.flatten(), bins=100
     )
 
     # Apply threshold to create a mask and determine new axis limits
@@ -1308,7 +1284,7 @@ def plot_dynamic_correlation_heatmap(
     heatmap, xedges, yedges = np.histogram2d(
         preds_std.flatten(),
         errors.flatten(),
-        bins=50,
+        bins=100,
         range=[[x_min, x_max], [y_min, y_max]],
     )
 
@@ -1325,13 +1301,15 @@ def plot_dynamic_correlation_heatmap(
     plt.colorbar(label=r"$\log_{10}$(Counts)")
     plt.xlabel("Absolute Gradient (Normalized)")
     plt.ylabel("Absolute Prediction Error")
-    plt.title("Correlation between Gradients and Prediction Errors")
+    title = f"Correlation between Gradients and Prediction Errors (Heatmap)\nAverage Correlation: {average_correlation:.2f}"
+    plt.title(title)
 
     if save and conf:
-        save_plot(plt, "dynamic_correlation_heatmap.png", conf, surr_name)
+        save_plot(plt, "gradient_error_heatmap.png", conf, surr_name)
 
-    plt.show()
     plt.close()
+
+    return max_value, x_max, y_max
 
 
 def plot_error_distribution_comparative(
@@ -1353,18 +1331,22 @@ def plot_error_distribution_comparative(
 
     # Initialize list to hold log-transformed non-zero errors and count zeros
     log_errors = []
+    mean_errors = []
+    median_errors = []
     zero_counts = 0
 
     # Transform error magnitudes to log-space and filter out zeros for each model
     for model_name in model_names:
         model_errors = errors[model_name].flatten()
+        mean_errors.append(np.mean(model_errors))
+        median_errors.append(np.median(model_errors))
         non_zero_model_errors = model_errors[model_errors > 0]
         log_errors.append(np.log10(non_zero_model_errors))
         zero_counts += np.sum(model_errors == 0)
 
     # Calculate the 1st and 99th percentiles in the log-space
-    min_percentiles = [np.percentile(err, 3) for err in log_errors if len(err) > 0]
-    max_percentiles = [np.percentile(err, 97) for err in log_errors if len(err) > 0]
+    min_percentiles = [np.percentile(err, 2) for err in log_errors if len(err) > 0]
+    max_percentiles = [np.percentile(err, 98) for err in log_errors if len(err) > 0]
 
     global_min = np.min(min_percentiles)
     global_max = np.max(max_percentiles)
@@ -1375,7 +1357,7 @@ def plot_error_distribution_comparative(
 
     # Set up the plot
     plt.figure(figsize=(10, 6))
-    colors = plt.cm.viridis(np.linspace(0, 1, num_models))
+    colors = plt.cm.viridis(np.linspace(0, 0.9, num_models))
 
     # Define the x-axis range for plotting
     x_vals = np.linspace(x_min, x_max + 0.1, 100)
@@ -1395,6 +1377,21 @@ def plot_error_distribution_comparative(
             color=colors[i],
         )
 
+        # Plot the average error as a vertical line
+        plt.axvline(
+            x=mean_errors[i],
+            color=colors[i],
+            linestyle="--",
+            label=f"{model_name} mean = {mean_errors[i]:.2e}",
+        )
+
+        plt.axvline(
+            x=median_errors[i],
+            color=colors[i],
+            linestyle="-.",
+            label=f"{model_name} median = {median_errors[i]:.2e}",
+        )
+
     plt.xscale("log")  # Log scale for error magnitudes
     plt.xlim(10**x_min, 10**x_max)  # Set x-axis range based on log-space calculations
     plt.xlabel("Magnitude of Error")
@@ -1406,82 +1403,200 @@ def plot_error_distribution_comparative(
     plt.legend()
 
     if save and conf:
-        save_plot(plt, "error_distribution_comparative.png", conf)
+        save_plot(plt, "error_distributions.png", conf)
 
-    plt.show()
     plt.close()
 
 
-def rbf_kernel(x, y, bandwidth):
-    """
-    Compute the RBF (Gaussian) kernel between two arrays.
-
-    Args:
-        x (np.ndarray): First array.
-        y (np.ndarray): Second array.
-        bandwidth (float): Bandwidth parameter for the RBF kernel.
-
-    Returns:
-        np.ndarray: The RBF kernel matrix.
-    """
-    sq_dists = cdist(x, y, "sqeuclidean")
-    return np.exp(-sq_dists / (2 * bandwidth**2))
-
-
-def plot_correlation_KDE(
-    surr_name: str,
-    conf: dict,
-    preds_std: np.ndarray,
-    errors: np.ndarray,
-    save: bool = False,
-    bandwidth: float = 0.01,
+def plot_comparative_error_correlation_heatmaps(
+    preds_std: dict[str, np.ndarray],
+    errors: dict[str, np.ndarray],
+    avg_correlations: dict[str, float],
+    axis_max: dict[str, float],
+    max_count: dict[str, float],
+    config: dict,
+    save: bool = True,
 ) -> None:
     """
-    Plot the correlation between predictive uncertainty and prediction errors using a KDE plot.
+    Plot comparative heatmaps of correlation between predictive uncertainty and prediction errors
+    for multiple surrogate models.
 
     Args:
-        surr_name (str): The name of the surrogate model.
-        conf (dict): The configuration dictionary.
-        preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
-        errors (np.ndarray): Prediction errors.
-        save (bool, optional): Whether to save the plot as a file.
-        bandwidth (float, optional): Bandwidth for the RBF kernel.
+        preds_std (dict[str, np.ndarray]): Dictionary of standard deviation of predictions from the ensemble of models.
+        errors (dict[str, np.ndarray]): Dictionary of prediction errors.
+        avg_correlations (dict[str, float]): Dictionary of average correlations between gradients and prediction errors.
+        axis_max (dict[str, float]): Dictionary of maximum values for axis scaling across models.
+        max_count (dict[str, float]): Dictionary of maximum count values for heatmap normalization across models.
+        config (dict): Configuration dictionary.
+        save (bool, optional): Whether to save the plot. Defaults to True.
+
+    Returns:
+        None
     """
-    # Normalize the errors
-    errors = errors / np.abs(errors).max()
+    # Number of models
+    model_names = list(preds_std.keys())
+    num_models = len(model_names)
 
-    # Prepare data
-    data = np.vstack([preds_std.flatten(), errors.flatten()]).T
+    # Determine the global maximum value for axis scaling
+    global_axis_max = max(axis_max.values())
 
-    # Create grid for evaluation
-    x_min, x_max = data[:, 0].min(), data[:, 0].max()
-    y_min, y_max = data[:, 1].min(), data[:, 1].max()
-    x_grid, y_grid = np.linspace(x_min, x_max, 50), np.linspace(y_min, y_max, 50)
-    x_mesh, y_mesh = np.meshgrid(x_grid, y_grid)
-    grid_points = np.vstack([x_mesh.ravel(), y_mesh.ravel()]).T
+    # Determine global max for heatmap normalization
+    global_max_count = max(max_count.values())
 
-    # Compute KDE
-    kde_values = (
-        rbf_kernel(grid_points, data, bandwidth).mean(axis=1).reshape(x_mesh.shape)
+    # Create subplots, one row per model
+    fig, axes = plt.subplots(
+        num_models, 1, figsize=(10, 6 * num_models), sharex=True, sharey=True
     )
 
-    # Plot KDE
-    plt.figure(figsize=(10, 6))
-    plt.imshow(
-        np.log10(kde_values.T),
-        origin="lower",
-        aspect="auto",
-        extent=[x_min, x_max, y_min, y_max],
-        cmap="viridis",
+    # Adjust layout for shared colorbar
+    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])  # Position for the colorbar
+
+    for i, model_name in enumerate(model_names):
+        ax = axes[i]
+        preds_std_model = preds_std[model_name].flatten()
+        errors_model = errors[model_name].flatten()
+        avg_corr = avg_correlations[model_name]
+
+        # Compute 2D histogram (heatmap)
+        heatmap, _, _ = np.histogram2d(
+            preds_std_model,
+            errors_model,
+            bins=100,
+            range=[[0, global_axis_max], [0, global_axis_max]],
+        )
+
+        # Set all fields with 0 counts to 1 count for log scale plotting
+        heatmap[heatmap == 0] = 1
+
+        # Plot heatmap
+        im = ax.imshow(
+            np.log10(heatmap.T),
+            origin="lower",
+            aspect="auto",
+            extent=[0, global_axis_max, 0, global_axis_max],
+            cmap="inferno",
+            vmin=0,
+            vmax=np.log10(global_max_count),  # Normalize across all models
+        )
+
+        ax.set_xlabel("Predictive Uncertainty")
+        ax.set_ylabel("Prediction Error")
+
+        ax.set_title(f"{model_name}\nAvg Correlation: {avg_corr:.2f}")
+        # Add diagonal line
+        ax.plot(
+            [0, global_axis_max],
+            [0, global_axis_max],
+            color="white",
+            linestyle="--",
+            linewidth=1,
+        )
+
+    fig.subplots_adjust(top=0.92, bottom=0.06, left=0.08, right=0.9, hspace=0.2)
+
+    # Shared colorbar
+    fig.colorbar(im, cax=cbar_ax, label=r"$\log_{10}$(Counts)")
+
+    plt.suptitle("Comparative Error Correlation Heatmaps Across Models", y=0.98)
+
+    if save:
+        save_plot(fig, "uncertainty_error_corr_comparison.png", config)
+
+    plt.close()
+
+
+def plot_comparative_dynamic_correlation_heatmaps(
+    gradients: dict[str, np.ndarray],
+    errors: dict[str, np.ndarray],
+    avg_correlations: dict[str, float],
+    max_grad: dict[str, float],
+    max_err: dict[str, float],
+    max_count: dict[str, float],
+    config: dict,
+    save: bool = True,
+) -> None:
+    """
+    Plot comparative heatmaps of correlation between gradient and prediction errors
+    for multiple surrogate models.
+
+    Args:
+        gradients (dict[str, np.ndarray]): Dictionary of gradients from the ensemble of models.
+        errors (dict[str, np.ndarray]): Dictionary of prediction errors.
+        avg_correlations (dict[str, float]): Dictionary of average correlations between gradients and prediction errors.
+        max_grad (dict[str, float]): Dictionary of maximum gradient values for axis scaling across models.
+        max_err (dict[str, float]): Dictionary of maximum error values for axis scaling across models.
+        max_count (dict[str, float]): Dictionary of maximum count values for heatmap normalization across models.
+        config (dict): Configuration dictionary.
+        save (bool, optional): Whether to save the plot. Defaults to True.
+
+    Returns:
+        None
+    """
+    # Number of models
+    model_names = list(gradients.keys())
+    num_models = len(model_names)
+
+    # Determine global max for axis scaling
+    global_x_max = max(max_grad.values())
+    global_y_max = max(max_err.values())
+
+    # Determine global max for heatmap normalization
+    global_max_count = max(max_count.values())
+
+    # Create subplots, one row per model
+    fig, axes = plt.subplots(
+        num_models, 1, figsize=(10, 6 * num_models), sharex=False, sharey=False
     )
-    plt.colorbar(label=r"$\log_{10}$(Density)")
-    plt.xlabel("Predictive Uncertainty")
-    plt.ylabel("Prediction Error (Normalized)")
-    plt.title("Correlation between Predictive Uncertainty and Prediction Errors (KDE)")
 
-    if save and conf:
-        save_plot(plt, "correlation_KDE.png", conf, surr_name)
+    # Adjust layout for shared colorbar
+    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
 
+    for i, model_name in enumerate(model_names):
+        ax = axes[i]
+        grad_model = gradients[model_name].flatten()
+        errors_model = errors[model_name].flatten()
+        avg_corr = avg_correlations[model_name]
+
+        # Re-bin the data using the global axis limits
+        heatmap, xedges, yedges = np.histogram2d(
+            grad_model,
+            errors_model,
+            bins=100,
+            range=[[0, global_x_max], [0, global_y_max]],
+        )
+
+        # Set all fields with 0 counts to 1 count for log scale plotting
+        heatmap[heatmap == 0] = 1
+
+        # Plot heatmap
+        im = ax.imshow(
+            np.log10(heatmap.T),
+            origin="lower",
+            aspect="auto",
+            extent=[0, global_x_max, 0, global_y_max],
+            cmap="inferno",
+            vmin=0,
+            vmax=np.log10(global_max_count),  # Normalize across all models
+        )
+
+        ax.set_xlabel("Absolute Gradient (Normalized)")
+        ax.set_ylabel("Absolute Prediction Error")
+
+        ax.set_title(f"{model_name}\nAvg Correlation: {avg_corr:.2f}")
+
+    fig.subplots_adjust(top=0.92, bottom=0.06, left=0.08, right=0.9, hspace=0.2)
+
+    # Shared colorbar
+    fig.colorbar(im, cax=cbar_ax, label=r"$\log_{10}$(Counts)")
+
+    plt.suptitle(
+        "Comparative Gradient vs. Prediction Error Heatmaps Across Models", y=0.98
+    )
+
+    if save:
+        save_plot(fig, "gradient_error_corr_comparison.png", config)
+
+    plt.show()
     plt.close()
 
 

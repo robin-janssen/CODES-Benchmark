@@ -9,16 +9,13 @@ from scipy.stats import pearsonr
 
 from .bench_plots import (
     plot_relative_errors_over_time,
-    # plot_dynamic_correlation,
     plot_generalization_errors,
     plot_average_errors_over_time,
     plot_average_uncertainty_over_time,
     plot_example_predictions_with_uncertainty,
-    # plot_uncertainty_vs_errors,
     plot_surr_losses,
     plot_error_distribution_per_chemical,
     plot_loss_comparison,
-    # plot_MAE_comparison,
     plot_MAE_comparison_train_duration,
     plot_relative_errors,
     inference_time_bar_plot,
@@ -27,6 +24,8 @@ from .bench_plots import (
     plot_dynamic_correlation_heatmap,
     plot_uncertainty_over_time_comparison,
     plot_error_distribution_comparative,
+    plot_comparative_error_correlation_heatmaps,
+    plot_comparative_dynamic_correlation_heatmaps,
 )
 from .bench_utils import (
     count_trainable_parameters,
@@ -93,14 +92,12 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
 
     # Plot training losses
     if conf["losses"]:
+        print("Loss plots...")
         plot_surr_losses(model, surr_name, conf, timesteps)
 
     # Accuracy benchmark
-    if conf["accuracy"]:
-        print("Running accuracy benchmark...")
-        metrics["accuracy"] = evaluate_accuracy(
-            model, surr_name, val_loader, conf, labels
-        )
+    print("Running accuracy benchmark...")
+    metrics["accuracy"] = evaluate_accuracy(model, surr_name, val_loader, conf, labels)
 
     # Dynamic accuracy benchmark
     if conf["dynamic_accuracy"]:
@@ -193,11 +190,9 @@ def evaluate_accuracy(
     mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
     preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
 
-    # preds = preds.transpose(0, 2, 1)
-    # targets = targets.transpose(0, 2, 1)
-
     # Calculate relative errors
-    relative_errors = np.abs((preds - targets) / targets)
+    absolute_errors = np.abs(preds - targets)
+    relative_errors = np.abs(absolute_errors / targets)
 
     # Plot relative errors over time
     plot_relative_errors_over_time(
@@ -224,6 +219,7 @@ def evaluate_accuracy(
         "median_relative_error": np.median(relative_errors),
         "max_relative_error": np.max(relative_errors),
         "min_relative_error": np.min(relative_errors),
+        "absolute_errors": absolute_errors,
         "relative_errors": relative_errors,
     }
 
@@ -284,8 +280,8 @@ def evaluate_dynamic_accuracy(
 
     # Plot correlation for averaged species
     # plot_dynamic_correlation(surr_name, conf, avg_gradient, avg_error, save=True)
-    plot_dynamic_correlation_heatmap(
-        surr_name, conf, gradients, prediction_errors, save=True
+    max_count, max_grad, max_err = plot_dynamic_correlation_heatmap(
+        surr_name, conf, gradients, prediction_errors, avg_correlation, save=True
     )
 
     # Ensure species names are provided
@@ -298,8 +294,12 @@ def evaluate_dynamic_accuracy(
 
     # Store metrics
     dynamic_accuracy_metrics = {
+        "gradients": gradients,
         "species_correlations": species_correlations,
         "avg_correlation": avg_correlation,
+        "max_counts": max_count,
+        "max_gradient": max_grad,
+        "max_error": max_err,
     }
 
     return dynamic_accuracy_metrics
@@ -721,7 +721,7 @@ def evaluate_UQ(
     # Correlate uncertainty with errors
     errors = np.abs(preds_mean - targets)
     errors_time = np.mean(errors, axis=(0, 2))
-    correlation_metrics, _ = pearsonr(errors.flatten(), preds_std.flatten())
+    avg_correlation, _ = pearsonr(errors.flatten(), preds_std.flatten())
     preds_std_time = np.mean(preds_std, axis=(0, 2))
 
     # Plots
@@ -739,13 +739,17 @@ def evaluate_UQ(
         surr_name, conf, errors_time, preds_std_time, timesteps, save=True
     )
     # plot_uncertainty_vs_errors(surr_name, conf, preds_std, errors, save=True)
-    plot_error_correlation_heatmap(surr_name, conf, preds_std, errors, save=True)
+    max_counts, axis_max = plot_error_correlation_heatmap(
+        surr_name, conf, preds_std, errors, avg_correlation, save=True
+    )
 
     # Store metrics
     UQ_metrics = {
         "average_uncertainty": average_uncertainty,
-        "correlation_metrics": correlation_metrics,
-        "pred_uncertainty_over_time": preds_std_time,
+        "correlation_metrics": avg_correlation,
+        "pred_uncertainty": preds_std,
+        "max_counts": max_counts,
+        "axis_max": axis_max,
     }
 
     return UQ_metrics
@@ -753,12 +757,16 @@ def evaluate_UQ(
 
 def compare_models(metrics: dict, config: dict):
 
-    # Compare MAE
-    if config["accuracy"]:
-        compare_relative_errors(metrics, config)
-        compare_MAE(metrics, config)
-        if config["losses"]:
-            compare_main_losses(metrics, config)
+    print("Making comparative plots...")
+
+    # Compare relative errors
+    compare_relative_errors(metrics, config)
+    compare_MAE(metrics, config)
+    if config["losses"]:
+        compare_main_losses(metrics, config)
+
+    if config["dynamic_accuracy"]:
+        compare_dynamic_accuracy(metrics, config)
 
     # Compare inference time
     if config["timing"]:
@@ -921,6 +929,37 @@ def compare_inference_time(
     inference_time_bar_plot(surrogates, means, stds, config, save)
 
 
+def compare_dynamic_accuracy(metrics: dict, config: dict) -> None:
+    """
+    Compare the dynamic accuracy of different surrogate models.
+
+    Args:
+        metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
+
+    Returns:
+        None
+    """
+    gradients = {}
+    abs_errors = {}
+    max_grads = {}
+    max_errors = {}
+    max_counts = {}
+    corrs = {}
+
+    for surrogate, surrogate_metrics in metrics.items():
+        gradients[surrogate] = surrogate_metrics["dynamic_accuracy"]["gradients"]
+        abs_errors[surrogate] = surrogate_metrics["accuracy"]["absolute_errors"]
+        max_grads[surrogate] = surrogate_metrics["dynamic_accuracy"]["max_gradient"]
+        max_errors[surrogate] = surrogate_metrics["dynamic_accuracy"]["max_error"]
+        max_counts[surrogate] = surrogate_metrics["dynamic_accuracy"]["max_counts"]
+        corrs[surrogate] = surrogate_metrics["dynamic_accuracy"]["avg_correlation"]
+
+    plot_comparative_dynamic_correlation_heatmaps(
+        gradients, abs_errors, corrs, max_grads, max_errors, max_counts, config
+    )
+
+
 def compare_interpolation(all_metrics: dict, config: dict) -> None:
     """
     Compare the interpolation errors of different surrogate models.
@@ -1054,8 +1093,36 @@ def compare_UQ(all_metrics: dict, config: dict) -> None:
         None
     """
     pred_unc = {}
+    pred_unc_time = {}
+    abs_errors = {}
+    axis_max = {}
+    max_counts = {}
+    corrs = {}
     for surrogate, surrogate_metrics in all_metrics.items():
         timesteps = surrogate_metrics["timesteps"]
-        pred_unc[surrogate] = surrogate_metrics["UQ"]["pred_uncertainty_over_time"]
+        abs_errors[surrogate] = surrogate_metrics["accuracy"]["absolute_errors"]
+        pred_unc[surrogate] = surrogate_metrics["UQ"]["pred_uncertainty"]
+        pred_unc_time[surrogate] = np.mean(pred_unc[surrogate], axis=(0, 2))
+        axis_max[surrogate] = surrogate_metrics["UQ"]["axis_max"]
+        max_counts[surrogate] = surrogate_metrics["UQ"]["max_counts"]
+        corrs[surrogate] = surrogate_metrics["UQ"]["correlation_metrics"]
 
-    plot_uncertainty_over_time_comparison(pred_unc, timesteps, config)
+    plot_uncertainty_over_time_comparison(pred_unc_time, abs_errors, timesteps, config)
+
+    plot_comparative_error_correlation_heatmaps(
+        pred_unc, abs_errors, corrs, axis_max, max_counts, config
+    )
+
+
+def tabular_comparison(metrics: dict, config: dict) -> None:
+    """
+    Compare the metrics of different surrogate models in a tabular format.
+
+    Args:
+        metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
+
+    Returns:
+        None
+    """
+    pass
