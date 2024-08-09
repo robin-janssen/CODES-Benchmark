@@ -24,6 +24,7 @@
 - [ ] Datasets by Lorenzo and Simon Glover
 - [ ] Optuna tuning script
 - [ ] Determine optimal model parameters for the baseline models per dataset
+- [ ] Integrate Torch Compile for potentially better performance
 
 ## Potential Models
 - [ ] Multiple DeepONets
