@@ -303,3 +303,19 @@ def get_surrogate(surrogate_name: str) -> SurrogateModel | None:
             return surrogate
 
     return None
+
+
+def format_time(mean_time, std_time):
+    """Format mean and std time consistently in ns, µs, ms, or s."""
+    if mean_time < 1e-6:
+        # Both in ns
+        return f"{mean_time * 1e9:.2f} ns ± {std_time * 1e9:.2f} ns"
+    elif mean_time < 1e-3:
+        # Both in µs
+        return f"{mean_time * 1e6:.2f} µs ± {std_time * 1e6:.2f} µs"
+    elif mean_time < 1:
+        # Both in ms
+        return f"{mean_time * 1e3:.2f} ms ± {std_time * 1e3:.2f} ms"
+    else:
+        # Both in s
+        return f"{mean_time:.2f} s ± {std_time:.2f} s"

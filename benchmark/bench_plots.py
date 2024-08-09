@@ -16,7 +16,6 @@ def save_plot(
     conf: dict,
     surr_name: str = "",
     dpi: int = 300,
-    verbose: bool = False,
 ) -> None:
     """
     Save the plot to a file, creating necessary directories if they don't exist.
@@ -27,7 +26,6 @@ def save_plot(
         conf (dict): The configuration dictionary.
         surr_name (str): The name of the surrogate model.
         dpi (int): The resolution of the saved plot.
-        verbose (bool): Whether to print the path to the saved plot.
 
     Raises:
         ValueError: If the configuration dictionary does not contain the required keys.
@@ -42,7 +40,7 @@ def save_plot(
 
     filepath = save_plot_counter(filename, plot_dir)
     plt.savefig(filepath, dpi=dpi)
-    if verbose:
+    if conf["verbose"]:
         print(f"Plot saved as: {filepath}")
 
 

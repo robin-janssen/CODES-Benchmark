@@ -7,21 +7,21 @@ dataset:
   normalise: "minmax" # "standardise", "minmax", "disable"
 devices: ["cuda:6"]
 seed: 42
+verbose: False
 
 # Details of the benchmarking
-losses: False
-# accuracy: True
+losses: True
 dynamic_accuracy: True
-timing: False
-compute: False
+timing: True
+compute: True
 interpolation:
   enabled: False
   intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
 extrapolation: 
-  enabled: False
+  enabled: True
   cutoffs: [50, 60, 70, 80, 90]
 sparse: 
-  enabled: False
+  enabled: True
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
   enabled: False

@@ -6,6 +6,7 @@ import time
 from typing import Any
 from torch.utils.data import DataLoader
 from scipy.stats import pearsonr
+from tabulate import tabulate
 
 from .bench_plots import (
     plot_relative_errors_over_time,
@@ -32,6 +33,7 @@ from .bench_utils import (
     measure_memory_footprint,
     write_metrics_to_yaml,
     get_surrogate,
+    format_time,
 )
 from data import check_and_load_data
 
@@ -75,6 +77,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     n_timesteps = train_data.shape[1]
     n_chemicals = train_data.shape[2]
     model = surrogate_class(device, n_chemicals, n_timesteps)
+    n_test_samples = len(test_data.flatten())
 
     # Placeholder for metrics
     metrics = {}
@@ -110,7 +113,9 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     # Timing benchmark
     if conf["timing"]:
         print("Running timing benchmark...")
-        metrics["timing"] = time_inference(model, surr_name, val_loader, conf)
+        metrics["timing"] = time_inference(
+            model, surr_name, val_loader, conf, n_test_samples
+        )
 
     # Compute (resources) benchmark
     if conf["compute"]:
@@ -310,6 +315,7 @@ def time_inference(
     surr_name: str,
     test_loader: DataLoader,
     conf: dict,
+    n_test_samples: int,
     n_runs: int = 5,
 ) -> dict[str, Any]:
     """
@@ -321,6 +327,7 @@ def time_inference(
         test_loader (DataLoader): The DataLoader object containing the test data.
         timesteps (np.ndarray): The timesteps array.
         conf (dict): The configuration dictionary.
+        n_test_samples (int): The number of test samples.
         n_runs (int, optional): Number of times to run the inference for timing.
 
     Returns:
@@ -341,15 +348,14 @@ def time_inference(
     # Calculate metrics
     mean_inference_time = np.mean(inference_times)
     std_inference_time = np.std(inference_times)
-    num_predictions = len(test_loader.dataset)
 
     # Store metrics
     timing_metrics = {
         "mean_inference_time_per_run": mean_inference_time,
         "std_inference_time_per_run": std_inference_time,
-        "num_predictions": num_predictions,
-        "mean_inference_time_per_prediction": mean_inference_time / num_predictions,
-        "std_inference_time_per_prediction": std_inference_time / num_predictions,
+        "num_predictions": n_test_samples,
+        "mean_inference_time_per_prediction": mean_inference_time / n_test_samples,
+        "std_inference_time_per_prediction": std_inference_time / n_test_samples,
     }
 
     return timing_metrics
@@ -792,6 +798,8 @@ def compare_models(metrics: dict, config: dict):
     if config["UQ"]["enabled"]:
         compare_UQ(metrics, config)
 
+    tabular_comparison(metrics, config)
+
 
 def compare_main_losses(metrics: dict, config: dict) -> None:
     """
@@ -1114,15 +1122,100 @@ def compare_UQ(all_metrics: dict, config: dict) -> None:
     )
 
 
-def tabular_comparison(metrics: dict, config: dict) -> None:
+def tabular_comparison(all_metrics: dict, config: dict) -> None:
     """
     Compare the metrics of different surrogate models in a tabular format.
 
     Args:
-        metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
+        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:
         None
     """
-    pass
+    # Initialize the table headers and rows
+    model_names = list(all_metrics.keys())
+    headers = ["Metric"] + model_names
+    rows = []
+
+    # Accuracy metrics (always included)
+    mse_values = [
+        metrics["accuracy"]["mean_squared_error"] for metrics in all_metrics.values()
+    ]
+    mre_values = [
+        metrics["accuracy"]["mean_relative_error"] for metrics in all_metrics.values()
+    ]
+
+    # Find the best (minimum) MSE and MRE values
+    best_mse_index = np.argmin(mse_values)
+    best_mre_index = np.argmin(mre_values)
+
+    mse_row = ["MSE"] + [
+        f"{value:.4f}" if i != best_mse_index else f"*{value:.4f}*"
+        for i, value in enumerate(mse_values)
+    ]
+    mre_row = ["Mean Rel. Error"] + [
+        f"{value*100:.2f} %" if i != best_mre_index else f"*{value*100:.2f} %*"
+        for i, value in enumerate(mre_values)
+    ]
+    rows.extend([mse_row, mre_row])
+
+    # Dynamic accuracy (if enabled)
+    if config.get("dynamic_accuracy", False):
+        avg_corr_values = [
+            metrics["dynamic_accuracy"]["avg_correlation"]
+            for metrics in all_metrics.values()
+        ]
+        avg_corr_row = ["Avg Correlation"] + [
+            f"{value:.4f}" for value in avg_corr_values
+        ]
+        rows.append(avg_corr_row)
+
+    # Timing metrics (if enabled)
+    if config.get("timing", False):
+        mean_times = [
+            metrics["timing"]["mean_inference_time_per_prediction"]
+            for metrics in all_metrics.values()
+        ]
+        std_times = [
+            metrics["timing"]["std_inference_time_per_prediction"]
+            for metrics in all_metrics.values()
+        ]
+
+        # Find the best (minimum) inference time
+        best_time_index = np.argmin(mean_times)
+
+        timing_row = ["Inference Times"] + [
+            (
+                f"{format_time(mean, std)}"
+                if i != best_time_index
+                else f"*{format_time(mean, std)}*"
+            )
+            for i, (mean, std) in enumerate(zip(mean_times, std_times))
+        ]
+        rows.append(timing_row)
+
+    # Compute metrics (if enabled)
+    if config.get("compute", False):
+        num_params_row = ["# Trainable Params"] + [
+            f'{metrics["compute"]["num_trainable_parameters"]}'
+            for metrics in all_metrics.values()
+        ]
+        rows.append(num_params_row)
+
+    # UQ metrics (if enabled)
+    if config.get("UQ", {}).get("enabled", False):
+        avg_uncertainties = [
+            metrics["UQ"]["average_uncertainty"] for metrics in all_metrics.values()
+        ]
+        uq_corr_values = [
+            metrics["UQ"]["correlation_metrics"] for metrics in all_metrics.values()
+        ]
+        uq_rows = [
+            ["Avg Uncertainty"] + [f"{value:.4f}" for value in avg_uncertainties],
+            ["UQ Correlation"] + [f"{value:.4f}" for value in uq_corr_values],
+        ]
+        rows.extend(uq_rows)
+
+    # Print the table using tabulate
+    print(tabulate(rows, headers, tablefmt="simple_grid"))

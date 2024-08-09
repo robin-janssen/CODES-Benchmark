@@ -12,6 +12,7 @@
 - [ ] **Complete the README.md**
 - [ ] **Make tutorial notebooks/examples**
 - [ ] Rename NeuralODE to LatentNeuralODe
+- [ ] Think about the error plots - where should absolute errors be used, where relative errors? Does it make sense to use relative errors for the chemical error plots?
 
 ## New Features
 - [ ] **Javascript config maker**
@@ -34,9 +35,9 @@
 - [ ] Chemulator
 
 ## Plots
-- [ ] Heatmaps comparative plot
-- [ ] Layout of chemical error distribution plot similar to example UQ plots
+- [x] Heatmaps comparative plot
+- [x] Layout of chemical error distribution plot similar to example UQ plots
 - [ ] Contour plots to compare dynamics/UQ correlations
-- [ ] **Add overall quantities to the plots (e.g. mean, std, etc.)**
+- [x] **Add overall quantities to the plots (e.g. mean, std, etc.)**
 
 
