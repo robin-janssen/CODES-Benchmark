@@ -4,7 +4,7 @@ import torch
 
 
 @dataclass
-class NeuralODEConfigOSU:
+class LatentNeuralODEConfigOSU:
     "Model config for OSU_2008 dataset"
     # in_features: int = 29
     latent_features: int = 5

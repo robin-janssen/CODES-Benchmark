@@ -7,7 +7,7 @@ from surrogates.NeuralODE.neural_ode import NeuralODE
 surrogate_classes = [
     MultiONet,
     FullyConnected,
-    NeuralODE,
+    LatentNeuralODE,
     LatentPoly,
     # Add any additional surrogate classes here
 ]

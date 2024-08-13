@@ -1,6 +1,6 @@
 # Global settings for the benchmark
 training_id: "all4_testrun_3"
-surrogates: ["MultiONet", "FullyConnected", "NeuralODE", "LatentPoly"]
+surrogates: ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
 dataset: 
   name: "osu2008"
   log10_transform: False
