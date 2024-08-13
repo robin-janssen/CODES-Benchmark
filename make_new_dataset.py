@@ -1,7 +1,6 @@
 import numpy as np
-from data import create_dataset
 
-# from data.osu2008_old.osu_chemicals import osu_chemicals
+from data import create_dataset
 
 if __name__ == "__main__":
     # Create a new dataset

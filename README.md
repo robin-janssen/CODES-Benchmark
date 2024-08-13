@@ -43,6 +43,11 @@ Besides this, there are plenty of plots and visualisations providing insights in
 - Predictions with uncertainty and predicted uncertainty across time
 - Correlations between the predicted uncertainty and the prediction error or the dynamics of the data and the prediction error.
 
+Some prime **use-cases** of the benchmark are:
+- Finding the best-performing surrogate on a dataset. Here, best-performing could mean high accuracy, low inference times or any other metric of interest (e.g. most accurate uncertainty estimates, ...).
+- Comparing performance of a novel surrogate architecture against the implemented baseline models.
+- Gaining insights into a dataset or comparing datasets using the built-in dataset insights. 
+
 ## Key Features
 
 **Baseline Surrogates**
@@ -88,17 +93,12 @@ While randomness is an important part of machine learning and even required in t
 
 **Custom Datasets and Own Models**
 
-To cover a wide variety of use-cases, there is a 
-
-
-
-
-
-
-
+To cover a wide variety of use-cases, the benchmark is designed such that adding own datasets and models is explicitly supported.
 
 
 ## Structure
+
+The repository is structured as follows:
 
 ## Usage
 

@@ -1,15 +1,15 @@
+from typing import TypeVar
+
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
-import numpy as np
-from typing import TypeVar
-
-from surrogates.surrogates import AbstractSurrogateModel
 
 # Use the below import to adjust the config class to the specific model
 from surrogates.DeepONet.deeponet_config import OChemicalTrainConfig as MultiONetConfig
-
+from surrogates.surrogates import AbstractSurrogateModel
 from utils import time_execution, worker_init_fn
+
 from .utils import mass_conservation_loss
 
 

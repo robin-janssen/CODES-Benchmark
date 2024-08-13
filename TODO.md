@@ -40,6 +40,7 @@
 - [x] Layout of chemical error distribution plot similar to example UQ plots
 - [ ] Contour plots to compare dynamics/UQ correlations
 - [ ] Average prediction error over time + average gradient over time
+- [ ] Scatter plot of absolute/relative error vs. inference time comparing surrogates.
 - [x] **Add overall quantities to the plots (e.g. mean, std, etc.)**
 
 

@@ -49,3 +49,4 @@ unicodedata2==15.1.0
 urllib3==2.2.1
 wheel==0.43.0
 tabulate==0.9.0
+isort==5.13.2

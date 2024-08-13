@@ -1,9 +1,7 @@
 from argparse import ArgumentParser
 
-from benchmark.bench_fcts import run_benchmark, compare_models
-from benchmark.bench_utils import check_surrogate, get_surrogate
-
-from utils import read_yaml_config, nice_print
+from benchmark import check_surrogate, compare_models, get_surrogate, run_benchmark
+from utils import nice_print, read_yaml_config
 
 
 def main(args):

@@ -1,14 +1,13 @@
-import torch
-from torch import nn
-from torch.utils.data import DataLoader
-from torch import Tensor
-from torch.optim import Adam
 import numpy as np
+import torch
+from torch import Tensor, nn
+from torch.optim import Adam
+from torch.utils.data import DataLoader
 
-from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.LatentPolynomial.latent_poly_config import LatentPolynomialConfigOSU
+from surrogates.NeuralODE.neural_ode import Decoder, Encoder
 from surrogates.NeuralODE.utilities import ChemDataset
-from surrogates.NeuralODE.neural_ode import Encoder, Decoder
+from surrogates.surrogates import AbstractSurrogateModel
 from utils import time_execution
 
 
