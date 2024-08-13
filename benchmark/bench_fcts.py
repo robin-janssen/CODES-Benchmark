@@ -7,6 +7,7 @@ from typing import Any
 from torch.utils.data import DataLoader
 from scipy.stats import pearsonr
 from tabulate import tabulate
+from contextlib import redirect_stdout
 
 from .bench_plots import (
     plot_relative_errors_over_time,
@@ -34,6 +35,7 @@ from .bench_utils import (
     write_metrics_to_yaml,
     get_surrogate,
     format_time,
+    make_comparison_csv,
 )
 from data import check_and_load_data
 
@@ -187,7 +189,7 @@ def evaluate_accuracy(
 
     # Load the model
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
-    model.n_timesteps = 100
+    # model.n_timesteps = 100
 
     # Use the model's predict method
     criterion = torch.nn.MSELoss(reduction="sum")
@@ -254,7 +256,7 @@ def evaluate_dynamic_accuracy(
 
     # Load the model
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
-    model.n_timesteps = 100
+    # model.n_timesteps = 100
 
     # Obtain predictions and targets
     preds, targets = model.predict(data_loader=test_loader)
@@ -335,7 +337,7 @@ def time_inference(
     """
     training_id = conf["training_id"]
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
-    model.n_timesteps = 100
+    # model.n_timesteps = 100
 
     # Run inference multiple times and record the durations
     inference_times = []
@@ -378,7 +380,7 @@ def evaluate_compute(
     """
     training_id = conf["training_id"]
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
-    model.n_timesteps = 100
+    # model.n_timesteps = 100
 
     # Count the number of trainable parameters
     num_params = count_trainable_parameters(model)
@@ -433,7 +435,7 @@ def evaluate_interpolation(
             else f"{surr_name.lower()}_interpolation_{interval}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        model.n_timesteps = 100
+        # model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         interpolation_metrics[f"interval {interval}"] = {"MSE": mean_squared_error}
@@ -503,7 +505,7 @@ def evaluate_extrapolation(
             else f"{surr_name.lower()}_extrapolation_{cutoff}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        model.n_timesteps = 100
+        # model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         extrapolation_metrics[f"cutoff {cutoff}"] = {"MSE": mean_squared_error}
@@ -577,7 +579,7 @@ def evaluate_sparse(
             else f"{surr_name.lower()}_sparse_{factor}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        model.n_timesteps = 100
+        # model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         train_samples = n_train_samples // factor
@@ -647,7 +649,7 @@ def evaluate_batchsize(
     for i, batch_size in enumerate(batch_sizes):
         model_id = f"{surr_name.lower()}_batchsize_{batch_size}"
         model.load(training_id, surr_name, model_identifier=model_id)
-        model.n_timesteps = 100
+        # model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         batch_metrics[f"batch_size {batch_size}"] = {"MSE": mean_squared_error}
@@ -712,7 +714,7 @@ def evaluate_UQ(
             f"{surr_name.lower()}_main" if i == 0 else f"{surr_name.lower()}_UQ_{i}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        model.n_timesteps = 100
+        # model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
         all_predictions.append(preds)
@@ -763,7 +765,7 @@ def evaluate_UQ(
 
 def compare_models(metrics: dict, config: dict):
 
-    print("Making comparative plots...")
+    print("Making comparative plots... \n")
 
     # Compare relative errors
     compare_relative_errors(metrics, config)
@@ -825,7 +827,7 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
 
         def load_losses(model_identifier: str):
             model.load(training_id, surr_name, model_identifier=model_identifier)
-            model.n_timesteps = 100
+            # model.n_timesteps = 100
             return model.train_loss, model.test_loss
 
         # Load main model losses
@@ -861,7 +863,7 @@ def compare_MAE(metrics: dict, config: dict) -> None:
         model = surrogate_class(device=device)
         model_identifier = f"{surr_name.lower()}_main"
         model.load(training_id, surr_name, model_identifier=model_identifier)
-        model.n_timesteps = 100
+        # model.n_timesteps = 100
         MAE.append(model.MAE)
         labels.append(surr_name)
         train_durations.append(model.train_duration)
@@ -1133,6 +1135,8 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
     Returns:
         None
     """
+    print("The results are in! Here is a summary of the benchmark metrics:\n")
+
     # Initialize the table headers and rows
     model_names = list(all_metrics.keys())
     headers = ["Metric"] + model_names
@@ -1151,11 +1155,11 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
     best_mre_index = np.argmin(mre_values)
 
     mse_row = ["MSE"] + [
-        f"{value:.4f}" if i != best_mse_index else f"*{value:.4f}*"
+        f"{value:.4f}" if i != best_mse_index else f"* {value:.4f} *"
         for i, value in enumerate(mse_values)
     ]
     mre_row = ["Mean Rel. Error"] + [
-        f"{value*100:.2f} %" if i != best_mre_index else f"*{value*100:.2f} %*"
+        f"{value*100:.2f} %" if i != best_mre_index else f"* {value*100:.2f} % *"
         for i, value in enumerate(mre_values)
     ]
     rows.extend([mse_row, mre_row])
@@ -1189,7 +1193,7 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
             (
                 f"{format_time(mean, std)}"
                 if i != best_time_index
-                else f"*{format_time(mean, std)}*"
+                else f"* {format_time(mean, std)} *"
             )
             for i, (mean, std) in enumerate(zip(mean_times, std_times))
         ]
@@ -1218,4 +1222,15 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
         rows.extend(uq_rows)
 
     # Print the table using tabulate
-    print(tabulate(rows, headers, tablefmt="simple_grid"))
+    table = tabulate(rows, headers, tablefmt="simple_grid")
+    print(table)
+    print()
+
+    # Save the table to a file if an output file path is provided
+    txt_path = f"results/{config['training_id']}/metrics_table.txt"
+    with open(txt_path, "w") as f:
+        with redirect_stdout(f):
+            print(table)
+
+    # Make a csv file that contains all metrics for each model
+    make_comparison_csv(metrics=all_metrics, config=config)

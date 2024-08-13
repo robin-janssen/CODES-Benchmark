@@ -89,7 +89,9 @@ def plot_relative_errors_over_time(
     """
     # Calculate the mean, median, and percentiles across all samples and chemicals
     mean_errors = np.mean(relative_errors, axis=(0, 2))
+    mean = np.mean(mean_errors)
     median_errors = np.median(relative_errors, axis=(0, 2))
+    median = np.median(median_errors)
     p50_upper = np.percentile(relative_errors, 75, axis=(0, 2))
     p50_lower = np.percentile(relative_errors, 25, axis=(0, 2))
     p90_upper = np.percentile(relative_errors, 95, axis=(0, 2))
@@ -100,8 +102,10 @@ def plot_relative_errors_over_time(
     timesteps = np.arange(relative_errors.shape[1])
 
     plt.figure(figsize=(10, 6))
-    plt.plot(timesteps, mean_errors, label="Mean Error", color="blue")
-    plt.plot(timesteps, median_errors, label="Median Error", color="red")
+    mean_label = f"Mean Error (Mean: {mean*100:.2f} %)"
+    plt.plot(timesteps, mean_errors, label=mean_label, color="blue")
+    median_label = f"Median Error (Median: {median*100:.2f} %)"
+    plt.plot(timesteps, median_errors, label=median_label, color="red")
 
     # Shading areas
     plt.fill_between(
@@ -334,7 +338,7 @@ def plot_example_predictions_with_uncertainty(
         targets (np.ndarray): True targets.
         timesteps (np.ndarray): Timesteps array.
         example_idx (int, optional): Index of the example to plot. Default is 0.
-        num_chemicals (int, optional): Number of chemicals to plot. Default is 10.
+        num_chemicals (int, optional): Number of chemicals to plot. Default is 100.
         labels (list, optional): List of labels for the chemicals.
         save (bool, optional): Whether to save the plot as a file.
     """
@@ -346,7 +350,6 @@ def plot_example_predictions_with_uncertainty(
     num_plots = int(np.ceil(num_chemicals / chemicals_per_plot))
 
     # Define the color palette
-    # colors = get_custom_palette(chemicals_per_plot)
     colors = plt.cm.viridis(np.linspace(0, 1, chemicals_per_plot))
 
     # Create subplots
@@ -385,6 +388,9 @@ def plot_example_predictions_with_uncertainty(
                     alpha=0.5 / sigma_multiplier,
                 )
 
+        # Set the y-axis label for each subplot
+        ax.set_ylabel("log(Chemical Abundance)")
+
         # Create a legend directly next to the plot using the stored line objects
         if labels is not None:
             legend_labels = labels[start_idx:end_idx]
@@ -399,6 +405,9 @@ def plot_example_predictions_with_uncertainty(
 
         # Set the x limit exactly from the lowest to the highest timestep
         ax.set_xlim(timesteps.min(), timesteps.max())
+
+    # Add a single x-axis label to the bottom plot
+    fig.text(0.5, 0.04, "Timesteps", ha="center", va="center", fontsize=12)
 
     # Create a general legend for line styles, positioned below the title
     handles = [
@@ -425,7 +434,7 @@ def plot_example_predictions_with_uncertainty(
     plt.tight_layout(rect=[0.05, 0.03, 0.95, 0.92])
 
     if save and conf:
-        save_plot(plt, "DeepEnsemble_UQ_preds.png", conf, surr_name, dpi=300)
+        save_plot(plt, "deepensemble_UQ_preds.png", conf, surr_name, dpi=300)
 
     plt.close()
 
@@ -449,9 +458,13 @@ def plot_average_uncertainty_over_time(
         timesteps (np.ndarray): Timesteps array.
         save (bool, optional): Whether to save the plot as a file.
     """
+    errors_mean = np.mean(errors_time)
+    preds_mean = np.mean(preds_std)
     plt.figure(figsize=(10, 6))
-    plt.plot(timesteps, preds_std, label="Average Uncertainty", color="#3A1A5A")
-    plt.plot(timesteps, errors_time, label="Mean Absolute Error", color="#DA5F4D")
+    errors_label = f"Mean Uncertainty (Mean: {preds_mean:.2e})"
+    preds_label = f"Mean Absolute Error (Mean: {errors_mean:.2e})"
+    plt.plot(timesteps, preds_std, label=preds_label, color="#3A1A5A")
+    plt.plot(timesteps, errors_time, label=errors_label, color="#DA5F4D")
     plt.xlabel("Timesteps")
     plt.ylabel("Average Uncertainty / Mean Absolute Error")
     plt.xlim(timesteps[0], timesteps[-1])
@@ -941,17 +954,21 @@ def plot_relative_errors(
     linestyles = ["-", "--"]
 
     for i, surrogate in enumerate(mean_errors.keys()):
+        mean = np.mean(mean_errors[surrogate])
+        mean_label = f"{surrogate} Mean = {mean*100:.2f} %"
         plt.plot(
             timesteps,
             mean_errors[surrogate],
-            label=f"{surrogate} Mean",
+            label=mean_label,
             color=colors[i],
             linestyle=linestyles[0],
         )
+        median = np.mean(median_errors[surrogate])
+        median_label = f"{surrogate} Median = {median*100:.2f} %"
         plt.plot(
             timesteps,
             median_errors[surrogate],
-            label=f"{surrogate} Median",
+            label=median_label,
             color=colors[i],
             linestyle=linestyles[1],
         )
@@ -965,7 +982,7 @@ def plot_relative_errors(
     # plt.grid(True)
 
     if save and config:
-        save_plot(plt, "relative_errors_over_time.png", config)
+        save_plot(plt, "relative_errors_over_time_models.png", config)
 
     plt.close()
 
@@ -994,6 +1011,16 @@ def plot_uncertainty_over_time_comparison(
     plt.figure(figsize=(12, 6))
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(uncertainties)))
     for i, surrogate in enumerate(uncertainties.keys()):
+        avg_uncertainty = np.mean(uncertainties[surrogate])
+        uq_label = f"{surrogate} uncertainty (mean: {avg_uncertainty:.2e})"
+        plt.plot(
+            timesteps,
+            uncertainties[surrogate],
+            label=uq_label,
+            linestyle="-",
+            color=colors[i],
+        )
+
         abs_errors = absolute_errors[surrogate]
         abs_errors_time = np.mean(abs_errors, axis=(0, 2))
         abs_error_avg = np.mean(abs_errors_time)
@@ -1005,9 +1032,6 @@ def plot_uncertainty_over_time_comparison(
             color=colors[i],
             linestyle="--",
         )
-        avg_uncertainty = np.mean(uncertainties[surrogate])
-        uq_label = f"{surrogate} uncertainty (mean: {avg_uncertainty:.2e})"
-        plt.plot(timesteps, uncertainties[surrogate], label=uq_label, color=colors[i])
 
     plt.xlabel("Timesteps")
     plt.xlim(timesteps[0], timesteps[-1])

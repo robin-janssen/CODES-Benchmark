@@ -3,10 +3,10 @@
 - [ ] **Write NeurIPS submission**
 
 ## Refactor
-- [ ] Remove the model.n_timesteps = 100 lines in bench_fcts once new models are trained.
+- [x] Remove the # model.n_timesteps = 100 lines in bench_fcts once new models are trained.
 - [ ] Docstrings completion.
 - [ ] Refactoring for more generality (remove chemistry specific code)
-- [ ] **Find a catchy name**
+- [ ] **Find a catchy name** - CODESS Benchmark: Coupled ODE System Surrogates
 - [ ] Think about the organisation of the model config files
 - [ ] **Check the memory benchmarking**
 - [ ] **Complete the README.md**
@@ -16,8 +16,8 @@
 
 ## New Features
 - [ ] **Javascript config maker**
-- [ ] **Make a table in the CLI at the end of the benchmark with the most important metrics**
-- [ ] **Make a csv/json file with the most important metrics**
+- [x] **Make a table in the CLI at the end of the benchmark with the most important metrics**
+- [x] **Make a csv/json file with the most important metrics**
 - [ ] Inter-/extrapolation in the initial conditions (domain shift)
 - [ ] Dataset Visualizations
 - [ ] Surrogate performance on Baseline ODE systems (Lorenz, Van der Pol, etc.) -> implement dynamic datasets
@@ -38,6 +38,7 @@
 - [x] Heatmaps comparative plot
 - [x] Layout of chemical error distribution plot similar to example UQ plots
 - [ ] Contour plots to compare dynamics/UQ correlations
+- [ ] Average prediction error over time + average gradient over time
 - [x] **Add overall quantities to the plots (e.g. mean, std, etc.)**
 
 

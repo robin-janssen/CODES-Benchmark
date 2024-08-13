@@ -1,4 +1,5 @@
 import os
+import csv
 import numpy as np
 from copy import deepcopy
 import yaml
@@ -238,15 +239,20 @@ def discard_numpy_entries(d: dict) -> dict:
     return clean_dict
 
 
-def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
+def clean_metrics(metrics: dict, conf: dict) -> dict:
     """
-    Write the benchmark metrics to a YAML file.
+    Clean the metrics dictionary to remove problematic entries.
 
     Args:
-        surr_name (str): The name of the surrogate model.
-        conf (dict): The configuration dictionary.
         metrics (dict): The benchmark metrics.
+        conf (dict): The configuration dictionary.
+
+    Returns:
+        dict: The cleaned metrics dictionary.
     """
+
+    # Make a deep copy of the metrics
+
     write_metrics = deepcopy(metrics)
 
     # Remove problematic entries
@@ -271,10 +277,24 @@ def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
         write_metrics["UQ"].pop("pred_uncertainty", None)
         write_metrics["UQ"].pop("max_counts", None)
         write_metrics["UQ"].pop("axis_max", None)
+
+    return write_metrics
+
+
+def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
+    """
+    Write the benchmark metrics to a YAML file.
+
+    Args:
+        surr_name (str): The name of the surrogate model.
+        conf (dict): The configuration dictionary.
+        metrics (dict): The benchmark metrics.
+    """
+    # Clean the metrics
+    write_metrics = clean_metrics(metrics, conf)
+
     # Convert metrics to standard types
     write_metrics = convert_to_standard_types(write_metrics)
-
-    # write_metrics = discard_numpy_entries(write_metrics)
 
     # Make results directory
     try:
@@ -319,3 +339,104 @@ def format_time(mean_time, std_time):
     else:
         # Both in s
         return f"{mean_time:.2f} s ± {std_time:.2f} s"
+
+
+def flatten_dict(d: dict, parent_key: str = "", sep: str = " - ") -> dict:
+    """
+    Flatten a nested dictionary.
+
+    Args:
+        d (dict): The dictionary to flatten.
+        parent_key (str): The base key string.
+        sep (str): The separator between keys.
+
+    Returns:
+        dict: Flattened dictionary with composite keys.
+    """
+    items = []
+    for k, v in d.items():
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        if isinstance(v, dict):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
+
+
+def convert_dict_to_scientific_notation(d: dict, precision: int = 8) -> dict:
+    """
+    Convert all numerical values in a dictionary to scientific notation.
+
+    Args:
+        d (dict): The input dictionary.
+
+    Returns:
+        dict: The dictionary with numerical values in scientific notation.
+    """
+    return {
+        k: f"{v:.{precision}e}" if isinstance(v, (int, float)) else v
+        for k, v in d.items()
+    }
+
+
+def make_comparison_csv(metrics: dict, config: dict) -> None:
+    """
+    Generate a CSV file comparing metrics for different surrogate models.
+
+    Args:
+        metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
+
+    Returns:
+        None
+    """
+
+    # Clean the metrics
+    for surr_name in metrics.keys():
+        metrics[surr_name] = clean_metrics(metrics[surr_name], config)
+
+    # cleaned_metrics = convert_to_standard_types(metrics)
+
+    # Flatten the metrics dictionary for each surrogate model
+    flattened_metrics = {
+        surr_name: flatten_dict(met) for surr_name, met in metrics.items()
+    }
+
+    # Convert all numerical values to scientific notation
+    for surr_name in flattened_metrics.keys():
+        flattened_metrics[surr_name] = convert_dict_to_scientific_notation(
+            flattened_metrics[surr_name]
+        )
+
+    # Get all unique keys across all models (i.e., all possible metric categories)
+    all_keys = set()
+    for surr_name, flat_met in flattened_metrics.items():
+        all_keys.update(flat_met.keys())
+
+    # Convert the set of keys to a sorted list
+    all_keys = sorted(all_keys)
+
+    # Prepare the CSV file path
+    csv_file_path = f"results/{config['training_id']}/metrics.csv"
+    os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
+
+    # Write to the CSV file
+    with open(csv_file_path, mode="w", newline="") as csv_file:
+        writer = csv.writer(csv_file)
+
+        # Write the header row
+        header = ["Category"] + list(metrics.keys())
+        writer.writerow(header)
+
+        # Write each row with the values corresponding to each model
+        for key in all_keys:
+            row = [key]
+            for surr_name in metrics.keys():
+                value = flattened_metrics[surr_name].get(
+                    key, "N/A"
+                )  # Use 'N/A' if key is missing
+                row.append(value)
+            writer.writerow(row)
+
+    if config["verbose"]:
+        print(f"Comparison CSV file saved at {csv_file_path}")
