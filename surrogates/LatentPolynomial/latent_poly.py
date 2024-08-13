@@ -7,8 +7,8 @@ import numpy as np
 
 from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.LatentPolynomial.latent_poly_config import LatentPolynomialConfigOSU
-from surrogates.NeuralODE.utilities import ChemDataset
-from surrogates.NeuralODE.neural_ode import Encoder, Decoder
+from surrogates.LatentNeuralODE.utilities import ChemDataset
+from surrogates.LatentNeuralODE.neural_ode import Encoder, Decoder
 from utils import time_execution
 
 

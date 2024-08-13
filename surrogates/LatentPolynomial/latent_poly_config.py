@@ -6,7 +6,7 @@ from torch import nn
 @dataclass
 class LatentPolynomialConfigOSU:
     "Model Config for LatentPolynomial model for OUS_2008 dataset"
-    # in_features: int = 29
+    in_features: int
     latent_features: int = 5
     degree: int = 2
     latent_dim: int = 5

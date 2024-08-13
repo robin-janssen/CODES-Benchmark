@@ -9,14 +9,14 @@ import torchode as to
 import numpy as np
 
 from surrogates.surrogates import AbstractSurrogateModel
-from surrogates.NeuralODE.neural_ode_config import NeuralODEConfigOSU as Config
-from surrogates.NeuralODE.utilities import ChemDataset
+from surrogates.LatentNeuralODE.neural_ode_config import LatentNeuralODEConfigOSU as Config
+from surrogates.LatentNeuralODE.utilities import ChemDataset
 from utils import time_execution, worker_init_fn
 
 
-class NeuralODE(AbstractSurrogateModel):
+class LatentNeuralODE(AbstractSurrogateModel):
     """
-    NeuralODE is a class that represents a neural ordinary differential equation model.
+    LatentNeuralODE is a class that represents a neural ordinary differential equation model.
 
     It inherits from the AbstractSurrogateModel class and implements methods for training,
     predicting, and saving the model.
@@ -26,7 +26,7 @@ class NeuralODE(AbstractSurrogateModel):
         train_loss (torch.Tensor): The training loss of the model.
 
     Methods:
-        __init__(self, config: Config = Config()): Initializes a NeuralODE object.
+        __init__(self, config: Config = Config()): Initializes a LatentNeuralODE object.
         forward(self, inputs: torch.Tensor, timesteps: torch.Tensor):
             Performs a forward pass of the model.
         prepare_data(self, raw_data: np.ndarray, batch_size: int, shuffle: bool):
@@ -132,7 +132,7 @@ class NeuralODE(AbstractSurrogateModel):
         timesteps: np.ndarray | Tensor,
         epochs: int,
         position: int = 0,
-        description: str = "Training NeuralODE",
+        description: str = "Training LatentNeuralODE",
     ) -> None:
         """
         Fits the model to the training data. Sets the train_loss and test_loss attributes.
