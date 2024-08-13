@@ -27,7 +27,6 @@ sparse:
 batch_scaling:
   enabled: False
   sizes: [16, 64, 256, 1024, 4096]
-  subset: 1  # Factor by which to slice the dataset (just for faster training)
 UQ: 
   enabled: True
   n_models: 5  # Number of models for deep ensemble

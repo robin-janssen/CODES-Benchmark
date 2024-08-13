@@ -288,7 +288,7 @@ def get_data_subset(full_train_data, full_test_data, timesteps, mode, metric, co
         test_data = full_test_data[::factor]
         timesteps = timesteps
     elif mode == "batch_size":
-        factor = config["batch_scaling"]["subset"]
+        factor = 4
         train_data = full_train_data[::factor]
         test_data = full_test_data[::factor]
         timesteps = timesteps

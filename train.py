@@ -138,8 +138,8 @@ def train_surrogate(config, surr_name: str):
         for factor in config["sparse"]["factors"]:
             tasks.append((surr_name, "sparse", factor, id, seed + factor, epochs))
 
-    if config["UQ"]["enabled"]:
-        n_models = config["UQ"]["n_models"]
+    if config["uncertainty"]["enabled"]:
+        n_models = config["uncertainty"]["ensemble_size"]
         for i in range(n_models - 1):
             tasks.append((surr_name, "UQ", i + 1, id, seed + i, epochs))
 

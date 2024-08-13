@@ -797,7 +797,7 @@ def compare_models(metrics: dict, config: dict):
         compare_batchsize(metrics, config)
 
     # Compare UQ metrics
-    if config["UQ"]["enabled"]:
+    if config["uncertainty"]["enabled"]:
         compare_UQ(metrics, config)
 
     tabular_comparison(metrics, config)
