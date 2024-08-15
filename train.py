@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 from datetime import timedelta
 
 from tqdm import tqdm
@@ -12,8 +13,8 @@ from utils import (
 )
 
 
-def main():
-    config = load_and_save_config()
+def main(args):
+    config = load_and_save_config(config_path=args.config)
     task_list_filepath = check_training_status(config["training_id"])
     tasks = load_task_list(task_list_filepath)
 
@@ -48,4 +49,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--config", default="config.yaml", type=str, help="Path to the config file."
+    )
+    args = parser.parse_args()
+    main(args)
