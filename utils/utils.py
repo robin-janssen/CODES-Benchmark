@@ -1,13 +1,14 @@
-import yaml
 import functools
-import time
 import json
-import sys
 import os
-import shutil
 import random
+import shutil
+import sys
+import time
+
 import numpy as np
 import torch
+import yaml
 from tqdm import tqdm
 
 
@@ -189,7 +190,7 @@ def check_training_status(training_id: str):
 
     # Check if training is already complete
     if os.path.exists(completion_marker_filepath):
-        print("Training is already completed. Exiting.")
+        print("Training is already completed. Exiting. \n")
         sys.exit()
 
     return task_list_filepath

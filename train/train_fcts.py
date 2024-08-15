@@ -208,4 +208,33 @@ def parallel_training(tasks, device_list, task_list_filepath: str):
     ) as f:
         f.write("Training completed")
 
+    # Remove the task list file
+    os.remove(task_list_filepath)
+
+    return elapsed_time
+
+
+def sequential_training(tasks, device_list, task_list_filepath: str):
+    """
+    Execute the training tasks sequentially on a single device.
+    """
+    overall_progress_bar = get_progress_bar(tasks)
+    for i, task in enumerate(tasks):
+        train_and_save_model(*task, device_list[0])
+        overall_progress_bar.update(1)
+        remaining_tasks = tasks[i + 1 :]
+        save_task_list(remaining_tasks, task_list_filepath)
+
+    elapsed_time = overall_progress_bar.format_dict["elapsed"]
+    overall_progress_bar.close()
+
+    # Create a completion marker after all tasks are completed
+    with open(
+        os.path.join(os.path.dirname(task_list_filepath), "completed.txt"), "w"
+    ) as f:
+        f.write("Training completed")
+
+    # Remove the task list file
+    os.remove(task_list_filepath)
+
     return elapsed_time

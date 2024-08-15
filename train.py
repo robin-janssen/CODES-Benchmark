@@ -2,10 +2,9 @@ from datetime import timedelta
 
 from tqdm import tqdm
 
-from train import parallel_training, train_and_save_model, train_surrogate
+from train import parallel_training, sequential_training, train_surrogate
 from utils import (
     check_training_status,
-    get_progress_bar,
     load_and_save_config,
     load_task_list,
     nice_print,
@@ -36,14 +35,7 @@ def main():
             elapsed_time = parallel_training(tasks, device_list, task_list_filepath)
         else:
             tqdm.write(f"Training models sequentially on device {device_list[0]}")
-            overall_progress_bar = get_progress_bar(tasks)
-            for i, task in enumerate(tasks):
-                train_and_save_model(*task, device_list[0])
-                overall_progress_bar.update(1)
-                remaining_tasks = tasks[i + 1 :]
-                save_task_list(remaining_tasks, task_list_filepath)
-            elapsed_time = overall_progress_bar.format_dict["elapsed"]
-            overall_progress_bar.close()
+            elapsed_time = sequential_training(tasks, device_list, task_list_filepath)
 
         print("\n")
         nice_print("Training completed")

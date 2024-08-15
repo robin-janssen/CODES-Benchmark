@@ -1,3 +1,13 @@
-from .train_fcts import parallel_training, train_and_save_model, train_surrogate
+from .train_fcts import (
+    parallel_training,
+    sequential_training,
+    train_and_save_model,
+    train_surrogate,
+)
 
-__all__ = ["train_and_save_model", "train_surrogate", "parallel_training"]
+__all__ = [
+    "parallel_training",
+    "sequential_training",
+    "train_and_save_model",
+    "train_surrogate",
+]
