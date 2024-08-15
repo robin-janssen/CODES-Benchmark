@@ -4,7 +4,7 @@
 
 This repo aims to provide a way of benchmarking surrogate models for coupled ODE systems, as can be found in the context of chemical reaction networks. 
 
-Full documentation can be found at **add link here!**
+Full documentation can be found on the [website](https://immi000.github.io/CODES-Benchmark-Docs/).
 
 ## Motivation
 
