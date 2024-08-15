@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from surrogates.FCNN.fcnn_config import OConfig
+from surrogates.FCNN.fcnn_config import FCNNBaseConfig
 from surrogates.surrogates import AbstractSurrogateModel
 from utils import time_execution, worker_init_fn
 
@@ -36,7 +36,11 @@ class FullyConnectedNet(nn.Module):
 
 class FullyConnected(AbstractSurrogateModel):
     def __init__(
-        self, device: str | None = None, n_chemicals: int = 29, n_timesteps: int = 100
+        self,
+        device: str | None = None,
+        n_chemicals: int = 29,
+        n_timesteps: int = 100,
+        config: dict = {},
     ):
         """
         Initialize the FullyConnected model with a configuration.
@@ -48,11 +52,10 @@ class FullyConnected(AbstractSurrogateModel):
         - output_size (int): The number of outputs of the model.
         - device (str): The device to use for training (e.g., 'cpu', 'cuda:0').
         """
-        config = OConfig()  # Load the specific config for FullyConnected
         super().__init__(
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
         )
-
+        config = FCNNBaseConfig(**config)
         self.config = config
         self.device = device
         self.N = n_chemicals

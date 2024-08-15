@@ -4,7 +4,7 @@ from threading import Thread
 
 from tqdm import tqdm
 
-from benchmark.bench_utils import get_surrogate
+from benchmark.bench_utils import get_model_config, get_surrogate
 from data import check_and_load_data, get_data_subset
 from utils import (
     get_progress_bar,
@@ -45,6 +45,8 @@ def train_and_save_model(
         )
     )
 
+    model_config = get_model_config(surr_name, config["dataset"]["name"])
+
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(
         full_train_data, full_test_data, timesteps, mode, metric, config
@@ -57,7 +59,7 @@ def train_and_save_model(
     surrogate_class = get_surrogate(surr_name)
 
     # Set the device for the model
-    model = surrogate_class(device, n_chemicals, n_timesteps)
+    model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
     surr_idx = config["surrogates"].index(surr_name)
 
     # Determine the batch size

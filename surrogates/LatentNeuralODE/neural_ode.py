@@ -8,9 +8,7 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 
-from surrogates.LatentNeuralODE.neural_ode_config import (
-    LatentNeuralODEConfigOSU as Config,
-)
+from surrogates.LatentNeuralODE.neural_ode_config import LatentNeuralODEBaseConfig
 from surrogates.LatentNeuralODE.utilities import ChemDataset
 from surrogates.surrogates import AbstractSurrogateModel
 from utils import time_execution, worker_init_fn
@@ -40,15 +38,16 @@ class LatentNeuralODE(AbstractSurrogateModel):
     """
 
     def __init__(
-        self, device: str | None = None, n_chemicals: int = 29, n_timesteps: int = 100
+        self,
+        device: str | None = None,
+        n_chemicals: int = 29,
+        n_timesteps: int = 100,
+        config: dict = {},
     ):
         super().__init__(
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
         )
-        self.config: Config = Config()
-        # TODO find out why the config is loaded incorrectly after the first
-        # training and fix! The list is ordered the other way around...
-        # self.config.coder_layers = [32, 16, 8]
+        self.config = LatentNeuralODEBaseConfig(**config)
         self.model = ModelWrapper(config=self.config, n_chemicals=n_chemicals).to(
             device
         )

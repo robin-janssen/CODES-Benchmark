@@ -31,13 +31,13 @@ This benchmark aims to aid in choosing the best surrogate model for the task at 
 
 To achieve this, a selection of surrogate models are implemented in this repository. They can be trained on one of the included datasets or a custom dataset and then benchmarked on the corresponding test dataset. 
 
-Some metrics included in the benchmark (but there is much more!):
+Some **metrics** included in the benchmark (but there is much more!):
 - Absolute and relative error of the models.
 - Inference time.
 - Number of trainable parameters.
 - Memory requirements (**WIP**).
 
-Besides this, there are plenty of plots and visualisations providing insights into the models behaviour:
+Besides this, there are plenty of **plots and visualisations** providing insights into the models behaviour:
 
 - Error distributions - per model, across time or per quantity.
 - Insights into interpolation and extrapolation across time.

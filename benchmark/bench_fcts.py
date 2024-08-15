@@ -76,6 +76,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
             normalisation_mode=conf["dataset"]["normalise"],
         )
     )
+    # model_config = get_model_config(surr_name, conf["dataset"]["name"])
     n_timesteps = train_data.shape[1]
     n_chemicals = train_data.shape[2]
     model = surrogate_class(device, n_chemicals, n_timesteps)
@@ -153,7 +154,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
         )
 
     # Uncertainty Quantification (UQ) benchmark
-    if conf["UQ"]["enabled"]:
+    if conf["uncertainty"]["enabled"]:
         print("Running UQ benchmark...")
         metrics["UQ"] = evaluate_UQ(
             model, surr_name, val_loader, timesteps, conf, labels
@@ -704,7 +705,7 @@ def evaluate_UQ(
         dict: A dictionary containing UQ metrics.
     """
     training_id = conf["training_id"]
-    n_models = conf["UQ"]["n_models"]
+    n_models = conf["uncertainty"]["n_models"]
     UQ_metrics = []
 
     # Obtain predictions for each model

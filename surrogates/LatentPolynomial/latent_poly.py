@@ -4,9 +4,9 @@ from torch import Tensor, nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from surrogates.LatentPolynomial.latent_poly_config import LatentPolynomialConfigOSU
-from surrogates.NeuralODE.neural_ode import Decoder, Encoder
-from surrogates.NeuralODE.utilities import ChemDataset
+from surrogates.LatentNeuralODE.neural_ode import Decoder, Encoder
+from surrogates.LatentNeuralODE.utilities import ChemDataset
+from surrogates.LatentPolynomial.latent_poly_config import LatentPolynomialBaseConfig
 from surrogates.surrogates import AbstractSurrogateModel
 from utils import time_execution
 
@@ -14,12 +14,16 @@ from utils import time_execution
 class LatentPoly(AbstractSurrogateModel):
 
     def __init__(
-        self, device: str | None = None, n_chemicals: int = 29, n_timesteps: int = 100
+        self,
+        device: str | None = None,
+        n_chemicals: int = 29,
+        n_timesteps: int = 100,
+        model_config: dict = {},
     ):
         super().__init__(
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
         )
-        self.config: LatentPolynomialConfigOSU = LatentPolynomialConfigOSU()
+        self.config = LatentPolynomialBaseConfig(**model_config)
         self.config.in_features = n_chemicals
         self.model = PolynomialModelWrapper(config=self.config, device=self.device)
 

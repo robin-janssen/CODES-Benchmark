@@ -4,8 +4,8 @@ import torch
 
 
 @dataclass
-class LatentNeuralODEBaseConfig:
-    """Standard model config for LatentNeuralODE"""
+class NeuralODEConfigOSU:
+    """Only for backward compatibility with old models"""
 
     latent_features: int = 5
     coder_hidden: int = 4

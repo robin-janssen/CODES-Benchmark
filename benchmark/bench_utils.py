@@ -1,6 +1,9 @@
 import csv
+import importlib.util
+import inspect
 import os
 from copy import deepcopy
+from dataclasses import asdict
 
 import numpy as np
 import psutil
@@ -77,8 +80,8 @@ def get_required_models_list(surrogate: str, conf: dict) -> list:
             [f"{surrogate.lower()}_sparse_{factor}.pth" for factor in factors]
         )
 
-    if conf["UQ"]["enabled"]:
-        n_models = conf["UQ"]["n_models"]
+    if conf["uncertainty"]["enabled"]:
+        n_models = conf["uncertainty"]["n_models"]
         required_models.extend(
             [f"{surrogate.lower()}_UQ_{i+1}.pth" for i in range(n_models - 1)]
         )
@@ -274,7 +277,7 @@ def clean_metrics(metrics: dict, conf: dict) -> dict:
     if conf["sparse"]["enabled"]:
         write_metrics["sparse"].pop("model_errors", None)
         write_metrics["sparse"].pop("n_train_samples", None)
-    if conf["UQ"]["enabled"]:
+    if conf["uncertainty"]["enabled"]:
         write_metrics["UQ"].pop("pred_uncertainty", None)
         write_metrics["UQ"].pop("max_counts", None)
         write_metrics["UQ"].pop("axis_max", None)
@@ -441,3 +444,71 @@ def make_comparison_csv(metrics: dict, config: dict) -> None:
 
     if config["verbose"]:
         print(f"Comparison CSV file saved at {csv_file_path}")
+
+
+# def get_model_config(surr_name: str, dataset_name) -> dict:
+#     """
+#     Get the model configuration for a specific surrogate model from the dataset folder.
+#     Returns an empty dictionary if the configuration file is not found.
+
+#     Args:
+#         surr_name (str): The name of the surrogate model.
+#         conf (dict): The configuration dictionary.
+
+#     Returns:
+#         dict: The model configuration dictionary.
+#     """
+#     dataset_name = dataset_name.lower()
+#     dataset_folder = f"data/{dataset_name}"
+#     model_config_path = f"{dataset_folder}/{surr_name.lower()}_config.yaml"
+#     if os.path.exists(model_config_path):
+#         with open(model_config_path, "r") as file:
+#             model_config = yaml.safe_load(file)
+#     else:
+#         model_config = {}
+
+#     return model_config
+
+
+def get_model_config(surr_name: str, dataset_name: str) -> dict:
+    """
+    Get the model configuration for a specific surrogate model from the dataset folder.
+    Returns an empty dictionary if the configuration file is not found.
+
+    Args:
+        surr_name (str): The name of the surrogate model.
+        dataset_name (str): The name of the dataset.
+
+    Returns:
+        dict: The model configuration dictionary.
+    """
+    dataset_name = dataset_name.lower()
+    dataset_folder = f"data/{dataset_name}"
+    config_file = f"{dataset_folder}/surrogate_config.py"
+
+    if os.path.exists(config_file):
+        spec = importlib.util.spec_from_file_location("config_module", config_file)
+        config_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(config_module)
+
+        # Look for the dataclass matching the surr_name + 'Config'
+        config_class = None
+        target_class_name = f"{surr_name}config".lower()
+        for name, obj in inspect.getmembers(config_module, inspect.isclass):
+            if (
+                hasattr(obj, "__dataclass_fields__")
+                and name.lower() == target_class_name
+            ):
+                config_class = obj
+                break
+
+        if config_class:
+            # Instantiate the dataclass and convert it to a dictionary
+            config_instance = config_class()
+            model_config = asdict(config_instance)
+        else:
+            model_config = {}
+    else:
+        model_config = {}
+
+    return model_config

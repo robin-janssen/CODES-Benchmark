@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
 # Use the below import to adjust the config class to the specific model
-from surrogates.DeepONet.deeponet_config import OChemicalTrainConfig as MultiONetConfig
+from surrogates.DeepONet.deeponet_config import MultiONetBaseConfig
 from surrogates.surrogates import AbstractSurrogateModel
 from utils import time_execution, worker_init_fn
 
@@ -74,7 +74,11 @@ OperatorNetworkType = TypeVar("OperatorNetworkType", bound=OperatorNetwork)
 
 class MultiONet(OperatorNetwork):
     def __init__(
-        self, device: str | None = None, n_chemicals: int = 29, n_timesteps: int = 100
+        self,
+        device: str | None = None,
+        n_chemicals: int = 29,
+        n_timesteps: int = 100,
+        config: dict = {},
     ):
         """
         Initialize the MultiONet model with a configuration.
@@ -89,8 +93,12 @@ class MultiONet(OperatorNetwork):
         - N_outputs (int): The number of outputs of the model.
         - device (str): The device to use for training (e.g., 'cpu', 'cuda:0').
         """
-        config = MultiONetConfig()  # Load the specific config for DeepONet
-        # super(MultiONet, self).__init__()
+        try:
+            config = MultiONetBaseConfig(**config)
+        except TypeError as e:
+            raise TypeError(
+                f"Invalid configuration for MultiONet model: {e} \n This likely means that the model config contains keys that are not in the models base config."
+            ) from e
         super().__init__(
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
         )
