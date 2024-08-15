@@ -5,6 +5,7 @@
 ## Refactor
 - [x] Remove the # model.n_timesteps = 100 lines in bench_fcts once new models are trained.
 - [ ] Docstrings completion.
+- [ ] Make a clean requirements.txt
 - [ ] Refactoring for more generality (remove chemistry specific code)
 - [ ] **Find a catchy name** - CODESS Benchmark: Coupled ODE System Surrogates
 - [ ] Think about the organisation of the model config files

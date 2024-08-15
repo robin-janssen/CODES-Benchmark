@@ -16,8 +16,6 @@ from utils import (
 def main():
     config = load_and_save_config()
     task_list_filepath = check_training_status(config["training_id"])
-
-    # Load tasks from a previous run if they exist
     tasks = load_task_list(task_list_filepath)
 
     if not tasks:
@@ -28,7 +26,6 @@ def main():
         for surr_name in config["surrogates"]:
             tasks += train_surrogate(config, surr_name)
 
-        # Save the initial task list
         save_task_list(tasks, task_list_filepath)
 
     if tasks:  # Only proceed if there are tasks to complete
