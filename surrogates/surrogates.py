@@ -1,18 +1,18 @@
-from abc import ABC, abstractmethod
-from typing import TypeVar, Any
-import os
 import dataclasses
-import yaml
+import os
+from abc import ABC, abstractmethod
+from typing import Any, TypeVar
 
-# from typing import Optional, Union
-
-import torch
-from tqdm import tqdm
-from torch import nn, Tensor
-from torch.utils.data import DataLoader
 import numpy as np
+import torch
+import yaml
+from torch import Tensor, nn
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from utils import create_model_dir
+
+# from typing import Optional, Union
 
 
 # Define abstract base class for surrogate models

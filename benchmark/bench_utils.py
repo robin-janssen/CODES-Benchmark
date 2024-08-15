@@ -1,10 +1,11 @@
-import os
 import csv
-import numpy as np
+import os
 from copy import deepcopy
-import yaml
-import torch
+
+import numpy as np
 import psutil
+import torch
+import yaml
 
 from surrogates.surrogate_classes import surrogate_classes
 from surrogates.surrogates import SurrogateModel

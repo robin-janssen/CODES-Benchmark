@@ -1,6 +1,6 @@
-import torch.utils
 import torch
 import torch.nn as nn
+import torch.utils
 
 
 def mass_conservation_loss(

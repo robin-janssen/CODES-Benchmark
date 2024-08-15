@@ -5,6 +5,7 @@
 ## Refactor
 - [x] Remove the # model.n_timesteps = 100 lines in bench_fcts once new models are trained.
 - [ ] Docstrings completion.
+- [ ] Make a clean requirements.txt
 - [ ] Refactoring for more generality (remove chemistry specific code)
 - [ ] **Find a catchy name** - CODESS Benchmark: Coupled ODE System Surrogates
 - [ ] Think about the organisation of the model config files
@@ -40,6 +41,7 @@
 - [x] Layout of chemical error distribution plot similar to example UQ plots
 - [ ] Contour plots to compare dynamics/UQ correlations
 - [ ] Average prediction error over time + average gradient over time
+- [ ] Scatter plot of absolute/relative error vs. inference time comparing surrogates.
 - [x] **Add overall quantities to the plots (e.g. mean, std, etc.)**
 
 

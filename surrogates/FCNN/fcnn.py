@@ -1,14 +1,11 @@
-import torch
-import torch.nn as nn
-
 # from torch.profiler import ProfilerActivity, record_function
 import numpy as np
-from torch.utils.data import DataLoader
-from torch.utils.data import TensorDataset
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader, TensorDataset
 
-from surrogates.surrogates import AbstractSurrogateModel
 from surrogates.FCNN.fcnn_config import OConfig
-
+from surrogates.surrogates import AbstractSurrogateModel
 from utils import time_execution, worker_init_fn
 
 

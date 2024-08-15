@@ -1,12 +1,14 @@
 # CODES Benchmark
 
-## A benchmark for Coupled ODE Surrogates
+## Benchmarking Coupled ODE Surrogates
 
 This repo aims to provide a way of benchmarking surrogate models for coupled ODE systems, as can be found in the context of chemical reaction networks. 
 
+Full documentation can be found at **add link here!**
+
 ## Motivation
 
-There are many efforts to replace the costly numerics that are used to solve coupled ODE systems with machine learning models ("surrogates"). But for the end user, it is not obvious how to choose the right surrogate for a given task. Usually, the best choice depends on both the dataset and the target application.
+There are many efforts to use machine learning models ("surrogates") to replace the costly numerics required involved in solving coupled ODEs. But for the end user, it is not obvious how to choose the right surrogate for a given task. Usually, the best choice depends on both the dataset and the target application.
 
 Dataset specifics - how "complex" is the dataset?
 - How many samples are there?
@@ -25,27 +27,33 @@ Besides these practical considerations, one overarching question is always: Does
 
 ## Goals
 
-This benchmark aims at shedding light on some of these questions and to aid in choosing the best surrogate model for the task at hand. 
+This benchmark aims to aid in choosing the best surrogate model for the task at hand and additionally to shed some light on the above questions.
 
-To achieve this, a number of different surrogates are implemented in this repository. They can be trained on one of the included datasets or a custom dataset and then benchmarked on the corresponding test dataset. 
+To achieve this, a selection of surrogate models are implemented in this repository. They can be trained on one of the included datasets or a custom dataset and then benchmarked on the corresponding test dataset. 
 
 Some metrics included in the benchmark (but there is much more!):
-- Absolute and relative error of the models
-- Inference time
-- Number of trainable parameters
-- Memory requirements (**WIP**)
+- Absolute and relative error of the models.
+- Inference time.
+- Number of trainable parameters.
+- Memory requirements (**WIP**).
 
 Besides this, there are plenty of plots and visualisations providing insights into the models behaviour:
 
-- Error distributions - per model, across time or per quantity
-- Insights into interpolation and extrapolation across time
-- Behaviour when training with sparse data or varying batch size
-- Predictions with uncertainty and predicted uncertainty across time
-- Correlations between the predicted uncertainty and the prediction error or the dynamics of the data and the prediction error.
+- Error distributions - per model, across time or per quantity.
+- Insights into interpolation and extrapolation across time.
+- Behaviour when training with sparse data or varying batch size.
+- Predictions with uncertainty and predictive uncertainty across time.
+- Correlations between the either predictive uncertainty or dynamics (gradients) of the data and the prediction error
+
+Some prime **use-cases** of the benchmark are:
+- Finding the best-performing surrogate on a dataset. Here, best-performing could mean high accuracy, low inference times or any other metric of interest (e.g. most accurate uncertainty estimates, ...).
+- Comparing performance of a novel surrogate architecture against the implemented baseline models.
+- Gaining insights into a dataset or comparing datasets using the built-in dataset insights. 
 
 ## Key Features
 
-**Baseline Surrogates**
+<details>
+  <summary><b>Baseline Surrogates</b></summary>
 
 The following surrogate models are currently implemented to be benchmarked:
 
@@ -58,50 +66,83 @@ NeuralODE combined with an autoencoder that reduces the dimensionality of the da
 - Latent Polynomial: 
 Uses an autoencoder similar to Latent NeuralODE, but fits a polynomial to the trajectories in the resulting latent space.
 
-**Baseline Datasets**
- 
+</details>
+
+<details>
+  <summary><b>Baseline Datasets</b></summary>
+
 The following datasets are currently included in the benchmark:
 
-**Uncertainty Quantification (UQ)**
+</details>
+
+
+<details>
+  <summary><b>Uncertainty Quantification (UQ)</b></summary>
 
 To give an uncertainty estimate that does not rely too much on the specifics of the surrogate architecture, we use DeepEnsemble for UQ. 
 
-**Parallel Training**
+</details>
+
+<details>
+  <summary><b>Parallel Training</b></summary>
 
 To gain insights into the surrogates behaviour, many models must be trained on varying subsets of the training data. This task is trivially parallelisable. In addition to utilising all specified devices, the benchmark features some nice progress bars to gain insights into the current status of the training. 
 
-**Plots, Plots, Plots**
+</details>
+
+
+<details>
+  <summary><b>Plots, Plots, Plots</b></summary>
 
 While hard metrics are crucial to compare the surrogates, performance cannot always be broken down to a set of numbers. Running the benchmark creates many plots that serve to compare performance of surrogates or provide insights into the performance of each surrogate.
 
-**Dataset Insights (WIP)**
+</details>
+
+<details>
+  <summary><b>Dataset Insights (WIP)</b></summary>
 
 "Know your data" is one of the most important rules in machine learning. To aid in this, the benchmark provides plots and visualisations that should help to understand the dataset better.
 
-**Tabular Benchmark Results**
+</details>
 
-At the end of the benchmark, the most important metrics are displayed in a table, additionally, all metrics generated during the benchmark are provided as a csv
+<details>
+  <summary><b>Tabular Benchmark Results</b></summary>
 
-**Reproducibility**
+At the end of the benchmark, the most important metrics are displayed in a table, additionally, all metrics generated during the benchmark are provided as a csv file.
 
-While randomness is an important part of machine learning and even required in the context of UQ with DeepEnsemble, reproducibility is key in benchmarking enterprises. The benchmark uses a custom seed that can be set by the user to ensure full reproducibility.
+</details>
 
-**Custom Datasets and Own Models**
+<details>
+  <summary><b>Reproducibility</b></summary>
 
-To cover a wide variety of use-cases, there is a 
+Randomness is an important part of machine learning and even required in the context of UQ with DeepEnsemble, but reproducibility is key in benchmarking enterprises. The benchmark uses a custom seed that can be set by the user to ensure full reproducibility.
 
+</details>
 
+<details>
+  <summary><b>Custom Datasets and Own Models</b></summary>
 
+To cover a wide variety of use-cases, the benchmark is designed such that adding own datasets and models is explicitly supported.
 
+</details>
 
-
-
-
-
-## Structure
+## Quickstart
 
 ## Usage
 
+**Move this part to the docs page**
+
+<details>
+  <summary><i>Setup</i></summary>
+</details>
+
+<details>
+  <summary><i>Running the Benchmark (Plots + Metrics)</i></summary>
+</details>
+
+<details>
+  <summary><i>Benchmark Results</i></summary>
+</details>
 
 
 <details>
@@ -196,4 +237,12 @@ The default data_dir is data, which is a subdirectory of the root directory of t
 
 The data is stored as provided in the numpy arrays. Please ensure that the data is clean and has a reasonable range. Ideally, it should be normalized. The data is stored in the path data_dir/dataset_name/data.hdf5.  
 
+</details>
+
+<details>
+  <summary><i>Repo Structure</i></summary>
+</details>
+
+<details>
+  <summary><i>Code Documentation</i></summary>
 </details>

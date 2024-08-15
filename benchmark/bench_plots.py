@@ -1,11 +1,11 @@
+import os
+from typing import Optional
+
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.colors import ListedColormap
 from matplotlib.gridspec import GridSpec
-from typing import Optional
-import numpy as np
 from scipy.ndimage import gaussian_filter1d
-import os
-
 
 # Utility functions for plotting
 

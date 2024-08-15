@@ -1,16 +1,18 @@
+import numpy as np
 import torch
-from torch.optim import Adam
-from torch.optim.lr_scheduler import CosineAnnealingLR
-from torch.utils.data import DataLoader
-from torch import Tensor
 
 # from torchdiffeq import odeint, odeint_adjoint
 import torchode as to
-import numpy as np
+from torch import Tensor
+from torch.optim import Adam
+from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.utils.data import DataLoader
 
-from surrogates.surrogates import AbstractSurrogateModel
-from surrogates.LatentNeuralODE.neural_ode_config import LatentNeuralODEConfigOSU as Config
+from surrogates.LatentNeuralODE.neural_ode_config import (
+    LatentNeuralODEConfigOSU as Config,
+)
 from surrogates.LatentNeuralODE.utilities import ChemDataset
+from surrogates.surrogates import AbstractSurrogateModel
 from utils import time_execution, worker_init_fn
 
 
