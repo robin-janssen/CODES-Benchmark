@@ -12,12 +12,12 @@
 - [ ] **Check the memory benchmarking**
 - [ ] **Complete the README.md**
 - [ ] **Make tutorial notebooks/examples**
-- [ ] Rename NeuralODE to LatentNeuralODe
+- [x] Rename NeuralODE to LatentNeuralODe
 - [ ] Think about the error plots - where should absolute errors be used, where relative errors? Does it make sense to use relative errors for the chemical error plots?
 - [ ] Add testing
 
 ## New Features
-- [ ] **Javascript config maker**
+- [x] **Javascript config maker**
 - [x] **Make a table in the CLI at the end of the benchmark with the most important metrics**
 - [x] **Make a csv/json file with the most important metrics**
 - [ ] Inter-/extrapolation in the initial conditions (domain shift)
