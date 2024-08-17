@@ -1,6 +1,8 @@
 # Global settings for the benchmark
-training_id: "config_handling_test"
+training_id: "all4_testrun_3"
 surrogates: ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
+batch_size: [1024, 1024, 128, 128]
+epochs: [2,2,2,2]
 dataset: 
   name: "osu2008"
   log10_transform: False
@@ -9,12 +11,7 @@ devices: ["cuda:7"]
 seed: 42
 verbose: False
 
-# Details of the benchmarking
-losses: True
-accuracy: True
-dynamic_accuracy: False
-timing: False
-compute: False
+# Models to train
 interpolation: 
   enabled: False
   intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -30,11 +27,12 @@ batch_scaling:
 uncertainty: 
   enabled: False
   n_models: 5  # Number of models for deep ensemble
+
+# Evaluations during benchmark
+losses: True
+dynamic_accuracy: False
+timing: False
+compute: False
 compare: False # Whether to compare the surrogates
 
-# Optional global settings
-# Leave empty if the quantities should be set per surrogate
-
-batch_size: [1024, 1024, 128, 128]
-epochs: [2,2,2,2]
 

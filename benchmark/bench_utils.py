@@ -484,7 +484,7 @@ def get_model_config(surr_name: str, dataset_name: str) -> dict:
     """
     dataset_name = dataset_name.lower()
     dataset_folder = f"data/{dataset_name}"
-    config_file = f"{dataset_folder}/surrogate_config.py"
+    config_file = f"{dataset_folder}/surrogates_config.py"
 
     if os.path.exists(config_file):
         spec = importlib.util.spec_from_file_location("config_module", config_file)

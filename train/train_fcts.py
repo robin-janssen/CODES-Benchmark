@@ -107,7 +107,7 @@ def train_and_save_model(
     )
 
 
-def train_surrogate(config, surr_name: str):
+def train_surrogate(config, surr_name: str) -> list:
     """
     Train and save models for different purposes based on the config settings.
     """

@@ -4,6 +4,7 @@
 
 ## Refactor
 - [x] Remove the # model.n_timesteps = 100 lines in bench_fcts once new models are trained.
+- [ ] Check whether the training is indeed deterministic.
 - [ ] Docstrings completion.
 - [ ] Make a clean requirements.txt
 - [ ] Refactoring for more generality (remove chemistry specific code)
