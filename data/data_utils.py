@@ -1,4 +1,5 @@
 import os
+
 import h5py
 import numpy as np
 
@@ -305,7 +306,7 @@ def create_dataset(
     train_data: np.ndarray,
     test_data: np.ndarray | None = None,
     val_data: np.ndarray | None = None,
-    split: tuple[float, float, float] | None = None,
+    split: tuple[float, float, float] = (0.75, 0.05, 0.2),
     timesteps: np.ndarray | None = None,
     labels: list[str] | None = None,
 ):
@@ -341,14 +342,11 @@ def create_dataset(
             "train_data must have shape (n_samples, n_timesteps, n_chemicals)."
         )
 
-    if (test_data is None or val_data is None) and split is None:
-        raise ValueError(
-            "split must be provided if test_data and val_data are not provided."
-        )
-
     if test_data is not None:
         if not isinstance(test_data, np.ndarray):
             raise TypeError("test_data must be a numpy array.")
+        if val_data is None:
+            raise ValueError("test_data cannot be provided without val_data.")
         if (
             not train_data.shape[2] == test_data.shape[2]
             or not train_data.shape[1] == test_data.shape[1]
@@ -356,10 +354,13 @@ def create_dataset(
             raise ValueError(
                 "train_data and test_data must have the same number of timesteps and chemicals."
             )
+        np.random.shuffle(test_data)
 
     if val_data is not None:
         if not isinstance(val_data, np.ndarray):
             raise TypeError("val_data must be a numpy array.")
+        if test_data is None:
+            raise ValueError("val_data cannot be provided without test_data.")
         if (
             not train_data.shape[2] == val_data.shape[2]
             or not train_data.shape[1] == val_data.shape[1]
@@ -367,6 +368,7 @@ def create_dataset(
             raise ValueError(
                 "train_data and val_data must have the same number of timesteps and chemicals."
             )
+        np.random.shuffle(val_data)
 
     if timesteps is None:
         print("Timesteps not provided and will not be saved.")
@@ -377,40 +379,39 @@ def create_dataset(
                 "Timesteps must be a 1D array with length equal to the number of timesteps in the data."
             )
 
-    if split is not None:
-        if not isinstance(split, (tuple, list)):
-            raise TypeError("split must be a tuple or list of floats.")
-        if len(split) != 3:
-            raise ValueError(
-                "split must contain three values: train, test, and validation split."
-            )
-        if not all(isinstance(value, float) for value in split):
-            raise TypeError("split values must be floats.")
-        if not all(0 <= value <= 1 for value in split):
-            raise ValueError("split values must be between 0 and 1.")
-        if not split[0] + split[1] + split[2] == 1:
-            raise ValueError("split values must sum to 1.")
+    if not isinstance(split, (tuple, list)):
+        raise TypeError("split must be a tuple or list of floats.")
+    if len(split) != 3:
+        raise ValueError(
+            "split must contain three values: train, test, and validation split."
+        )
+    if not all(isinstance(value, float) for value in split):
+        raise TypeError("split values must be floats.")
+    if not all(0 <= value <= 1 for value in split):
+        raise ValueError("split values must be between 0 and 1.")
+    if not split[0] + split[1] + split[2] == 1:
+        raise ValueError("split values must sum to 1.")
 
-        if not (test_data is None and val_data is None):
-            print(
-                "Warning: split values will be ignored since test_data and val_data are provided."
-            )
-        else:
-            full_data = train_data
-            n_samples = train_data.shape[0]
-            n_train = int(n_samples * split[0])
-            n_test = int(n_samples * split[1])
-            train_data = full_data[:n_train]
-            test_data = full_data[n_train : n_train + n_test]
-            val_data = full_data[n_train + n_test :]
+    np.random.shuffle(train_data)
 
-        if labels is not None:
-            if not isinstance(labels, list):
-                raise TypeError("labels must be a list of strings.")
-            if not len(labels) == train_data.shape[2]:
-                raise ValueError(
-                    "The number of labels must match the number of chemicals."
-                )
+    if not (test_data is None and val_data is None):
+        print(
+            "Warning: split values will be ignored since test_data and val_data are provided."
+        )
+    else:
+        full_data = train_data
+        n_samples = train_data.shape[0]
+        n_train = int(n_samples * split[0])
+        n_test = int(n_samples * split[1])
+        train_data = full_data[:n_train]
+        test_data = full_data[n_train : n_train + n_test]
+        val_data = full_data[n_train + n_test :]
+
+    if labels is not None:
+        if not isinstance(labels, list):
+            raise TypeError("labels must be a list of strings.")
+        if not len(labels) == train_data.shape[2]:
+            raise ValueError("The number of labels must match the number of chemicals.")
 
     create_hdf5_dataset(
         train_data, test_data, val_data, name, timesteps=timesteps, labels=labels

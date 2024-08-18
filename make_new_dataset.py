@@ -12,7 +12,6 @@ if __name__ == "__main__":
     create_dataset(
         "osu2008",
         full_dataset,
-        split=(0.75, 0.05, 0.2),
         timesteps=np.linspace(0, 1, 100),
         labels=labels,
     )

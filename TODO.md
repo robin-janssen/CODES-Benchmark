@@ -4,6 +4,7 @@
 
 ## Refactor
 - [x] Remove the # model.n_timesteps = 100 lines in bench_fcts once new models are trained.
+- [ ] Check whether the training is indeed deterministic.
 - [ ] Docstrings completion.
 - [ ] Make a clean requirements.txt
 - [ ] Refactoring for more generality (remove chemistry specific code)
@@ -20,8 +21,10 @@
 - [x] **Javascript config maker**
 - [x] **Make a table in the CLI at the end of the benchmark with the most important metrics**
 - [x] **Make a csv/json file with the most important metrics**
+- [ ] Continue training of the existing models in case further convergence is needed
+- [ ] Accumulation of error when predicting quantities iteratively
 - [ ] Inter-/extrapolation in the initial conditions (domain shift)
-- [ ] Dataset Visualizations
+- [ ] Dataset Visualizations - also include how the distribution changes over time (for iterative preds)
 - [ ] Surrogate performance on Baseline ODE systems (Lorenz, Van der Pol, etc.) -> implement dynamic datasets
 - [ ] Data Storage (heibox?)
 - [ ] Datasets by Lorenzo and Simon Glover
