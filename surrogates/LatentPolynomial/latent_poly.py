@@ -4,7 +4,7 @@ from torch import Tensor, nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from surrogates.LatentNeuralODE.neural_ode import Decoder, Encoder
+from surrogates.LatentNeuralODE.latent_neural_ode import Decoder, Encoder
 from surrogates.LatentNeuralODE.utilities import ChemDataset
 from surrogates.LatentPolynomial.latent_poly_config import LatentPolynomialBaseConfig
 from surrogates.surrogates import AbstractSurrogateModel
