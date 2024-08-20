@@ -19,7 +19,11 @@ from utils import create_model_dir
 class AbstractSurrogateModel(ABC, nn.Module):
 
     def __init__(
-        self, device: str | None = None, n_chemicals: int = 29, n_timesteps: int = 100
+        self,
+        device: str | None = None,
+        n_chemicals: int = 29,
+        n_timesteps: int = 100,
+        config: dict = {},
     ):
         super().__init__()
         self.train_loss = None
@@ -30,9 +34,10 @@ class AbstractSurrogateModel(ABC, nn.Module):
         self.n_chemicals = n_chemicals
         self.n_timesteps = n_timesteps
         self.L1 = nn.L1Loss()
+        self.config = config
 
     @abstractmethod
-    def forward(self, inputs: Any) -> Tensor:
+    def forward(self, inputs: Any) -> tuple[Tensor, Tensor]:
         pass
 
     @abstractmethod
