@@ -190,6 +190,7 @@ def evaluate_accuracy(
 
     # Load the model
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
+    num_chemicals = model.n_chemicals
     # model.n_timesteps = 100
 
     # Use the model's predict method
@@ -216,7 +217,7 @@ def evaluate_accuracy(
         conf,
         relative_errors,
         chemical_names=labels,
-        num_chemicals=29,
+        num_chemicals=num_chemicals,
         save=True,
     )
 
