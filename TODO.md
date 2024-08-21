@@ -20,6 +20,7 @@
 - [ ] **Make tutorial notebooks/examples**
 - [ ] Think about the error plots - where should absolute errors be used, where relative errors? Does it make sense to use relative errors for the chemical error plots?
 - [ ] Add testing
+- [ ] **Clean up the python environment and do a fresh test install**
 
 ## New Features
 - [x] **Javascript config maker**
