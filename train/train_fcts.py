@@ -90,7 +90,6 @@ def train_and_save_model(
     model.fit(
         train_loader=train_loader,
         test_loader=test_loader,
-        timesteps=timesteps,
         epochs=epochs,
         position=position,
         description=description,

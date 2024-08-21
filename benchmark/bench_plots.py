@@ -142,7 +142,7 @@ def plot_relative_errors_over_time(
     plt.legend()
 
     if save and conf:
-        save_plot(plt, "relative_errors_over_time.png", conf, surr_name)
+        save_plot(plt, "accuracy_rel_errors_time.png", conf, surr_name)
 
     plt.close()
 
@@ -434,7 +434,7 @@ def plot_example_predictions_with_uncertainty(
     plt.tight_layout(rect=[0.05, 0.03, 0.95, 0.92])
 
     if save and conf:
-        save_plot(plt, "deepensemble_UQ_preds.png", conf, surr_name, dpi=300)
+        save_plot(plt, "uncertainty_deepensemble_preds.png", conf, surr_name, dpi=300)
 
     plt.close()
 
@@ -747,7 +747,7 @@ def plot_error_distribution_per_chemical(
     plt.tight_layout(rect=[0, 0, 1, 0.97])
 
     if save and conf:
-        save_plot(plt, "error_distribution_per_chemical.png", conf, surr_name)
+        save_plot(plt, "accuracy_error_per_quantity.png", conf, surr_name)
 
     plt.close()
 
@@ -924,7 +924,7 @@ def plot_MAE_comparison_train_duration(
     plt.grid(True)
 
     if save and config:
-        save_plot(plt, "MAE_training_main_model.png", config)
+        save_plot(plt, "losses_MAE_main_model.png", config)
 
     plt.close()
 
@@ -982,7 +982,7 @@ def plot_relative_errors(
     # plt.grid(True)
 
     if save and config:
-        save_plot(plt, "relative_errors_over_time_models.png", config)
+        save_plot(plt, "accuracy_rel_errors_time_models.png", config)
 
     plt.close()
 
@@ -1107,7 +1107,7 @@ def inference_time_bar_plot(
     ax.set_title("Comparison of Mean Inference Time with Standard Deviation")
 
     if save:
-        save_plot(plt, "inference_times.png", config)
+        save_plot(plt, "timing_inference.png", config)
 
     plt.close()
 
@@ -1418,14 +1418,15 @@ def plot_error_distribution_comparative(
     plt.xlim(10**x_min, 10**x_max)  # Set x-axis range based on log-space calculations
     plt.xlabel("Magnitude of Error")
     plt.ylabel("Density (PDF)")
+    num_test_samples = len(errors[model_names[0]].flatten()) * num_models
     plt.title(
-        f"Error Distribution per Model (Test Samples: {len(errors[model_names[0]].flatten())}, Excluded zeros: {zero_counts})"
+        f"Error Distribution per Model (Test Samples: {num_test_samples}, Excluded zeros: {zero_counts})"
     )
 
     plt.legend()
 
     if save and conf:
-        save_plot(plt, "error_distributions.png", conf)
+        save_plot(plt, "accuracy_error_distributions.png", conf)
 
     plt.close()
 
@@ -1616,7 +1617,7 @@ def plot_comparative_dynamic_correlation_heatmaps(
     )
 
     if save:
-        save_plot(fig, "gradient_error_corr_comparison.png", config)
+        save_plot(fig, "gradients_error_corr_comparison.png", config)
 
     plt.show()
     plt.close()

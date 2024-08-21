@@ -128,7 +128,7 @@ class FullyConnected(AbstractSurrogateModel):
         self,
         train_loader: DataLoader,
         test_loader: DataLoader,
-        timesteps: np.ndarray,
+        # timesteps: np.ndarray,
         epochs: int,
         position: int = 0,
         description: str = "Training FullyConnected",
@@ -139,7 +139,7 @@ class FullyConnected(AbstractSurrogateModel):
         Args:
             train_loader (DataLoader): The DataLoader object containing the training data.
             test_loader (DataLoader): The DataLoader object containing the test data.
-            timesteps (np.ndarray): The timesteps.
+            # timesteps (np.ndarray): The timesteps.
             epochs (int, optional): The number of epochs to train the model.
             position (int): The position of the progress bar.
             description (str): The description for the progress bar.
@@ -147,7 +147,7 @@ class FullyConnected(AbstractSurrogateModel):
         Returns:
             None
         """
-        self.n_timesteps = len(timesteps)
+        # self.n_timesteps = len(timesteps)
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
 
         criterion = self.setup_criterion()

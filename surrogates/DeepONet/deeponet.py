@@ -205,7 +205,7 @@ class MultiONet(OperatorNetwork):
         self,
         train_loader: DataLoader,
         test_loader: DataLoader,
-        timesteps: np.ndarray,
+        # timesteps: np.ndarray,
         epochs: int,
         position: int = 0,
         description: str = "Training DeepONet",
@@ -216,7 +216,7 @@ class MultiONet(OperatorNetwork):
         Args:
             train_data (np.ndarray): The training data.
             test_data (np.ndarray): The test data (to evaluate the model during training).
-            timesteps (np.ndarray): The timesteps.
+            # timesteps (np.ndarray): The timesteps.
             epochs (int, optional): The number of epochs to train the model.
             position (int): The position of the progress bar.
             description (str): The description for the progress bar.
@@ -224,7 +224,7 @@ class MultiONet(OperatorNetwork):
         Returns:
             None
         """
-        self.n_timesteps = len(timesteps)
+        # self.n_timesteps = len(timesteps)
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
 
         criterion = self.setup_criterion()

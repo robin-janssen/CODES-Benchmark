@@ -105,11 +105,11 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     print("Running accuracy benchmark...")
     metrics["accuracy"] = evaluate_accuracy(model, surr_name, val_loader, conf, labels)
 
-    # Dynamic accuracy benchmark
-    if conf["dynamic_accuracy"]:
-        print("Running dynamic accuracy benchmark...")
+    # Gradients benchmark
+    if conf["gradients"]:
+        print("Running gradients benchmark...")
         # For this benchmark, we can also use the main model
-        metrics["dynamic_accuracy"] = evaluate_dynamic_accuracy(
+        metrics["gradients"] = evaluate_dynamic_accuracy(
             model, surr_name, val_loader, conf
         )
 
@@ -242,7 +242,7 @@ def evaluate_dynamic_accuracy(
     species_names: list = None,
 ) -> dict:
     """
-    Evaluate the dynamic accuracy of the surrogate model.
+    Evaluate the gradients of the surrogate model.
 
     Args:
         model: Instance of the surrogate model class.
@@ -251,7 +251,7 @@ def evaluate_dynamic_accuracy(
         conf (dict): The configuration dictionary.
 
     Returns:
-        dict: A dictionary containing dynamic accuracy metrics.
+        dict: A dictionary containing gradients metrics.
     """
     training_id = conf["training_id"]
 
@@ -301,7 +301,7 @@ def evaluate_dynamic_accuracy(
     species_correlations = dict(zip(species_names, species_correlations))
 
     # Store metrics
-    dynamic_accuracy_metrics = {
+    gradients_metrics = {
         "gradients": gradients,
         "species_correlations": species_correlations,
         "avg_correlation": avg_correlation,
@@ -310,7 +310,7 @@ def evaluate_dynamic_accuracy(
         "max_error": max_err,
     }
 
-    return dynamic_accuracy_metrics
+    return gradients_metrics
 
 
 def time_inference(
@@ -774,7 +774,7 @@ def compare_models(metrics: dict, config: dict):
     if config["losses"]:
         compare_main_losses(metrics, config)
 
-    if config["dynamic_accuracy"]:
+    if config["gradients"]:
         compare_dynamic_accuracy(metrics, config)
 
     # Compare inference time
@@ -942,7 +942,7 @@ def compare_inference_time(
 
 def compare_dynamic_accuracy(metrics: dict, config: dict) -> None:
     """
-    Compare the dynamic accuracy of different surrogate models.
+    Compare the gradients of different surrogate models.
 
     Args:
         metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
@@ -959,12 +959,12 @@ def compare_dynamic_accuracy(metrics: dict, config: dict) -> None:
     corrs = {}
 
     for surrogate, surrogate_metrics in metrics.items():
-        gradients[surrogate] = surrogate_metrics["dynamic_accuracy"]["gradients"]
+        gradients[surrogate] = surrogate_metrics["gradients"]["gradients"]
         abs_errors[surrogate] = surrogate_metrics["accuracy"]["absolute_errors"]
-        max_grads[surrogate] = surrogate_metrics["dynamic_accuracy"]["max_gradient"]
-        max_errors[surrogate] = surrogate_metrics["dynamic_accuracy"]["max_error"]
-        max_counts[surrogate] = surrogate_metrics["dynamic_accuracy"]["max_counts"]
-        corrs[surrogate] = surrogate_metrics["dynamic_accuracy"]["avg_correlation"]
+        max_grads[surrogate] = surrogate_metrics["gradients"]["max_gradient"]
+        max_errors[surrogate] = surrogate_metrics["gradients"]["max_error"]
+        max_counts[surrogate] = surrogate_metrics["gradients"]["max_counts"]
+        corrs[surrogate] = surrogate_metrics["gradients"]["avg_correlation"]
 
     plot_comparative_dynamic_correlation_heatmaps(
         gradients, abs_errors, corrs, max_grads, max_errors, max_counts, config
@@ -1165,11 +1165,10 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
     ]
     rows.extend([mse_row, mre_row])
 
-    # Dynamic accuracy (if enabled)
-    if config.get("dynamic_accuracy", False):
+    # Gradients (if enabled)
+    if config.get("gradients", False):
         avg_corr_values = [
-            metrics["dynamic_accuracy"]["avg_correlation"]
-            for metrics in all_metrics.values()
+            metrics["gradients"]["avg_correlation"] for metrics in all_metrics.values()
         ]
         avg_corr_row = ["Avg Correlation"] + [
             f"{value:.4f}" for value in avg_corr_values

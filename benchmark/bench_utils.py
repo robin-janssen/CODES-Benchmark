@@ -55,8 +55,8 @@ def get_required_models_list(surrogate: str, conf: dict) -> list:
     required_models = []
     required_models.append(f"{surrogate.lower()}_main.pth")
 
-    # Dynamic accuracy does not require a separate model
-    if conf["dynamic_accuracy"]:
+    # Gradients does not require a separate model
+    if conf["gradients"]:
         pass
 
     if conf["interpolation"]["enabled"]:
@@ -263,11 +263,11 @@ def clean_metrics(metrics: dict, conf: dict) -> dict:
     write_metrics.pop("timesteps", None)
     write_metrics["accuracy"].pop("absolute_errors", None)
     write_metrics["accuracy"].pop("relative_errors", None)
-    if conf["dynamic_accuracy"]:
-        write_metrics["dynamic_accuracy"].pop("gradients", None)
-        write_metrics["dynamic_accuracy"].pop("max_counts", None)
-        write_metrics["dynamic_accuracy"].pop("max_gradient", None)
-        write_metrics["dynamic_accuracy"].pop("max_error", None)
+    if conf["gradients"]:
+        write_metrics["gradients"].pop("gradients", None)
+        write_metrics["gradients"].pop("max_counts", None)
+        write_metrics["gradients"].pop("max_gradient", None)
+        write_metrics["gradients"].pop("max_error", None)
     if conf["interpolation"]["enabled"]:
         write_metrics["interpolation"].pop("model_errors", None)
         write_metrics["interpolation"].pop("intervals", None)
