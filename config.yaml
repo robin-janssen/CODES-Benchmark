@@ -1,13 +1,13 @@
 # Global settings for the benchmark
-training_id: "fit_test" # "all4_testrun_3"
+training_id: "all4_testrun_3"
 surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
 batch_size: [1024, 1024, 128, 128]
-epochs: [2,2,2,2]
+epochs: [5,5,5,5]
 dataset: 
   name: "osu2008"
   log10_transform: False
   normalise: "minmax" # "standardise", "minmax", "disable"
-devices: ["cuda:1"]
+devices: ["cuda:8"]
 seed: 42
 verbose: False
 
@@ -31,7 +31,7 @@ uncertainty:
 # Evaluations during benchmark
 losses: False
 gradients: False
-timing: False
+timing: True
 compute: False
 compare: True # Whether to compare the surrogates
 

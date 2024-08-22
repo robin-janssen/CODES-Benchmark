@@ -39,7 +39,7 @@ def save_plot(
         os.makedirs(plot_dir)
 
     filepath = save_plot_counter(filename, plot_dir)
-    plt.savefig(filepath, dpi=dpi)
+    plt.savefig(filepath, dpi=dpi, bbox_inches="tight")
     if conf["verbose"]:
         print(f"Plot saved as: {filepath}")
 
@@ -300,7 +300,7 @@ def plot_average_errors_over_time(
                     horizontalalignment="right",
                 )
 
-    plt.xlabel("Timesteps")
+    plt.xlabel("Time")
     plt.xlim(timesteps[0], timesteps[-1])
     plt.ylabel("Mean Absolute Error")
     title = f"{mode.capitalize()} Errors Over Time"
@@ -407,7 +407,7 @@ def plot_example_predictions_with_uncertainty(
         ax.set_xlim(timesteps.min(), timesteps.max())
 
     # Add a single x-axis label to the bottom plot
-    fig.text(0.5, 0.04, "Timesteps", ha="center", va="center", fontsize=12)
+    fig.text(0.5, 0.04, "Time", ha="center", va="center", fontsize=12)
 
     # Create a general legend for line styles, positioned below the title
     handles = [
@@ -465,7 +465,7 @@ def plot_average_uncertainty_over_time(
     preds_label = f"Mean Absolute Error (Mean: {errors_mean:.2e})"
     plt.plot(timesteps, preds_std, label=preds_label, color="#3A1A5A")
     plt.plot(timesteps, errors_time, label=errors_label, color="#DA5F4D")
-    plt.xlabel("Timesteps")
+    plt.xlabel("Time")
     plt.ylabel("Average Uncertainty / Mean Absolute Error")
     plt.xlim(timesteps[0], timesteps[-1])
     plt.title("Average Uncertainty and Mean Absolute Error Over Time")
@@ -973,7 +973,7 @@ def plot_relative_errors(
             linestyle=linestyles[1],
         )
 
-    plt.xlabel("Timesteps")
+    plt.xlabel("Time")
     plt.xlim(timesteps[0], timesteps[-1])
     plt.ylabel("Relative Error")
     plt.yscale("log")
@@ -1033,7 +1033,7 @@ def plot_uncertainty_over_time_comparison(
             linestyle="--",
         )
 
-    plt.xlabel("Timesteps")
+    plt.xlabel("Time")
     plt.xlim(timesteps[0], timesteps[-1])
     plt.ylabel("Uncertainty")
     plt.title("Comparison of Predictive Uncertainty Over Time")
@@ -1145,6 +1145,15 @@ def plot_generalization_error_comparison(
         plt.scatter(
             metrics_list[i], model_errors_list[i], label=surrogate, color=colors[i]
         )
+        # Add thin lines of the same color to show the trend
+
+        plt.plot(
+            metrics_list[i],
+            model_errors_list[i],
+            color=colors[i],
+            alpha=0.5,
+            linestyle="-",
+        )
 
     plt.xlabel(xlabel)
     if xlog:
@@ -1152,7 +1161,7 @@ def plot_generalization_error_comparison(
     plt.ylabel("Mean Absolute Error")
     plt.yscale("log")
     plt.title(f"Comparison of {xlabel} Errors")
-    plt.grid(True, which="major", linestyle="--", linewidth=0.5)
+    plt.grid(True, which="major", linestyle="--", linewidth=0.5, axis="y")
     plt.legend()
 
     if save:
@@ -1667,3 +1676,142 @@ def get_custom_palette(num_colors):
     colors = custom_cmap(np.linspace(0, 1, num_colors))
 
     return colors
+
+
+def int_ext_sparse(all_metrics: dict, config: dict) -> None:
+    """
+    Function to make one comparative plot of the interpolation, extrapolation, and sparse training errors.
+
+    Args:
+        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
+
+    Returns:
+        None
+    """
+    surrogates = list(all_metrics.keys())
+
+    # Prepare the data for each modality
+    interpolation_metrics_list = []
+    interpolation_errors_list = []
+
+    extrapolation_metrics_list = []
+    extrapolation_errors_list = []
+
+    sparse_metrics_list = []
+    sparse_errors_list = []
+
+    for surrogate in surrogates:
+        # Interpolation data
+        if "interpolation" in all_metrics[surrogate]:
+            interpolation_metrics_list.append(
+                all_metrics[surrogate]["interpolation"]["intervals"]
+            )
+            interpolation_errors_list.append(
+                all_metrics[surrogate]["interpolation"]["model_errors"]
+            )
+
+        # Extrapolation data
+        if "extrapolation" in all_metrics[surrogate]:
+            extrapolation_metrics_list.append(
+                all_metrics[surrogate]["extrapolation"]["cutoffs"]
+            )
+            extrapolation_errors_list.append(
+                all_metrics[surrogate]["extrapolation"]["model_errors"]
+            )
+
+        # Sparse training data
+        if "sparse" in all_metrics[surrogate]:
+            sparse_metrics_list.append(
+                all_metrics[surrogate]["sparse"]["n_train_samples"]
+            )
+            sparse_errors_list.append(all_metrics[surrogate]["sparse"]["model_errors"])
+
+    # Create the figure and subplots
+    fig, axes = plt.subplots(1, 3, figsize=(15, 6), sharey=True)
+    colors = plt.cm.viridis(np.linspace(0, 0.9, len(surrogates)))
+
+    # Interpolation subplot
+    for i, surrogate in enumerate(surrogates):
+        if i < len(interpolation_metrics_list):
+            axes[0].scatter(
+                interpolation_metrics_list[i],
+                interpolation_errors_list[i],
+                label=surrogate,
+                color=colors[i],
+            )
+            axes[0].plot(
+                interpolation_metrics_list[i],
+                interpolation_errors_list[i],
+                color=colors[i],
+                alpha=0.5,
+                linestyle="-",
+            )
+    axes[0].set_xlabel("Interpolation Intervals")
+    axes[0].set_title("Interpolation")
+    axes[0].set_yscale("log")
+    axes[0].grid(True, which="major", linestyle="--", linewidth=0.5, axis="y")
+
+    # Extrapolation subplot
+    for i, surrogate in enumerate(surrogates):
+        if i < len(extrapolation_metrics_list):
+            axes[1].scatter(
+                extrapolation_metrics_list[i],
+                extrapolation_errors_list[i],
+                label=surrogate,
+                color=colors[i],
+            )
+            axes[1].plot(
+                extrapolation_metrics_list[i],
+                extrapolation_errors_list[i],
+                color=colors[i],
+                alpha=0.5,
+                linestyle="-",
+            )
+    axes[1].set_xlabel("Extrapolation Cutoffs")
+    axes[1].set_title("Extrapolation")
+    axes[1].set_yscale("log")
+    axes[1].grid(True, which="major", linestyle="--", linewidth=0.5, axis="y")
+
+    # Sparse training subplot
+    for i, surrogate in enumerate(surrogates):
+        if i < len(sparse_metrics_list):
+            axes[2].scatter(
+                sparse_metrics_list[i],
+                sparse_errors_list[i],
+                label=surrogate,
+                color=colors[i],
+            )
+            axes[2].plot(
+                sparse_metrics_list[i],
+                sparse_errors_list[i],
+                color=colors[i],
+                alpha=0.5,
+                linestyle="-",
+            )
+    axes[2].set_xlabel("Number of Training Samples (log scale)")
+    axes[2].set_title("Sparse Training")
+    axes[2].set_xscale("log")
+    axes[2].set_yscale("log")
+    axes[2].grid(True, which="major", linestyle="--", linewidth=0.5, axis="y")
+
+    # Set the x-ticks to all values in sparse_metrics_list
+    axes[2].set_xticks(sparse_metrics_list[0])
+    axes[2].get_xaxis().set_major_formatter(plt.ScalarFormatter())
+
+    # Set the ylabel on the leftmost subplot
+    axes[0].set_ylabel("Mean Absolute Error")
+
+    # Add the legend to the first plot only
+    handles, labels = axes[0].get_legend_handles_labels()
+    axes[0].legend(handles, labels, loc="upper left", fontsize="small")
+
+    # Set the overall title
+    fig.suptitle("Model Errors for Different Modalities", fontsize=16)
+
+    # Adjust layout to reduce whitespace and improve spacing
+    plt.tight_layout(rect=[0, 0.03, 1, 0.98])
+
+    save_plot(fig, "generalization_error_comparison.png", config)
+
+    plt.close()

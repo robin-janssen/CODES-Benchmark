@@ -25,7 +25,8 @@
 ## New Features
 - [x] **Javascript config maker**
 - [x] **Make a table in the CLI at the end of the benchmark with the most important metrics**
-- [x] **Make a csv/json file with the most important metrics**
+- [x] **Make a csv file with the most important metrics**
+- [x] **Make a json file with the most important metrics**
 - [ ] Calculate and add error quantities per surrogate to the individal (and comparative) outputs.
 - [ ] Continue training of the existing models in case further convergence is needed
 - [ ] Accumulation of error when predicting quantities iteratively

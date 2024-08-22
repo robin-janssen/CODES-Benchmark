@@ -12,6 +12,7 @@ from data import check_and_load_data
 
 from .bench_plots import (
     inference_time_bar_plot,
+    int_ext_sparse,
     plot_average_errors_over_time,
     plot_average_uncertainty_over_time,
     plot_comparative_dynamic_correlation_heatmaps,
@@ -80,7 +81,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     n_timesteps = train_data.shape[1]
     n_chemicals = train_data.shape[2]
     model = surrogate_class(device, n_chemicals, n_timesteps)
-    n_test_samples = len(test_data.flatten())
+    n_test_samples = n_timesteps * val_data.shape[0]
 
     # Placeholder for metrics
     metrics = {}
@@ -344,10 +345,16 @@ def time_inference(
     # Run inference multiple times and record the durations
     inference_times = []
     for _ in range(n_runs):
-        start_time = time.time()
-        _, _ = model.predict(data_loader=test_loader)
-        end_time = time.time()
-        inference_times.append(end_time - start_time)
+        # _, _ = model.predict(data_loader=test_loader)
+        total_time = 0
+        with torch.inference_mode():
+            for inputs in test_loader:
+                start_time = time.time()
+                _, _ = model.forward(inputs)
+                end_time = time.time()
+                total_time += end_time - start_time
+        # total_time /= n_test_samples
+        inference_times.append(total_time)
 
     # Calculate metrics
     mean_inference_time = np.mean(inference_times)
@@ -794,6 +801,13 @@ def compare_models(metrics: dict, config: dict):
     if config["sparse"]["enabled"]:
         compare_sparse(metrics, config)
 
+    if (
+        config["interpolation"]["enabled"]
+        and config["extrapolation"]["enabled"]
+        and config["sparse"]["enabled"]
+    ):
+        int_ext_sparse(metrics, config)
+
     # Compare batch size training errors
     if config["batch_scaling"]["enabled"]:
         compare_batchsize(metrics, config)
@@ -1059,6 +1073,7 @@ def compare_sparse(all_metrics: dict, config: dict) -> None:
         "Number of Training Samples",
         "sparse_errors.png",
         config,
+        xlog=True,
     )
 
 

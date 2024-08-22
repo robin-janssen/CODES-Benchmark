@@ -10,7 +10,7 @@ from torch import Tensor, nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from utils import create_model_dir
+from utils import create_model_dir, time_execution
 
 # from typing import Optional, Union
 
