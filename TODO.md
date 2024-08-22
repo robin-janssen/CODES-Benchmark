@@ -1,6 +1,9 @@
 # Todos for the project
 
 - [ ] **Write NeurIPS submission**
+- [ ] Read into DataHosting on HeiDATA
+- [ ] Choose a code licence for the code - MIT?
+- [ ] Copy over actions and other settings from the SSC Cookiecutter Template
 
 ## Refactor
 - [x] Remove the # model.n_timesteps = 100 lines in bench_fcts once new models are trained.
