@@ -600,7 +600,7 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
 
     # UQ losses
     if conf["uncertainty"]["enabled"]:
-        n_models = conf["uncertainty"]["n_models"]
+        n_models = conf["uncertainty"]["ensemble_size"]
         uq_train_losses = [main_train_loss]
         uq_test_losses = [main_test_loss]
         for i in range(1, n_models):
