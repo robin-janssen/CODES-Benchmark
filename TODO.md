@@ -11,6 +11,7 @@
 - [x] Think about the organisation of the model config files
 - [x] **Complete the README.md**
 - [x] Rename NeuralODE to LatentNeuralODE
+- [ ] **Save Plots as SVG for immaculate quality**
 - [ ] Latex-font labels in the plots?
 - [ ] Find a way to save the optimal batch size and recommended number of epochs for each model.
 - [ ] Rename batch_scaling to batch.
