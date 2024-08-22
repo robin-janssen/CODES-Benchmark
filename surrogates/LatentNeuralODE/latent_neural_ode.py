@@ -1,9 +1,6 @@
 import numpy as np
 import torch
-
-# from torchdiffeq import odeint, odeint_adjoint
 import torchode as to
-from torch import Tensor
 from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
@@ -132,7 +129,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         self,
         train_loader: DataLoader,
         test_loader: DataLoader,
-        timesteps: np.ndarray | Tensor,
+        # timesteps: np.ndarray | Tensor,
         epochs: int,
         position: int = 0,
         description: str = "Training LatentNeuralODE",
@@ -143,7 +140,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         Args:
             train_loader (DataLoader): The data loader for the training data.
             test_loader (DataLoader): The data loader for the test data.
-            timesteps (np.ndarray | Tensor): The array of timesteps.
+            # timesteps (np.ndarray | Tensor): The array of timesteps.
             epochs (int | None): The number of epochs to train the model. If None, uses the value from the config.
             position (int): The position of the progress bar.
             description (str): The description for the progress bar.
@@ -151,8 +148,8 @@ class LatentNeuralODE(AbstractSurrogateModel):
         Returns:
             None
         """
-        if not isinstance(timesteps, torch.Tensor):
-            timesteps = torch.tensor(timesteps).to(self.device)
+        # if not isinstance(timesteps, torch.Tensor):
+        #     timesteps = torch.tensor(timesteps).to(self.device)
 
         # TODO: make Optimizer and scheduler configable
         optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
