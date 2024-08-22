@@ -1,20 +1,20 @@
 # Global settings for the benchmark
-training_id: "simple_ode_testrun"
+training_id: "test_delete_me"
 surrogates: ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
-batch_size: [1024, 1024, 128, 128]
-epochs: [500, 500, 500, 500]
+batch_size: [1024, 1024, 256, 256]
+epochs: [2, 2, 2, 2]
 dataset: 
-  name: "simple_ode"
+  name: "osu2008"
   log10_transform: False
   normalise: "minmax" # "standardise", "minmax", "disable"
-devices: ["cuda:2", "cuda:3", "cuda:5", "cuda:6", "cuda:8"]
+devices: ["cpu"]
 seed: 42
 verbose: False
 
 # Models to train
 interpolation: 
   enabled: True
-  intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
+  intervals: [2, 4, 6, 8, 10]
 extrapolation: 
   enabled: True
   cutoffs: [50, 60, 70, 80, 90]
