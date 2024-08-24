@@ -81,7 +81,7 @@ def get_required_models_list(surrogate: str, conf: dict) -> list:
         )
 
     if conf["uncertainty"]["enabled"]:
-        n_models = conf["uncertainty"]["n_models"]
+        n_models = conf["uncertainty"]["ensemble_size"]
         required_models.extend(
             [f"{surrogate.lower()}_UQ_{i+1}.pth" for i in range(n_models - 1)]
         )
@@ -320,7 +320,7 @@ def get_surrogate(surrogate_name: str) -> SurrogateModel | None:
         surrogate_name (str): The name of the surrogate model.
 
     Returns:
-        bool: True if the surrogate model exists, False otherwise.
+        SurrogateModel | None: The surrogate model class if it exists, otherwise None.
     """
     for surrogate in surrogate_classes:
         if surrogate_name == surrogate.__name__:

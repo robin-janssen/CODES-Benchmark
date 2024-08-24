@@ -2,37 +2,37 @@
 training_id: "all4_testrun_3"
 surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
 batch_size: [1024, 1024, 128, 128]
-epochs: [5,5,5,5]
+epochs: [500, 500, 500, 500]
 dataset: 
-  name: "osu2008"
+  name: "simple_ode"
   log10_transform: False
   normalise: "minmax" # "standardise", "minmax", "disable"
-devices: ["cuda:8"]
+devices: ["cuda:0"]
 seed: 42
 verbose: False
 
 # Models to train
 interpolation: 
-  enabled: False
+  enabled: True
   intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
 extrapolation: 
-  enabled: False
+  enabled: True
   cutoffs: [50, 60, 70, 80, 90]
 sparse: 
-  enabled: False
+  enabled: True
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
-  enabled: False
+  enabled: True
   sizes: [16, 64, 256, 1024, 4096]
 uncertainty: 
-  enabled: False
-  n_models: 5  # Number of models for deep ensemble
+  enabled: True
+  ensemble_size: 5  # Number of models for deep ensemble
 
 # Evaluations during benchmark
-losses: False
-gradients: False
+losses: True
+gradients: True
 timing: True
-compute: False
+compute: True
 compare: True # Whether to compare the surrogates
 
 

@@ -11,10 +11,12 @@ from utils import (
     nice_print,
     save_task_list,
 )
+from data.data_utils import download_data
 
 
 def main(args):
     config = load_and_save_config(config_path=args.config)
+    download_data(config["dataset"]["name"])
     task_list_filepath = check_training_status(config["training_id"])
     tasks = load_task_list(task_list_filepath)
 

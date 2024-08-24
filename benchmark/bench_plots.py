@@ -601,7 +601,7 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
 
     # UQ losses
     if conf["uncertainty"]["enabled"]:
-        n_models = conf["uncertainty"]["n_models"]
+        n_models = conf["uncertainty"]["ensemble_size"]
         uq_train_losses = [main_train_loss]
         uq_test_losses = [main_test_loss]
         for i in range(1, n_models):
@@ -1025,7 +1025,7 @@ def plot_uncertainty_over_time_comparison(
         abs_errors = absolute_errors[surrogate]
         abs_errors_time = np.mean(abs_errors, axis=(0, 2))
         abs_error_avg = np.mean(abs_errors_time)
-        err_label = f"{surrogate} rel error (mean: {abs_error_avg:.2e})"
+        err_label = f"{surrogate} abs. error (mean: {abs_error_avg:.2e})"
         plt.plot(
             timesteps,
             abs_errors_time,

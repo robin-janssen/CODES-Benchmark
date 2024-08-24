@@ -718,7 +718,7 @@ def evaluate_UQ(
         dict: A dictionary containing UQ metrics.
     """
     training_id = conf["training_id"]
-    n_models = conf["uncertainty"]["n_models"]
+    n_models = conf["uncertainty"]["ensemble_size"]
     UQ_metrics = []
 
     # Obtain predictions for each model
@@ -844,7 +844,9 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
     for surr_name, _ in metrics.items():
         training_id = config["training_id"]
         surrogate_class = get_surrogate(surr_name)
-        model = surrogate_class(device=device)
+        n_timesteps = metrics[surr_name]["timesteps"].shape[0]
+        n_chemicals = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
+        model = surrogate_class(device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps)
 
         def load_losses(model_identifier: str):
             model.load(training_id, surr_name, model_identifier=model_identifier)
@@ -881,7 +883,9 @@ def compare_MAE(metrics: dict, config: dict) -> None:
     for surr_name, _ in metrics.items():
         training_id = config["training_id"]
         surrogate_class = get_surrogate(surr_name)
-        model = surrogate_class(device=device)
+        n_timesteps = metrics[surr_name]["timesteps"].shape[0]
+        n_chemicals = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
+        model = surrogate_class(device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps)
         model_identifier = f"{surr_name.lower()}_main"
         model.load(training_id, surr_name, model_identifier=model_identifier)
         # model.n_timesteps = 100
