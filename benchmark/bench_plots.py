@@ -7,6 +7,8 @@ from matplotlib.colors import ListedColormap
 from matplotlib.gridspec import GridSpec
 from scipy.ndimage import gaussian_filter1d
 
+from .bench_utils import format_time
+
 # Utility functions for plotting
 
 
@@ -134,7 +136,6 @@ def plot_relative_errors_over_time(
     )
 
     plt.yscale("log")
-    plt.ylim(1e-6, 10)
     plt.xlabel("Timestep")
     plt.ylabel("Relative Error")
     plt.xlim(timesteps[0], timesteps[-1])
@@ -1065,19 +1066,6 @@ def inference_time_bar_plot(
     Returns:
         None
     """
-    # Determine the appropriate time unit (s, ms, or µs)
-    max_mean = max(means)
-    if max_mean < 1e-3:
-        unit = "µs"
-        means = [mean * 1e6 for mean in means]
-        stds = [std * 1e6 for std in stds]
-    elif max_mean < 1:
-        unit = "ms"
-        means = [mean * 1e3 for mean in means]
-        stds = [std * 1e3 for std in stds]
-    else:
-        unit = "s"
-
     # Create the bar plot
     fig, ax = plt.subplots(figsize=(10, 6))
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(surrogates)))
@@ -1088,21 +1076,22 @@ def inference_time_bar_plot(
     # Calculate the upper y-limit to provide space for text
     max_bar = max(means[i] + stds[i] for i in range(len(means)))
     min_bar = min(means[i] - stds[i] for i in range(len(means)))
-    ax.set_ylim(min_bar * 0.5, max_bar * 1.5)  # Set limits with some padding
+    ax.set_ylim(min_bar * 0.3, max_bar * 2)  # Set limits with some padding
 
-    # Add inference time as text to the bars
-    for i, mean in enumerate(means):
+    # Add inference time as text to the bars using the format_time function
+    for i, (mean, std) in enumerate(zip(means, stds)):
+        formatted_time = format_time(mean, std)
         ax.text(
             i,
-            mean + stds[i] * 1.2,  # Position the text above the bar
-            f"{mean:.2f} {unit}",
+            mean + std * 1.2,  # Position the text above the bar
+            formatted_time,
             ha="center",
             va="bottom",
             fontsize=10,
         )
 
     ax.set_xlabel("Surrogate Model")
-    ax.set_ylabel(f"Mean Inference Time per Prediction ({unit})")
+    ax.set_ylabel("Mean Inference Time per Run")
     ax.set_yscale("log")
     ax.set_title("Comparison of Mean Inference Time with Standard Deviation")
 

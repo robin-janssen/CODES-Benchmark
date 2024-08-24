@@ -345,6 +345,14 @@ def format_time(mean_time, std_time):
         return f"{mean_time:.2f} s ± {std_time:.2f} s"
 
 
+def format_seconds(seconds: int) -> str:
+    """Format a duration given in seconds as hh:mm:ss."""
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    seconds = seconds % 60
+    return f"{hours:02}:{minutes:02}:{seconds:02}"
+
+
 def flatten_dict(d: dict, parent_key: str = "", sep: str = " - ") -> dict:
     """
     Flatten a nested dictionary.

@@ -33,6 +33,7 @@ from .bench_plots import (
 )
 from .bench_utils import (
     count_trainable_parameters,
+    format_seconds,
     format_time,
     get_surrogate,
     make_comparison_csv,
@@ -191,6 +192,7 @@ def evaluate_accuracy(
 
     # Load the model
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
+    train_time = model.train_duration
     num_chemicals = model.n_chemicals
     # model.n_timesteps = 100
 
@@ -202,6 +204,7 @@ def evaluate_accuracy(
 
     # Calculate relative errors
     absolute_errors = np.abs(preds - targets)
+    mean_absolute_error = np.mean(absolute_errors)
     relative_errors = np.abs(absolute_errors / targets)
 
     # Plot relative errors over time
@@ -225,12 +228,14 @@ def evaluate_accuracy(
     # Store metrics
     accuracy_metrics = {
         "mean_squared_error": mean_squared_error,
+        "mean_absolute_error": mean_absolute_error,
         "mean_relative_error": np.mean(relative_errors),
         "median_relative_error": np.median(relative_errors),
         "max_relative_error": np.max(relative_errors),
         "min_relative_error": np.min(relative_errors),
         "absolute_errors": absolute_errors,
         "relative_errors": relative_errors,
+        "main_model_training_time": train_time,
     }
 
     return accuracy_metrics
@@ -938,12 +943,8 @@ def compare_inference_time(
 
     for surrogate, surrogate_metrics in metrics.items():
         if "timing" in surrogate_metrics:
-            mean_time = surrogate_metrics["timing"].get(
-                "mean_inference_time_per_prediction"
-            )
-            std_time = surrogate_metrics["timing"].get(
-                "std_inference_time_per_prediction"
-            )
+            mean_time = surrogate_metrics["timing"].get("mean_inference_time_per_run")
+            std_time = surrogate_metrics["timing"].get("std_inference_time_per_run")
             if mean_time is not None and std_time is not None:
                 mean_inference_times[surrogate] = mean_time
                 std_inference_times[surrogate] = std_time
@@ -1163,42 +1164,50 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
     mse_values = [
         metrics["accuracy"]["mean_squared_error"] for metrics in all_metrics.values()
     ]
+    mae_values = [
+        metrics["accuracy"]["mean_absolute_error"] for metrics in all_metrics.values()
+    ]
     mre_values = [
         metrics["accuracy"]["mean_relative_error"] for metrics in all_metrics.values()
+    ]
+    train_times = [
+        int(metrics["accuracy"]["main_model_training_time"])
+        for metrics in all_metrics.values()
     ]
 
     # Find the best (minimum) MSE and MRE values
     best_mse_index = np.argmin(mse_values)
+    best_mae_index = np.argmin(mae_values)
     best_mre_index = np.argmin(mre_values)
+    best_time_index = np.argmin(train_times)
 
     mse_row = ["MSE"] + [
         f"{value:.4f}" if i != best_mse_index else f"* {value:.4f} *"
         for i, value in enumerate(mse_values)
     ]
+    mae_row = ["MAE"] + [
+        f"{value:.4f}" if i != best_mae_index else f"* {value:.4f} *"
+        for i, value in enumerate(mae_values)
+    ]
     mre_row = ["Mean Rel. Error"] + [
         f"{value*100:.2f} %" if i != best_mre_index else f"* {value*100:.2f} % *"
         for i, value in enumerate(mre_values)
     ]
-    rows.extend([mse_row, mre_row])
-
-    # Gradients (if enabled)
-    if config.get("gradients", False):
-        avg_corr_values = [
-            metrics["gradients"]["avg_correlation"] for metrics in all_metrics.values()
-        ]
-        avg_corr_row = ["Avg Correlation"] + [
-            f"{value:.4f}" for value in avg_corr_values
-        ]
-        rows.append(avg_corr_row)
+    train_strings = [f"{format_seconds(time)}" for time in train_times]
+    tt_row = ["Train Time (hh:mm:ss)"] + [
+        f"{time}" if i != best_time_index else f"* {time} *"
+        for i, time in enumerate(train_strings)
+    ]
+    rows.extend([mse_row, mae_row, mre_row, tt_row])
 
     # Timing metrics (if enabled)
     if config.get("timing", False):
         mean_times = [
-            metrics["timing"]["mean_inference_time_per_prediction"]
+            metrics["timing"]["mean_inference_time_per_run"]
             for metrics in all_metrics.values()
         ]
         std_times = [
-            metrics["timing"]["std_inference_time_per_prediction"]
+            metrics["timing"]["std_inference_time_per_run"]
             for metrics in all_metrics.values()
         ]
 
@@ -1214,6 +1223,16 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
             for i, (mean, std) in enumerate(zip(mean_times, std_times))
         ]
         rows.append(timing_row)
+
+    # Gradients (if enabled)
+    if config.get("gradients", False):
+        avg_corr_values = [
+            metrics["gradients"]["avg_correlation"] for metrics in all_metrics.values()
+        ]
+        avg_corr_row = ["Avg Correlation"] + [
+            f"{value:.4f}" for value in avg_corr_values
+        ]
+        rows.append(avg_corr_row)
 
     # Compute metrics (if enabled)
     if config.get("compute", False):
