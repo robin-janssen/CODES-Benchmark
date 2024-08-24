@@ -1,3 +1,5 @@
+# TODO: move this to an appropriate location
+
 import os
 from argparse import ArgumentParser
 
@@ -26,10 +28,10 @@ def func(t, n):
     k = np.array([0.8, 0.5, 0.2])
     return np.array(
         [
-            -k[0] * n[0] - k[2] * n[0] * n[2] / (t + 1),
+            -k[0] * n[0] - k[2] * n[0] * n[2],
             k[0] * n[0] - k[1] * n[1] + 2 * k[2] * n[0] * n[2],
             k[1] * n[1] - k[2] * n[0] * n[2],
-            k[2] * n[0] * t,
+            k[2] * n[0] + k[1] / k[0] * n[1],
             k[0] * n[0] / k[1] * n[2] - k[1] * n[0] * n[2],
         ]
     )

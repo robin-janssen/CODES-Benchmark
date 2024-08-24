@@ -1,4 +1,6 @@
 import os
+import urllib.request
+import yaml
 
 import h5py
 import numpy as np
@@ -306,7 +308,7 @@ def create_dataset(
     train_data: np.ndarray,
     test_data: np.ndarray | None = None,
     val_data: np.ndarray | None = None,
-    split: tuple[float, float, float] = (0.75, 0.05, 0.2),
+    split: tuple[float, float, float] | None = None,
     timesteps: np.ndarray | None = None,
     labels: list[str] | None = None,
 ):
@@ -394,7 +396,7 @@ def create_dataset(
 
     np.random.shuffle(train_data)
 
-    if not (test_data is None and val_data is None):
+    if not (test_data is None and val_data is None) and split is not None:
         print(
             "Warning: split values will be ignored since test_data and val_data are provided."
         )
@@ -418,3 +420,26 @@ def create_dataset(
     )
 
     print(f"Dataset '{name}' created at {dataset_dir}")
+
+def download_data(dataset_name: str):
+    """
+    Download the specified dataset if it is not present
+    Args:
+        dataset_name (str): The name of the dataset.
+    """
+    if os.path.isfile(f"data/{dataset_name.lower()}/data.hdf5"):
+        return
+
+    with open("data/data_sources.yaml", "r") as file:
+        data_sources = yaml.safe_load(file)
+
+    try:
+        url = data_sources[dataset_name]
+    except KeyError:
+        raise ValueError(f"Dataset '{dataset_name}' not found in data_sources.yaml")
+
+    os.makedirs(f"data/{dataset_name.lower()}", exist_ok=True)
+    
+    print(f"Downloading dataset '{dataset_name}'...")
+    urllib.request.urlretrieve(url, f"data/{dataset_name.lower()}/data.hdf5")
+    print(f"Dataset '{dataset_name}' downloaded successfully.")
