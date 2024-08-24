@@ -8,6 +8,8 @@
 - [x] Think about the organisation of the model config files
 - [x] **Complete the README.md**
 - [x] Rename NeuralODE to LatentNeuralODE
+- [ ] **Check the memory benchmarking**
+- [ ] **Check the time benchmarking** How should we measure the time?
 - [ ] Latex-font labels in the plots?
 - [ ] Find a way to save the optimal batch size and recommended number of epochs for each model.
 - [ ] Rename batch_scaling to batch.
@@ -16,7 +18,6 @@
 - [ ] Docstrings completion.
 - [ ] Make a clean requirements.txt
 - [ ] Refactoring for more generality (remove chemistry specific code)
-- [ ] **Check the memory benchmarking**
 - [ ] **Make tutorial notebooks/examples**
 - [ ] Think about the error plots - where should absolute errors be used, where relative errors? Does it make sense to use relative errors for the chemical error plots?
 - [ ] Add testing
