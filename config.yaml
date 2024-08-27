@@ -29,10 +29,6 @@ uncertainty:
   ensemble_size: 5  # Number of models for deep ensemble
 
 # Evaluations during benchmark
-losses: True
-gradients: True
-timing: True
-compute: True
 compare: True # Whether to compare the surrogates
 
 

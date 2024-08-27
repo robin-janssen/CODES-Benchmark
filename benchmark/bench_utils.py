@@ -41,6 +41,130 @@ def check_surrogate(surrogate: str, conf: dict) -> None:
     print(f"All required models for surrogate {surrogate} are present.")
 
 
+def check_benchmark(conf: dict) -> None:
+    """
+    Check whether there are any configuration issues with the benchmark.
+
+    Args:
+        conf (dict): The configuration dictionary.
+
+    Raises:
+        FileNotFoundError: If the training ID directory is missing or if the .yaml file is missing.
+        ValueError: If the configuration is missing required keys or the values do not match the training configuration.
+    """
+    # Check for the training directory and load the training configuration
+    print("\nChecking benchmark configuration...")
+    training_id = conf.get("training_id")
+    if not training_id:
+        raise ValueError("Configuration must include a 'training_id'.")
+
+    trained_dir = os.path.join(os.getcwd(), "trained", training_id)
+    if not os.path.exists(trained_dir):
+        raise FileNotFoundError(f"Training ID directory {training_id} not found.")
+
+    yaml_file = os.path.join(trained_dir, "config.yaml")
+    if not os.path.isfile(yaml_file):
+        raise FileNotFoundError(
+            f"Training configuration file not found in directory {trained_dir}."
+        )
+
+    with open(yaml_file, "r") as file:
+        training_conf = yaml.safe_load(file)
+
+    # 1. Check Surrogates
+    training_surrogates = set(training_conf.get("surrogates", []))
+    benchmark_surrogates = set(conf.get("surrogates", []))
+    if not benchmark_surrogates.issubset(training_surrogates):
+        raise ValueError(
+            "Benchmark configuration includes surrogates that were not in the training configuration."
+        )
+
+    # 2. Check Batch Size
+    if "batch_size" in conf:
+        training_batch_size = training_conf.get("batch_size", [])
+        benchmark_batch_size = conf.get("batch_size", [])
+        if len(training_batch_size) != len(benchmark_batch_size):
+            raise ValueError(
+                "Mismatch in number of batch sizes between training and benchmark configuration."
+            )
+
+        # Check if batch sizes correspond to the correct surrogates
+        for i, surrogate in enumerate(conf.get("surrogates", [])):
+            if surrogate in training_conf["surrogates"]:
+                index = training_conf["surrogates"].index(surrogate)
+                if training_batch_size[index] != benchmark_batch_size[i]:
+                    print(
+                        f"Warning: Batch size for surrogate '{surrogate}' has changed from {training_batch_size[index]} to {benchmark_batch_size[i]}."
+                    )
+
+    # 3. Check Dataset Settings
+    training_dataset = training_conf.get("dataset", {})
+    benchmark_dataset = conf.get("dataset", {})
+
+    # Check if any dataset keys or values do not match
+    for key, training_value in training_dataset.items():
+        benchmark_value = benchmark_dataset.get(key)
+        if benchmark_value != training_value:
+            raise ValueError(
+                f"Dataset setting '{key}' does not match between training and benchmark configurations. "
+                f"Training value: {training_value}, Benchmark value: {benchmark_value}."
+            )
+
+    # Check if there are any additional keys in the benchmark dataset not present in training
+    for key in benchmark_dataset.keys():
+        if key not in training_dataset:
+            raise ValueError(
+                f"Additional dataset setting '{key}' found in benchmark configuration that is not present in training configuration."
+            )
+
+    # 4. Check Modalities (Interpolation, Extrapolation, Sparse, Batch Scaling, Uncertainty)
+    modalities = [
+        "interpolation",
+        "extrapolation",
+        "sparse",
+        "batch_scaling",
+        "uncertainty",
+    ]
+    for modality in modalities:
+        training_modality = training_conf.get(modality, {})
+        benchmark_modality = conf.get(modality, {})
+
+        # Check if enabled state has changed incorrectly
+        if benchmark_modality.get("enabled", False) and not training_modality.get(
+            "enabled", False
+        ):
+            raise ValueError(
+                f"Modality '{modality}' is enabled in benchmark but was not enabled in training."
+            )
+
+        # Check values within each modality
+        for key, value in benchmark_modality.items():
+            if key == "enabled":
+                continue
+            if key not in training_modality:
+                raise ValueError(
+                    f"Benchmark configuration provides a value for '{key}' in '{modality}' not present in training."
+                )
+            if isinstance(value, list):
+                if not set(value).issubset(set(training_modality.get(key, []))):
+                    raise ValueError(
+                        f"Benchmark configuration provides values for '{key}' in '{modality}' not trained for."
+                    )
+            else:
+                if modality == "uncertainty" and key == "ensemble_size":
+                    if value > training_modality.get(key, value):
+                        raise ValueError(
+                            f"Benchmark ensemble_size for '{modality}' cannot be larger than in training."
+                        )
+                else:
+                    if value != training_modality.get(key):
+                        raise ValueError(
+                            f"Benchmark configuration value for '{key}' in '{modality}' does not match training configuration."
+                        )
+
+    print("Configuration check passed successfully.")
+
+
 def get_required_models_list(surrogate: str, conf: dict) -> list:
     """
     Generate a list of required models based on the configuration settings.

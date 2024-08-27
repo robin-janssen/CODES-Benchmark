@@ -1036,7 +1036,7 @@ def plot_uncertainty_over_time_comparison(
 
     plt.xlabel("Time")
     plt.xlim(timesteps[0], timesteps[-1])
-    plt.ylabel("Uncertainty")
+    plt.ylabel("Uncertainty/Absolute Error")
     plt.title("Comparison of Predictive Uncertainty Over Time")
     plt.legend()
 
@@ -1802,5 +1802,115 @@ def int_ext_sparse(all_metrics: dict, config: dict) -> None:
     plt.tight_layout(rect=[0, 0.03, 1, 0.98])
 
     save_plot(fig, "generalization_error_comparison.png", config)
+
+    plt.close()
+
+
+def rel_errors_and_uq(
+    metrics: dict[str, dict], config: dict, save: bool = True
+) -> None:
+    """
+    Create a figure with two subplots: relative errors over time and uncertainty over time for different surrogate models.
+
+    Args:
+        metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
+        save (bool): Whether to save the plot.
+
+    Returns:
+        None
+    """
+    # Prepare data for relative errors plot
+    mean_errors = {}
+    median_errors = {}
+    uncertainties = {}
+    absolute_errors = {}
+    timesteps = None
+
+    for surrogate, surrogate_metrics in metrics.items():
+        relative_error_model = surrogate_metrics["accuracy"].get("relative_errors")
+        if relative_error_model is not None:
+            mean_errors[surrogate] = np.mean(relative_error_model, axis=(0, 2))
+            median_errors[surrogate] = np.median(relative_error_model, axis=(0, 2))
+
+        uncertainties[surrogate] = surrogate_metrics["UQ"]["pred_uncertainty"]
+        absolute_errors[surrogate] = surrogate_metrics["accuracy"]["absolute_errors"]
+        timesteps = surrogate_metrics["timesteps"]
+
+    # Prepare data for uncertainty plot
+    pred_unc_time = {
+        surrogate: np.mean(uncertainty, axis=(0, 2))
+        for surrogate, uncertainty in uncertainties.items()
+    }
+
+    # Create subplots
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+
+    # Plot 1: Relative Errors
+    colors = plt.cm.viridis(np.linspace(0, 0.9, len(mean_errors)))
+    linestyles = ["-", "--"]
+
+    for i, surrogate in enumerate(mean_errors.keys()):
+        mean = np.mean(mean_errors[surrogate])
+        mean_label = f"{surrogate} Mean = {mean*100:.2f} %"
+        ax1.plot(
+            timesteps,
+            mean_errors[surrogate],
+            label=mean_label,
+            color=colors[i],
+            linestyle=linestyles[0],
+        )
+        median = np.mean(median_errors[surrogate])
+        median_label = f"{surrogate} Median = {median*100:.2f} %"
+        ax1.plot(
+            timesteps,
+            median_errors[surrogate],
+            label=median_label,
+            color=colors[i],
+            linestyle=linestyles[1],
+        )
+
+    ax1.set_xlabel("Time")
+    ax1.set_xlim(timesteps[0], timesteps[-1])
+    ax1.set_ylabel("Relative Error")
+    ax1.set_yscale("log")
+    ax1.set_title("Comparison of Relative Errors Over Time")
+    ax1.legend(loc="best")
+
+    # Plot 2: Uncertainty over Time
+    for i, surrogate in enumerate(pred_unc_time.keys()):
+        avg_uncertainty = np.mean(pred_unc_time[surrogate])
+        uq_label = f"{surrogate} uncertainty (mean: {avg_uncertainty:.2e})"
+        ax2.plot(
+            timesteps,
+            pred_unc_time[surrogate],
+            label=uq_label,
+            linestyle="-",
+            color=colors[i],
+        )
+
+        abs_errors_time = np.mean(absolute_errors[surrogate], axis=(0, 2))
+        abs_error_avg = np.mean(abs_errors_time)
+        err_label = f"{surrogate} abs. error (mean: {abs_error_avg:.2e})"
+        ax2.plot(
+            timesteps,
+            abs_errors_time,
+            label=err_label,
+            color=colors[i],
+            linestyle="--",
+        )
+
+    ax2.set_xlabel("Time")
+    ax2.set_xlim(timesteps[0], timesteps[-1])
+    ax2.set_ylabel("Uncertainty/Absolute Error")
+    ax2.set_title("Comparison of Predictive Uncertainty Over Time")
+    ax2.legend(loc="best")
+
+    # Adjust layout
+    plt.tight_layout(rect=[0, 0.03, 1, 0.98])
+
+    # Save plot if required
+    if save and config:
+        save_plot(fig, "combined_rel_errors_and_uq.png", config)
 
     plt.close()
