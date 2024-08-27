@@ -1,29 +1,29 @@
 # Global settings for the benchmark
-training_id: "all4_testrun_3"
+training_id: "reaction_test"
 surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
 batch_size: [1024, 1024, 128, 128]
-epochs: [500, 500, 500, 500]
+epochs: [500, 500, 1000, 2000]
 dataset: 
-  name: "simple_ode"
+  name: "simple_reaction"
   log10_transform: False
   normalise: "minmax" # "standardise", "minmax", "disable"
-devices: ["cuda:0"]
+devices: ["cuda:5", "cuda:8"]
 seed: 42
 verbose: False
 
 # Models to train
 interpolation: 
   enabled: True
-  intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
+  intervals: [4, 8, 12]
 extrapolation: 
   enabled: True
-  cutoffs: [50, 60, 70, 80, 90]
+  cutoffs: [50, 80, 100]
 sparse: 
   enabled: True
-  factors: [2, 4, 8, 16, 32]
+  factors: [2, 16, 32]
 batch_scaling:
   enabled: True
-  sizes: [16, 64, 256, 1024, 4096]
+  sizes: [16, 1024, 8192]
 uncertainty: 
   enabled: True
   ensemble_size: 5  # Number of models for deep ensemble
