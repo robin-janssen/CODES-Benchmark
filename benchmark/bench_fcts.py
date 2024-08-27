@@ -30,6 +30,7 @@ from .bench_plots import (
     plot_relative_errors_over_time,
     plot_surr_losses,
     plot_uncertainty_over_time_comparison,
+    rel_errors_and_uq,
 )
 from .bench_utils import (
     count_trainable_parameters,
@@ -81,8 +82,8 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     # model_config = get_model_config(surr_name, conf["dataset"]["name"])
     n_timesteps = train_data.shape[1]
     n_chemicals = train_data.shape[2]
-    model = surrogate_class(device, n_chemicals, n_timesteps)
     n_test_samples = n_timesteps * val_data.shape[0]
+    model = surrogate_class(device, n_chemicals, n_timesteps)
 
     # Placeholder for metrics
     metrics = {}
@@ -354,9 +355,9 @@ def time_inference(
         total_time = 0
         with torch.inference_mode():
             for inputs in test_loader:
-                start_time = time.time()
+                start_time = time.perf_counter()
                 _, _ = model.forward(inputs)
-                end_time = time.time()
+                end_time = time.perf_counter()
                 total_time += end_time - start_time
         # total_time /= n_test_samples
         inference_times.append(total_time)
@@ -820,6 +821,7 @@ def compare_models(metrics: dict, config: dict):
     # Compare UQ metrics
     if config["uncertainty"]["enabled"]:
         compare_UQ(metrics, config)
+        rel_errors_and_uq(metrics, config)
 
     tabular_comparison(metrics, config)
 
@@ -846,7 +848,9 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
         surrogate_class = get_surrogate(surr_name)
         n_timesteps = metrics[surr_name]["timesteps"].shape[0]
         n_chemicals = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
-        model = surrogate_class(device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps)
+        model = surrogate_class(
+            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+        )
 
         def load_losses(model_identifier: str):
             model.load(training_id, surr_name, model_identifier=model_identifier)
@@ -885,7 +889,9 @@ def compare_MAE(metrics: dict, config: dict) -> None:
         surrogate_class = get_surrogate(surr_name)
         n_timesteps = metrics[surr_name]["timesteps"].shape[0]
         n_chemicals = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
-        model = surrogate_class(device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps)
+        model = surrogate_class(
+            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+        )
         model_identifier = f"{surr_name.lower()}_main"
         model.load(training_id, surr_name, model_identifier=model_identifier)
         # model.n_timesteps = 100
@@ -1193,7 +1199,7 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
         f"{value:.4f}" if i != best_mae_index else f"* {value:.4f} *"
         for i, value in enumerate(mae_values)
     ]
-    mre_row = ["Mean Rel. Error"] + [
+    mre_row = ["MRE"] + [
         f"{value*100:.2f} %" if i != best_mre_index else f"* {value*100:.2f} % *"
         for i, value in enumerate(mre_values)
     ]
@@ -1233,7 +1239,7 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
         avg_corr_values = [
             metrics["gradients"]["avg_correlation"] for metrics in all_metrics.values()
         ]
-        avg_corr_row = ["Avg Correlation"] + [
+        avg_corr_row = ["Gradient Corr."] + [
             f"{value:.4f}" for value in avg_corr_values
         ]
         rows.append(avg_corr_row)
@@ -1247,18 +1253,18 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
         rows.append(num_params_row)
 
     # UQ metrics (if enabled)
-    if config.get("UQ", {}).get("enabled", False):
+    if config.get("uncertainty", False).get("enabled", False):
         avg_uncertainties = [
             metrics["UQ"]["average_uncertainty"] for metrics in all_metrics.values()
         ]
         uq_corr_values = [
             metrics["UQ"]["correlation_metrics"] for metrics in all_metrics.values()
         ]
-        uq_rows = [
-            ["Avg Uncertainty"] + [f"{value:.4f}" for value in avg_uncertainties],
-            ["UQ Correlation"] + [f"{value:.4f}" for value in uq_corr_values],
+        avg_unc_row = ["Avg. Uncertainty"] + [
+            f"{value:.4f}" for value in avg_uncertainties
         ]
-        rows.extend(uq_rows)
+        uq_corr_row = ["UQ Corr."] + [f"{value:.4f}" for value in uq_corr_values]
+        rows.extend([avg_unc_row, uq_corr_row])
 
     # Print the table using tabulate
     table = tabulate(rows, headers, tablefmt="simple_grid")

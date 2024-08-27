@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from tqdm import tqdm
 
+from data.data_utils import download_data
 from train import parallel_training, sequential_training, train_surrogate
 from utils import (
     check_training_status,
@@ -11,13 +12,13 @@ from utils import (
     nice_print,
     save_task_list,
 )
-from data.data_utils import download_data
 
 
 def main(args):
-    config = load_and_save_config(config_path=args.config)
+    config = load_and_save_config(config_path=args.config, save=False)
     download_data(config["dataset"]["name"])
     task_list_filepath = check_training_status(config["training_id"])
+    load_and_save_config(config_path=args.config, save=True)
     tasks = load_task_list(task_list_filepath)
 
     if not tasks:

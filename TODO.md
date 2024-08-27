@@ -1,8 +1,9 @@
 # Todos for the project
 
 - [ ] **Write NeurIPS submission**
-- [ ] Read into DataHosting on HeiDATA
+- [x] Read into DataHosting on HeiDATA -> use Zenodo for now
 - [ ] Choose a code licence for the code - MIT?
+- [ ] Reach out to Lorenzo regarding the dataset
 - [ ] Copy over actions and other settings from the SSC Cookiecutter Template
 
 ## Refactor
@@ -11,34 +12,32 @@
 - [x] Think about the organisation of the model config files
 - [x] **Complete the README.md**
 - [x] Rename NeuralODE to LatentNeuralODE
+- [x] **Check the time benchmarking**
 - [ ] **Check the memory benchmarking**
-- [ ] **Check the time benchmarking** How should we measure the time?
 - [ ] **Save Plots as SVG for immaculate quality**
-- [ ] Latex-font labels in the plots?
-- [ ] Find a way to save the optimal batch size and recommended number of epochs for each model.
 - [ ] Rename batch_scaling to batch.
-- [ ] Add user prompt on whether to use task list or overwrite it.
-- [ ] Check whether the training is indeed deterministic.
-- [ ] Docstrings completion.
-- [ ] Make a clean requirements.txt
-- [ ] Refactoring for more generality (remove chemistry specific code)
+- [ ] **Check whether the training is indeed deterministic.**
+- [ ] **Docstrings completion.**
+- [ ] **Make a clean requirements.txt, clean up the python environment and do a fresh test install**
 - [ ] **Make tutorial notebooks/examples**
+- [ ] **Check/update the config maker**
 - [ ] Think about the error plots - where should absolute errors be used, where relative errors? Does it make sense to use relative errors for the chemical error plots?
-- [ ] Add testing
-- [ ] **Clean up the python environment and do a fresh test install**
+- [ ] **Add testing (for workshop)**
 
 ## New Features
 - [x] **Javascript config maker**
 - [x] **Make a table in the CLI at the end of the benchmark with the most important metrics**
 - [x] **Make a csv file with the most important metrics**
 - [x] **Make a json file with the most important metrics**
-- [ ] Calculate and add error quantities per surrogate to the individal (and comparative) outputs.
+- [x] Calculate and add error quantities per surrogate to the individal (and comparative) outputs.
+- [ ] Store output in a .txt file
+- [ ] Refactoring for more generality (remove chemistry specific code)
+- [ ] Add user prompt on whether to use task list or overwrite it.
 - [ ] Continue training of the existing models in case further convergence is needed
 - [ ] Accumulation of error when predicting quantities iteratively
 - [ ] Inter-/extrapolation in the initial conditions (domain shift)
 - [ ] Dataset Visualizations - also include how the distribution changes over time (for iterative preds)
-- [ ] Surrogate performance on Baseline ODE systems (Lorenz, Van der Pol, etc.) -> implement dynamic datasets
-- [ ] Data Storage (heibox?)
+- [ ] Add additional baseline datasets -> implement dynamic datasets
 - [ ] Datasets by Lorenzo and Simon Glover
 - [ ] Optuna tuning script
 - [ ] Determine optimal model parameters for the baseline models per dataset
@@ -56,7 +55,7 @@
 - [x] Layout of chemical error distribution plot similar to example UQ plots
 - [x] **Add overall quantities to the plots (e.g. mean, std, etc.)**
 - [ ] Contour plots to compare dynamics/UQ correlations
-- [ ] Average prediction error over time + average gradient over time
+- [ ] **Average prediction error over time + average gradient over time**
 - [ ] Scatter plot of absolute/relative error vs. inference time comparing surrogates.
 
 
