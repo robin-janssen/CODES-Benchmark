@@ -68,7 +68,7 @@ def check_benchmark(conf: dict) -> None:
             f"Training configuration file not found in directory {trained_dir}."
         )
 
-    with open(yaml_file, "r") as file:
+    with open(yaml_file, "r", encoding="uft-8") as file:
         training_conf = yaml.safe_load(file)
 
     # 1. Check Surrogates
@@ -224,7 +224,7 @@ def read_yaml_config(config_path: str) -> dict:
     Returns:
         dict: The configuration dictionary.
     """
-    with open(config_path, "r") as file:
+    with open(config_path, "r", encoding="uft-8") as file:
         conf = yaml.safe_load(file)
     return conf
 
@@ -458,7 +458,7 @@ def get_surrogate(surrogate_name: str) -> SurrogateModel | None:
 def format_time(mean_time, std_time):
     """
     Format mean and std time consistently in ns, µs, ms, or s.
-    
+
     Args:
         mean_time: The mean time.
         std_time: The standard deviation of the time.
@@ -483,7 +483,7 @@ def format_time(mean_time, std_time):
 def format_seconds(seconds: int) -> str:
     """
     Format a duration given in seconds as hh:mm:ss.
-    
+
     Args:
         seconds (int): The duration in seconds.
 
@@ -576,7 +576,7 @@ def make_comparison_csv(metrics: dict, config: dict) -> None:
     os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
     # Write to the CSV file
-    with open(csv_file_path, mode="w", newline="") as csv_file:
+    with open(csv_file_path, mode="w", newline="", encoding="utf-8") as csv_file:
         writer = csv.writer(csv_file)
 
         # Write the header row
@@ -615,7 +615,11 @@ def get_model_config(surr_name: str, dataset_name: str) -> dict:
 
     if os.path.exists(config_file):
         spec = importlib.util.spec_from_file_location("config_module", config_file)
+        if spec is None:
+            raise ImportError(f"Failed to import config module from {config_file}")
         config_module = importlib.util.module_from_spec(spec)
+        if spec.loader is None:
+            raise ImportError(f"Failed to load config module from {config_file}")
         spec.loader.exec_module(config_module)
 
         # Look for the dataclass matching the surr_name + 'Config'

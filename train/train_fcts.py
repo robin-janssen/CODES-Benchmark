@@ -60,7 +60,7 @@ def train_and_save_model(
 
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(
-        full_train_data, full_test_data, timesteps, mode, metric, config
+        full_train_data, full_test_data, timesteps, mode, metric
     )
 
     n_timesteps = train_data.shape[1]
