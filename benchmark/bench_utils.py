@@ -380,7 +380,6 @@ def clean_metrics(metrics: dict, conf: dict) -> dict:
     """
 
     # Make a deep copy of the metrics
-
     write_metrics = deepcopy(metrics)
 
     # Remove problematic entries
@@ -431,7 +430,9 @@ def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
         pass
 
     with open(
-        f"results/{conf['training_id']}/{surr_name.lower()}_metrics.yaml", "w"
+        f"results/{conf['training_id']}/{surr_name.lower()}_metrics.yaml",
+        mode="w",
+        encoding="utf-8",
     ) as f:
         yaml.dump(write_metrics, f, sort_keys=False)
 
@@ -454,7 +455,16 @@ def get_surrogate(surrogate_name: str) -> SurrogateModel | None:
 
 
 def format_time(mean_time, std_time):
-    """Format mean and std time consistently in ns, µs, ms, or s."""
+    """
+    Format mean and std time consistently in ns, µs, ms, or s.
+    
+    Args:
+        mean_time: The mean time.
+        std_time: The standard deviation of the time.
+
+    Returns:
+        str: The formatted time string.
+    """
     if mean_time < 1e-6:
         # Both in ns
         return f"{mean_time * 1e9:.2f} ns ± {std_time * 1e9:.2f} ns"
@@ -470,7 +480,15 @@ def format_time(mean_time, std_time):
 
 
 def format_seconds(seconds: int) -> str:
-    """Format a duration given in seconds as hh:mm:ss."""
+    """
+    Format a duration given in seconds as hh:mm:ss.
+    
+    Args:
+        seconds (int): The duration in seconds.
+
+    Returns:
+        str: The formatted duration string.
+    """
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60
     seconds = seconds % 60

@@ -682,6 +682,8 @@ def plot_error_distribution_per_chemical(
     # Transform error magnitudes to log-space and filter out zeros
     for i in range(num_chemicals):
         chemical_errors = errors[:, i]
+        if np.isnan(chemical_errors).any():
+            raise ValueError("Error values contain NaNs.")
         non_zero_chemical_errors = chemical_errors[chemical_errors > 0]
         log_errors.append(np.log10(non_zero_chemical_errors))
         zero_counts += np.sum(chemical_errors == 0)
