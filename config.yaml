@@ -13,13 +13,13 @@ verbose: False
 
 # Models to train
 interpolation: 
-  enabled: False
+  enabled: True
   intervals: [2, 3, 4, 5, 6, 7, 8, 10]
 extrapolation: 
-  enabled: False
+  enabled: True
   cutoffs: [50, 60, 70, 80, 90]
 sparse: 
-  enabled: False
+  enabled: True
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
   enabled: False
@@ -29,10 +29,10 @@ uncertainty:
   ensemble_size: 5  # Number of models for deep ensemble
 
 # Evaluations during benchmark
-losses: False
-gradients: False
-timing: False
-compute: False
+losses: True
+gradients: True
+timing: True
+compute: True
 compare: True # Whether to compare the surrogates
 
 

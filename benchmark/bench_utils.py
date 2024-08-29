@@ -578,30 +578,6 @@ def make_comparison_csv(metrics: dict, config: dict) -> None:
         print(f"Comparison CSV file saved at {csv_file_path}")
 
 
-# def get_model_config(surr_name: str, dataset_name) -> dict:
-#     """
-#     Get the model configuration for a specific surrogate model from the dataset folder.
-#     Returns an empty dictionary if the configuration file is not found.
-
-#     Args:
-#         surr_name (str): The name of the surrogate model.
-#         conf (dict): The configuration dictionary.
-
-#     Returns:
-#         dict: The model configuration dictionary.
-#     """
-#     dataset_name = dataset_name.lower()
-#     dataset_folder = f"data/{dataset_name}"
-#     model_config_path = f"{dataset_folder}/{surr_name.lower()}_config.yaml"
-#     if os.path.exists(model_config_path):
-#         with open(model_config_path, "r") as file:
-#             model_config = yaml.safe_load(file)
-#     else:
-#         model_config = {}
-
-#     return model_config
-
-
 def get_model_config(surr_name: str, dataset_name: str) -> dict:
     """
     Get the model configuration for a specific surrogate model from the dataset folder.

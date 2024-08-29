@@ -195,6 +195,8 @@ def evaluate_accuracy(
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
     train_time = model.train_duration
     num_chemicals = model.n_chemicals
+    model_index = conf["surrogates"].index(surr_name)
+    n_epochs = conf["epochs"][model_index]
     # model.n_timesteps = 100
 
     # Use the model's predict method
@@ -237,6 +239,7 @@ def evaluate_accuracy(
         "absolute_errors": absolute_errors,
         "relative_errors": relative_errors,
         "main_model_training_time": train_time,
+        "main_model_epochs": n_epochs,
     }
 
     return accuracy_metrics
@@ -1180,6 +1183,9 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
     mre_values = [
         metrics["accuracy"]["mean_relative_error"] for metrics in all_metrics.values()
     ]
+    epochs = [
+        metrics["accuracy"]["main_model_epochs"] for metrics in all_metrics.values()
+    ]
     train_times = [
         int(metrics["accuracy"]["main_model_training_time"])
         for metrics in all_metrics.values()
@@ -1203,12 +1209,16 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
         f"{value*100:.2f} %" if i != best_mre_index else f"* {value*100:.2f} % *"
         for i, value in enumerate(mre_values)
     ]
+    epochs_row = ["Epochs"] + [
+        f"{value}" if i != best_mse_index else f"* {value} *"
+        for i, value in enumerate(epochs)
+    ]
     train_strings = [f"{format_seconds(time)}" for time in train_times]
     tt_row = ["Train Time (hh:mm:ss)"] + [
         f"{time}" if i != best_time_index else f"* {time} *"
         for i, time in enumerate(train_strings)
     ]
-    rows.extend([mse_row, mae_row, mre_row, tt_row])
+    rows.extend([mse_row, mae_row, mre_row, epochs_row, tt_row])
 
     # Timing metrics (if enabled)
     if config.get("timing", False):
