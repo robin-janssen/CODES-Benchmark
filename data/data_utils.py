@@ -381,18 +381,19 @@ def create_dataset(
                 "Timesteps must be a 1D array with length equal to the number of timesteps in the data."
             )
 
-    if not isinstance(split, (tuple, list)):
-        raise TypeError("split must be a tuple or list of floats.")
-    if len(split) != 3:
-        raise ValueError(
-            "split must contain three values: train, test, and validation split."
-        )
-    if not all(isinstance(value, float) for value in split):
-        raise TypeError("split values must be floats.")
-    if not all(0 <= value <= 1 for value in split):
-        raise ValueError("split values must be between 0 and 1.")
-    if not split[0] + split[1] + split[2] == 1:
-        raise ValueError("split values must sum to 1.")
+    if split is not None:
+        if not isinstance(split, (tuple, list)):
+            raise TypeError("split must be a tuple or list of floats.")
+        if len(split) != 3:
+            raise ValueError(
+                "split must contain three values: train, test, and validation split."
+            )
+        if not all(isinstance(value, float) for value in split):
+            raise TypeError("split values must be floats.")
+        if not all(0 <= value <= 1 for value in split):
+            raise ValueError("split values must be between 0 and 1.")
+        if not split[0] + split[1] + split[2] == 1:
+            raise ValueError("split values must sum to 1.")
 
     np.random.shuffle(train_data)
 
@@ -400,7 +401,7 @@ def create_dataset(
         print(
             "Warning: split values will be ignored since test_data and val_data are provided."
         )
-    else:
+    if split is not None:
         full_data = train_data
         n_samples = train_data.shape[0]
         n_train = int(n_samples * split[0])

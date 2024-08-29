@@ -3,7 +3,8 @@
 - [ ] **Write NeurIPS submission**
 - [x] Read into DataHosting on HeiDATA -> use Zenodo for now
 - [ ] Choose a code licence for the code - MIT?
-- [ ] Reach out to Lorenzo regarding the dataset
+- [x] Reach out to Lorenzo regarding the dataset
+- [ ] Optuna and final run for all datasets.
 - [ ] Copy over actions and other settings from the SSC Cookiecutter Template
 
 ## Refactor
@@ -29,6 +30,7 @@
 - [x] **Make a table in the CLI at the end of the benchmark with the most important metrics**
 - [x] **Make a csv file with the most important metrics**
 - [x] **Make a json file with the most important metrics**
+- [ ] **Add and document Lorenzo's Dataset**
 - [x] Calculate and add error quantities per surrogate to the individal (and comparative) outputs.
 - [ ] Store output in a .txt file
 - [ ] Refactoring for more generality (remove chemistry specific code)
