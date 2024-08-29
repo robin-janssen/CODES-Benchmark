@@ -128,7 +128,6 @@ class FullyConnected(AbstractSurrogateModel):
         self,
         train_loader: DataLoader,
         test_loader: DataLoader,
-        # timesteps: np.ndarray,
         epochs: int,
         position: int = 0,
         description: str = "Training FullyConnected",
@@ -139,7 +138,6 @@ class FullyConnected(AbstractSurrogateModel):
         Args:
             train_loader (DataLoader): The DataLoader object containing the training data.
             test_loader (DataLoader): The DataLoader object containing the test data.
-            # timesteps (np.ndarray): The timesteps.
             epochs (int, optional): The number of epochs to train the model.
             position (int): The position of the progress bar.
             description (str): The description for the progress bar.
@@ -265,7 +263,6 @@ class FullyConnected(AbstractSurrogateModel):
         timesteps: np.ndarray,
         batch_size: int,
         shuffle: bool = False,
-        normalize: bool = True,
     ) -> DataLoader:
         """
         Create a DataLoader from a dataset.
@@ -297,12 +294,6 @@ class FullyConnected(AbstractSurrogateModel):
         inputs_tensor = torch.tensor(flattened_data, dtype=torch.float32)
         targets_tensor = torch.tensor(flattened_targets, dtype=torch.float32)
 
-        if normalize:
-            inputs_tensor = (inputs_tensor - inputs_tensor.mean()) / inputs_tensor.std()
-            targets_tensor = (
-                targets_tensor - targets_tensor.mean()
-            ) / targets_tensor.std()
-
         inputs_tensor = inputs_tensor.to(self.device)
         targets_tensor = targets_tensor.to(self.device)
         dataset = TensorDataset(inputs_tensor, targets_tensor)
@@ -312,5 +303,4 @@ class FullyConnected(AbstractSurrogateModel):
             batch_size=batch_size,
             shuffle=shuffle,
             worker_init_fn=worker_init_fn,
-            # num_workers=4,
         )

@@ -14,6 +14,7 @@
 - [x] **Complete the README.md**
 - [x] Rename NeuralODE to LatentNeuralODE
 - [x] **Check the time benchmarking**
+- [ ] **Implement optional log scale labels in plots**
 - [ ] **Check the memory benchmarking**
 - [ ] **Save Plots as SVG for immaculate quality**
 - [ ] Rename batch_scaling to batch.

@@ -1,10 +1,10 @@
 # Global settings for the benchmark
-training_id: "reaction_test"
+training_id: "normalisation_test"
 surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
 batch_size: [1024, 1024, 128, 128]
-epochs: [500, 500, 1000, 2000]
+epochs: [10, 10, 10 , 10]
 dataset: 
-  name: "simple_reaction"
+  name: "osu2008"
   log10_transform: False
   normalise: "minmax" # "standardise", "minmax", "disable"
 devices: ["cuda:5", "cuda:8"]
@@ -22,7 +22,7 @@ sparse:
   enabled: True
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
-  enabled: True
+  enabled: False
   sizes: [16, 1024, 8192]
 uncertainty: 
   enabled: True

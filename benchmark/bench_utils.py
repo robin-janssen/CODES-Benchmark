@@ -138,29 +138,30 @@ def check_benchmark(conf: dict) -> None:
             )
 
         # Check values within each modality
-        for key, value in benchmark_modality.items():
-            if key == "enabled":
-                continue
-            if key not in training_modality:
-                raise ValueError(
-                    f"Benchmark configuration provides a value for '{key}' in '{modality}' not present in training."
-                )
-            if isinstance(value, list):
-                if not set(value).issubset(set(training_modality.get(key, []))):
+        if training_modality.get("enabled", False):
+            for key, value in benchmark_modality.items():
+                if key == "enabled":
+                    continue
+                if key not in training_modality:
                     raise ValueError(
-                        f"Benchmark configuration provides values for '{key}' in '{modality}' not trained for."
+                        f"Benchmark configuration provides a value for '{key}' in '{modality}' not present in training."
                     )
-            else:
-                if modality == "uncertainty" and key == "ensemble_size":
-                    if value > training_modality.get(key, value):
+                if isinstance(value, list):
+                    if not set(value).issubset(set(training_modality.get(key, []))):
                         raise ValueError(
-                            f"Benchmark ensemble_size for '{modality}' cannot be larger than in training."
+                            f"Benchmark configuration provides values for '{key}' in '{modality}' not trained for."
                         )
                 else:
-                    if value != training_modality.get(key):
-                        raise ValueError(
-                            f"Benchmark configuration value for '{key}' in '{modality}' does not match training configuration."
-                        )
+                    if modality == "uncertainty" and key == "ensemble_size":
+                        if value > training_modality.get(key, value):
+                            raise ValueError(
+                                f"Benchmark ensemble_size for '{modality}' cannot be larger than in training."
+                            )
+                    else:
+                        if value != training_modality.get(key):
+                            raise ValueError(
+                                f"Benchmark configuration value for '{key}' in '{modality}' does not match training configuration."
+                            )
 
     print("Configuration check passed successfully.")
 
