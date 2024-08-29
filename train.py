@@ -4,7 +4,7 @@ from datetime import timedelta
 from tqdm import tqdm
 
 from data.data_utils import download_data
-from train import parallel_training, sequential_training, train_surrogate
+from train import parallel_training, sequential_training, create_task_list_for_surrogate
 from utils import (
     check_training_status,
     load_and_save_config,
@@ -15,6 +15,15 @@ from utils import (
 
 
 def main(args):
+    """
+    Main function to train the models. If the training is already completed, it will
+    print a message and exit. Otherwise, it will create a task list for each surrogate
+    model and train the models sequentially or in parallel depending on the number of
+    devices.
+
+    Args:
+        args (Namespace): The command line arguments.
+    """
     config = load_and_save_config(config_path=args.config, save=False)
     download_data(config["dataset"]["name"])
     task_list_filepath = check_training_status(config["training_id"])
@@ -27,7 +36,7 @@ def main(args):
         nice_print("Starting training")
 
         for surr_name in config["surrogates"]:
-            tasks += train_surrogate(config, surr_name)
+            tasks += create_task_list_for_surrogate(config, surr_name)
 
         save_task_list(tasks, task_list_filepath)
 

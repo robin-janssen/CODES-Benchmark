@@ -12,17 +12,34 @@ from utils import time_execution
 
 
 class LatentPoly(AbstractSurrogateModel):
+    """
+    LatentPoly class for training a polynomial model on latent space trajectories.
+    Includes an Encoder, Decoder and learnable Polynomial.
+
+    Attributes:
+        
+    """
 
     def __init__(
         self,
         device: str | None = None,
         n_chemicals: int = 29,
         n_timesteps: int = 100,
-        model_config: dict = {},
+        model_config: dict | None = None,
     ):
+        """
+        Initialize the LatentPoly model.
+
+        Args:
+            device (str | None): The device to use for training.
+            n_chemicals (int): The number of chemicals in the dataset.
+            n_timesteps (int): The number of timesteps in the dataset.
+            model_config (dict): The configuration for the model.
+        """
         super().__init__(
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
         )
+        model_config = model_config if model_config is not None else {}
         self.config = LatentPolynomialBaseConfig(**model_config)
         self.config.in_features = n_chemicals
         self.model = PolynomialModelWrapper(config=self.config, device=self.device)
@@ -63,9 +80,9 @@ class LatentPoly(AbstractSurrogateModel):
         """
         device = self.device
 
-        timesteps = torch.tensor(timesteps).to(device)
+        timesteps_torch = torch.tensor(timesteps).to(device)
 
-        dset_train = ChemDataset(dataset_train, timesteps, device=self.device)
+        dset_train = ChemDataset(dataset_train, timesteps_torch, device=self.device)
         dataloader_train = DataLoader(
             dset_train,
             batch_size=batch_size,
@@ -75,7 +92,7 @@ class LatentPoly(AbstractSurrogateModel):
 
         dataloader_test = None
         if dataset_test is not None:
-            dset_test = ChemDataset(dataset_test, timesteps, device=self.device)
+            dset_test = ChemDataset(dataset_test, timesteps_torch, device=self.device)
             dataloader_test = DataLoader(
                 dset_test,
                 batch_size=batch_size,
@@ -85,7 +102,7 @@ class LatentPoly(AbstractSurrogateModel):
 
         dataloader_val = None
         if dataset_val is not None:
-            dset_val = ChemDataset(dataset_val, timesteps, device=self.device)
+            dset_val = ChemDataset(dataset_val, timesteps_torch, device=self.device)
             dataloader_val = DataLoader(
                 dset_val,
                 batch_size=batch_size,
@@ -100,27 +117,21 @@ class LatentPoly(AbstractSurrogateModel):
         self,
         train_loader: DataLoader,
         test_loader: DataLoader,
-        # timesteps: np.ndarray | Tensor,
         epochs: int,
         position: int = 0,
         description: str = "Training LatentPoly",
     ) -> None:
         """
         Fits the model to the training data. Sets the train_loss and test_loss attributes.
+        After 10 epochs, the loss weights are renormalized to scale the individual loss terms.
 
         Args:
             train_loader (DataLoader): The data loader for the training data.
             test_loader (DataLoader): The data loader for the test data.
-            # timesteps (np.ndarray | Tensor): The array of timesteps.
             epochs (int | None): The number of epochs to train the model. If None, uses the value from the config.
-
-        Returns:
-            None
+            position (int): The position of the progress bar.
+            description (str): The description for the progress bar.
         """
-        # if not isinstance(timesteps, torch.Tensor):
-        #     timesteps = torch.tensor(timesteps).to(self.device)
-
-        # TODO: make Optimizer and scheduler configable
         optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
 
         losses = torch.empty((epochs, len(train_loader)))
@@ -139,7 +150,6 @@ class LatentPoly(AbstractSurrogateModel):
                 optimizer.step()
                 losses[epoch, i] = loss.item()
 
-                # TODO: make configable
                 if epoch == 10 and i == 0:
                     with torch.no_grad():
                         self.model.renormalize_loss_weights(x_true, x_pred)
@@ -164,11 +174,37 @@ class LatentPoly(AbstractSurrogateModel):
 
 
 class PolynomialModelWrapper(nn.Module):
+    """
+    Wraps the Encoder, Decoder and Polynomial classes into a single model.
+
+    Attributes:
+        config (LatentPolynomialBaseConfig): The configuration for the model.
+        loss_weights (list[float]): The loss weights for the model.
+        device (str): The device to use for training.
+        encoder (Encoder): The encoder model.
+        decoder (Decoder): The decoder model.
+        poly (Polynomial): The polynomial model.
+
+    Methods:
+        forward: Perform a forward pass through the model.
+        renormalize_loss_weights: Renormalize the loss weights based on the current
+            loss values so that they are accurately weighted based on the provided weights.
+        total_loss: Calculate the total loss based on the loss weights.
+        identity_loss: Calculate the identity loss (Encoder -> Decoder).
+        l2_loss: Calculate the L2 loss.
+        deriv_loss: Difference between the slopes of the predicted and true trajectories.
+        deriv2_loss: Difference between the curvature of the predicted and true trajectories.
+        deriv: Calculate the numerical derivative.
+        deriv2: Calculate the numerical second derivative.
+    """
 
     def __init__(self, config, device):
         super().__init__()
         self.config = config
-        self.loss_weights = [100.0, 1.0, 1.0, 1.0]
+        if hasattr(config, "loss_weights"):
+            self.loss_weights = config.loss_weights
+        else:
+            self.loss_weights = [100.0, 1.0, 1.0, 1.0]
         self.device = device
 
         self.encoder = Encoder(
@@ -190,6 +226,18 @@ class PolynomialModelWrapper(nn.Module):
         ).to(self.device)
 
     def forward(self, x, t_range):
+        """
+        Perform a forward pass through the model. Applies the encoder to the initial state,
+        then propagates through time in the latent space by applying the polynomial to the time range.
+        Finally, the decoder is applied to the latent space trajectory to obtain the predicted trajectory.
+
+        Args:
+            x (torch.Tensor): The input tensor.
+            t_range (torch.Tensor): The time range to propagate through.
+
+        Returns:
+            torch.Tensor: The predicted trajectory.
+        """
         current_batch_size = x.shape[0]
         x0 = x[:, 0, :]
         z0 = self.encoder(x0)  # x(t=0)
@@ -198,12 +246,30 @@ class PolynomialModelWrapper(nn.Module):
         return self.decoder(z_pred)
 
     def renormalize_loss_weights(self, x_true, x_pred):
+        """
+        Renormalize the loss weights based on the current loss values so that they are accurately
+        weighted based on the provided weights. To be used once after a short burn in phase.
+
+        Args:
+            x_true (torch.Tensor): The true trajectory.
+            x_pred (torch.Tensor): The predicted trajectory
+        """
         self.loss_weights[0] = 1 / self.l2_loss(x_true, x_pred).item() * 100
         self.loss_weights[1] = 1 / self.identity_loss(x_true).item()
         self.loss_weights[2] = 1 / self.deriv_loss(x_true, x_pred).item()
         self.loss_weights[3] = 1 / self.deriv2_loss(x_true, x_pred).item()
 
     def total_loss(self, x_true, x_pred):
+        """
+        Calculate the total loss based on the loss weights.
+
+        Args:
+            x_true (torch.Tensor): The true trajectory.
+            x_pred (torch.Tensor): The predicted trajectory
+
+        Returns:
+            torch.Tensor: The total loss.
+        """
         return (
             self.loss_weights[0] * self.l2_loss(x_true, x_pred)
             + self.loss_weights[1] * self.identity_loss(x_true)
@@ -212,40 +278,99 @@ class PolynomialModelWrapper(nn.Module):
         )
 
     def identity_loss(self, x: torch.Tensor):
+        """
+        Calculate the identity loss (Encoder -> Decoder).
+
+        Args:
+            x (torch.Tensor): The input tensor.
+
+        Returns:
+            torch.Tensor: The identity loss.
+        """
         return self.l2_loss(x, self.decoder(self.encoder(x)))
 
     @classmethod
     def l2_loss(cls, x_true: torch.Tensor, x_pred: torch.Tensor):
+        """
+        Calculate the L2 loss.
+
+        Args:
+            x_true (torch.Tensor): The true trajectory.
+            x_pred (torch.Tensor): The predicted trajectory
+
+        Returns:
+            torch.Tensor: The L2 loss.
+        """
         return torch.mean(torch.abs(x_true - x_pred) ** 2)
 
     @classmethod
-    def mass_conservation_loss(cls):
-        raise NotImplementedError("Don't use yet please")
-
-    @classmethod
     def deriv_loss(cls, x_true, x_pred):
+        """
+        Difference between the slopes of the predicted and true trajectories.
+
+        Args:
+            x_true (torch.Tensor): The true trajectory.
+            x_pred (torch.Tensor): The predicted trajectory
+
+        Returns:
+            torch.Tensor: The derivative loss.
+        """
         return cls.l2_loss(cls.deriv(x_pred), cls.deriv(x_true))
 
     @classmethod
     def deriv2_loss(cls, x_true, x_pred):
+        """
+        Difference between the curvature of the predicted and true trajectories.
+
+        Args:
+            x_true (torch.Tensor): The true trajectory.
+            x_pred (torch.Tensor): The predicted trajectory
+
+        Returns:
+            torch.Tensor: The second derivative loss.
+        """
         return cls.l2_loss(cls.deriv2(x_pred), cls.deriv2(x_true))
 
     @classmethod
     def deriv(cls, x):
+        """
+        Calculate the numerical derivative.
+
+        Args:
+            x (torch.Tensor): The input tensor.
+
+        Returns:
+            torch.Tensor: The numerical derivative.
+        """
         return torch.gradient(x, dim=1)[0].squeeze(0)
 
     @classmethod
     def deriv2(cls, x):
+        """
+        Calculate the numerical second derivative.
+
+        Args:
+            x (torch.Tensor): The input tensor.
+
+        Returns:
+            torch.Tensor: The numerical second derivative.
+        """
         return cls.deriv(cls.deriv(x))
 
 
 class Polynomial(nn.Module):
     """
-    Polynomial class with learnable parameters
+    Polynomial class with learnable parameters derived from nn.Module.
 
     Attributes:
         degree (int): the degree of the polynomial
         dimension (int): The dimension of the in- and output variables
+        coef (nn.Linear): The linear layer for the polynomial coefficients
+        t_matrix (torch.Tensor): The matrix of time values
+
+    Methods:
+        forward: Evaluate the polynomial at the given timesteps.
+        _prepare_t: Prepare the time values in matrix form for the polynomial.
     """
 
     def __init__(self, degree: int, dimension: int):
@@ -258,10 +383,28 @@ class Polynomial(nn.Module):
         self.t_matrix = None
 
     def forward(self, t: torch.Tensor):
+        """
+        Evaluate the polynomial at the given timesteps.
+
+        Args:
+            t (torch.Tensor): The input tensor.
+
+        Returns:
+            torch.Tensor: The evaluated polynomial.
+        """
         if self.t_matrix is None or self.t_matrix.shape[0] != t.shape[0]:
             self.t_matrix = self._prepare_t(t)
         return self.coef(self.t_matrix)
 
     def _prepare_t(self, t):
+        """
+        Prepare the time values in matrix form for the polynomial.
+
+        Args:
+            t (torch.Tensor): The input tensor.
+
+        Returns:
+            torch.Tensor: The prepared time values.
+        """
         t = t[:, None]
         return torch.hstack([t**i for i in range(1, self.degree + 1)]).permute(0, 2, 1)

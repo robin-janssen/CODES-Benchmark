@@ -22,6 +22,9 @@ def time_execution(func):
     """
     Decorator to time the execution of a function and store the duration
     as an attribute of the function.
+
+    Args:
+        func (callable): The function to be timed.
     """
 
     @functools.wraps(func)
@@ -43,10 +46,13 @@ def create_model_dir(
     """
     Create a directory based on a unique identifier inside a specified subfolder of the base directory.
 
-    :param base_dir: The base directory where the subfolder and unique directory will be created.
-    :param subfolder: The subfolder inside the base directory to include before the unique directory.
-    :param unique_id: A unique identifier to be included in the directory name.
-    :return: The path of the created unique directory within the specified subfolder.
+    Args:
+        base_dir (str): The base directory where the subfolder and unique directory will be created.
+        subfolder (str): The subfolder inside the base directory to include before the unique directory.
+        unique_id (str): A unique identifier to be included in the directory name.
+
+    Returns:
+        str: The path of the created unique directory within the specified subfolder.
     """
     full_path = os.path.join(base_dir, subfolder, unique_id)
 
@@ -69,7 +75,7 @@ def load_and_save_config(config_path: str = "config.yaml", save: bool = True) ->
         dict: The loaded configuration dictionary.
     """
     # Load configuration from YAML
-    with open(config_path, "r") as file:
+    with open(config_path, "r", encoding="utf-8") as file:
         config = yaml.safe_load(file)
 
     if save:
@@ -88,6 +94,12 @@ def load_and_save_config(config_path: str = "config.yaml", save: bool = True) ->
 
 
 def set_random_seeds(seed: int):
+    """
+    Set random seeds for reproducibility.
+
+    Args:
+        seed (int): The random seed to set.
+    """
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -165,19 +177,41 @@ def get_progress_bar(tasks: list) -> tqdm:
 
 
 def worker_init_fn(worker_id):
+    """
+    Initialize the random seed for each worker in PyTorch DataLoader.
+
+    Args:
+        worker_id (int): The worker ID.
+    """
     torch_seed = torch.initial_seed()
     np_seed = torch_seed // 2**32 - 1
     np.random.seed(np_seed)
 
 
 def save_task_list(tasks: list, filepath: str) -> None:
-    with open(filepath, "w") as f:
+    """
+    Save a list of tasks to a JSON file.
+
+    Args:
+        tasks (list): The list of tasks to save.
+        filepath (str): The path to the JSON file.
+    """
+    with open(filepath, "w", encoding="utf-8") as f:
         json.dump(tasks, f)
 
 
 def load_task_list(filepath: str) -> list:
+    """
+    Load a list of tasks from a JSON file.
+
+    Args:
+        filepath (str): The path to the JSON file.
+
+    Returns:
+        list: The loaded list of tasks
+    """
     if os.path.exists(filepath):
-        with open(filepath, "r") as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             tasks = json.load(f)
         return tasks
     else:
@@ -185,6 +219,15 @@ def load_task_list(filepath: str) -> list:
 
 
 def check_training_status(training_id: str):
+    """
+    Check if the training is already completed by looking for a completion marker file.
+    
+    Args:
+        training_id (str): The unique identifier for the training run.
+
+    Returns:
+        str: The path to the task list file.
+    """
     task_list_filepath = os.path.join(f"trained/{training_id}/train_tasks.json")
     completion_marker_filepath = os.path.join(f"trained/{training_id}/completed.txt")
 

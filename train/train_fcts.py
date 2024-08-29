@@ -26,7 +26,18 @@ def train_and_save_model(
     position: int = 1,
 ):
     """
-    Train and save a model for a specific benchmark mode.
+    Train and save a model for a specific benchmark mode. The parameters are determined
+    by the task(s) which is created from the config file.
+
+    Args:
+        surr_name (str): The name of the surrogate model.
+        mode (str): The benchmark mode (e.g. "main", "interpolation", "extrapolation").
+        metric (int): The metric for the benchmark mode.
+        training_id (str): The training ID for the current training session.
+        seed (int, optional): The random seed for the training. Defaults to None.
+        epochs (int, optional): The number of epochs for the training. Defaults to None.
+        device (str, optional): The device for the training. Defaults to "cpu".
+        position (int, optional): The position of the model in the task list. Defaults to 1.
     """
     config_path = f"trained/{training_id}/config.yaml"
     config = load_and_save_config(config_path, save=False)
@@ -106,9 +117,17 @@ def train_and_save_model(
     )
 
 
-def train_surrogate(config, surr_name: str) -> list:
+def create_task_list_for_surrogate(config, surr_name: str) -> list:
     """
-    Train and save models for different purposes based on the config settings.
+    Creates a list of training tasks for a specific surrogate model based on the
+    configuration file.
+
+    Args:
+        config (dict): The configuration dictionary taken from the config file.
+        surr_name (str): The name of the surrogate model.
+
+    Returns:
+        list: A list of training tasks for the surrogate model.
     """
     tasks = []
     seed = config["seed"]
@@ -158,6 +177,13 @@ def worker(
 ):
     """
     Worker function to process tasks from the task queue on the given device.
+
+    Args:
+        task_queue (Queue): The task queue containing the training tasks.
+        device (str): The device to use for training.
+        device_idx (int): The index of the device in the device list.
+        overall_progress_bar (tqdm): The overall progress bar for the training.
+        task_list_filepath (str): The filepath to the task list file
     """
     while not task_queue.empty():
         try:
@@ -178,7 +204,12 @@ def worker(
 
 def parallel_training(tasks, device_list, task_list_filepath: str):
     """
-    Execute the training tasks in parallel across multiple devices.
+    Execute the training tasks in parallel on multiple devices.
+
+    Args:
+        tasks (list): The list of training tasks.
+        device_list (list): The list of devices to use for training.
+        task_list_filepath (str): The filepath to the task list file.
     """
     task_queue = Queue()
     for task in tasks:
@@ -203,7 +234,9 @@ def parallel_training(tasks, device_list, task_list_filepath: str):
 
     # Create a completion marker after all tasks are completed
     with open(
-        os.path.join(os.path.dirname(task_list_filepath), "completed.txt"), "w"
+        os.path.join(os.path.dirname(task_list_filepath), "completed.txt"),
+        "w",
+        encoding="utf-8",
     ) as f:
         f.write("Training completed")
 
@@ -216,6 +249,11 @@ def parallel_training(tasks, device_list, task_list_filepath: str):
 def sequential_training(tasks, device_list, task_list_filepath: str):
     """
     Execute the training tasks sequentially on a single device.
+
+    Args:
+        tasks (list): The list of training tasks.
+        device_list (list): The list of devices to use for training.
+        task_list_filepath (str): The filepath to the task list file.
     """
     overall_progress_bar = get_progress_bar(tasks)
     for i, task in enumerate(tasks):
@@ -229,7 +267,9 @@ def sequential_training(tasks, device_list, task_list_filepath: str):
 
     # Create a completion marker after all tasks are completed
     with open(
-        os.path.join(os.path.dirname(task_list_filepath), "completed.txt"), "w"
+        os.path.join(os.path.dirname(task_list_filepath), "completed.txt"),
+        "w",
+        encoding="utf-8",
     ) as f:
         f.write("Training completed")
 
