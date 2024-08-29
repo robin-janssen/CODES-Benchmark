@@ -1,9 +1,9 @@
 import os
 import urllib.request
-import yaml
 
 import h5py
 import numpy as np
+import yaml
 
 
 def check_and_load_data(
@@ -422,6 +422,7 @@ def create_dataset(
 
     print(f"Dataset '{name}' created at {dataset_dir}")
 
+
 def download_data(dataset_name: str):
     """
     Download the specified dataset if it is not present
@@ -440,7 +441,7 @@ def download_data(dataset_name: str):
         raise ValueError(f"Dataset '{dataset_name}' not found in data_sources.yaml")
 
     os.makedirs(f"data/{dataset_name.lower()}", exist_ok=True)
-    
+
     print(f"Downloading dataset '{dataset_name}'...")
     urllib.request.urlretrieve(url, f"data/{dataset_name.lower()}/data.hdf5")
     print(f"Dataset '{dataset_name}' downloaded successfully.")

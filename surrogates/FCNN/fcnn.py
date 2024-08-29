@@ -46,11 +46,11 @@ class FullyConnected(AbstractSurrogateModel):
         Initialize the FullyConnected model with a configuration.
 
         The configuration must provide the following information:
-        - input_size (int): The input size for the network.
         - hidden_size (int): The number of hidden units in each layer of the network.
         - num_hidden_layers (int): The number of hidden layers in the network.
-        - output_size (int): The number of outputs of the model.
-        - device (str): The device to use for training (e.g., 'cpu', 'cuda:0').
+        - learning_rate (float): The learning rate for the optimizer.
+        - regularization_factor (float): The L2 regularization factor.
+        - schedule (bool): Whether to use a learning rate schedule.
         """
         super().__init__(
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
@@ -148,7 +148,7 @@ class FullyConnected(AbstractSurrogateModel):
         # self.n_timesteps = len(timesteps)
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
 
-        criterion = self.setup_criterion()
+        criterion = nn.MSELoss(reduction="sum")
         optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
 
         train_losses, test_losses, MAEs = [np.zeros(epochs) for _ in range(3)]
@@ -175,16 +175,6 @@ class FullyConnected(AbstractSurrogateModel):
         self.train_loss = train_losses
         self.test_loss = test_losses
         self.MAE = MAEs
-
-    def setup_criterion(self) -> callable:
-        """
-        Utility function to set up the loss function for training.
-
-        Returns:
-            callable: The loss function.
-        """
-        crit = nn.MSELoss(reduction="sum")
-        return crit
 
     def setup_optimizer_and_scheduler(
         self,
@@ -227,7 +217,7 @@ class FullyConnected(AbstractSurrogateModel):
         optimizer: torch.optim.Optimizer,
     ) -> float:
         """
-        Perform a single training step on the model.
+        Perform one training epoch.
 
         Args:
             data_loader (DataLoader): The DataLoader object containing the training data.

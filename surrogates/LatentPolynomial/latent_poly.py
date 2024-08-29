@@ -17,7 +17,7 @@ class LatentPoly(AbstractSurrogateModel):
     Includes an Encoder, Decoder and learnable Polynomial.
 
     Attributes:
-        
+
     """
 
     def __init__(
