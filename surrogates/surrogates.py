@@ -354,7 +354,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         """
         if self.normalisation is not None:
             if self.normalisation["mode"] == "disabled":
-                data = data
+                ...
             elif self.normalisation["mode"] == "minmax":
                 dmax = self.normalisation["max"]
                 dmin = self.normalisation["min"]
@@ -363,9 +363,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
                 mean = self.normalisation["mean"]
                 std = self.normalisation["std"]
                 data = data * std + mean
-
-            # if self.normalisation["log10_transform"]:
-            #     data = 10**data
 
         return data
 

@@ -17,7 +17,14 @@ class LatentPoly(AbstractSurrogateModel):
     Includes an Encoder, Decoder and learnable Polynomial.
 
     Attributes:
-        
+        config (LatentPolynomialBaseConfig): The configuration for the model.
+        model (PolynomialModelWrapper): The model for the polynomial.
+        device (str): The device to use for training.
+
+    Methods:
+        forward: Perform a forward pass through the model.
+        prepare_data: Prepares the data for training by creating a DataLoader object.
+        fit: Fits the model to the training data. Sets the train_loss and test_loss attributes.
     """
 
     def __init__(
@@ -27,15 +34,6 @@ class LatentPoly(AbstractSurrogateModel):
         n_timesteps: int = 100,
         model_config: dict | None = None,
     ):
-        """
-        Initialize the LatentPoly model.
-
-        Args:
-            device (str | None): The device to use for training.
-            n_chemicals (int): The number of chemicals in the dataset.
-            n_timesteps (int): The number of timesteps in the dataset.
-            model_config (dict): The configuration for the model.
-        """
         super().__init__(
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
         )
@@ -78,11 +76,8 @@ class LatentPoly(AbstractSurrogateModel):
         Returns:
             DataLoader: The DataLoader object containing the prepared data.
         """
-        device = self.device
 
-        timesteps_torch = torch.tensor(timesteps).to(device)
-
-        dset_train = ChemDataset(dataset_train, timesteps_torch, device=self.device)
+        dset_train = ChemDataset(dataset_train, timesteps, device=self.device)
         dataloader_train = DataLoader(
             dset_train,
             batch_size=batch_size,
@@ -92,7 +87,7 @@ class LatentPoly(AbstractSurrogateModel):
 
         dataloader_test = None
         if dataset_test is not None:
-            dset_test = ChemDataset(dataset_test, timesteps_torch, device=self.device)
+            dset_test = ChemDataset(dataset_test, timesteps, device=self.device)
             dataloader_test = DataLoader(
                 dset_test,
                 batch_size=batch_size,
@@ -102,7 +97,7 @@ class LatentPoly(AbstractSurrogateModel):
 
         dataloader_val = None
         if dataset_val is not None:
-            dset_val = ChemDataset(dataset_val, timesteps_torch, device=self.device)
+            dset_val = ChemDataset(dataset_val, timesteps, device=self.device)
             dataloader_val = DataLoader(
                 dset_val,
                 batch_size=batch_size,
@@ -210,14 +205,12 @@ class PolynomialModelWrapper(nn.Module):
         self.encoder = Encoder(
             in_features=config.in_features,
             latent_features=config.latent_features,
-            n_hidden=config.coder_hidden,
             width_list=config.coder_layers,
             activation=config.coder_activation,
         ).to(self.device)
         self.decoder = Decoder(
             out_features=config.in_features,
             latent_features=config.latent_features,
-            n_hidden=config.coder_hidden,
             width_list=config.coder_layers,
             activation=config.coder_activation,
         ).to(self.device)
