@@ -200,7 +200,7 @@ def save_task_list(tasks: list, filepath: str) -> None:
         json.dump(tasks, f)
 
 
-def load_task_list(filepath: str) -> list:
+def load_task_list(filepath: str | None) -> list:
     """
     Load a list of tasks from a JSON file.
 
@@ -218,22 +218,76 @@ def load_task_list(filepath: str) -> list:
         return []
 
 
-def check_training_status(training_id: str):
+def check_training_status(config: dict) -> str:
     """
     Check if the training is already completed by looking for a completion marker file.
-    
-    Args:
-        training_id (str): The unique identifier for the training run.
+    If the training is not complete, compare the configurations and ask for a confirmation if there are differences.
 
+    Args:
+        config (dict): The configuration dictionary.
     Returns:
         str: The path to the task list file.
+        bool: Whether to copy the configuration file.
     """
+    training_id = config["training_id"]
     task_list_filepath = os.path.join(f"trained/{training_id}/train_tasks.json")
     completion_marker_filepath = os.path.join(f"trained/{training_id}/completed.txt")
 
     # Check if training is already complete
     if os.path.exists(completion_marker_filepath):
+        print()
         print("Training is already completed. Exiting. \n")
         sys.exit()
+    else:
+        # Check if the configuration is different from the saved configuration
+        saved_config_path = os.path.join(f"trained/{training_id}/config.yaml")
+        if not os.path.exists(saved_config_path):
+            return task_list_filepath, True
 
-    return task_list_filepath
+        saved_config = read_yaml_config(saved_config_path)
+
+        # Check if the configurations are the same
+        errors = []
+        for key, value in config.items():
+            if key not in saved_config:
+                errors.append(f"Key '{key}' not found in saved configuration.")
+            elif value != saved_config[key]:
+                if isinstance(value, dict):
+                    for sub_key, sub_value in value.items():
+                        if sub_key not in saved_config[key]:
+                            errors.append(
+                                f"Key '{sub_key}' not found in '{key}' of saved configuration."
+                            )
+                        elif sub_value != saved_config[key][sub_key]:
+                            errors.append(
+                                f"Value of '{sub_key}' in '{key}' is different from saved configuration:\n"
+                                f"    Previous: {saved_config[key][sub_key]}, current: {sub_value}"
+                            )
+                else:
+                    errors.append(
+                        f"Value of '{key}' is different from saved configuration:\n"
+                        f"    Previous: {saved_config[key]}, current: {value}"
+                    )
+
+        print()
+        if len(errors) > 0:
+            print("The current configuration differs from the saved configuration:")
+            for error in errors:
+                print(f"  - {error}")
+            print(
+                "You can overwrite the saved configuration or resume the training with the previous configuration."
+            )
+            confirmation = input("Overwrite? [y/n]: ")
+            if confirmation.lower() == "y":
+                print("Overwriting the saved configuration.")
+                os.remove(task_list_filepath)
+                copy_config = True
+            else:
+                print("Continuing training with the previous configuration.")
+                nice_print("Resuming training.")
+                copy_config = False
+        else:
+            nice_print("Resuming training.")
+            copy_config = True
+
+    return task_list_filepath, copy_config

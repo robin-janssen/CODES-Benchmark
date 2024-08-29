@@ -14,7 +14,23 @@ from .utils import mass_conservation_loss
 
 
 class BranchNet(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, num_hidden_layers):
+    """
+    Class that defines the branch network for the MultiONet model.
+
+    Args:
+        input_size (int): The input size for the network.
+        hidden_size (int): The number of hidden units in each layer.
+        output_size (int): The number of output units.
+        num_hidden_layers (int): The number of hidden layers.
+    """
+
+    def __init__(
+        self,
+        input_size: int,
+        hidden_size: int,
+        output_size: int,
+        num_hidden_layers: int,
+    ):
         super(BranchNet, self).__init__()
         layers = [nn.Linear(input_size, hidden_size), nn.ReLU()]
         for _ in range(num_hidden_layers - 1):
@@ -22,12 +38,34 @@ class BranchNet(nn.Module):
         layers.append(nn.Linear(hidden_size, output_size))
         self.network = nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass for the branch network.
+
+        Args:
+            x (torch.Tensor): The input tensor.
+        """
         return self.network(x)
 
 
 class TrunkNet(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, num_hidden_layers):
+    """
+    Class that defines the trunk network for the MultiONet model.
+
+    Args:
+        input_size (int): The input size for the network.
+        hidden_size (int): The number of hidden units in each layer.
+        output_size (int): The number of output units.
+        num_hidden_layers (int): The number of hidden layers.
+    """
+
+    def __init__(
+        self,
+        input_size: int,
+        hidden_size: int,
+        output_size: int,
+        num_hidden_layers: int,
+    ):
         super(TrunkNet, self).__init__()
         layers = [nn.Linear(input_size, hidden_size), nn.ReLU()]
         for _ in range(num_hidden_layers - 1):
@@ -35,11 +73,31 @@ class TrunkNet(nn.Module):
         layers.append(nn.Linear(hidden_size, output_size))
         self.network = nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass for the trunk network.
+
+        Args:
+            x (torch.Tensor): The input tensor.
+        """
         return self.network(x)
 
 
 class OperatorNetwork(AbstractSurrogateModel):
+    """
+    Abstract class for operator networks.
+    Child classes must implement a forward method and use the branch_net and trunk_net attributes.
+
+    Args:
+        device (str, optional): The device to use for training (e.g., 'cpu', 'cuda:0').
+        n_chemicals (int, optional): The number of chemicals.
+        n_timesteps (int, optional): The number of timesteps.
+
+    Raises:
+        NotImplementedError: Child classes must implement a forward method.
+        NotImplementedError: Child classes must initialize a branch_net and trunk_net.
+    """
+
     def __init__(
         self, device: str | None = None, n_chemicals: int = 29, n_timesteps: int = 100
     ):
@@ -73,15 +131,16 @@ OperatorNetworkType = TypeVar("OperatorNetworkType", bound=OperatorNetwork)
 
 
 class MultiONet(OperatorNetwork):
-    def __init__(
-        self,
-        device: str | None = None,
-        n_chemicals: int = 29,
-        n_timesteps: int = 100,
-        config: dict = {},
-    ):
-        """
-        Initialize the MultiONet model with a configuration.
+    """
+    Class that implements the MultiONet model.
+    It differs from a standard DeepONet in that it has multiple outputs, which are obtained by
+    splitting the outputs of branch and trunk networks and calculating the scalar product of the splits.
+
+    Args:
+        device (str, optional): The device to use for training (e.g., 'cpu', 'cuda:0').
+        n_chemicals (int, optional): The number of chemicals.
+        n_timesteps (int, optional): The number of timesteps.
+        config (dict, optional): The configuration for the model.
 
         The configuration must provide the following information:
 
@@ -89,10 +148,24 @@ class MultiONet(OperatorNetwork):
         - hidden_size (int): The number of hidden units in each layer of the branch and trunk networks.
         - branch_hidden_layers (int): The number of hidden layers in the branch network.
         - trunk_hidden_layers (int): The number of hidden layers in the trunk network.
-        - output_neurons (int): The number of neurons in the last layer of both branch and trunk networks.
-        - N_outputs (int): The number of outputs of the model.
-        - device (str): The device to use for training (e.g., 'cpu', 'cuda:0').
-        """
+        - output_factor (int): The factor by which the number of outputs is multiplied.
+        - learning_rate (float): The learning rate for the optimizer.
+        - schedule (bool): Whether to use a learning rate schedule.
+        - regularization_factor (float): The regularization factor for the optimizer.
+        - masses (np.ndarray, optional): The masses for mass conservation loss.
+        - massloss_factor (float, optional): The factor for the mass conservation loss.
+
+    Raises:
+        TypeError: Invalid configuration for MultiONet model.
+    """
+
+    def __init__(
+        self,
+        device: str | None = None,
+        n_chemicals: int = 29,
+        n_timesteps: int = 100,
+        config: dict = {},
+    ):
         try:
             config = MultiONetBaseConfig(**config)
         except TypeError as e:
@@ -110,7 +183,7 @@ class MultiONet(OperatorNetwork):
             n_chemicals * config.output_factor
         )  # Number of neurons in the last layer
         self.branch_net = BranchNet(
-            n_chemicals - config.trunk_input_size + 1,  # +1 due to time
+            n_chemicals - (config.trunk_input_size - 1),  # +1 due to time
             config.hidden_size,
             self.outputs,
             config.branch_hidden_layers,
@@ -128,12 +201,9 @@ class MultiONet(OperatorNetwork):
 
         Args:
             inputs (tuple): The input tuple containing branch_input, trunk_input, and targets.
-            Note: The targets are not used in the forward pass, but are included for compatibility with DataLoader.
-            timesteps (np.ndarray, optional): The timesteps.
-            Note: The timesteps are not used in the forward pass, but are included for compatibility with the benchmarking code.
 
         Returns:
-            torch.Tensor: Output tensor of the model.
+            tuple: The model outputs and the targets.
         """
         branch_input, trunk_input, targets = inputs
         branch_output = self.branch_net(branch_input)
@@ -181,7 +251,6 @@ class MultiONet(OperatorNetwork):
             timesteps,
             batch_size,
             shuffle,
-            train=True,
         )
         dataloaders.append(dataloader_train)
 
@@ -205,7 +274,6 @@ class MultiONet(OperatorNetwork):
         self,
         train_loader: DataLoader,
         test_loader: DataLoader,
-        # timesteps: np.ndarray,
         epochs: int,
         position: int = 0,
         description: str = "Training DeepONet",
@@ -214,15 +282,14 @@ class MultiONet(OperatorNetwork):
         Train the MultiONet model.
 
         Args:
-            train_data (np.ndarray): The training data.
-            test_data (np.ndarray): The test data (to evaluate the model during training).
-            # timesteps (np.ndarray): The timesteps.
+            train_loader (DataLoader): The DataLoader object containing the training data.
+            test_loader (DataLoader): The DataLoader object containing the test data.
             epochs (int, optional): The number of epochs to train the model.
             position (int): The position of the progress bar.
             description (str): The description for the progress bar.
 
         Returns:
-            None
+            None. The training loss, test loss, and MAE are stored in the model.
         """
         # self.n_timesteps = len(timesteps)
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
@@ -305,7 +372,7 @@ class MultiONet(OperatorNetwork):
         optimizer: torch.optim.Optimizer,
     ) -> float:
         """
-        Perform a single training step on the model.
+        Perform one training epoch.
 
         Args:
             data_loader (DataLoader): The DataLoader object containing the training data.
@@ -338,12 +405,20 @@ class MultiONet(OperatorNetwork):
 
     def create_dataloader(
         self,
-        data,
-        timesteps,
-        batch_size=32,
+        data: np.ndarray,
+        timesteps: np.ndarray,
+        batch_size: int,
         shuffle: bool = False,
     ):
-        """ """
+        """
+        Create a DataLoader for the given data.
+
+        Args:
+            data (np.ndarray): The data to load. Must have shape (n_samples, n_timesteps, n_chemicals).
+            timesteps (np.ndarray): The timesteps.
+            batch_size (int, optional): The batch size.
+            shuffle (bool, optional): Whether to shuffle the data.
+        """
         # Initialize lists to store the inputs and targets
         branch_inputs = []
         trunk_inputs = []
@@ -376,5 +451,4 @@ class MultiONet(OperatorNetwork):
             batch_size=batch_size,
             shuffle=shuffle,
             worker_init_fn=worker_init_fn,
-            # num_workers=4,
         )

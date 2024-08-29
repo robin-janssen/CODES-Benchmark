@@ -1,9 +1,9 @@
 import os
 import urllib.request
-import yaml
 
 import h5py
 import numpy as np
+import yaml
 
 
 class DatasetError(Exception):
