@@ -14,24 +14,25 @@
 - [x] **Complete the README.md**
 - [x] Rename NeuralODE to LatentNeuralODE
 - [x] **Check the time benchmarking**
-- [ ] **Implement optional log scale labels in plots**
+- [x] **Docstrings completion.**
+- [x] **Run pydoctest on the code**
+- [x] **Implement optional log scale labels in plots**
 - [ ] **Check the memory benchmarking**
 - [ ] **Save Plots as SVG for immaculate quality**
 - [ ] Rename batch_scaling to batch.
 - [ ] **Check whether the training is indeed deterministic.**
-- [ ] **Docstrings completion.**
 - [ ] **Make a clean requirements.txt, clean up the python environment and do a fresh test install**
 - [ ] **Make tutorial notebooks/examples**
 - [ ] **Check/update the config maker**
 - [ ] Think about the error plots - where should absolute errors be used, where relative errors? Does it make sense to use relative errors for the chemical error plots?
-- [ ] **Add testing (for workshop)**
+- [ ] **Add testing (for the workshop: at least test the surrogates)**
 
 ## New Features
 - [x] **Javascript config maker**
 - [x] **Make a table in the CLI at the end of the benchmark with the most important metrics**
 - [x] **Make a csv file with the most important metrics**
 - [x] **Make a json file with the most important metrics**
-- [ ] **Add and document Lorenzo's Dataset**
+- [x] **Add and document Lorenzo's Dataset**
 - [x] Calculate and add error quantities per surrogate to the individal (and comparative) outputs.
 - [ ] Store output in a .txt file
 - [ ] Refactoring for more generality (remove chemistry specific code)

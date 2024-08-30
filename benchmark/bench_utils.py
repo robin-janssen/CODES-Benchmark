@@ -524,6 +524,7 @@ def convert_dict_to_scientific_notation(d: dict, precision: int = 8) -> dict:
 
     Args:
         d (dict): The input dictionary.
+        precision (int): The number of decimal places to include.
 
     Returns:
         dict: The dictionary with numerical values in scientific notation.

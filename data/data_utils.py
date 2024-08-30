@@ -139,8 +139,8 @@ def check_and_load_data(
 
         if "labels" in f.attrs:
             labels = f.attrs["labels"]
-            if not isinstance(labels, list):
-                raise TypeError("Labels must be a list of strings.")
+            if not isinstance(labels, np.ndarray):
+                raise TypeError("Labels must be a numpy array.")
             if len(labels) != n_chemicals:
                 raise ValueError(
                     "The number of labels must match the number of chemicals."
@@ -323,12 +323,12 @@ def create_dataset(
 
     Args:
         name (str): The name of the dataset.
-        train_data (np.ndarray | torch.Tensor): The training data.
-        test_data (np.ndarray | torch.Tensor, optional): The test data.
-        val_data (np.ndarray | torch.Tensor, optional): The validation data.
+        train_data (np.ndarray): The training data.
+        test_data (np.ndarray, optional): The test data.
+        val_data (np.ndarray, optional): The validation data.
         split tuple(float, float, float), optional): If test_data and val_data are not provided,
             train_data can be split into training, test and validation data.
-        timesteps (np.ndarray | torch.Tensor, optional): The timesteps array.
+        timesteps (np.ndarray, optional): The timesteps array.
         labels (list[str], optional): The labels for the chemicals.
 
     Raises:

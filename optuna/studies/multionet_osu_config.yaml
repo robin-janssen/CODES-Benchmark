@@ -1,0 +1,29 @@
+batch_size: 1024
+dataset:
+  log10_transform: false
+  name: osu2008
+  normalise: minmax
+device: cuda:0
+epochs: 500
+optuna_params:
+  branch_hidden_layers:
+    high: 8
+    low: 2
+    type: int
+  learning_rate:
+    high: 0.01
+    log: true
+    low: 1.0e-05
+    type: float
+  output_factor:
+    high: 30
+    low: 1
+    type: int
+  trunk_hidden_layers:
+    high: 8
+    low: 2
+    type: int
+seed: 42
+study_name: multionet_osu
+surrogate:
+  name: MultiONet

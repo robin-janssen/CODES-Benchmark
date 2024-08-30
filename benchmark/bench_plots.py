@@ -327,6 +327,7 @@ def plot_example_predictions_with_uncertainty(
     num_chemicals: int = 100,
     labels: list[str] | None = None,
     save: bool = False,
+    log: bool = True,
 ) -> None:
     """
     Plot example predictions with uncertainty.
@@ -342,6 +343,7 @@ def plot_example_predictions_with_uncertainty(
         num_chemicals (int, optional): Number of chemicals to plot. Default is 100.
         labels (list, optional): List of labels for the chemicals.
         save (bool, optional): Whether to save the plot as a file.
+        log (bool, optional): Whether to plot the y-axis in log scale.
     """
     # Cap the number of chemicals at 100
     num_chemicals = min(preds_std.shape[2], num_chemicals)
@@ -390,7 +392,10 @@ def plot_example_predictions_with_uncertainty(
                 )
 
         # Set the y-axis label for each subplot
-        ax.set_ylabel("log(Chemical Abundance)")
+        if log:
+            ax.set_ylabel("log(Chemical Abundance)")
+        else:
+            ax.set_ylabel("Chemical Abundance")
 
         # Create a legend directly next to the plot using the stored line objects
         if labels is not None:
@@ -643,7 +648,7 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
 def plot_error_distribution_per_chemical(
     surr_name: str,
     conf: dict,
-    errors: np.ndarray,
+    relative_errors: np.ndarray,
     chemical_names: list[str] | None = None,
     num_chemicals: int = 10,
     save: bool = True,
@@ -660,8 +665,8 @@ def plot_error_distribution_per_chemical(
         save (bool, optional): Whether to save the plot as a file.
     """
     # Reshape errors to combine samples and timesteps
-    total_chemicals = errors.shape[2]
-    errors = errors.reshape(-1, total_chemicals)
+    total_chemicals = relative_errors.shape[2]
+    errors = relative_errors.reshape(-1, total_chemicals)
     n_errors = len(errors.reshape(-1))
 
     # Cap the number of chemicals to plot at 50
@@ -742,7 +747,7 @@ def plot_error_distribution_per_chemical(
 
     plt.xscale("log")  # Log scale for error magnitudes
     plt.xlim(10**x_min, 10**x_max)  # Set x-axis range based on log-space calculations
-    plt.xlabel("Magnitude of Error")
+    plt.xlabel("Relative Error Magnitude")
     fig.suptitle(
         f"Error Distribution per Chemical (Test Samples: {n_errors}, Excluded zeros: {zero_counts})"
     )

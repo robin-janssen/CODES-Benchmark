@@ -69,7 +69,7 @@ def train_and_save_model(
     # Get the surrogate class
     surrogate_class = get_surrogate(surr_name)
 
-    # Set the device for the model
+    # Instantiate the model
     model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
     surr_idx = config["surrogates"].index(surr_name)
 

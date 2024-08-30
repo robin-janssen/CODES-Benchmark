@@ -760,6 +760,7 @@ def evaluate_UQ(
         timesteps,
         save=True,
         labels=labels,
+        log=conf["dataset"]["log10_transform"],
     )
     plot_average_uncertainty_over_time(
         surr_name, conf, errors_time, preds_std_time, timesteps, save=True
