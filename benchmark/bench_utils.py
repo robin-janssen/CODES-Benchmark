@@ -6,7 +6,6 @@ from copy import deepcopy
 from dataclasses import asdict
 
 import numpy as np
-import psutil
 import torch
 import yaml
 
@@ -68,7 +67,7 @@ def check_benchmark(conf: dict) -> None:
             f"Training configuration file not found in directory {trained_dir}."
         )
 
-    with open(yaml_file, "r", encoding="uft-8") as file:
+    with open(yaml_file, "r", encoding="utf-8") as file:
         training_conf = yaml.safe_load(file)
 
     # 1. Check Surrogates
@@ -268,6 +267,8 @@ def count_trainable_parameters(model: torch.nn.Module) -> int:
 def measure_memory_footprint(
     model: torch.nn.Module,
     inputs: tuple,
+    conf: dict,
+    surr_name: str,
 ) -> dict:
     """
     Measure the memory footprint of the model during the forward and backward pass.
@@ -275,20 +276,27 @@ def measure_memory_footprint(
     Args:
         model (torch.nn.Module): The PyTorch model.
         inputs (tuple): The input data for the model.
+        conf (dict): The configuration dictionary.
+        surr_name (str): The name of the surrogate model.
 
     Returns:
         dict: A dictionary containing memory footprint measurements.
     """
-    # model.to(model.device)
-    # initial_conditions = initial_conditions.to(model.device)
-    # times = times.to(model.device)
+    training_id = conf["training_id"]
 
-    def get_memory_usage():
-        process = psutil.Process(os.getpid())
-        return process.memory_info().rss
+    # def get_memory_usage():
+    #     process = psutil.Process(os.getpid())
+    #     return process.memory_info().rss
+
+    def get_memory_usage(model):
+        return torch.cuda.memory_allocated(model.device)
+
+    before_load = get_memory_usage(model)
+
+    model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
 
     # Measure memory usage before the forward pass
-    before_forward = get_memory_usage()
+    before_forward = get_memory_usage(model)
 
     # Forward pass
     # istuple = isinstance(inputs, tuple)
@@ -303,20 +311,20 @@ def measure_memory_footprint(
         else inputs.to(model.device)
     )
     preds, targets = model(inputs=inputs)
-    after_forward = get_memory_usage()
+    after_forward = get_memory_usage(model)
 
     # Measure memory usage before the backward pass
     loss = (preds - targets).sum()  # Example loss function
     loss.backward()
-    after_backward = get_memory_usage()
+    after_backward = get_memory_usage(model)
 
-    return {
-        "before_forward": before_forward,
-        "after_forward": after_forward,
-        "forward_pass_memory": after_forward - before_forward,
-        "after_backward": after_backward,
-        "backward_pass_memory": after_backward - after_forward,
+    memory_usage = {
+        "model_memory": before_forward - before_load,
+        "forward_memory": after_forward - before_forward,
+        "backward_memory": after_backward - after_forward,
     }
+
+    return memory_usage, model
 
 
 def convert_to_standard_types(data):

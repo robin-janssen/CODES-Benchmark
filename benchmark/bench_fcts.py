@@ -197,7 +197,6 @@ def evaluate_accuracy(
     num_chemicals = model.n_chemicals
     model_index = conf["surrogates"].index(surr_name)
     n_epochs = conf["epochs"][model_index]
-    # model.n_timesteps = 100
 
     # Use the model's predict method
     criterion = torch.nn.MSELoss(reduction="sum")
@@ -268,7 +267,6 @@ def evaluate_dynamic_accuracy(
 
     # Load the model
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
-    # model.n_timesteps = 100
 
     # Obtain predictions and targets
     preds, targets = model.predict(data_loader=test_loader)
@@ -349,7 +347,6 @@ def time_inference(
     """
     training_id = conf["training_id"]
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
-    # model.n_timesteps = 100
 
     # Run inference multiple times and record the durations
     inference_times = []
@@ -396,17 +393,14 @@ def evaluate_compute(
     Returns:
         dict: A dictionary containing model complexity metrics.
     """
-    training_id = conf["training_id"]
-    model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
-    # model.n_timesteps = 100
-
-    # Count the number of trainable parameters
-    num_params = count_trainable_parameters(model)
 
     # Get a sample input tensor from the test_loader
     inputs = next(iter(test_loader))
     # Measure the memory footprint during forward and backward pass
-    memory_footprint = measure_memory_footprint(model, inputs)
+    memory_footprint, model = measure_memory_footprint(model, inputs, conf, surr_name)
+
+    # Count the number of trainable parameters
+    num_params = count_trainable_parameters(model)
 
     # Store complexity metrics
     complexity_metrics = {
@@ -453,7 +447,6 @@ def evaluate_interpolation(
             else f"{surr_name.lower()}_interpolation_{interval}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        # model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         interpolation_metrics[f"interval {interval}"] = {"MSE": mean_squared_error}
@@ -523,7 +516,6 @@ def evaluate_extrapolation(
             else f"{surr_name.lower()}_extrapolation_{cutoff}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        # model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         extrapolation_metrics[f"cutoff {cutoff}"] = {"MSE": mean_squared_error}
@@ -597,7 +589,6 @@ def evaluate_sparse(
             else f"{surr_name.lower()}_sparse_{factor}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        # model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         train_samples = n_train_samples // factor
@@ -667,7 +658,6 @@ def evaluate_batchsize(
     for i, batch_size in enumerate(batch_sizes):
         model_id = f"{surr_name.lower()}_batchsize_{batch_size}"
         model.load(training_id, surr_name, model_identifier=model_id)
-        # model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         batch_metrics[f"batch_size {batch_size}"] = {"MSE": mean_squared_error}
@@ -732,7 +722,6 @@ def evaluate_UQ(
             f"{surr_name.lower()}_main" if i == 0 else f"{surr_name.lower()}_UQ_{i}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        # model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
         all_predictions.append(preds)
@@ -857,7 +846,6 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
 
         def load_losses(model_identifier: str):
             model.load(training_id, surr_name, model_identifier=model_identifier)
-            # model.n_timesteps = 100
             return model.train_loss, model.test_loss
 
         # Load main model losses
@@ -897,7 +885,6 @@ def compare_MAE(metrics: dict, config: dict) -> None:
         )
         model_identifier = f"{surr_name.lower()}_main"
         model.load(training_id, surr_name, model_identifier=model_identifier)
-        # model.n_timesteps = 100
         MAE.append(model.MAE)
         labels.append(surr_name)
         train_durations.append(model.train_duration)
@@ -1260,7 +1247,11 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
             f'{metrics["compute"]["num_trainable_parameters"]}'
             for metrics in all_metrics.values()
         ]
-        rows.append(num_params_row)
+        memory_row = ["Memory Footprint (MB)"] + [
+            f'{metrics["compute"]["memory_footprint"]:.2f}'
+            for metrics in all_metrics.values()
+        ]
+        rows.append(num_params_row, memory_row)
 
     # UQ metrics (if enabled)
     if config.get("uncertainty", False).get("enabled", False):

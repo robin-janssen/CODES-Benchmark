@@ -14,11 +14,11 @@
 - [x] **Complete the README.md**
 - [x] Rename NeuralODE to LatentNeuralODE
 - [x] **Check the time benchmarking**
-- [ ] **Implement optional log scale labels in plots**
+- [x] **Check whether the training is indeed deterministic.**
+- [x] **Implement optional log scale labels in plots**
 - [ ] **Check the memory benchmarking**
 - [ ] **Save Plots as SVG for immaculate quality**
 - [ ] Rename batch_scaling to batch.
-- [ ] **Check whether the training is indeed deterministic.**
 - [ ] **Docstrings completion.**
 - [ ] **Make a clean requirements.txt, clean up the python environment and do a fresh test install**
 - [ ] **Make tutorial notebooks/examples**
