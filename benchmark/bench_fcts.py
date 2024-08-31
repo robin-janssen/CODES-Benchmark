@@ -393,11 +393,13 @@ def evaluate_compute(
     Returns:
         dict: A dictionary containing model complexity metrics.
     """
+    training_id = conf["training_id"]
+    model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
 
     # Get a sample input tensor from the test_loader
     inputs = next(iter(test_loader))
     # Measure the memory footprint during forward and backward pass
-    memory_footprint, model = measure_memory_footprint(model, inputs, conf, surr_name)
+    memory_footprint, model = measure_memory_footprint(model, inputs)
 
     # Count the number of trainable parameters
     num_params = count_trainable_parameters(model)
@@ -1248,10 +1250,10 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
             for metrics in all_metrics.values()
         ]
         memory_row = ["Memory Footprint (MB)"] + [
-            f'{metrics["compute"]["memory_footprint"]:.2f}'
+            f'{(metrics["compute"]["memory_footprint"]["forward_memory_nograd"]/1e6):.2f}'
             for metrics in all_metrics.values()
         ]
-        rows.append(num_params_row, memory_row)
+        rows.extend([num_params_row, memory_row])
 
     # UQ metrics (if enabled)
     if config.get("uncertainty", False).get("enabled", False):
