@@ -16,7 +16,7 @@ from utils import (
 
 def main(args):
     """
-    Main function to train the models. If the training is already completed, it will
+    Main function to train the models. If the xtraining is already completed, it will
     print a message and exit. Otherwise, it will create a task list for each surrogate
     model and train the models sequentially or in parallel depending on the number of
     devices.

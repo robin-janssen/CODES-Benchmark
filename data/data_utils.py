@@ -71,6 +71,21 @@ def check_and_load_data(
 
         # Log transformation
         if log:
+            found_nonzero_values = (
+                np.any(train_data == 0)
+                and np.any(test_data == 0)
+                and np.any(val_data == 0)
+            )
+            if found_nonzero_values:
+                nonzero_min_value = np.min(train_data[train_data > 0])
+                train_data[train_data == 0] = nonzero_min_value
+                test_data[test_data == 0] = nonzero_min_value
+                val_data[val_data == 0] = nonzero_min_value
+                if verbose:
+                    print(
+                        f"Data contains zero values. A log transform would result in NaN values.\n"
+                        f"Replaced with the minimum non-zero value: {nonzero_min_value:.2e}"
+                    )
             try:
                 train_data = np.log10(train_data)
                 test_data = np.log10(test_data)

@@ -15,7 +15,7 @@
 - [x] Rename NeuralODE to LatentNeuralODE
 - [x] **Check the time benchmarking**
 - [x] **Docstrings completion.**
-- [x] **Run pydoctest on the code**
+- [ ] **Run pydoctest and implement suggestions**
 - [x] **Implement optional log scale labels in plots**
 - [ ] **Check the memory benchmarking**
 - [ ] **Save Plots as SVG for immaculate quality**
