@@ -68,7 +68,7 @@ def check_benchmark(conf: dict) -> None:
             f"Training configuration file not found in directory {trained_dir}."
         )
 
-    with open(yaml_file, "r", encoding="uft-8") as file:
+    with open(yaml_file, "r", encoding="utf-8") as file:
         training_conf = yaml.safe_load(file)
 
     # 1. Check Surrogates
