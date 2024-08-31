@@ -409,7 +409,7 @@ class ODE(torch.nn.Module):
         self.mlp = torch.nn.Sequential()
         self.mlp.append(torch.nn.Linear(input_shape, layer_width, dtype=torch.float64))
         self.mlp.append(self.activation)
-        for i in range(n_hidden):
+        for _ in range(n_hidden):
             self.mlp.append(
                 torch.nn.Linear(layer_width, layer_width, dtype=torch.float64)
             )

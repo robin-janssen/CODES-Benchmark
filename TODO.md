@@ -2,6 +2,7 @@
 
 - [ ] **Write NeurIPS submission**
 - [x] Read into DataHosting on HeiDATA -> use Zenodo for now
+    - [ ] Also upload other datasets and create download function
 - [ ] Choose a code licence for the code - MIT?
 - [x] Reach out to Lorenzo regarding the dataset
 - [ ] Optuna and final run for all datasets.
@@ -19,7 +20,7 @@
 - [ ] **Save Plots as SVG for immaculate quality**
 - [ ] Rename batch_scaling to batch.
 - [ ] **Check whether the training is indeed deterministic.**
-- [ ] **Docstrings completion.**
+- [x] **Docstrings completion.**
 - [ ] **Make a clean requirements.txt, clean up the python environment and do a fresh test install**
 - [ ] **Make tutorial notebooks/examples**
 - [ ] **Check/update the config maker**
