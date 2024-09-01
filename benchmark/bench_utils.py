@@ -6,7 +6,6 @@ from copy import deepcopy
 from dataclasses import asdict
 
 import numpy as np
-import psutil
 import torch
 import yaml
 
@@ -68,7 +67,7 @@ def check_benchmark(conf: dict) -> None:
             f"Training configuration file not found in directory {trained_dir}."
         )
 
-    with open(yaml_file, "r", encoding="uft-8") as file:
+    with open(yaml_file, "r", encoding="utf-8") as file:
         training_conf = yaml.safe_load(file)
 
     # 1. Check Surrogates
@@ -275,48 +274,60 @@ def measure_memory_footprint(
     Args:
         model (torch.nn.Module): The PyTorch model.
         inputs (tuple): The input data for the model.
+        conf (dict): The configuration dictionary.
+        surr_name (str): The name of the surrogate model.
 
     Returns:
         dict: A dictionary containing memory footprint measurements.
     """
-    # model.to(model.device)
-    # initial_conditions = initial_conditions.to(model.device)
-    # times = times.to(model.device)
+    # def get_memory_usage():
+    #     process = psutil.Process(os.getpid())
+    #     return process.memory_info().rss
 
-    def get_memory_usage():
-        process = psutil.Process(os.getpid())
-        return process.memory_info().rss
+    def get_memory_usage(model):
+        return torch.cuda.memory_allocated(model.device)
+
+    model.to("cpu")
+
+    before_load = get_memory_usage(model)
+
+    model.to(model.device)
 
     # Measure memory usage before the forward pass
-    before_forward = get_memory_usage()
+    after_load = get_memory_usage(model)
 
-    # Forward pass
-    # istuple = isinstance(inputs, tuple)
-    # islist = isinstance(inputs, list)
-    # if istuple or islist:
-    #     inputs = tuple(i.to(model.device) for i in inputs)
-    # else:
-    #     inputs = inputs.to(model.device)
     inputs = (
         tuple(i.to(model.device) for i in inputs)
         if isinstance(inputs, list) or isinstance(inputs, tuple)
         else inputs.to(model.device)
     )
+    before_forward = get_memory_usage(model)
     preds, targets = model(inputs=inputs)
-    after_forward = get_memory_usage()
+    after_forward = get_memory_usage(model)
 
     # Measure memory usage before the backward pass
     loss = (preds - targets).sum()  # Example loss function
+    before_backward = get_memory_usage(model)
     loss.backward()
-    after_backward = get_memory_usage()
+    after_backward = get_memory_usage(model)
 
-    return {
-        "before_forward": before_forward,
-        "after_forward": after_forward,
-        "forward_pass_memory": after_forward - before_forward,
-        "after_backward": after_backward,
-        "backward_pass_memory": after_backward - after_forward,
+    del preds, targets, loss
+
+    # Measure pure forward pass memory usage
+    model.zero_grad()
+    before_forward_nograd = get_memory_usage(model)
+    with torch.no_grad():
+        preds, targets = model(inputs=inputs)
+    after_forward_nograd = get_memory_usage(model)
+
+    memory_usage = {
+        "model_memory": after_load - before_load,
+        "forward_memory": after_forward - before_forward,
+        "backward_memory": after_backward - before_backward,
+        "forward_memory_nograd": after_forward_nograd - before_forward_nograd,
     }
+
+    return memory_usage, model
 
 
 def convert_to_standard_types(data):

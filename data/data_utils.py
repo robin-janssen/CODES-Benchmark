@@ -139,8 +139,8 @@ def check_and_load_data(
 
         if "labels" in f.attrs:
             labels = f.attrs["labels"]
-            if not isinstance(labels, list):
-                raise TypeError("Labels must be a list of strings.")
+            if not isinstance(labels, np.ndarray):
+                raise TypeError("Labels must be an array of strings.")
             if len(labels) != n_chemicals:
                 raise ValueError(
                     "The number of labels must match the number of chemicals."

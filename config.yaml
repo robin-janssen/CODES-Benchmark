@@ -1,19 +1,19 @@
 # Global settings for the benchmark
-training_id: "continue_training_test_2"
+training_id: "determinism_test_1"
 surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
 batch_size: [1024, 1024, 128, 128]
-epochs: [3, 3, 3, 3]
+epochs: [20, 20, 20, 20]
 dataset: 
   name: "osu2008"
   log10_transform: False
   normalise: "minmax" # "standardise", "minmax", "disable"
-devices: ["cuda:1"]
+devices: ["cuda:3"]
 seed: 42
 verbose: False
 
 # Models to train
 interpolation: 
-  enabled: True
+  enabled: False
   intervals: [2, 3, 4, 5, 6, 7, 8, 10]
 extrapolation: 
   enabled: False
@@ -32,7 +32,7 @@ uncertainty:
 losses: False
 gradients: False
 timing: False
-compute: False
+compute: True
 compare: True # Whether to compare the surrogates
 
 
