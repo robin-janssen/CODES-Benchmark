@@ -10,7 +10,6 @@ class DatasetError(Exception):
     """
     Error for missing data or dataset or if the data shape is incorrect.
     """
-
     pass
 
 
