@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from torch import nn
+
 # from data.osu2008.osu_chemicals import osu_masses
 
 
@@ -14,6 +16,7 @@ class MultiONetBaseConfig:
     trunk_hidden_layers: int = 5
     output_factor: int = 10
     learning_rate: float = 3e-4
+    activation: nn.Module = nn.ReLU()
     schedule: bool = False
     regularization_factor: float = 0.0  # 0.012
     massloss_factor: float = 0.0  # 0.012

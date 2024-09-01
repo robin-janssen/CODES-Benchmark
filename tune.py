@@ -18,8 +18,7 @@ def parse_arguments():
     parser.add_argument(
         "--config",
         type=str,
-        default="branca_fullyconnected.py",
-        # required=True,
+        default="osu_latentneuralode.py",
         help="The name of the Python config file (e.g., 'config_1.py').",
     )
     return parser.parse_args()
@@ -39,8 +38,6 @@ def run(config, study_name):
 
     # Create the objective function with the config
     optuna_objective = create_objective(config)
-
-    n_trials = config.get("n_trials", 100)
     study.optimize(optuna_objective, n_trials=config["n_trials"])
 
 

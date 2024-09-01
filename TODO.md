@@ -18,6 +18,7 @@
 - [ ] **Run pydoctest and implement suggestions**
 - [x] **Implement optional log scale labels in plots**
 - [ ] **Check the memory benchmarking**
+- [ ] **Implement variable activation functions for FullyConnected and MultiONet**
 - [ ] **Save Plots as SVG for immaculate quality**
 - [ ] Rename batch_scaling to batch.
 - [ ] **Check whether the training is indeed deterministic.**

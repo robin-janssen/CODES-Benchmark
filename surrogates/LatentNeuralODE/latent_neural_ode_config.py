@@ -1,7 +1,5 @@
 from dataclasses import dataclass, field
 
-import torch
-
 
 @dataclass
 class LatentNeuralODEBaseConfig:
@@ -9,8 +7,8 @@ class LatentNeuralODEBaseConfig:
 
     latent_features: int = 5
     coder_layers: list[int] = field(default_factory=lambda: [32, 16, 8])
-    coder_activation: torch.nn.Module = torch.nn.ReLU()
-    ode_activation: torch.nn.Module = torch.nn.Tanh()
+    coder_activation: str = "ReLU"
+    ode_activation: str = "Tanh"
     ode_hidden: int = 4
     ode_layer_width: int = 64
     ode_tanh_reg: bool = True

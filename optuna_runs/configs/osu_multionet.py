@@ -18,5 +18,9 @@ config = {
         "hidden_size": {"type": "int", "low": 50, "high": 200},
         "learning_rate": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
         "output_factor": {"type": "int", "low": 1, "high": 30},
+        "activation": {
+            "type": "categorical",
+            "choices": ["ReLU", "LeakyReLU", "Tanh", "GELU", "Softplus"],
+        },
     },
 }

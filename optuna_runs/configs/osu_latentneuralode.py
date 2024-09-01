@@ -1,20 +1,28 @@
 config = {
     "surrogate": {
-        "name": "FullyConnected",
+        "name": "LatentNeuralODE",
     },
     "dataset": {
         "name": "osu2008",
         "log10_transform": True,
         "normalise": "minmax",
     },
-    "device": "cuda:6",
+    "device": "cuda:4",
     "seed": 42,
     "batch_size": 1024,
-    "epochs": 400,
-    "study_name": "fullyconnected_osu",
+    "epochs": 5000,
+    "n_trials": 200,
     "optuna_params": {
-        "hidden_size": {"type": "int", "low": 50, "high": 300},
-        "num_hidden_layers": {"type": "int", "low": 2, "high": 8},
+        "latent_features": {"type": "int", "low": 3, "high": 10},
         "learning_rate": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
+        "coder_activation": {
+            "type": "categorical",
+            "choices": ["ReLU", "LeakyReLU", "Tanh", "GELU", "Softplus"],
+        },
+        "ode_activation": {
+            "type": "categorical",
+            "choices": ["ReLU", "LeakyReLU", "Tanh", "GELU", "Softplus"],
+        },
+        "ode_tanh_reg": {"type": "categorical", "choices": [True, False]},
     },
 }

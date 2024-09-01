@@ -30,11 +30,12 @@ class BranchNet(nn.Module):
         hidden_size: int,
         output_size: int,
         num_hidden_layers: int,
+        activation: nn.Module = nn.ReLU(),
     ):
         super(BranchNet, self).__init__()
-        layers = [nn.Linear(input_size, hidden_size), nn.ReLU()]
+        layers = [nn.Linear(input_size, hidden_size), activation]
         for _ in range(num_hidden_layers - 1):
-            layers += [nn.Linear(hidden_size, hidden_size), nn.ReLU()]
+            layers += [nn.Linear(hidden_size, hidden_size), activation]
         layers.append(nn.Linear(hidden_size, output_size))
         self.network = nn.Sequential(*layers)
 
@@ -65,11 +66,12 @@ class TrunkNet(nn.Module):
         hidden_size: int,
         output_size: int,
         num_hidden_layers: int,
+        activation: nn.Module = nn.ReLU(),
     ):
         super(TrunkNet, self).__init__()
-        layers = [nn.Linear(input_size, hidden_size), nn.ReLU()]
+        layers = [nn.Linear(input_size, hidden_size), activation]
         for _ in range(num_hidden_layers - 1):
-            layers += [nn.Linear(hidden_size, hidden_size), nn.ReLU()]
+            layers += [nn.Linear(hidden_size, hidden_size), activation]
         layers.append(nn.Linear(hidden_size, output_size))
         self.network = nn.Sequential(*layers)
 
@@ -175,24 +177,27 @@ class MultiONet(OperatorNetwork):
         super().__init__(
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
         )
-
         self.config = config
         self.device = device
         self.N = n_chemicals  # Number of chemicals
         self.outputs = (
             n_chemicals * config.output_factor
         )  # Number of neurons in the last layer
+        act_fct = config.activation if hasattr(config, "activation") else "ReLU"
+        config.activation = self.get_activation_function(act_fct)
         self.branch_net = BranchNet(
             n_chemicals - (config.trunk_input_size - 1),  # +1 due to time
             config.hidden_size,
             self.outputs,
             config.branch_hidden_layers,
+            config.activation,
         ).to(device)
         self.trunk_net = TrunkNet(
             config.trunk_input_size,  # = time + optional additional quantities
             config.hidden_size,
             self.outputs,
             config.trunk_hidden_layers,
+            config.activation,
         ).to(device)
 
     def forward(self, inputs) -> tuple[torch.Tensor, torch.Tensor]:

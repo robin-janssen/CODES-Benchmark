@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from torch import nn
+
 # from typing import Optional
 
 
@@ -10,6 +12,7 @@ class FCNNBaseConfig:
     hidden_size: int = 150
     num_hidden_layers: int = 5
     learning_rate: float = 1e-4
+    activation: nn.Module = nn.ReLU()
     schedule: bool = False
     regularization_factor: float = 0.012
 

@@ -40,6 +40,12 @@ class LatentPoly(AbstractSurrogateModel):
         model_config = model_config if model_config is not None else {}
         self.config = LatentPolynomialBaseConfig(**model_config)
         self.config.in_features = n_chemicals
+        act_fct = (
+            self.config.coder_activation
+            if hasattr(self.config, "coder_activation")
+            else "ReLU"
+        )
+        self.config["coder_"] = self.get_activation_function(act_fct)
         self.model = PolynomialModelWrapper(config=self.config, device=self.device)
 
     def forward(self, inputs) -> tuple[torch.Tensor, torch.Tensor]:

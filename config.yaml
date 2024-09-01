@@ -7,7 +7,7 @@ dataset:
   name: "osu2008"
   log10_transform: False
   normalise: "minmax" # "standardise", "minmax", "disable"
-devices: ["cuda:1"]
+devices: ["cuda:3"]
 seed: 42
 verbose: False
 
