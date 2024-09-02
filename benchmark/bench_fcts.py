@@ -880,9 +880,7 @@ def compare_MAE(metrics: dict, config: dict) -> None:
         surrogate_class = get_surrogate(surr_name)
         n_timesteps = metrics[surr_name]["timesteps"].shape[0]
         n_chemicals = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
-        model = surrogate_class(
-            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps, None
-        )
+        model = surrogate_class(device, n_chemicals, n_timesteps, None)
         model_identifier = f"{surr_name.lower()}_main"
         model.load(training_id, surr_name, model_identifier=model_identifier)
         MAE.append(model.MAE)
