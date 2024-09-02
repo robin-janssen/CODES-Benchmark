@@ -1,20 +1,19 @@
 # Global settings for the benchmark
 training_id: "test_delete_me"
-surrogates: ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
-batch_size: [1024, 1024, 256, 256]
-epochs: [2, 2, 2, 2]
+surrogates: ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly", "MySurrogate"]
+batch_size: [1024, 1024, 256, 256, 128]
+epochs: [2, 2, 2, 2, 2]
 dataset: 
-  name: "osu2008"
   name: "osu2008"
   log10_transform: False
   normalise: "minmax" # "standardise", "minmax", "disable"
-devices: ["cpu"]
+devices: ["cuda:0"]
 seed: 42
 verbose: False
 
 # Models to train
 interpolation: 
-  enabled: True
+  enabled: False
   intervals: [2, 4, 6, 8, 10]
 extrapolation: 
   enabled: False
@@ -33,7 +32,6 @@ uncertainty:
 losses: False
 gradients: False
 timing: False
-compute: True
 compare: True # Whether to compare the surrogates
 
 
