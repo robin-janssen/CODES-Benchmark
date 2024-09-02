@@ -14,7 +14,7 @@ class LatentNeuralODEConfig:
     """Model config for LatentNeuralODE for the osu2008 dataset"""
 
     latent_features: int = 5
-    coder_hidden: int = 4
+    ode_hidden: int = 4
 
 
 @dataclass

@@ -12,6 +12,7 @@ from data import check_and_load_data
 
 from .bench_plots import (
     inference_time_bar_plot,
+    int_ext_sparse,
     plot_average_errors_over_time,
     plot_average_uncertainty_over_time,
     plot_comparative_dynamic_correlation_heatmaps,
@@ -29,9 +30,11 @@ from .bench_plots import (
     plot_relative_errors_over_time,
     plot_surr_losses,
     plot_uncertainty_over_time_comparison,
+    rel_errors_and_uq,
 )
 from .bench_utils import (
     count_trainable_parameters,
+    format_seconds,
     format_time,
     get_surrogate,
     make_comparison_csv,
@@ -79,8 +82,8 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     # model_config = get_model_config(surr_name, conf["dataset"]["name"])
     n_timesteps = train_data.shape[1]
     n_chemicals = train_data.shape[2]
+    n_test_samples = n_timesteps * val_data.shape[0]
     model = surrogate_class(device, n_chemicals, n_timesteps)
-    n_test_samples = len(test_data.flatten())
 
     # Placeholder for metrics
     metrics = {}
@@ -190,8 +193,10 @@ def evaluate_accuracy(
 
     # Load the model
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
+    train_time = model.train_duration
     num_chemicals = model.n_chemicals
-    # model.n_timesteps = 100
+    model_index = conf["surrogates"].index(surr_name)
+    n_epochs = conf["epochs"][model_index]
 
     # Use the model's predict method
     criterion = torch.nn.MSELoss(reduction="sum")
@@ -201,6 +206,7 @@ def evaluate_accuracy(
 
     # Calculate relative errors
     absolute_errors = np.abs(preds - targets)
+    mean_absolute_error = np.mean(absolute_errors)
     relative_errors = np.abs(absolute_errors / targets)
 
     # Plot relative errors over time
@@ -224,12 +230,15 @@ def evaluate_accuracy(
     # Store metrics
     accuracy_metrics = {
         "mean_squared_error": mean_squared_error,
+        "mean_absolute_error": mean_absolute_error,
         "mean_relative_error": np.mean(relative_errors),
         "median_relative_error": np.median(relative_errors),
         "max_relative_error": np.max(relative_errors),
         "min_relative_error": np.min(relative_errors),
         "absolute_errors": absolute_errors,
         "relative_errors": relative_errors,
+        "main_model_training_time": train_time,
+        "main_model_epochs": n_epochs,
     }
 
     return accuracy_metrics
@@ -258,7 +267,6 @@ def evaluate_dynamic_accuracy(
 
     # Load the model
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
-    # model.n_timesteps = 100
 
     # Obtain predictions and targets
     preds, targets = model.predict(data_loader=test_loader)
@@ -339,15 +347,20 @@ def time_inference(
     """
     training_id = conf["training_id"]
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
-    # model.n_timesteps = 100
 
     # Run inference multiple times and record the durations
     inference_times = []
     for _ in range(n_runs):
-        start_time = time.time()
-        _, _ = model.predict(data_loader=test_loader)
-        end_time = time.time()
-        inference_times.append(end_time - start_time)
+        # _, _ = model.predict(data_loader=test_loader)
+        total_time = 0
+        with torch.inference_mode():
+            for inputs in test_loader:
+                start_time = time.perf_counter()
+                _, _ = model.forward(inputs)
+                end_time = time.perf_counter()
+                total_time += end_time - start_time
+        # total_time /= n_test_samples
+        inference_times.append(total_time)
 
     # Calculate metrics
     mean_inference_time = np.mean(inference_times)
@@ -382,15 +395,14 @@ def evaluate_compute(
     """
     training_id = conf["training_id"]
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
-    # model.n_timesteps = 100
-
-    # Count the number of trainable parameters
-    num_params = count_trainable_parameters(model)
 
     # Get a sample input tensor from the test_loader
     inputs = next(iter(test_loader))
     # Measure the memory footprint during forward and backward pass
-    memory_footprint = measure_memory_footprint(model, inputs)
+    memory_footprint, model = measure_memory_footprint(model, inputs)
+
+    # Count the number of trainable parameters
+    num_params = count_trainable_parameters(model)
 
     # Store complexity metrics
     complexity_metrics = {
@@ -437,7 +449,6 @@ def evaluate_interpolation(
             else f"{surr_name.lower()}_interpolation_{interval}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        # model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         interpolation_metrics[f"interval {interval}"] = {"MSE": mean_squared_error}
@@ -507,7 +518,6 @@ def evaluate_extrapolation(
             else f"{surr_name.lower()}_extrapolation_{cutoff}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        # model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         extrapolation_metrics[f"cutoff {cutoff}"] = {"MSE": mean_squared_error}
@@ -581,7 +591,6 @@ def evaluate_sparse(
             else f"{surr_name.lower()}_sparse_{factor}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        # model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         train_samples = n_train_samples // factor
@@ -651,7 +660,6 @@ def evaluate_batchsize(
     for i, batch_size in enumerate(batch_sizes):
         model_id = f"{surr_name.lower()}_batchsize_{batch_size}"
         model.load(training_id, surr_name, model_identifier=model_id)
-        # model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
         batch_metrics[f"batch_size {batch_size}"] = {"MSE": mean_squared_error}
@@ -716,7 +724,6 @@ def evaluate_UQ(
             f"{surr_name.lower()}_main" if i == 0 else f"{surr_name.lower()}_UQ_{i}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
-        # model.n_timesteps = 100
         preds, targets = model.predict(data_loader=test_loader)
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
         all_predictions.append(preds)
@@ -794,6 +801,13 @@ def compare_models(metrics: dict, config: dict):
     if config["sparse"]["enabled"]:
         compare_sparse(metrics, config)
 
+    if (
+        config["interpolation"]["enabled"]
+        and config["extrapolation"]["enabled"]
+        and config["sparse"]["enabled"]
+    ):
+        int_ext_sparse(metrics, config)
+
     # Compare batch size training errors
     if config["batch_scaling"]["enabled"]:
         compare_batchsize(metrics, config)
@@ -801,6 +815,7 @@ def compare_models(metrics: dict, config: dict):
     # Compare UQ metrics
     if config["uncertainty"]["enabled"]:
         compare_UQ(metrics, config)
+        rel_errors_and_uq(metrics, config)
 
     tabular_comparison(metrics, config)
 
@@ -827,11 +842,12 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
         surrogate_class = get_surrogate(surr_name)
         n_timesteps = metrics[surr_name]["timesteps"].shape[0]
         n_chemicals = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
-        model = surrogate_class(device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps)
+        model = surrogate_class(
+            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+        )
 
         def load_losses(model_identifier: str):
             model.load(training_id, surr_name, model_identifier=model_identifier)
-            # model.n_timesteps = 100
             return model.train_loss, model.test_loss
 
         # Load main model losses
@@ -866,10 +882,11 @@ def compare_MAE(metrics: dict, config: dict) -> None:
         surrogate_class = get_surrogate(surr_name)
         n_timesteps = metrics[surr_name]["timesteps"].shape[0]
         n_chemicals = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
-        model = surrogate_class(device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps)
+        model = surrogate_class(
+            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+        )
         model_identifier = f"{surr_name.lower()}_main"
         model.load(training_id, surr_name, model_identifier=model_identifier)
-        # model.n_timesteps = 100
         MAE.append(model.MAE)
         labels.append(surr_name)
         train_durations.append(model.train_duration)
@@ -928,12 +945,8 @@ def compare_inference_time(
 
     for surrogate, surrogate_metrics in metrics.items():
         if "timing" in surrogate_metrics:
-            mean_time = surrogate_metrics["timing"].get(
-                "mean_inference_time_per_prediction"
-            )
-            std_time = surrogate_metrics["timing"].get(
-                "std_inference_time_per_prediction"
-            )
+            mean_time = surrogate_metrics["timing"].get("mean_inference_time_per_run")
+            std_time = surrogate_metrics["timing"].get("std_inference_time_per_run")
             if mean_time is not None and std_time is not None:
                 mean_inference_times[surrogate] = mean_time
                 std_inference_times[surrogate] = std_time
@@ -1063,6 +1076,7 @@ def compare_sparse(all_metrics: dict, config: dict) -> None:
         "Number of Training Samples",
         "sparse_errors.png",
         config,
+        xlog=True,
     )
 
 
@@ -1152,42 +1166,57 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
     mse_values = [
         metrics["accuracy"]["mean_squared_error"] for metrics in all_metrics.values()
     ]
+    mae_values = [
+        metrics["accuracy"]["mean_absolute_error"] for metrics in all_metrics.values()
+    ]
     mre_values = [
         metrics["accuracy"]["mean_relative_error"] for metrics in all_metrics.values()
+    ]
+    epochs = [
+        metrics["accuracy"]["main_model_epochs"] for metrics in all_metrics.values()
+    ]
+    train_times = [
+        int(metrics["accuracy"]["main_model_training_time"])
+        for metrics in all_metrics.values()
     ]
 
     # Find the best (minimum) MSE and MRE values
     best_mse_index = np.argmin(mse_values)
+    best_mae_index = np.argmin(mae_values)
     best_mre_index = np.argmin(mre_values)
+    best_time_index = np.argmin(train_times)
 
     mse_row = ["MSE"] + [
         f"{value:.4f}" if i != best_mse_index else f"* {value:.4f} *"
         for i, value in enumerate(mse_values)
     ]
-    mre_row = ["Mean Rel. Error"] + [
+    mae_row = ["MAE"] + [
+        f"{value:.4f}" if i != best_mae_index else f"* {value:.4f} *"
+        for i, value in enumerate(mae_values)
+    ]
+    mre_row = ["MRE"] + [
         f"{value*100:.2f} %" if i != best_mre_index else f"* {value*100:.2f} % *"
         for i, value in enumerate(mre_values)
     ]
-    rows.extend([mse_row, mre_row])
-
-    # Gradients (if enabled)
-    if config.get("gradients", False):
-        avg_corr_values = [
-            metrics["gradients"]["avg_correlation"] for metrics in all_metrics.values()
-        ]
-        avg_corr_row = ["Avg Correlation"] + [
-            f"{value:.4f}" for value in avg_corr_values
-        ]
-        rows.append(avg_corr_row)
+    epochs_row = ["Epochs"] + [
+        f"{value}" if i != best_mse_index else f"* {value} *"
+        for i, value in enumerate(epochs)
+    ]
+    train_strings = [f"{format_seconds(time)}" for time in train_times]
+    tt_row = ["Train Time (hh:mm:ss)"] + [
+        f"{time}" if i != best_time_index else f"* {time} *"
+        for i, time in enumerate(train_strings)
+    ]
+    rows.extend([mse_row, mae_row, mre_row, epochs_row, tt_row])
 
     # Timing metrics (if enabled)
     if config.get("timing", False):
         mean_times = [
-            metrics["timing"]["mean_inference_time_per_prediction"]
+            metrics["timing"]["mean_inference_time_per_run"]
             for metrics in all_metrics.values()
         ]
         std_times = [
-            metrics["timing"]["std_inference_time_per_prediction"]
+            metrics["timing"]["std_inference_time_per_run"]
             for metrics in all_metrics.values()
         ]
 
@@ -1204,27 +1233,41 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
         ]
         rows.append(timing_row)
 
+    # Gradients (if enabled)
+    if config.get("gradients", False):
+        avg_corr_values = [
+            metrics["gradients"]["avg_correlation"] for metrics in all_metrics.values()
+        ]
+        avg_corr_row = ["Gradient Corr."] + [
+            f"{value:.4f}" for value in avg_corr_values
+        ]
+        rows.append(avg_corr_row)
+
     # Compute metrics (if enabled)
     if config.get("compute", False):
         num_params_row = ["# Trainable Params"] + [
             f'{metrics["compute"]["num_trainable_parameters"]}'
             for metrics in all_metrics.values()
         ]
-        rows.append(num_params_row)
+        memory_row = ["Memory Footprint (MB)"] + [
+            f'{(metrics["compute"]["memory_footprint"]["forward_memory_nograd"]/1e6):.2f}'
+            for metrics in all_metrics.values()
+        ]
+        rows.extend([num_params_row, memory_row])
 
     # UQ metrics (if enabled)
-    if config.get("UQ", {}).get("enabled", False):
+    if config.get("uncertainty", False).get("enabled", False):
         avg_uncertainties = [
             metrics["UQ"]["average_uncertainty"] for metrics in all_metrics.values()
         ]
         uq_corr_values = [
             metrics["UQ"]["correlation_metrics"] for metrics in all_metrics.values()
         ]
-        uq_rows = [
-            ["Avg Uncertainty"] + [f"{value:.4f}" for value in avg_uncertainties],
-            ["UQ Correlation"] + [f"{value:.4f}" for value in uq_corr_values],
+        avg_unc_row = ["Avg. Uncertainty"] + [
+            f"{value:.4f}" for value in avg_uncertainties
         ]
-        rows.extend(uq_rows)
+        uq_corr_row = ["UQ Corr."] + [f"{value:.4f}" for value in uq_corr_values]
+        rows.extend([avg_unc_row, uq_corr_row])
 
     # Print the table using tabulate
     table = tabulate(rows, headers, tablefmt="simple_grid")

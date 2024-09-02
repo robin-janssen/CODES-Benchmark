@@ -3,7 +3,6 @@ from surrogates.FCNN.fcnn import FullyConnected
 from surrogates.LatentNeuralODE.latent_neural_ode import LatentNeuralODE
 from surrogates.LatentPolynomial.latent_poly import LatentPoly
 
-# Define surrogate classes
 surrogate_classes = [
     MultiONet,
     FullyConnected,

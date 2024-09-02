@@ -6,7 +6,6 @@ from copy import deepcopy
 from dataclasses import asdict
 
 import numpy as np
-import psutil
 import torch
 import yaml
 
@@ -39,6 +38,131 @@ def check_surrogate(surrogate: str, conf: dict) -> None:
             )
 
     print(f"All required models for surrogate {surrogate} are present.")
+
+
+def check_benchmark(conf: dict) -> None:
+    """
+    Check whether there are any configuration issues with the benchmark.
+
+    Args:
+        conf (dict): The configuration dictionary.
+
+    Raises:
+        FileNotFoundError: If the training ID directory is missing or if the .yaml file is missing.
+        ValueError: If the configuration is missing required keys or the values do not match the training configuration.
+    """
+    # Check for the training directory and load the training configuration
+    print("\nChecking benchmark configuration...")
+    training_id = conf.get("training_id")
+    if not training_id:
+        raise ValueError("Configuration must include a 'training_id'.")
+
+    trained_dir = os.path.join(os.getcwd(), "trained", training_id)
+    if not os.path.exists(trained_dir):
+        raise FileNotFoundError(f"Training ID directory {training_id} not found.")
+
+    yaml_file = os.path.join(trained_dir, "config.yaml")
+    if not os.path.isfile(yaml_file):
+        raise FileNotFoundError(
+            f"Training configuration file not found in directory {trained_dir}."
+        )
+
+    with open(yaml_file, "r", encoding="utf-8") as file:
+        training_conf = yaml.safe_load(file)
+
+    # 1. Check Surrogates
+    training_surrogates = set(training_conf.get("surrogates", []))
+    benchmark_surrogates = set(conf.get("surrogates", []))
+    if not benchmark_surrogates.issubset(training_surrogates):
+        raise ValueError(
+            "Benchmark configuration includes surrogates that were not in the training configuration."
+        )
+
+    # 2. Check Batch Size
+    if "batch_size" in conf:
+        training_batch_size = training_conf.get("batch_size", [])
+        benchmark_batch_size = conf.get("batch_size", [])
+        if len(training_batch_size) != len(benchmark_batch_size):
+            raise ValueError(
+                "Mismatch in number of batch sizes between training and benchmark configuration."
+            )
+
+        # Check if batch sizes correspond to the correct surrogates
+        for i, surrogate in enumerate(conf.get("surrogates", [])):
+            if surrogate in training_conf["surrogates"]:
+                index = training_conf["surrogates"].index(surrogate)
+                if training_batch_size[index] != benchmark_batch_size[i]:
+                    print(
+                        f"Warning: Batch size for surrogate '{surrogate}' has changed from {training_batch_size[index]} to {benchmark_batch_size[i]}."
+                    )
+
+    # 3. Check Dataset Settings
+    training_dataset = training_conf.get("dataset", {})
+    benchmark_dataset = conf.get("dataset", {})
+
+    # Check if any dataset keys or values do not match
+    for key, training_value in training_dataset.items():
+        benchmark_value = benchmark_dataset.get(key)
+        if benchmark_value != training_value:
+            raise ValueError(
+                f"Dataset setting '{key}' does not match between training and benchmark configurations. "
+                f"Training value: {training_value}, Benchmark value: {benchmark_value}."
+            )
+
+    # Check if there are any additional keys in the benchmark dataset not present in training
+    for key in benchmark_dataset.keys():
+        if key not in training_dataset:
+            raise ValueError(
+                f"Additional dataset setting '{key}' found in benchmark configuration that is not present in training configuration."
+            )
+
+    # 4. Check Modalities (Interpolation, Extrapolation, Sparse, Batch Scaling, Uncertainty)
+    modalities = [
+        "interpolation",
+        "extrapolation",
+        "sparse",
+        "batch_scaling",
+        "uncertainty",
+    ]
+    for modality in modalities:
+        training_modality = training_conf.get(modality, {})
+        benchmark_modality = conf.get(modality, {})
+
+        # Check if enabled state has changed incorrectly
+        if benchmark_modality.get("enabled", False) and not training_modality.get(
+            "enabled", False
+        ):
+            raise ValueError(
+                f"Modality '{modality}' is enabled in benchmark but was not enabled in training."
+            )
+
+        # Check values within each modality
+        if training_modality.get("enabled", False):
+            for key, value in benchmark_modality.items():
+                if key == "enabled":
+                    continue
+                if key not in training_modality:
+                    raise ValueError(
+                        f"Benchmark configuration provides a value for '{key}' in '{modality}' not present in training."
+                    )
+                if isinstance(value, list):
+                    if not set(value).issubset(set(training_modality.get(key, []))):
+                        raise ValueError(
+                            f"Benchmark configuration provides values for '{key}' in '{modality}' not trained for."
+                        )
+                else:
+                    if modality == "uncertainty" and key == "ensemble_size":
+                        if value > training_modality.get(key, value):
+                            raise ValueError(
+                                f"Benchmark ensemble_size for '{modality}' cannot be larger than in training."
+                            )
+                    else:
+                        if value != training_modality.get(key):
+                            raise ValueError(
+                                f"Benchmark configuration value for '{key}' in '{modality}' does not match training configuration."
+                            )
+
+    print("Configuration check passed successfully.")
 
 
 def get_required_models_list(surrogate: str, conf: dict) -> list:
@@ -99,7 +223,7 @@ def read_yaml_config(config_path: str) -> dict:
     Returns:
         dict: The configuration dictionary.
     """
-    with open(config_path, "r") as file:
+    with open(config_path, "r", encoding="uft-8") as file:
         conf = yaml.safe_load(file)
     return conf
 
@@ -150,48 +274,60 @@ def measure_memory_footprint(
     Args:
         model (torch.nn.Module): The PyTorch model.
         inputs (tuple): The input data for the model.
+        conf (dict): The configuration dictionary.
+        surr_name (str): The name of the surrogate model.
 
     Returns:
         dict: A dictionary containing memory footprint measurements.
     """
-    # model.to(model.device)
-    # initial_conditions = initial_conditions.to(model.device)
-    # times = times.to(model.device)
+    # def get_memory_usage():
+    #     process = psutil.Process(os.getpid())
+    #     return process.memory_info().rss
 
-    def get_memory_usage():
-        process = psutil.Process(os.getpid())
-        return process.memory_info().rss
+    def get_memory_usage(model):
+        return torch.cuda.memory_allocated(model.device)
+
+    model.to("cpu")
+
+    before_load = get_memory_usage(model)
+
+    model.to(model.device)
 
     # Measure memory usage before the forward pass
-    before_forward = get_memory_usage()
+    after_load = get_memory_usage(model)
 
-    # Forward pass
-    # istuple = isinstance(inputs, tuple)
-    # islist = isinstance(inputs, list)
-    # if istuple or islist:
-    #     inputs = tuple(i.to(model.device) for i in inputs)
-    # else:
-    #     inputs = inputs.to(model.device)
     inputs = (
         tuple(i.to(model.device) for i in inputs)
         if isinstance(inputs, list) or isinstance(inputs, tuple)
         else inputs.to(model.device)
     )
+    before_forward = get_memory_usage(model)
     preds, targets = model(inputs=inputs)
-    after_forward = get_memory_usage()
+    after_forward = get_memory_usage(model)
 
     # Measure memory usage before the backward pass
     loss = (preds - targets).sum()  # Example loss function
+    before_backward = get_memory_usage(model)
     loss.backward()
-    after_backward = get_memory_usage()
+    after_backward = get_memory_usage(model)
 
-    return {
-        "before_forward": before_forward,
-        "after_forward": after_forward,
-        "forward_pass_memory": after_forward - before_forward,
-        "after_backward": after_backward,
-        "backward_pass_memory": after_backward - after_forward,
+    del preds, targets, loss
+
+    # Measure pure forward pass memory usage
+    model.zero_grad()
+    before_forward_nograd = get_memory_usage(model)
+    with torch.no_grad():
+        preds, targets = model(inputs=inputs)
+    after_forward_nograd = get_memory_usage(model)
+
+    memory_usage = {
+        "model_memory": after_load - before_load,
+        "forward_memory": after_forward - before_forward,
+        "backward_memory": after_backward - before_backward,
+        "forward_memory_nograd": after_forward_nograd - before_forward_nograd,
     }
+
+    return memory_usage, model
 
 
 def convert_to_standard_types(data):
@@ -256,7 +392,6 @@ def clean_metrics(metrics: dict, conf: dict) -> dict:
     """
 
     # Make a deep copy of the metrics
-
     write_metrics = deepcopy(metrics)
 
     # Remove problematic entries
@@ -307,7 +442,9 @@ def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
         pass
 
     with open(
-        f"results/{conf['training_id']}/{surr_name.lower()}_metrics.yaml", "w"
+        f"results/{conf['training_id']}/{surr_name.lower()}_metrics.yaml",
+        mode="w",
+        encoding="utf-8",
     ) as f:
         yaml.dump(write_metrics, f, sort_keys=False)
 
@@ -330,7 +467,16 @@ def get_surrogate(surrogate_name: str) -> SurrogateModel | None:
 
 
 def format_time(mean_time, std_time):
-    """Format mean and std time consistently in ns, µs, ms, or s."""
+    """
+    Format mean and std time consistently in ns, µs, ms, or s.
+
+    Args:
+        mean_time: The mean time.
+        std_time: The standard deviation of the time.
+
+    Returns:
+        str: The formatted time string.
+    """
     if mean_time < 1e-6:
         # Both in ns
         return f"{mean_time * 1e9:.2f} ns ± {std_time * 1e9:.2f} ns"
@@ -343,6 +489,22 @@ def format_time(mean_time, std_time):
     else:
         # Both in s
         return f"{mean_time:.2f} s ± {std_time:.2f} s"
+
+
+def format_seconds(seconds: int) -> str:
+    """
+    Format a duration given in seconds as hh:mm:ss.
+
+    Args:
+        seconds (int): The duration in seconds.
+
+    Returns:
+        str: The formatted duration string.
+    """
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    seconds = seconds % 60
+    return f"{hours:02}:{minutes:02}:{seconds:02}"
 
 
 def flatten_dict(d: dict, parent_key: str = "", sep: str = " - ") -> dict:
@@ -425,7 +587,7 @@ def make_comparison_csv(metrics: dict, config: dict) -> None:
     os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
     # Write to the CSV file
-    with open(csv_file_path, mode="w", newline="") as csv_file:
+    with open(csv_file_path, mode="w", newline="", encoding="utf-8") as csv_file:
         writer = csv.writer(csv_file)
 
         # Write the header row
@@ -446,30 +608,6 @@ def make_comparison_csv(metrics: dict, config: dict) -> None:
         print(f"Comparison CSV file saved at {csv_file_path}")
 
 
-# def get_model_config(surr_name: str, dataset_name) -> dict:
-#     """
-#     Get the model configuration for a specific surrogate model from the dataset folder.
-#     Returns an empty dictionary if the configuration file is not found.
-
-#     Args:
-#         surr_name (str): The name of the surrogate model.
-#         conf (dict): The configuration dictionary.
-
-#     Returns:
-#         dict: The model configuration dictionary.
-#     """
-#     dataset_name = dataset_name.lower()
-#     dataset_folder = f"data/{dataset_name}"
-#     model_config_path = f"{dataset_folder}/{surr_name.lower()}_config.yaml"
-#     if os.path.exists(model_config_path):
-#         with open(model_config_path, "r") as file:
-#             model_config = yaml.safe_load(file)
-#     else:
-#         model_config = {}
-
-#     return model_config
-
-
 def get_model_config(surr_name: str, dataset_name: str) -> dict:
     """
     Get the model configuration for a specific surrogate model from the dataset folder.
@@ -488,7 +626,11 @@ def get_model_config(surr_name: str, dataset_name: str) -> dict:
 
     if os.path.exists(config_file):
         spec = importlib.util.spec_from_file_location("config_module", config_file)
+        if spec is None:
+            raise ImportError(f"Failed to import config module from {config_file}")
         config_module = importlib.util.module_from_spec(spec)
+        if spec.loader is None:
+            raise ImportError(f"Failed to load config module from {config_file}")
         spec.loader.exec_module(config_module)
 
         # Look for the dataclass matching the surr_name + 'Config'

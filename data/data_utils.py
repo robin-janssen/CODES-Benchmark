@@ -1,9 +1,16 @@
 import os
 import urllib.request
-import yaml
 
 import h5py
 import numpy as np
+import yaml
+
+
+class DatasetError(Exception):
+    """
+    Error for missing data or dataset or if the data shape is incorrect.
+    """
+    pass
 
 
 def check_and_load_data(
@@ -25,7 +32,7 @@ def check_and_load_data(
         tuple: Loaded data and timesteps.
 
     Raises:
-        Exception: If the dataset or required data is missing or if the data shape is incorrect.
+        DatasetError: If the dataset or required data is missing or if the data shape is incorrect.
     """
     data_dir = "data"
     dataset_name_lower = dataset_name.lower()
@@ -37,7 +44,7 @@ def check_and_load_data(
         if os.path.isdir(os.path.join(data_dir, name))
     ]
     if dataset_name_lower not in dataset_folders:
-        raise Exception(
+        raise DatasetError(
             f"Dataset '{dataset_name}' not found. Available datasets: {', '.join(dataset_folders)}"
         )
 
@@ -46,17 +53,13 @@ def check_and_load_data(
 
     # Check if data.hdf5 file exists
     if not os.path.exists(data_file_path):
-        raise Exception(f"data.hdf5 file not found in {dataset_path}")
+        raise DatasetError(f"data.hdf5 file not found in {dataset_path}")
 
     with h5py.File(data_file_path, "r") as f:
-        # Check if mode data exists
-        # if mode not in f:
-        #     raise Exception(
-        #         f"'{mode}' data not found in {data_file_path}. Available data: {', '.join(list(f.keys()))}"
-        #     )
+
         for mode in ("train", "test", "val"):
             if mode not in f:
-                raise Exception(
+                raise DatasetError(
                     f"'{mode}' data not found in {data_file_path}. Available data: {', '.join(list(f.keys()))}"
                 )
 
@@ -83,7 +86,7 @@ def check_and_load_data(
             raise ValueError(
                 "Normalization mode must be either 'disable', 'minmax' or 'standardise'"
             )
-        if not normalisation_mode == "disable":
+        if normalisation_mode != "disable":
             data_params, train_data, test_data, val_data = normalize_data(
                 train_data, test_data, val_data, mode=normalisation_mode
             )
@@ -97,11 +100,11 @@ def check_and_load_data(
         # Check data shape
         for data in (train_data, test_data, val_data):
             if data.ndim != 3:
-                raise Exception(
+                raise DatasetError(
                     "Data does not have the required shape (n_samples, n_timesteps, n_chemicals)."
                 )
 
-        _, n_timesteps, n_chemicals = data.shape
+        _, n_timesteps, n_chemicals = train_data.shape
         n_samples = train_data.shape[0] + test_data.shape[0] + val_data.shape[0]
         if verbose:
             print(
@@ -135,10 +138,16 @@ def check_and_load_data(
 
         if "labels" in f.attrs:
             labels = f.attrs["labels"]
+            if not isinstance(labels, np.ndarray):
+                raise TypeError("Labels must be an array of strings.")
             if len(labels) != n_chemicals:
                 raise ValueError(
                     "The number of labels must match the number of chemicals."
                 )
+        else:
+            labels = None
+            if verbose:
+                print("Labels not found in metadata.")
 
     return (
         train_data,
@@ -260,7 +269,7 @@ def create_hdf5_dataset(
         f.attrs["labels"] = labels
 
 
-def get_data_subset(full_train_data, full_test_data, timesteps, mode, metric, config):
+def get_data_subset(full_train_data, full_test_data, timesteps, mode, metric):
     """
     Get the appropriate data subset based on the mode and metric.
 
@@ -270,7 +279,6 @@ def get_data_subset(full_train_data, full_test_data, timesteps, mode, metric, co
         timesteps (np.ndarray): The timesteps.
         mode (str): The benchmark mode (e.g., "accuracy", "interpolation", "extrapolation", "sparse", "UQ").
         metric (int): The specific metric for the mode (e.g., interval, cutoff, factor, batch size).
-        config (dict): The configuration dictionary.
 
     Returns:
         tuple: The training data, test data, and timesteps subset.
@@ -289,16 +297,13 @@ def get_data_subset(full_train_data, full_test_data, timesteps, mode, metric, co
         factor = metric
         train_data = full_train_data[::factor]
         test_data = full_test_data[::factor]
-        timesteps = timesteps
     elif mode == "batch_size":
         factor = 4
         train_data = full_train_data[::factor]
         test_data = full_test_data[::factor]
-        timesteps = timesteps
     else:
         train_data = full_train_data
         test_data = full_test_data
-        timesteps = timesteps
 
     return train_data, test_data, timesteps
 
@@ -381,18 +386,19 @@ def create_dataset(
                 "Timesteps must be a 1D array with length equal to the number of timesteps in the data."
             )
 
-    if not isinstance(split, (tuple, list)):
-        raise TypeError("split must be a tuple or list of floats.")
-    if len(split) != 3:
-        raise ValueError(
-            "split must contain three values: train, test, and validation split."
-        )
-    if not all(isinstance(value, float) for value in split):
-        raise TypeError("split values must be floats.")
-    if not all(0 <= value <= 1 for value in split):
-        raise ValueError("split values must be between 0 and 1.")
-    if not split[0] + split[1] + split[2] == 1:
-        raise ValueError("split values must sum to 1.")
+    if split is not None:
+        if not isinstance(split, (tuple, list)):
+            raise TypeError("split must be a tuple or list of floats.")
+        if len(split) != 3:
+            raise ValueError(
+                "split must contain three values: train, test, and validation split."
+            )
+        if not all(isinstance(value, float) for value in split):
+            raise TypeError("split values must be floats.")
+        if not all(0 <= value <= 1 for value in split):
+            raise ValueError("split values must be between 0 and 1.")
+        if not split[0] + split[1] + split[2] == 1:
+            raise ValueError("split values must sum to 1.")
 
     np.random.shuffle(train_data)
 
@@ -400,7 +406,7 @@ def create_dataset(
         print(
             "Warning: split values will be ignored since test_data and val_data are provided."
         )
-    else:
+    if split is not None:
         full_data = train_data
         n_samples = train_data.shape[0]
         n_train = int(n_samples * split[0])
@@ -421,6 +427,7 @@ def create_dataset(
 
     print(f"Dataset '{name}' created at {dataset_dir}")
 
+
 def download_data(dataset_name: str):
     """
     Download the specified dataset if it is not present
@@ -430,16 +437,18 @@ def download_data(dataset_name: str):
     if os.path.isfile(f"data/{dataset_name.lower()}/data.hdf5"):
         return
 
-    with open("data/data_sources.yaml", "r") as file:
+    with open("data/data_sources.yaml", "r", encoding="utf-8") as file:
         data_sources = yaml.safe_load(file)
 
     try:
         url = data_sources[dataset_name]
-    except KeyError:
-        raise ValueError(f"Dataset '{dataset_name}' not found in data_sources.yaml")
+    except KeyError as exc:
+        raise ValueError(
+            f"Dataset '{dataset_name}' not found in data_sources.yaml"
+        ) from exc
 
     os.makedirs(f"data/{dataset_name.lower()}", exist_ok=True)
-    
+
     print(f"Downloading dataset '{dataset_name}'...")
     urllib.request.urlretrieve(url, f"data/{dataset_name.lower()}/data.hdf5")
     print(f"Dataset '{dataset_name}' downloaded successfully.")

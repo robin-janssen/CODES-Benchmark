@@ -2,12 +2,12 @@ from .train_fcts import (
     parallel_training,
     sequential_training,
     train_and_save_model,
-    train_surrogate,
+    create_task_list_for_surrogate,
 )
 
 __all__ = [
     "parallel_training",
     "sequential_training",
     "train_and_save_model",
-    "train_surrogate",
+    "create_task_list_for_surrogate",
 ]

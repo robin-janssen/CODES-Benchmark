@@ -5,6 +5,7 @@ batch_size: [1024, 1024, 256, 256]
 epochs: [2, 2, 2, 2]
 dataset: 
   name: "osu2008"
+  name: "osu2008"
   log10_transform: False
   normalise: "minmax" # "standardise", "minmax", "disable"
 devices: ["cpu"]
@@ -16,22 +17,22 @@ interpolation:
   enabled: True
   intervals: [2, 4, 6, 8, 10]
 extrapolation: 
-  enabled: True
+  enabled: False
   cutoffs: [50, 60, 70, 80, 90]
 sparse: 
-  enabled: True
+  enabled: False
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
-  enabled: True
-  sizes: [16, 64, 256, 1024, 4096]
+  enabled: False
+  sizes: [16, 1024, 8192]
 uncertainty: 
-  enabled: True
+  enabled: False
   ensemble_size: 5  # Number of models for deep ensemble
 
 # Evaluations during benchmark
-losses: True
-gradients: True
-timing: True
+losses: False
+gradients: False
+timing: False
 compute: True
 compare: True # Whether to compare the surrogates
 

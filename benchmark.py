@@ -1,12 +1,27 @@
 from argparse import ArgumentParser
 
-from benchmark import check_surrogate, compare_models, get_surrogate, run_benchmark
+from benchmark import (
+    check_benchmark,
+    check_surrogate,
+    compare_models,
+    get_surrogate,
+    run_benchmark,
+)
 from utils import nice_print, read_yaml_config
 
 
 def main(args):
+    """
+    Main function to run the benchmark. It reads the config file, checks the benchmark
+    configuration, runs the benchmark for each surrogate model, and compares the models
+    if specified in the config file.
+
+    Args:
+        args (Namespace): The command line arguments.
+    """
 
     config = read_yaml_config(args.config)
+    check_benchmark(config)
     surrogates = config["surrogates"]
     # Create dictionary to store metrics for all surrogate models
     all_metrics = {surrogate: {} for surrogate in surrogates}
