@@ -39,15 +39,18 @@
 <span class="kn">import</span> <span class="nn">yaml</span>
 
 
+<div class="viewcode-block" id="DatasetError">
+<a class="viewcode-back" href="../../data.html#data.data_utils.DatasetError">[docs]</a>
 <span class="k">class</span> <span class="nc">DatasetError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Error for missing data or dataset or if the data shape is incorrect.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">pass</span>
+    <span class="k">pass</span></div>
+
 
 
 <div class="viewcode-block" id="check_and_load_data">
-<a class="viewcode-back" href="../../index.html#data.check_and_load_data">[docs]</a>
+<a class="viewcode-back" href="../../data.html#data.data_utils.check_and_load_data">[docs]</a>
 <span class="k">def</span> <span class="nf">check_and_load_data</span><span class="p">(</span>
     <span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -196,10 +199,12 @@
 
 
 
+<div class="viewcode-block" id="normalize_data">
+<a class="viewcode-back" href="../../data.html#data.data_utils.normalize_data">[docs]</a>
 <span class="k">def</span> <span class="nf">normalize_data</span><span class="p">(</span>
     <span class="n">train_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">test_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">val_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">test_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">val_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;standardise&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -257,11 +262,12 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">val_data_norm</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">return</span> <span class="n">data_params</span><span class="p">,</span> <span class="n">train_data_norm</span><span class="p">,</span> <span class="n">test_data_norm</span><span class="p">,</span> <span class="n">val_data_norm</span>
+    <span class="k">return</span> <span class="n">data_params</span><span class="p">,</span> <span class="n">train_data_norm</span><span class="p">,</span> <span class="n">test_data_norm</span><span class="p">,</span> <span class="n">val_data_norm</span></div>
+
 
 
 <div class="viewcode-block" id="create_hdf5_dataset">
-<a class="viewcode-back" href="../../index.html#data.create_hdf5_dataset">[docs]</a>
+<a class="viewcode-back" href="../../data.html#data.data_utils.create_hdf5_dataset">[docs]</a>
 <span class="k">def</span> <span class="nf">create_hdf5_dataset</span><span class="p">(</span>
     <span class="n">train_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">test_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -309,7 +315,7 @@
 
 
 <div class="viewcode-block" id="get_data_subset">
-<a class="viewcode-back" href="../../index.html#data.get_data_subset">[docs]</a>
+<a class="viewcode-back" href="../../data.html#data.data_utils.get_data_subset">[docs]</a>
 <span class="k">def</span> <span class="nf">get_data_subset</span><span class="p">(</span><span class="n">full_train_data</span><span class="p">,</span> <span class="n">full_test_data</span><span class="p">,</span> <span class="n">timesteps</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">metric</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get the appropriate data subset based on the mode and metric.</span>
@@ -351,7 +357,7 @@
 
 
 <div class="viewcode-block" id="create_dataset">
-<a class="viewcode-back" href="../../index.html#data.create_dataset">[docs]</a>
+<a class="viewcode-back" href="../../data.html#data.data_utils.create_dataset">[docs]</a>
 <span class="k">def</span> <span class="nf">create_dataset</span><span class="p">(</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">train_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -473,6 +479,8 @@
 
 
 
+<div class="viewcode-block" id="download_data">
+<a class="viewcode-back" href="../../data.html#data.data_utils.download_data">[docs]</a>
 <span class="k">def</span> <span class="nf">download_data</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Download the specified dataset if it is not present</span>
@@ -496,7 +504,8 @@
 
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downloading dataset &#39;</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">&#39;...&quot;</span><span class="p">)</span>
     <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;data/</span><span class="si">{</span><span class="n">dataset_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">/data.hdf5&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataset &#39;</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">&#39; downloaded successfully.&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataset &#39;</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">&#39; downloaded successfully.&quot;</span><span class="p">)</span></div>
+
 </pre></div>
 
           </div>
@@ -524,6 +533,17 @@
     </div>
 </search>
 <script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark.html">benchmark module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark.html">benchmark module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data.html">data package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../generate_simple_ode_data.html">generate_simple_ode_data module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../make_new_dataset.html">make_new_dataset module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../surrogates.html">surrogates package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../train.html">train module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../train.html">train module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../utils.html">utils package</a></li>
+</ul>
 
 <div class="relations">
 <h3>Related Topics</h3>

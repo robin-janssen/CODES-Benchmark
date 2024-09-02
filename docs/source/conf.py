@@ -35,3 +35,11 @@ extensions = [
 
 html_theme = 'alabaster'
 html_static_path = ['_static']
+
+
+# INFO:
+# To generate the rst files automatically, run the following command:
+# sphinx-apidoc -o /export/data/isulzer/DON-vs-NODE/docs/test/ /export/data/isulzer/DON-vs-NODE/
+#
+# To generate the html files, run the following command:
+# sphinx-build -M html source build

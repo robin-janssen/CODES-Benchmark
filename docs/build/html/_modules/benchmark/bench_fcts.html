@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>benchmark.bench_fcts &#8212; CODES Benchmark 09.09.2024 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=c058f7c8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../_static/documentation_options.js?v=47c521fd"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for benchmark.bench_fcts</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">redirect_stdout</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">pearsonr</span>
+<span class="kn">from</span> <span class="nn">tabulate</span> <span class="kn">import</span> <span class="n">tabulate</span>
+<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
+
+<span class="kn">from</span> <span class="nn">data</span> <span class="kn">import</span> <span class="n">check_and_load_data</span>
+
+<span class="kn">from</span> <span class="nn">.bench_plots</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">inference_time_bar_plot</span><span class="p">,</span>
+    <span class="n">int_ext_sparse</span><span class="p">,</span>
+    <span class="n">plot_average_errors_over_time</span><span class="p">,</span>
+    <span class="n">plot_average_uncertainty_over_time</span><span class="p">,</span>
+    <span class="n">plot_comparative_dynamic_correlation_heatmaps</span><span class="p">,</span>
+    <span class="n">plot_comparative_error_correlation_heatmaps</span><span class="p">,</span>
+    <span class="n">plot_dynamic_correlation_heatmap</span><span class="p">,</span>
+    <span class="n">plot_error_correlation_heatmap</span><span class="p">,</span>
+    <span class="n">plot_error_distribution_comparative</span><span class="p">,</span>
+    <span class="n">plot_error_distribution_per_chemical</span><span class="p">,</span>
+    <span class="n">plot_example_predictions_with_uncertainty</span><span class="p">,</span>
+    <span class="n">plot_generalization_error_comparison</span><span class="p">,</span>
+    <span class="n">plot_generalization_errors</span><span class="p">,</span>
+    <span class="n">plot_loss_comparison</span><span class="p">,</span>
+    <span class="n">plot_MAE_comparison_train_duration</span><span class="p">,</span>
+    <span class="n">plot_relative_errors</span><span class="p">,</span>
+    <span class="n">plot_relative_errors_over_time</span><span class="p">,</span>
+    <span class="n">plot_surr_losses</span><span class="p">,</span>
+    <span class="n">plot_uncertainty_over_time_comparison</span><span class="p">,</span>
+    <span class="n">rel_errors_and_uq</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.bench_utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">count_trainable_parameters</span><span class="p">,</span>
+    <span class="n">format_seconds</span><span class="p">,</span>
+    <span class="n">format_time</span><span class="p">,</span>
+    <span class="n">get_surrogate</span><span class="p">,</span>
+    <span class="n">make_comparison_csv</span><span class="p">,</span>
+    <span class="n">measure_memory_footprint</span><span class="p">,</span>
+    <span class="n">write_metrics_to_yaml</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="run_benchmark">
+<a class="viewcode-back" href="../../index.html#benchmark.run_benchmark">[docs]</a>
+<span class="k">def</span> <span class="nf">run_benchmark</span><span class="p">(</span><span class="n">surr_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">surrogate_class</span><span class="p">,</span> <span class="n">conf</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run benchmarks for a given surrogate model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        surr_name (str): The name of the surrogate model to benchmark.</span>
+<span class="sd">        surrogate_class: The class of the surrogate model.</span>
+<span class="sd">        conf (dict): The configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A dictionary containing all relevant metrics for the given model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Instantiate the model</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;devices&quot;</span><span class="p">]</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">device</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="n">device</span>
+
+    <span class="c1"># Determine the batch size</span>
+    <span class="n">surr_idx</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;surrogates&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">surr_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">conf</span><span class="p">[</span><span class="s2">&quot;batch_size&quot;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">conf</span><span class="p">[</span><span class="s2">&quot;batch_size&quot;</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">conf</span><span class="p">[</span><span class="s2">&quot;surrogates&quot;</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The number of provided batch sizes must match the number of surrogate models.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">batch_size</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;batch_size&quot;</span><span class="p">][</span><span class="n">surr_idx</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;batch_size&quot;</span><span class="p">]</span>
+
+    <span class="n">train_data</span><span class="p">,</span> <span class="n">test_data</span><span class="p">,</span> <span class="n">val_data</span><span class="p">,</span> <span class="n">timesteps</span><span class="p">,</span> <span class="n">n_train_samples</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">check_and_load_data</span><span class="p">(</span>
+            <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">log</span><span class="o">=</span><span class="n">conf</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">][</span><span class="s2">&quot;log10_transform&quot;</span><span class="p">],</span>
+            <span class="n">normalisation_mode</span><span class="o">=</span><span class="n">conf</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">][</span><span class="s2">&quot;normalise&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="c1"># model_config = get_model_config(surr_name, conf[&quot;dataset&quot;][&quot;name&quot;])</span>
+    <span class="n">n_timesteps</span> <span class="o">=</span> <span class="n">train_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">n_chemicals</span> <span class="o">=</span> <span class="n">train_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">n_test_samples</span> <span class="o">=</span> <span class="n">n_timesteps</span> <span class="o">*</span> <span class="n">val_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">surrogate_class</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">n_chemicals</span><span class="p">,</span> <span class="n">n_timesteps</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="c1"># Placeholder for metrics</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;timesteps&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">timesteps</span>
+
+    <span class="c1"># Create dataloader for the test data</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">val_loader</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">prepare_data</span><span class="p">(</span>
+        <span class="n">dataset_train</span><span class="o">=</span><span class="n">train_data</span><span class="p">,</span>
+        <span class="n">dataset_test</span><span class="o">=</span><span class="n">test_data</span><span class="p">,</span>
+        <span class="n">dataset_val</span><span class="o">=</span><span class="n">val_data</span><span class="p">,</span>
+        <span class="n">timesteps</span><span class="o">=</span><span class="n">timesteps</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+        <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Plot training losses</span>
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;losses&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loss plots...&quot;</span><span class="p">)</span>
+        <span class="n">plot_surr_losses</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">conf</span><span class="p">,</span> <span class="n">timesteps</span><span class="p">)</span>
+
+    <span class="c1"># Accuracy benchmark</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running accuracy benchmark...&quot;</span><span class="p">)</span>
+    <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_accuracy</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">val_loader</span><span class="p">,</span> <span class="n">conf</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+
+    <span class="c1"># Gradients benchmark</span>
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running gradients benchmark...&quot;</span><span class="p">)</span>
+        <span class="c1"># For this benchmark, we can also use the main model</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_dynamic_accuracy</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">val_loader</span><span class="p">,</span> <span class="n">conf</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Timing benchmark</span>
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;timing&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running timing benchmark...&quot;</span><span class="p">)</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;timing&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_inference</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">val_loader</span><span class="p">,</span> <span class="n">conf</span><span class="p">,</span> <span class="n">n_test_samples</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Compute (resources) benchmark</span>
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;compute&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running compute benchmark...&quot;</span><span class="p">)</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;compute&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_compute</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">val_loader</span><span class="p">,</span> <span class="n">conf</span><span class="p">)</span>
+
+    <span class="c1"># Interpolation benchmark</span>
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;interpolation&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running interpolation benchmark...&quot;</span><span class="p">)</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;interpolation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_interpolation</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">val_loader</span><span class="p">,</span> <span class="n">timesteps</span><span class="p">,</span> <span class="n">conf</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Extrapolation benchmark</span>
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;extrapolation&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running extrapolation benchmark...&quot;</span><span class="p">)</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;extrapolation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_extrapolation</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">val_loader</span><span class="p">,</span> <span class="n">timesteps</span><span class="p">,</span> <span class="n">conf</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Sparse data benchmark</span>
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;sparse&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running sparse benchmark...&quot;</span><span class="p">)</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;sparse&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_sparse</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">val_loader</span><span class="p">,</span> <span class="n">timesteps</span><span class="p">,</span> <span class="n">n_train_samples</span><span class="p">,</span> <span class="n">conf</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Batch size benchmark</span>
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;batch_scaling&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running batch size benchmark...&quot;</span><span class="p">)</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;batch_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_batchsize</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">val_loader</span><span class="p">,</span> <span class="n">timesteps</span><span class="p">,</span> <span class="n">conf</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Uncertainty Quantification (UQ) benchmark</span>
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;uncertainty&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running UQ benchmark...&quot;</span><span class="p">)</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;UQ&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_UQ</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">val_loader</span><span class="p">,</span> <span class="n">timesteps</span><span class="p">,</span> <span class="n">conf</span><span class="p">,</span> <span class="n">labels</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Write metrics to yaml</span>
+    <span class="n">write_metrics_to_yaml</span><span class="p">(</span><span class="n">surr_name</span><span class="p">,</span> <span class="n">conf</span><span class="p">,</span> <span class="n">metrics</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">metrics</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">evaluate_accuracy</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">surr_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">test_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+    <span class="n">conf</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="nb">list</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluate the accuracy of the surrogate model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Instance of the surrogate model class.</span>
+<span class="sd">        surr_name (str): The name of the surrogate model.</span>
+<span class="sd">        test_loader (DataLoader): The DataLoader object containing the test data.</span>
+<span class="sd">        conf (dict): The configuration dictionary.</span>
+<span class="sd">        labels (list, optional): The labels for the chemical species.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A dictionary containing accuracy metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">training_id</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;training_id&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Load the model</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">training_id</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">model_identifier</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surr_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_main&quot;</span><span class="p">)</span>
+    <span class="n">train_time</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">train_duration</span>
+    <span class="n">num_chemicals</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">n_chemicals</span>
+    <span class="n">model_index</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;surrogates&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">surr_name</span><span class="p">)</span>
+    <span class="n">n_epochs</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;epochs&quot;</span><span class="p">][</span><span class="n">model_index</span><span class="p">]</span>
+
+    <span class="c1"># Use the model&#39;s predict method</span>
+    <span class="n">criterion</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+    <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data_loader</span><span class="o">=</span><span class="n">test_loader</span><span class="p">)</span>
+    <span class="n">mean_squared_error</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">numel</span><span class="p">(</span><span class="n">preds</span><span class="p">)</span>
+    <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">preds</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">targets</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+    <span class="c1"># Calculate relative errors</span>
+    <span class="n">absolute_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">preds</span> <span class="o">-</span> <span class="n">targets</span><span class="p">)</span>
+    <span class="n">mean_absolute_error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">absolute_errors</span><span class="p">)</span>
+    <span class="n">relative_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">absolute_errors</span> <span class="o">/</span> <span class="n">targets</span><span class="p">)</span>
+
+    <span class="c1"># Plot relative errors over time</span>
+    <span class="n">plot_relative_errors_over_time</span><span class="p">(</span>
+        <span class="n">surr_name</span><span class="p">,</span>
+        <span class="n">conf</span><span class="p">,</span>
+        <span class="n">relative_errors</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Relative Errors over Time for </span><span class="si">{</span><span class="n">surr_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">plot_error_distribution_per_chemical</span><span class="p">(</span>
+        <span class="n">surr_name</span><span class="p">,</span>
+        <span class="n">conf</span><span class="p">,</span>
+        <span class="n">relative_errors</span><span class="p">,</span>
+        <span class="n">chemical_names</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span>
+        <span class="n">num_chemicals</span><span class="o">=</span><span class="n">num_chemicals</span><span class="p">,</span>
+        <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Store metrics</span>
+    <span class="n">accuracy_metrics</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;mean_squared_error&quot;</span><span class="p">:</span> <span class="n">mean_squared_error</span><span class="p">,</span>
+        <span class="s2">&quot;mean_absolute_error&quot;</span><span class="p">:</span> <span class="n">mean_absolute_error</span><span class="p">,</span>
+        <span class="s2">&quot;mean_relative_error&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">relative_errors</span><span class="p">),</span>
+        <span class="s2">&quot;median_relative_error&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">relative_errors</span><span class="p">),</span>
+        <span class="s2">&quot;max_relative_error&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">relative_errors</span><span class="p">),</span>
+        <span class="s2">&quot;min_relative_error&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">relative_errors</span><span class="p">),</span>
+        <span class="s2">&quot;absolute_errors&quot;</span><span class="p">:</span> <span class="n">absolute_errors</span><span class="p">,</span>
+        <span class="s2">&quot;relative_errors&quot;</span><span class="p">:</span> <span class="n">relative_errors</span><span class="p">,</span>
+        <span class="s2">&quot;main_model_training_time&quot;</span><span class="p">:</span> <span class="n">train_time</span><span class="p">,</span>
+        <span class="s2">&quot;main_model_epochs&quot;</span><span class="p">:</span> <span class="n">n_epochs</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">accuracy_metrics</span>
+
+
+<span class="k">def</span> <span class="nf">evaluate_dynamic_accuracy</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">surr_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">test_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+    <span class="n">conf</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">species_names</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluate the gradients of the surrogate model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Instance of the surrogate model class.</span>
+<span class="sd">        surr_name (str): The name of the surrogate model.</span>
+<span class="sd">        test_loader (DataLoader): The DataLoader object containing the test data.</span>
+<span class="sd">        conf (dict): The configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A dictionary containing gradients metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">training_id</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;training_id&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Load the model</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">training_id</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">model_identifier</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surr_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_main&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Obtain predictions and targets</span>
+    <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data_loader</span><span class="o">=</span><span class="n">test_loader</span><span class="p">)</span>
+    <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">preds</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">targets</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+    <span class="c1"># Calculate gradients of the target data w.r.t time</span>
+    <span class="n">gradients</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Take absolute value and normalize gradients</span>
+    <span class="n">gradients</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">gradients</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">gradients</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+    <span class="c1"># Calculate absolute prediction errors</span>
+    <span class="n">prediction_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">preds</span> <span class="o">-</span> <span class="n">targets</span><span class="p">)</span>
+    <span class="c1"># Normalize prediction errors</span>
+    <span class="c1"># prediction_errors = prediction_errors / prediction_errors.max()</span>
+
+    <span class="c1"># Calculate correlations</span>
+    <span class="n">species_correlations</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">targets</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]):</span>
+        <span class="n">gradient_species</span> <span class="o">=</span> <span class="n">gradients</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="n">error_species</span> <span class="o">=</span> <span class="n">prediction_errors</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="n">correlation</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">pearsonr</span><span class="p">(</span><span class="n">gradient_species</span><span class="p">,</span> <span class="n">error_species</span><span class="p">)</span>
+        <span class="n">species_correlations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">correlation</span><span class="p">)</span>
+
+    <span class="c1"># Average correlation over all species</span>
+    <span class="n">avg_gradient</span> <span class="o">=</span> <span class="n">gradients</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="n">avg_error</span> <span class="o">=</span> <span class="n">prediction_errors</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="n">avg_correlation</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">pearsonr</span><span class="p">(</span><span class="n">avg_gradient</span><span class="p">,</span> <span class="n">avg_error</span><span class="p">)</span>
+
+    <span class="c1"># Plot correlation for averaged species</span>
+    <span class="c1"># plot_dynamic_correlation(surr_name, conf, avg_gradient, avg_error, save=True)</span>
+    <span class="n">max_count</span><span class="p">,</span> <span class="n">max_grad</span><span class="p">,</span> <span class="n">max_err</span> <span class="o">=</span> <span class="n">plot_dynamic_correlation_heatmap</span><span class="p">(</span>
+        <span class="n">surr_name</span><span class="p">,</span> <span class="n">conf</span><span class="p">,</span> <span class="n">gradients</span><span class="p">,</span> <span class="n">prediction_errors</span><span class="p">,</span> <span class="n">avg_correlation</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Ensure species names are provided</span>
+    <span class="n">species_names</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">species_names</span>
+        <span class="k">if</span> <span class="n">species_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;quantity_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">targets</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])]</span>
+    <span class="p">)</span>
+    <span class="n">species_correlations</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">species_names</span><span class="p">,</span> <span class="n">species_correlations</span><span class="p">))</span>
+
+    <span class="c1"># Store metrics</span>
+    <span class="n">gradients_metrics</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;gradients&quot;</span><span class="p">:</span> <span class="n">gradients</span><span class="p">,</span>
+        <span class="s2">&quot;species_correlations&quot;</span><span class="p">:</span> <span class="n">species_correlations</span><span class="p">,</span>
+        <span class="s2">&quot;avg_correlation&quot;</span><span class="p">:</span> <span class="n">avg_correlation</span><span class="p">,</span>
+        <span class="s2">&quot;max_counts&quot;</span><span class="p">:</span> <span class="n">max_count</span><span class="p">,</span>
+        <span class="s2">&quot;max_gradient&quot;</span><span class="p">:</span> <span class="n">max_grad</span><span class="p">,</span>
+        <span class="s2">&quot;max_error&quot;</span><span class="p">:</span> <span class="n">max_err</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">gradients_metrics</span>
+
+
+<span class="k">def</span> <span class="nf">time_inference</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">surr_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">test_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+    <span class="n">conf</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">n_test_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_runs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Time the inference of the surrogate model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Instance of the surrogate model class.</span>
+<span class="sd">        surr_name (str): The name of the surrogate model.</span>
+<span class="sd">        test_loader (DataLoader): The DataLoader object containing the test data.</span>
+<span class="sd">        timesteps (np.ndarray): The timesteps array.</span>
+<span class="sd">        conf (dict): The configuration dictionary.</span>
+<span class="sd">        n_test_samples (int): The number of test samples.</span>
+<span class="sd">        n_runs (int, optional): Number of times to run the inference for timing.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A dictionary containing timing metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">training_id</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;training_id&quot;</span><span class="p">]</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">training_id</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">model_identifier</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surr_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_main&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Run inference multiple times and record the durations</span>
+    <span class="n">inference_times</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_runs</span><span class="p">):</span>
+        <span class="c1"># _, _ = model.predict(data_loader=test_loader)</span>
+        <span class="n">total_time</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">inference_mode</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">inputs</span> <span class="ow">in</span> <span class="n">test_loader</span><span class="p">:</span>
+                <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+                <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+                <span class="n">total_time</span> <span class="o">+=</span> <span class="n">end_time</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="c1"># total_time /= n_test_samples</span>
+        <span class="n">inference_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">total_time</span><span class="p">)</span>
+
+    <span class="c1"># Calculate metrics</span>
+    <span class="n">mean_inference_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">inference_times</span><span class="p">)</span>
+    <span class="n">std_inference_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">inference_times</span><span class="p">)</span>
+
+    <span class="c1"># Store metrics</span>
+    <span class="n">timing_metrics</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;mean_inference_time_per_run&quot;</span><span class="p">:</span> <span class="n">mean_inference_time</span><span class="p">,</span>
+        <span class="s2">&quot;std_inference_time_per_run&quot;</span><span class="p">:</span> <span class="n">std_inference_time</span><span class="p">,</span>
+        <span class="s2">&quot;num_predictions&quot;</span><span class="p">:</span> <span class="n">n_test_samples</span><span class="p">,</span>
+        <span class="s2">&quot;mean_inference_time_per_prediction&quot;</span><span class="p">:</span> <span class="n">mean_inference_time</span> <span class="o">/</span> <span class="n">n_test_samples</span><span class="p">,</span>
+        <span class="s2">&quot;std_inference_time_per_prediction&quot;</span><span class="p">:</span> <span class="n">std_inference_time</span> <span class="o">/</span> <span class="n">n_test_samples</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">timing_metrics</span>
+
+
+<span class="k">def</span> <span class="nf">evaluate_compute</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">test_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">conf</span><span class="p">:</span> <span class="nb">dict</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluate the computational resource requirements of the surrogate model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Instance of the surrogate model class.</span>
+<span class="sd">        surr_name (str): The name of the surrogate model.</span>
+<span class="sd">        test_loader (DataLoader): The DataLoader object containing the test data.</span>
+<span class="sd">        conf (dict): The configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A dictionary containing model complexity metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">training_id</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;training_id&quot;</span><span class="p">]</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">training_id</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">model_identifier</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surr_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_main&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Get a sample input tensor from the test_loader</span>
+    <span class="n">inputs</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">test_loader</span><span class="p">))</span>
+    <span class="c1"># Measure the memory footprint during forward and backward pass</span>
+    <span class="n">memory_footprint</span><span class="p">,</span> <span class="n">model</span> <span class="o">=</span> <span class="n">measure_memory_footprint</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
+
+    <span class="c1"># Count the number of trainable parameters</span>
+    <span class="n">num_params</span> <span class="o">=</span> <span class="n">count_trainable_parameters</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="c1"># Store complexity metrics</span>
+    <span class="n">complexity_metrics</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;num_trainable_parameters&quot;</span><span class="p">:</span> <span class="n">num_params</span><span class="p">,</span>
+        <span class="s2">&quot;memory_footprint&quot;</span><span class="p">:</span> <span class="n">memory_footprint</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">complexity_metrics</span>
+
+
+<span class="k">def</span> <span class="nf">evaluate_interpolation</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">test_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">timesteps</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">conf</span><span class="p">:</span> <span class="nb">dict</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluate the interpolation performance of the surrogate model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Instance of the surrogate model class.</span>
+<span class="sd">        surr_name (str): The name of the surrogate model.</span>
+<span class="sd">        test_loader (DataLoader): The DataLoader object containing the test data.</span>
+<span class="sd">        timesteps (np.ndarray): The timesteps array.</span>
+<span class="sd">        conf (dict): The configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A dictionary containing interpolation metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">training_id</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;training_id&quot;</span><span class="p">]</span>
+    <span class="n">intervals</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;interpolation&quot;</span><span class="p">][</span><span class="s2">&quot;intervals&quot;</span><span class="p">]</span>
+    <span class="n">intervals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">intervals</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">))</span>
+    <span class="n">intervals</span> <span class="o">=</span> <span class="n">intervals</span><span class="p">[</span><span class="n">intervals</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">intervals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">intervals</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">interpolation_metrics</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">intervals</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">timesteps</span><span class="p">)))</span>
+
+    <span class="c1"># Criterion for prediction loss</span>
+    <span class="n">criterion</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Evaluate models for each interval</span>
+    <span class="k">for</span> <span class="n">interval</span> <span class="ow">in</span> <span class="n">intervals</span><span class="p">:</span>
+        <span class="c1"># Ensure that the main model is loaded for interval 1</span>
+        <span class="n">model_id</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surr_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_main&quot;</span>
+            <span class="k">if</span> <span class="n">interval</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surr_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_interpolation_</span><span class="si">{</span><span class="n">interval</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">training_id</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">model_identifier</span><span class="o">=</span><span class="n">model_id</span><span class="p">)</span>
+        <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data_loader</span><span class="o">=</span><span class="n">test_loader</span><span class="p">)</span>
+        <span class="n">mean_squared_error</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">numel</span><span class="p">(</span><span class="n">preds</span><span class="p">)</span>
+        <span class="n">interpolation_metrics</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;interval </span><span class="si">{</span><span class="n">interval</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;MSE&quot;</span><span class="p">:</span> <span class="n">mean_squared_error</span><span class="p">}</span>
+
+        <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">preds</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">targets</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">mean_absolute_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">preds</span> <span class="o">-</span> <span class="n">targets</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">errors</span><span class="p">[</span><span class="n">intervals</span> <span class="o">==</span> <span class="n">interval</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_absolute_errors</span>
+
+    <span class="c1"># Extract metrics and errors for plotting</span>
+    <span class="n">model_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">metric</span><span class="p">[</span><span class="s2">&quot;MSE&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">interpolation_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    <span class="p">)</span>
+    <span class="n">interpolation_metrics</span><span class="p">[</span><span class="s2">&quot;model_errors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_errors</span>
+    <span class="n">interpolation_metrics</span><span class="p">[</span><span class="s2">&quot;intervals&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">intervals</span>
+
+    <span class="c1"># Plot interpolation errors</span>
+    <span class="n">plot_generalization_errors</span><span class="p">(</span>
+        <span class="n">surr_name</span><span class="p">,</span> <span class="n">conf</span><span class="p">,</span> <span class="n">intervals</span><span class="p">,</span> <span class="n">model_errors</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;interpolation&quot;</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="n">plot_average_errors_over_time</span><span class="p">(</span>
+        <span class="n">surr_name</span><span class="p">,</span>
+        <span class="n">conf</span><span class="p">,</span>
+        <span class="n">errors</span><span class="p">,</span>
+        <span class="n">intervals</span><span class="p">,</span>
+        <span class="n">timesteps</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;interpolation&quot;</span><span class="p">,</span>
+        <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">interpolation_metrics</span>
+
+
+<span class="k">def</span> <span class="nf">evaluate_extrapolation</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">test_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">timesteps</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">conf</span><span class="p">:</span> <span class="nb">dict</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluate the extrapolation performance of the surrogate model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Instance of the surrogate model class.</span>
+<span class="sd">        surr_name (str): The name of the surrogate model.</span>
+<span class="sd">        test_loader (DataLoader): The DataLoader object containing the test data.</span>
+<span class="sd">        timesteps (np.ndarray): The timesteps array.</span>
+<span class="sd">        conf (dict): The configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A dictionary containing extrapolation metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">training_id</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;training_id&quot;</span><span class="p">]</span>
+    <span class="n">cutoffs</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;extrapolation&quot;</span><span class="p">][</span><span class="s2">&quot;cutoffs&quot;</span><span class="p">]</span>
+    <span class="n">cutoffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cutoffs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">))</span>
+    <span class="n">max_cut</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">timesteps</span><span class="p">)</span>
+    <span class="n">cutoffs</span> <span class="o">=</span> <span class="n">cutoffs</span><span class="p">[</span><span class="n">cutoffs</span> <span class="o">&lt;</span> <span class="n">max_cut</span><span class="p">]</span>
+    <span class="n">cutoffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cutoffs</span><span class="p">,</span> <span class="n">max_cut</span><span class="p">)</span>
+    <span class="n">extrapolation_metrics</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">cutoffs</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">timesteps</span><span class="p">)))</span>
+
+    <span class="c1"># Criterion for prediction loss</span>
+    <span class="n">criterion</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Evaluate models for each cutoff</span>
+    <span class="k">for</span> <span class="n">cutoff</span> <span class="ow">in</span> <span class="n">cutoffs</span><span class="p">:</span>
+        <span class="c1"># Ensure that the main model is loaded for the last cutoff</span>
+        <span class="n">model_id</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surr_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_main&quot;</span>
+            <span class="k">if</span> <span class="n">cutoff</span> <span class="o">==</span> <span class="n">max_cut</span>
+            <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surr_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_extrapolation_</span><span class="si">{</span><span class="n">cutoff</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">training_id</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">model_identifier</span><span class="o">=</span><span class="n">model_id</span><span class="p">)</span>
+        <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data_loader</span><span class="o">=</span><span class="n">test_loader</span><span class="p">)</span>
+        <span class="n">mean_squared_error</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">numel</span><span class="p">(</span><span class="n">preds</span><span class="p">)</span>
+        <span class="n">extrapolation_metrics</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;cutoff </span><span class="si">{</span><span class="n">cutoff</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;MSE&quot;</span><span class="p">:</span> <span class="n">mean_squared_error</span><span class="p">}</span>
+
+        <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">preds</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">targets</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">mean_absolute_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">preds</span> <span class="o">-</span> <span class="n">targets</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">errors</span><span class="p">[</span><span class="n">cutoffs</span> <span class="o">==</span> <span class="n">cutoff</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_absolute_errors</span>
+
+    <span class="c1"># Extract metrics and errors for plotting</span>
+    <span class="n">model_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">metric</span><span class="p">[</span><span class="s2">&quot;MSE&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">extrapolation_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    <span class="p">)</span>
+    <span class="n">extrapolation_metrics</span><span class="p">[</span><span class="s2">&quot;model_errors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_errors</span>
+    <span class="n">extrapolation_metrics</span><span class="p">[</span><span class="s2">&quot;cutoffs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cutoffs</span>
+
+    <span class="c1"># Plot extrapolation errors</span>
+    <span class="n">plot_generalization_errors</span><span class="p">(</span>
+        <span class="n">surr_name</span><span class="p">,</span> <span class="n">conf</span><span class="p">,</span> <span class="n">cutoffs</span><span class="p">,</span> <span class="n">model_errors</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;extrapolation&quot;</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="n">plot_average_errors_over_time</span><span class="p">(</span>
+        <span class="n">surr_name</span><span class="p">,</span>
+        <span class="n">conf</span><span class="p">,</span>
+        <span class="n">errors</span><span class="p">,</span>
+        <span class="n">cutoffs</span><span class="p">,</span>
+        <span class="n">timesteps</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;extrapolation&quot;</span><span class="p">,</span>
+        <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">extrapolation_metrics</span>
+
+
+<span class="k">def</span> <span class="nf">evaluate_sparse</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">surr_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">test_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+    <span class="n">timesteps</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">n_train_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">conf</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluate the performance of the surrogate model with sparse training data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Instance of the surrogate model class.</span>
+<span class="sd">        surr_name (str): The name of the surrogate model.</span>
+<span class="sd">        test_loader (DataLoader): The DataLoader object containing the test data.</span>
+<span class="sd">        n_train_samples (int): The number of training samples in the full dataset.</span>
+<span class="sd">        conf (dict): The configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A dictionary containing sparse training metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">training_id</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;training_id&quot;</span><span class="p">]</span>
+    <span class="n">factors</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;sparse&quot;</span><span class="p">][</span><span class="s2">&quot;factors&quot;</span><span class="p">]</span>
+    <span class="n">factors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">factors</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">))</span>
+    <span class="n">factors</span> <span class="o">=</span> <span class="n">factors</span><span class="p">[</span><span class="n">factors</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">factors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">factors</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">sparse_metrics</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">factors</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">timesteps</span><span class="p">)))</span>
+
+    <span class="c1"># Criterion for prediction loss</span>
+    <span class="n">criterion</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Evaluate models for each factor</span>
+    <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">factors</span><span class="p">:</span>
+        <span class="c1"># Ensure that the main model is loaded for factor 1</span>
+        <span class="n">model_id</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surr_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_main&quot;</span>
+            <span class="k">if</span> <span class="n">factor</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surr_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_sparse_</span><span class="si">{</span><span class="n">factor</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">training_id</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">model_identifier</span><span class="o">=</span><span class="n">model_id</span><span class="p">)</span>
+        <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data_loader</span><span class="o">=</span><span class="n">test_loader</span><span class="p">)</span>
+        <span class="n">mean_squared_error</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">numel</span><span class="p">(</span><span class="n">preds</span><span class="p">)</span>
+        <span class="n">train_samples</span> <span class="o">=</span> <span class="n">n_train_samples</span> <span class="o">//</span> <span class="n">factor</span>
+        <span class="n">sparse_metrics</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;factor </span><span class="si">{</span><span class="n">factor</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;MSE&quot;</span><span class="p">:</span> <span class="n">mean_squared_error</span><span class="p">,</span>
+            <span class="s2">&quot;n_train_samples&quot;</span><span class="p">:</span> <span class="n">train_samples</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">preds</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">targets</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">mean_absolute_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">preds</span> <span class="o">-</span> <span class="n">targets</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">errors</span><span class="p">[</span><span class="n">factors</span> <span class="o">==</span> <span class="n">factor</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_absolute_errors</span>
+
+    <span class="c1"># Extract metrics and errors for plotting</span>
+    <span class="n">model_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">metric</span><span class="p">[</span><span class="s2">&quot;MSE&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">sparse_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+    <span class="n">n_train_samples_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">metric</span><span class="p">[</span><span class="s2">&quot;n_train_samples&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">sparse_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    <span class="p">)</span>
+    <span class="n">sparse_metrics</span><span class="p">[</span><span class="s2">&quot;model_errors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_errors</span>
+    <span class="n">sparse_metrics</span><span class="p">[</span><span class="s2">&quot;n_train_samples&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_train_samples_array</span>
+
+    <span class="c1"># Plot sparse training errors</span>
+    <span class="n">plot_generalization_errors</span><span class="p">(</span>
+        <span class="n">surr_name</span><span class="p">,</span> <span class="n">conf</span><span class="p">,</span> <span class="n">n_train_samples_array</span><span class="p">,</span> <span class="n">model_errors</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;sparse&quot;</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="n">plot_average_errors_over_time</span><span class="p">(</span>
+        <span class="n">surr_name</span><span class="p">,</span>
+        <span class="n">conf</span><span class="p">,</span>
+        <span class="n">errors</span><span class="p">,</span>
+        <span class="n">n_train_samples_array</span><span class="p">,</span>
+        <span class="n">timesteps</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;sparse&quot;</span><span class="p">,</span>
+        <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sparse_metrics</span>
+
+
+<span class="k">def</span> <span class="nf">evaluate_batchsize</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">surr_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">test_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+    <span class="n">timesteps</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">conf</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluate the performance of the surrogate model with different batch sizes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Instance of the surrogate model class.</span>
+<span class="sd">        surr_name (str): The name of the surrogate model.</span>
+<span class="sd">        test_loader (DataLoader): The DataLoader object containing the test data.</span>
+<span class="sd">        timesteps (np.ndarray): The timesteps array.</span>
+<span class="sd">        conf (dict): The configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A dictionary containing batch size training metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">training_id</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;training_id&quot;</span><span class="p">]</span>
+    <span class="n">batch_sizes</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;batch_scaling&quot;</span><span class="p">][</span><span class="s2">&quot;sizes&quot;</span><span class="p">]</span>
+    <span class="n">batch_metrics</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">batch_sizes</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">timesteps</span><span class="p">)))</span>
+
+    <span class="c1"># Criterion for prediction loss</span>
+    <span class="n">criterion</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Evaluate models for each batch size</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batch_size</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">batch_sizes</span><span class="p">):</span>
+        <span class="n">model_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surr_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_batchsize_</span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">training_id</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">model_identifier</span><span class="o">=</span><span class="n">model_id</span><span class="p">)</span>
+        <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data_loader</span><span class="o">=</span><span class="n">test_loader</span><span class="p">)</span>
+        <span class="n">mean_squared_error</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">numel</span><span class="p">(</span><span class="n">preds</span><span class="p">)</span>
+        <span class="n">batch_metrics</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;batch_size </span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;MSE&quot;</span><span class="p">:</span> <span class="n">mean_squared_error</span><span class="p">}</span>
+
+        <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">preds</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">targets</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">mean_relative_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">preds</span> <span class="o">-</span> <span class="n">targets</span><span class="p">)</span> <span class="o">/</span> <span class="n">targets</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">errors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_relative_errors</span>
+
+    <span class="c1"># Extract metrics and errors for plotting</span>
+    <span class="n">model_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">metric</span><span class="p">[</span><span class="s2">&quot;MSE&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">batch_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+    <span class="n">batch_sizes_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">batch_sizes</span><span class="p">)</span>
+    <span class="n">batch_metrics</span><span class="p">[</span><span class="s2">&quot;model_errors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_errors</span>
+    <span class="n">batch_metrics</span><span class="p">[</span><span class="s2">&quot;batch_sizes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch_sizes_array</span>
+
+    <span class="c1"># Plot batch size training errors</span>
+    <span class="n">plot_generalization_errors</span><span class="p">(</span>
+        <span class="n">surr_name</span><span class="p">,</span> <span class="n">conf</span><span class="p">,</span> <span class="n">batch_sizes_array</span><span class="p">,</span> <span class="n">model_errors</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;batchsize&quot;</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="n">plot_average_errors_over_time</span><span class="p">(</span>
+        <span class="n">surr_name</span><span class="p">,</span>
+        <span class="n">conf</span><span class="p">,</span>
+        <span class="n">errors</span><span class="p">,</span>
+        <span class="n">batch_sizes_array</span><span class="p">,</span>
+        <span class="n">timesteps</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;batchsize&quot;</span><span class="p">,</span>
+        <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">batch_metrics</span>
+
+
+<span class="k">def</span> <span class="nf">evaluate_UQ</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">surr_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">test_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+    <span class="n">timesteps</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">conf</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluate the uncertainty quantification (UQ) performance of the surrogate model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Instance of the surrogate model class.</span>
+<span class="sd">        surr_name (str): The name of the surrogate model.</span>
+<span class="sd">        test_loader (DataLoader): The DataLoader object containing the test data.</span>
+<span class="sd">        timesteps (np.ndarray): The timesteps array.</span>
+<span class="sd">        conf (dict): The configuration dictionary.</span>
+<span class="sd">        labels (list, optional): The labels for the chemical species.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A dictionary containing UQ metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">training_id</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;training_id&quot;</span><span class="p">]</span>
+    <span class="n">n_models</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;uncertainty&quot;</span><span class="p">][</span><span class="s2">&quot;ensemble_size&quot;</span><span class="p">]</span>
+    <span class="n">UQ_metrics</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Obtain predictions for each model</span>
+    <span class="n">all_predictions</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_models</span><span class="p">):</span>
+        <span class="n">model_id</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surr_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_main&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surr_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_UQ_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">training_id</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">model_identifier</span><span class="o">=</span><span class="n">model_id</span><span class="p">)</span>
+        <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data_loader</span><span class="o">=</span><span class="n">test_loader</span><span class="p">)</span>
+        <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">preds</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">targets</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">all_predictions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">preds</span><span class="p">)</span>
+
+    <span class="n">all_predictions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_predictions</span><span class="p">)</span>
+
+    <span class="c1"># Calculate average uncertainty</span>
+    <span class="n">preds_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">all_predictions</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">preds_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">all_predictions</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">average_uncertainty</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">preds_std</span><span class="p">)</span>
+
+    <span class="c1"># Correlate uncertainty with errors</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">preds_mean</span> <span class="o">-</span> <span class="n">targets</span><span class="p">)</span>
+    <span class="n">errors_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">errors</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">avg_correlation</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">pearsonr</span><span class="p">(</span><span class="n">errors</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">preds_std</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+    <span class="n">preds_std_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">preds_std</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1"># Plots</span>
+    <span class="n">plot_example_predictions_with_uncertainty</span><span class="p">(</span>
+        <span class="n">surr_name</span><span class="p">,</span>
+        <span class="n">conf</span><span class="p">,</span>
+        <span class="n">preds_mean</span><span class="p">,</span>
+        <span class="n">preds_std</span><span class="p">,</span>
+        <span class="n">targets</span><span class="p">,</span>
+        <span class="n">timesteps</span><span class="p">,</span>
+        <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">plot_average_uncertainty_over_time</span><span class="p">(</span>
+        <span class="n">surr_name</span><span class="p">,</span> <span class="n">conf</span><span class="p">,</span> <span class="n">errors_time</span><span class="p">,</span> <span class="n">preds_std_time</span><span class="p">,</span> <span class="n">timesteps</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="c1"># plot_uncertainty_vs_errors(surr_name, conf, preds_std, errors, save=True)</span>
+    <span class="n">max_counts</span><span class="p">,</span> <span class="n">axis_max</span> <span class="o">=</span> <span class="n">plot_error_correlation_heatmap</span><span class="p">(</span>
+        <span class="n">surr_name</span><span class="p">,</span> <span class="n">conf</span><span class="p">,</span> <span class="n">preds_std</span><span class="p">,</span> <span class="n">errors</span><span class="p">,</span> <span class="n">avg_correlation</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Store metrics</span>
+    <span class="n">UQ_metrics</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;average_uncertainty&quot;</span><span class="p">:</span> <span class="n">average_uncertainty</span><span class="p">,</span>
+        <span class="s2">&quot;correlation_metrics&quot;</span><span class="p">:</span> <span class="n">avg_correlation</span><span class="p">,</span>
+        <span class="s2">&quot;pred_uncertainty&quot;</span><span class="p">:</span> <span class="n">preds_std</span><span class="p">,</span>
+        <span class="s2">&quot;max_counts&quot;</span><span class="p">:</span> <span class="n">max_counts</span><span class="p">,</span>
+        <span class="s2">&quot;axis_max&quot;</span><span class="p">:</span> <span class="n">axis_max</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">UQ_metrics</span>
+
+
+<span class="k">def</span> <span class="nf">compare_models</span><span class="p">(</span><span class="n">metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Making comparative plots... </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Compare relative errors</span>
+    <span class="n">compare_relative_errors</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+    <span class="n">compare_MAE</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;losses&quot;</span><span class="p">]:</span>
+        <span class="n">compare_main_losses</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">]:</span>
+        <span class="n">compare_dynamic_accuracy</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+    <span class="c1"># Compare inference time</span>
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;timing&quot;</span><span class="p">]:</span>
+        <span class="n">compare_inference_time</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+    <span class="c1"># Compare interpolation errors</span>
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;interpolation&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="n">compare_interpolation</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+    <span class="c1"># Compare extrapolation errors</span>
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;extrapolation&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="n">compare_extrapolation</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+    <span class="c1"># Compare sparse training errors</span>
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;sparse&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="n">compare_sparse</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;interpolation&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;extrapolation&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;sparse&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]</span>
+    <span class="p">):</span>
+        <span class="n">int_ext_sparse</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+    <span class="c1"># Compare batch size training errors</span>
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;batch_scaling&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="n">compare_batchsize</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+    <span class="c1"># Compare UQ metrics</span>
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;uncertainty&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="n">compare_UQ</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+        <span class="n">rel_errors_and_uq</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+    <span class="n">tabular_comparison</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">compare_main_losses</span><span class="p">(</span><span class="n">metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compare the training and test losses of the main models for different surrogate models.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        metrics (dict): dictionary containing the benchmark metrics for each surrogate model.</span>
+<span class="sd">        config (dict): Configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">train_losses</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">test_losses</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;devices&quot;</span><span class="p">]</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">device</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="n">device</span>
+
+    <span class="k">for</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">metrics</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">training_id</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;training_id&quot;</span><span class="p">]</span>
+        <span class="n">surrogate_class</span> <span class="o">=</span> <span class="n">get_surrogate</span><span class="p">(</span><span class="n">surr_name</span><span class="p">)</span>
+        <span class="n">n_timesteps</span> <span class="o">=</span> <span class="n">metrics</span><span class="p">[</span><span class="n">surr_name</span><span class="p">][</span><span class="s2">&quot;timesteps&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">n_chemicals</span> <span class="o">=</span> <span class="n">metrics</span><span class="p">[</span><span class="n">surr_name</span><span class="p">][</span><span class="s2">&quot;accuracy&quot;</span><span class="p">][</span><span class="s2">&quot;absolute_errors&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">surrogate_class</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">n_chemicals</span><span class="p">,</span> <span class="n">n_timesteps</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">load_losses</span><span class="p">(</span><span class="n">model_identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">training_id</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">model_identifier</span><span class="o">=</span><span class="n">model_identifier</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">train_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">test_loss</span>
+
+        <span class="c1"># Load main model losses</span>
+        <span class="n">main_train_loss</span><span class="p">,</span> <span class="n">main_test_loss</span> <span class="o">=</span> <span class="n">load_losses</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surr_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_main&quot;</span><span class="p">)</span>
+        <span class="n">train_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">main_train_loss</span><span class="p">)</span>
+        <span class="n">test_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">main_test_loss</span><span class="p">)</span>
+        <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">surr_name</span><span class="p">)</span>
+
+    <span class="c1"># Plot the comparison of main model losses</span>
+    <span class="n">plot_loss_comparison</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">train_losses</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">test_losses</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">labels</span><span class="p">),</span> <span class="n">config</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">compare_MAE</span><span class="p">(</span><span class="n">metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compare the MAE of different surrogate models over the course of training.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        metrics (dict): dictionary containing the benchmark metrics for each surrogate model.</span>
+<span class="sd">        config (dict): Configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">MAE</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">train_durations</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;devices&quot;</span><span class="p">]</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">device</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="n">device</span>
+
+    <span class="k">for</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">metrics</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">training_id</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;training_id&quot;</span><span class="p">]</span>
+        <span class="n">surrogate_class</span> <span class="o">=</span> <span class="n">get_surrogate</span><span class="p">(</span><span class="n">surr_name</span><span class="p">)</span>
+        <span class="n">n_timesteps</span> <span class="o">=</span> <span class="n">metrics</span><span class="p">[</span><span class="n">surr_name</span><span class="p">][</span><span class="s2">&quot;timesteps&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">n_chemicals</span> <span class="o">=</span> <span class="n">metrics</span><span class="p">[</span><span class="n">surr_name</span><span class="p">][</span><span class="s2">&quot;accuracy&quot;</span><span class="p">][</span><span class="s2">&quot;absolute_errors&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">surrogate_class</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">n_chemicals</span><span class="p">,</span> <span class="n">n_timesteps</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">model_identifier</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surr_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_main&quot;</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">training_id</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">model_identifier</span><span class="o">=</span><span class="n">model_identifier</span><span class="p">)</span>
+        <span class="n">MAE</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">MAE</span><span class="p">)</span>
+        <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">surr_name</span><span class="p">)</span>
+        <span class="n">train_durations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">train_duration</span><span class="p">)</span>
+
+    <span class="c1"># plot_MAE_comparison(MAE, labels, config)</span>
+    <span class="n">plot_MAE_comparison_train_duration</span><span class="p">(</span><span class="n">MAE</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">train_durations</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">compare_relative_errors</span><span class="p">(</span><span class="n">metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compare the relative errors over time for different surrogate models.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        metrics (dict): dictionary containing the benchmark metrics for each surrogate model.</span>
+<span class="sd">        config (dict): Configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">mean_errors</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">median_errors</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">surrogate</span><span class="p">,</span> <span class="n">surrogate_metrics</span> <span class="ow">in</span> <span class="n">metrics</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">relative_error_model</span> <span class="o">=</span> <span class="n">surrogate_metrics</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;relative_errors&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">relative_error_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">errors</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">relative_error_model</span>
+        <span class="n">mean_error_model</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">relative_error_model</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">median_error_model</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">relative_error_model</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">mean_error_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">median_error_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mean_errors</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_error_model</span>
+            <span class="n">median_errors</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">median_error_model</span>
+            <span class="n">timesteps</span> <span class="o">=</span> <span class="n">surrogate_metrics</span><span class="p">[</span><span class="s2">&quot;timesteps&quot;</span><span class="p">]</span>
+
+    <span class="n">plot_relative_errors</span><span class="p">(</span><span class="n">mean_errors</span><span class="p">,</span> <span class="n">median_errors</span><span class="p">,</span> <span class="n">timesteps</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+    <span class="n">plot_error_distribution_comparative</span><span class="p">(</span><span class="n">errors</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">compare_inference_time</span><span class="p">(</span>
+    <span class="n">metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">save</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compare the mean inference time of different surrogate models.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        metrics (dict[str, dict]): dictionary containing the benchmark metrics for each surrogate model.</span>
+<span class="sd">        config (dict): Configuration dictionary.</span>
+<span class="sd">        save (bool, optional): Whether to save the plot. Defaults to True.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mean_inference_times</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">std_inference_times</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">surrogate</span><span class="p">,</span> <span class="n">surrogate_metrics</span> <span class="ow">in</span> <span class="n">metrics</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="s2">&quot;timing&quot;</span> <span class="ow">in</span> <span class="n">surrogate_metrics</span><span class="p">:</span>
+            <span class="n">mean_time</span> <span class="o">=</span> <span class="n">surrogate_metrics</span><span class="p">[</span><span class="s2">&quot;timing&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mean_inference_time_per_run&quot;</span><span class="p">)</span>
+            <span class="n">std_time</span> <span class="o">=</span> <span class="n">surrogate_metrics</span><span class="p">[</span><span class="s2">&quot;timing&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;std_inference_time_per_run&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">mean_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">std_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">mean_inference_times</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_time</span>
+                <span class="n">std_inference_times</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">std_time</span>
+
+    <span class="n">surrogates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">mean_inference_times</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">means</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">mean_inference_times</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">stds</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">std_inference_times</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+    <span class="n">inference_time_bar_plot</span><span class="p">(</span><span class="n">surrogates</span><span class="p">,</span> <span class="n">means</span><span class="p">,</span> <span class="n">stds</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">save</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">compare_dynamic_accuracy</span><span class="p">(</span><span class="n">metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compare the gradients of different surrogate models.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        metrics (dict): dictionary containing the benchmark metrics for each surrogate model.</span>
+<span class="sd">        config (dict): Configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gradients</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">abs_errors</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">max_grads</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">max_errors</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">max_counts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">corrs</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">surrogate</span><span class="p">,</span> <span class="n">surrogate_metrics</span> <span class="ow">in</span> <span class="n">metrics</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">gradients</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">surrogate_metrics</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">][</span><span class="s2">&quot;gradients&quot;</span><span class="p">]</span>
+        <span class="n">abs_errors</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">surrogate_metrics</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">][</span><span class="s2">&quot;absolute_errors&quot;</span><span class="p">]</span>
+        <span class="n">max_grads</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">surrogate_metrics</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">][</span><span class="s2">&quot;max_gradient&quot;</span><span class="p">]</span>
+        <span class="n">max_errors</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">surrogate_metrics</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">][</span><span class="s2">&quot;max_error&quot;</span><span class="p">]</span>
+        <span class="n">max_counts</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">surrogate_metrics</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">][</span><span class="s2">&quot;max_counts&quot;</span><span class="p">]</span>
+        <span class="n">corrs</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">surrogate_metrics</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">][</span><span class="s2">&quot;avg_correlation&quot;</span><span class="p">]</span>
+
+    <span class="n">plot_comparative_dynamic_correlation_heatmaps</span><span class="p">(</span>
+        <span class="n">gradients</span><span class="p">,</span> <span class="n">abs_errors</span><span class="p">,</span> <span class="n">corrs</span><span class="p">,</span> <span class="n">max_grads</span><span class="p">,</span> <span class="n">max_errors</span><span class="p">,</span> <span class="n">max_counts</span><span class="p">,</span> <span class="n">config</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">compare_interpolation</span><span class="p">(</span><span class="n">all_metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compare the interpolation errors of different surrogate models.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.</span>
+<span class="sd">        config (dict): Configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">surrogates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">all_metrics</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">intervals</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">model_errors</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">surrogate</span> <span class="ow">in</span> <span class="n">surrogates</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;interpolation&quot;</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]:</span>
+            <span class="n">intervals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">all_metrics</span><span class="p">[</span><span class="n">surrogate</span><span class="p">][</span><span class="s2">&quot;interpolation&quot;</span><span class="p">][</span><span class="s2">&quot;intervals&quot;</span><span class="p">])</span>
+            <span class="n">model_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">all_metrics</span><span class="p">[</span><span class="n">surrogate</span><span class="p">][</span><span class="s2">&quot;interpolation&quot;</span><span class="p">][</span><span class="s2">&quot;model_errors&quot;</span><span class="p">])</span>
+
+    <span class="n">plot_generalization_error_comparison</span><span class="p">(</span>
+        <span class="n">surrogates</span><span class="p">,</span>
+        <span class="n">intervals</span><span class="p">,</span>
+        <span class="n">model_errors</span><span class="p">,</span>
+        <span class="s2">&quot;Interpolation Interval&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;interpolation_errors.png&quot;</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">compare_extrapolation</span><span class="p">(</span><span class="n">all_metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compare the extrapolation errors of different surrogate models.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.</span>
+<span class="sd">        config (dict): Configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">surrogates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">all_metrics</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">cutoffs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">model_errors</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">surrogate</span> <span class="ow">in</span> <span class="n">surrogates</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;extrapolation&quot;</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]:</span>
+            <span class="n">cutoffs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">all_metrics</span><span class="p">[</span><span class="n">surrogate</span><span class="p">][</span><span class="s2">&quot;extrapolation&quot;</span><span class="p">][</span><span class="s2">&quot;cutoffs&quot;</span><span class="p">])</span>
+            <span class="n">model_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">all_metrics</span><span class="p">[</span><span class="n">surrogate</span><span class="p">][</span><span class="s2">&quot;extrapolation&quot;</span><span class="p">][</span><span class="s2">&quot;model_errors&quot;</span><span class="p">])</span>
+
+    <span class="n">plot_generalization_error_comparison</span><span class="p">(</span>
+        <span class="n">surrogates</span><span class="p">,</span>
+        <span class="n">cutoffs</span><span class="p">,</span>
+        <span class="n">model_errors</span><span class="p">,</span>
+        <span class="s2">&quot;Extrapolation Cutoff&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;extrapolation_errors.png&quot;</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">compare_sparse</span><span class="p">(</span><span class="n">all_metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compare the sparse training errors of different surrogate models.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.</span>
+<span class="sd">        config (dict): Configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">surrogates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">all_metrics</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">n_train_samples</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">model_errors</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">surrogate</span> <span class="ow">in</span> <span class="n">surrogates</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;sparse&quot;</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]:</span>
+            <span class="n">n_train_samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">all_metrics</span><span class="p">[</span><span class="n">surrogate</span><span class="p">][</span><span class="s2">&quot;sparse&quot;</span><span class="p">][</span><span class="s2">&quot;n_train_samples&quot;</span><span class="p">])</span>
+            <span class="n">model_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">all_metrics</span><span class="p">[</span><span class="n">surrogate</span><span class="p">][</span><span class="s2">&quot;sparse&quot;</span><span class="p">][</span><span class="s2">&quot;model_errors&quot;</span><span class="p">])</span>
+
+    <span class="n">plot_generalization_error_comparison</span><span class="p">(</span>
+        <span class="n">surrogates</span><span class="p">,</span>
+        <span class="n">n_train_samples</span><span class="p">,</span>
+        <span class="n">model_errors</span><span class="p">,</span>
+        <span class="s2">&quot;Number of Training Samples&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sparse_errors.png&quot;</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">,</span>
+        <span class="n">xlog</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">compare_batchsize</span><span class="p">(</span><span class="n">all_metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compare the batch size training errors of different surrogate models.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.</span>
+<span class="sd">        config (dict): Configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">surrogates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">all_metrics</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">batch_sizes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">model_errors</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">surrogate</span> <span class="ow">in</span> <span class="n">surrogates</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;batch_size&quot;</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]:</span>
+            <span class="n">batch_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">all_metrics</span><span class="p">[</span><span class="n">surrogate</span><span class="p">][</span><span class="s2">&quot;batch_size&quot;</span><span class="p">][</span><span class="s2">&quot;batch_sizes&quot;</span><span class="p">])</span>
+            <span class="n">model_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">all_metrics</span><span class="p">[</span><span class="n">surrogate</span><span class="p">][</span><span class="s2">&quot;batch_size&quot;</span><span class="p">][</span><span class="s2">&quot;model_errors&quot;</span><span class="p">])</span>
+
+    <span class="n">plot_generalization_error_comparison</span><span class="p">(</span>
+        <span class="n">surrogates</span><span class="p">,</span>
+        <span class="n">batch_sizes</span><span class="p">,</span>
+        <span class="n">model_errors</span><span class="p">,</span>
+        <span class="s2">&quot;Batch Size&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;batch_size_errors.png&quot;</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">,</span>
+        <span class="n">xlog</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">compare_UQ</span><span class="p">(</span><span class="n">all_metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compare the uncertainty quantification (UQ) metrics of different surrogate models.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.</span>
+<span class="sd">        config (dict): Configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pred_unc</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">pred_unc_time</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">abs_errors</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">axis_max</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">max_counts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">corrs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">surrogate</span><span class="p">,</span> <span class="n">surrogate_metrics</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">timesteps</span> <span class="o">=</span> <span class="n">surrogate_metrics</span><span class="p">[</span><span class="s2">&quot;timesteps&quot;</span><span class="p">]</span>
+        <span class="n">abs_errors</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">surrogate_metrics</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">][</span><span class="s2">&quot;absolute_errors&quot;</span><span class="p">]</span>
+        <span class="n">pred_unc</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">surrogate_metrics</span><span class="p">[</span><span class="s2">&quot;UQ&quot;</span><span class="p">][</span><span class="s2">&quot;pred_uncertainty&quot;</span><span class="p">]</span>
+        <span class="n">pred_unc_time</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_unc</span><span class="p">[</span><span class="n">surrogate</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">axis_max</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">surrogate_metrics</span><span class="p">[</span><span class="s2">&quot;UQ&quot;</span><span class="p">][</span><span class="s2">&quot;axis_max&quot;</span><span class="p">]</span>
+        <span class="n">max_counts</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">surrogate_metrics</span><span class="p">[</span><span class="s2">&quot;UQ&quot;</span><span class="p">][</span><span class="s2">&quot;max_counts&quot;</span><span class="p">]</span>
+        <span class="n">corrs</span><span class="p">[</span><span class="n">surrogate</span><span class="p">]</span> <span class="o">=</span> <span class="n">surrogate_metrics</span><span class="p">[</span><span class="s2">&quot;UQ&quot;</span><span class="p">][</span><span class="s2">&quot;correlation_metrics&quot;</span><span class="p">]</span>
+
+    <span class="n">plot_uncertainty_over_time_comparison</span><span class="p">(</span><span class="n">pred_unc_time</span><span class="p">,</span> <span class="n">abs_errors</span><span class="p">,</span> <span class="n">timesteps</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+    <span class="n">plot_comparative_error_correlation_heatmaps</span><span class="p">(</span>
+        <span class="n">pred_unc</span><span class="p">,</span> <span class="n">abs_errors</span><span class="p">,</span> <span class="n">corrs</span><span class="p">,</span> <span class="n">axis_max</span><span class="p">,</span> <span class="n">max_counts</span><span class="p">,</span> <span class="n">config</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">tabular_comparison</span><span class="p">(</span><span class="n">all_metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compare the metrics of different surrogate models in a tabular format.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.</span>
+<span class="sd">        config (dict): Configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The results are in! Here is a summary of the benchmark metrics:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Initialize the table headers and rows</span>
+    <span class="n">model_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">all_metrics</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Metric&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">model_names</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Accuracy metrics (always included)</span>
+    <span class="n">mse_values</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">][</span><span class="s2">&quot;mean_squared_error&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">metrics</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+    <span class="p">]</span>
+    <span class="n">mae_values</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">][</span><span class="s2">&quot;mean_absolute_error&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">metrics</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+    <span class="p">]</span>
+    <span class="n">mre_values</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">][</span><span class="s2">&quot;mean_relative_error&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">metrics</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+    <span class="p">]</span>
+    <span class="n">epochs</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">][</span><span class="s2">&quot;main_model_epochs&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">metrics</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+    <span class="p">]</span>
+    <span class="n">train_times</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="nb">int</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">][</span><span class="s2">&quot;main_model_training_time&quot;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">metrics</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+    <span class="p">]</span>
+
+    <span class="c1"># Find the best (minimum) MSE and MRE values</span>
+    <span class="n">best_mse_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">mse_values</span><span class="p">)</span>
+    <span class="n">best_mae_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">mae_values</span><span class="p">)</span>
+    <span class="n">best_mre_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">mre_values</span><span class="p">)</span>
+    <span class="n">best_time_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">train_times</span><span class="p">)</span>
+
+    <span class="n">mse_row</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MSE&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">best_mse_index</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;* </span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> *&quot;</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mse_values</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">mae_row</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MAE&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">best_mae_index</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;* </span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> *&quot;</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mae_values</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">mre_row</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MRE&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> %&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">best_mre_index</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;* </span><span class="si">{</span><span class="n">value</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> % *&quot;</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mre_values</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">epochs_row</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Epochs&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">best_mse_index</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;* </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> *&quot;</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">epochs</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">train_strings</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">format_seconds</span><span class="p">(</span><span class="n">time</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">time</span> <span class="ow">in</span> <span class="n">train_times</span><span class="p">]</span>
+    <span class="n">tt_row</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Train Time (hh:mm:ss)&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">time</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">best_time_index</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;* </span><span class="si">{</span><span class="n">time</span><span class="si">}</span><span class="s2"> *&quot;</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">time</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_strings</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">rows</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">mse_row</span><span class="p">,</span> <span class="n">mae_row</span><span class="p">,</span> <span class="n">mre_row</span><span class="p">,</span> <span class="n">epochs_row</span><span class="p">,</span> <span class="n">tt_row</span><span class="p">])</span>
+
+    <span class="c1"># Timing metrics (if enabled)</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timing&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">mean_times</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;timing&quot;</span><span class="p">][</span><span class="s2">&quot;mean_inference_time_per_run&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">metrics</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="p">]</span>
+        <span class="n">std_times</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;timing&quot;</span><span class="p">][</span><span class="s2">&quot;std_inference_time_per_run&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">metrics</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Find the best (minimum) inference time</span>
+        <span class="n">best_time_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">mean_times</span><span class="p">)</span>
+
+        <span class="n">timing_row</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Inference Times&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">format_time</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">best_time_index</span>
+                <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;* </span><span class="si">{</span><span class="n">format_time</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="p">)</span><span class="si">}</span><span class="s2"> *&quot;</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">mean_times</span><span class="p">,</span> <span class="n">std_times</span><span class="p">))</span>
+        <span class="p">]</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">timing_row</span><span class="p">)</span>
+
+    <span class="c1"># Gradients (if enabled)</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gradients&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">avg_corr_values</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">][</span><span class="s2">&quot;avg_correlation&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">metrics</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="p">]</span>
+        <span class="n">avg_corr_row</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Gradient Corr.&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">avg_corr_values</span>
+        <span class="p">]</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg_corr_row</span><span class="p">)</span>
+
+    <span class="c1"># Compute metrics (if enabled)</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;compute&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">num_params_row</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;# Trainable Params&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;compute&quot;</span><span class="p">][</span><span class="s2">&quot;num_trainable_parameters&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="k">for</span> <span class="n">metrics</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="p">]</span>
+        <span class="n">memory_row</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Memory Footprint (MB)&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;compute&quot;</span><span class="p">][</span><span class="s2">&quot;memory_footprint&quot;</span><span class="p">][</span><span class="s2">&quot;forward_memory_nograd&quot;</span><span class="p">]</span><span class="o">/</span><span class="mf">1e6</span><span class="p">)</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="k">for</span> <span class="n">metrics</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="p">]</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">num_params_row</span><span class="p">,</span> <span class="n">memory_row</span><span class="p">])</span>
+
+    <span class="c1"># UQ metrics (if enabled)</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;uncertainty&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">avg_uncertainties</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;UQ&quot;</span><span class="p">][</span><span class="s2">&quot;average_uncertainty&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">metrics</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="p">]</span>
+        <span class="n">uq_corr_values</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;UQ&quot;</span><span class="p">][</span><span class="s2">&quot;correlation_metrics&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">metrics</span> <span class="ow">in</span> <span class="n">all_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="p">]</span>
+        <span class="n">avg_unc_row</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Avg. Uncertainty&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">avg_uncertainties</span>
+        <span class="p">]</span>
+        <span class="n">uq_corr_row</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;UQ Corr.&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">uq_corr_values</span><span class="p">]</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">avg_unc_row</span><span class="p">,</span> <span class="n">uq_corr_row</span><span class="p">])</span>
+
+    <span class="c1"># Print the table using tabulate</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">tabulate</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;simple_grid&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">()</span>
+
+    <span class="c1"># Save the table to a file if an output file path is provided</span>
+    <span class="n">txt_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;results/</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;training_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/metrics_table.txt&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">txt_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">redirect_stdout</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
+
+    <span class="c1"># Make a csv file that contains all metrics for each model</span>
+    <span class="n">make_comparison_csv</span><span class="p">(</span><span class="n">metrics</span><span class="o">=</span><span class="n">all_metrics</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">CODES Benchmark</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Robin Janssen, Immanuel Sulzer.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

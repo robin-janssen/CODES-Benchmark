@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>surrogates package &#8212; CODES Benchmark 09.09.2024 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=c058f7c8" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=47c521fd"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="train module" href="train.html" />
+    <link rel="prev" title="make_new_dataset module" href="make_new_dataset.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="surrogates-package">
+<h1>surrogates package<a class="headerlink" href="#surrogates-package" title="Link to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-surrogates.surrogate_classes">
+<span id="surrogates-surrogate-classes-module"></span><h2>surrogates.surrogate_classes module<a class="headerlink" href="#module-surrogates.surrogate_classes" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-surrogates.surrogates">
+<span id="surrogates-surrogates-module"></span><h2>surrogates.surrogates module<a class="headerlink" href="#module-surrogates.surrogates" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surrogates.surrogates.</span></span><span class="sig-name descname"><span class="pre">AbstractSurrogateModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chemicals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Abstract base class for surrogate models. This class implements the basic
+structure of a surrogate model and defines the methods that need to be
+implemented by the subclasses for it to be compatible with the benchmarking
+framework. For more information, see
+<a class="reference external" href="https://immi000.github.io/CODES-Benchmark-Docs/documentation.html#add_model">https://immi000.github.io/CODES-Benchmark-Docs/documentation.html#add_model</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>optional</em>) – The device to run the model on. Defaults to None.</p></li>
+<li><p><strong>n_chemicals</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of chemicals. Defaults to 29.</p></li>
+<li><p><strong>n_timesteps</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of timesteps. Defaults to 100.</p></li>
+<li><p><strong>config</strong> (<em>dict</em><em>, </em><em>optional</em>) – The configuration dictionary. Defaults to {}.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.train_loss">
+<span class="sig-name descname"><span class="pre">train_loss</span></span><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.train_loss" title="Link to this definition">¶</a></dt>
+<dd><p>The training loss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.test_loss">
+<span class="sig-name descname"><span class="pre">test_loss</span></span><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.test_loss" title="Link to this definition">¶</a></dt>
+<dd><p>The test loss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.MAE">
+<span class="sig-name descname"><span class="pre">MAE</span></span><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.MAE" title="Link to this definition">¶</a></dt>
+<dd><p>The mean absolute error.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.normalisation">
+<span class="sig-name descname"><span class="pre">normalisation</span></span><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.normalisation" title="Link to this definition">¶</a></dt>
+<dd><p>The normalisation parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.train_duration">
+<span class="sig-name descname"><span class="pre">train_duration</span></span><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.train_duration" title="Link to this definition">¶</a></dt>
+<dd><p>The training duration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.device">
+<span class="sig-name descname"><span class="pre">device</span></span><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.device" title="Link to this definition">¶</a></dt>
+<dd><p>The device to run the model on.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.n_chemicals">
+<span class="sig-name descname"><span class="pre">n_chemicals</span></span><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.n_chemicals" title="Link to this definition">¶</a></dt>
+<dd><p>The number of chemicals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.n_timesteps">
+<span class="sig-name descname"><span class="pre">n_timesteps</span></span><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.n_timesteps" title="Link to this definition">¶</a></dt>
+<dd><p>The number of timesteps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.L1">
+<span class="sig-name descname"><span class="pre">L1</span></span><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.L1" title="Link to this definition">¶</a></dt>
+<dd><p>The L1 loss function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>nn.L1Loss</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.config">
+<span class="sig-name descname"><span class="pre">config</span></span><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.config" title="Link to this definition">¶</a></dt>
+<dd><p>The configuration dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">forward(inputs</span></span></dt>
+<dd><p>Any) -&gt; tuple[Tensor, Tensor]:
+Forward pass of the model.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">prepare_data(</span></span></dt>
+<dd><p>dataset_train: np.ndarray,
+dataset_test: np.ndarray | None,
+dataset_val: np.ndarray | None,
+timesteps: np.ndarray,
+batch_size: int,
+shuffle: bool,</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">)</span> <span class="pre">-&gt;</span> <span class="pre">tuple[DataLoader,</span> <span class="pre">DataLoader,</span> <span class="pre">DataLoader]</span></span></dt>
+<dd><p>Gets the data loaders for training, testing, and validation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">fit(</span></span></dt>
+<dd><p>train_loader: DataLoader,
+test_loader: DataLoader,
+epochs: int | None,
+position: int,
+description: str,</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></span></dt>
+<dd><p>Trains the model on the training data. Sets the train_loss and test_loss attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">predict(data_loader</span></span></dt>
+<dd><p>DataLoader) -&gt; tuple[torch.Tensor, torch.Tensor]:
+Evaluates the model on the given data loader.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">save(</span></span></dt>
+<dd><p>model_name: str,
+subfolder: str,
+training_id: str,
+data_params: dict,</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></span></dt>
+<dd><p>Saves the model to disk.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">load(training_id</span></span></dt>
+<dd><p>str, surr_name: str, model_identifier: str) -&gt; None:
+Loads a trained surrogate model.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">setup_progress_bar(epochs</span></span></dt>
+<dd><p>int, position: int, description: str) -&gt; tqdm:
+Helper function to set up a progress bar for training.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">denormalize(data</span></span></dt>
+<dd><p>torch.Tensor) -&gt; torch.Tensor:
+Denormalizes the data back to the original scale.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.denormalize">
+<span class="sig-name descname"><span class="pre">denormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel.denormalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.denormalize" title="Link to this definition">¶</a></dt>
+<dd><p>Denormalize the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>np.ndarray</em>) – The data to denormalize.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The denormalized data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.fit">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.fit" title="Link to this definition">¶</a></dt>
+<dd><p>Perform the training of the model. Sets the train_loss and test_loss attributes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the training data.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the testing data.</p></li>
+<li><p><strong>epochs</strong> (<em>int</em>) – The number of epochs to train the model for.</p></li>
+<li><p><strong>position</strong> (<em>int</em>) – The position of the progress bar.</p></li>
+<li><p><strong>description</strong> (<em>str</em>) – The description of the progress bar.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.forward">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Forward pass of the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inputs</strong> (<em>Any</em>) – The input data as recieved from the dataloader.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The model predictions and the targets.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[Tensor, Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_identifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.load" title="Link to this definition">¶</a></dt>
+<dd><p>Load a trained surrogate model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
+<li><p><strong>training_id</strong> (<em>str</em>) – The training identifier.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>model_identifier</strong> (<em>str</em>) – The identifier of the model (e.g., ‘main’).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None. The model is loaded in place.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.predict" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the model on the given dataloader.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the data the
+model is evaluated on.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The predictions and targets.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[torch.Tensor, torch.Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.prepare_data">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoader</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoader</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel.prepare_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.prepare_data" title="Link to this definition">¶</a></dt>
+<dd><p>Prepare the data for training, testing, and validation. This method should
+return the DataLoader objects for the training, testing, and validation data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset_train</strong> (<em>np.ndarray</em>) – The training dataset.</p></li>
+<li><p><strong>dataset_test</strong> (<em>np.ndarray</em>) – The testing dataset.</p></li>
+<li><p><strong>dataset_val</strong> (<em>np.ndarray</em>) – The validation dataset.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) – The batch size.</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em>) – Whether to shuffle the data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The DataLoader objects for the</dt><dd><p>training, testing, and validation data.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[DataLoader, DataLoader, DataLoader]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subfolder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.save" title="Link to this definition">¶</a></dt>
+<dd><p>Save the model to disk.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_name</strong> (<em>str</em>) – The name of the model.</p></li>
+<li><p><strong>subfolder</strong> (<em>str</em>) – The subfolder to save the model in.</p></li>
+<li><p><strong>training_id</strong> (<em>str</em>) – The training identifier.</p></li>
+<li><p><strong>data_params</strong> (<em>dict</em>) – The data parameters.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.surrogates.AbstractSurrogateModel.setup_progress_bar">
+<span class="sig-name descname"><span class="pre">setup_progress_bar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel.setup_progress_bar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.surrogates.AbstractSurrogateModel.setup_progress_bar" title="Link to this definition">¶</a></dt>
+<dd><p>Helper function to set up a progress bar for training.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>epochs</strong> (<em>int</em>) – The number of epochs.</p></li>
+<li><p><strong>position</strong> (<em>int</em>) – The position of the progress bar.</p></li>
+<li><p><strong>description</strong> (<em>str</em>) – The description of the progress bar.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The progress bar.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tqdm</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-surrogates">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-surrogates" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surrogates.</span></span><span class="sig-name descname"><span class="pre">AbstractSurrogateModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chemicals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.AbstractSurrogateModel" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Abstract base class for surrogate models. This class implements the basic
+structure of a surrogate model and defines the methods that need to be
+implemented by the subclasses for it to be compatible with the benchmarking
+framework. For more information, see
+<a class="reference external" href="https://immi000.github.io/CODES-Benchmark-Docs/documentation.html#add_model">https://immi000.github.io/CODES-Benchmark-Docs/documentation.html#add_model</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>optional</em>) – The device to run the model on. Defaults to None.</p></li>
+<li><p><strong>n_chemicals</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of chemicals. Defaults to 29.</p></li>
+<li><p><strong>n_timesteps</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of timesteps. Defaults to 100.</p></li>
+<li><p><strong>config</strong> (<em>dict</em><em>, </em><em>optional</em>) – The configuration dictionary. Defaults to {}.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.train_loss">
+<span class="sig-name descname"><span class="pre">train_loss</span></span><a class="headerlink" href="#surrogates.AbstractSurrogateModel.train_loss" title="Link to this definition">¶</a></dt>
+<dd><p>The training loss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.test_loss">
+<span class="sig-name descname"><span class="pre">test_loss</span></span><a class="headerlink" href="#surrogates.AbstractSurrogateModel.test_loss" title="Link to this definition">¶</a></dt>
+<dd><p>The test loss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.MAE">
+<span class="sig-name descname"><span class="pre">MAE</span></span><a class="headerlink" href="#surrogates.AbstractSurrogateModel.MAE" title="Link to this definition">¶</a></dt>
+<dd><p>The mean absolute error.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.normalisation">
+<span class="sig-name descname"><span class="pre">normalisation</span></span><a class="headerlink" href="#surrogates.AbstractSurrogateModel.normalisation" title="Link to this definition">¶</a></dt>
+<dd><p>The normalisation parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.train_duration">
+<span class="sig-name descname"><span class="pre">train_duration</span></span><a class="headerlink" href="#surrogates.AbstractSurrogateModel.train_duration" title="Link to this definition">¶</a></dt>
+<dd><p>The training duration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.device">
+<span class="sig-name descname"><span class="pre">device</span></span><a class="headerlink" href="#surrogates.AbstractSurrogateModel.device" title="Link to this definition">¶</a></dt>
+<dd><p>The device to run the model on.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.n_chemicals">
+<span class="sig-name descname"><span class="pre">n_chemicals</span></span><a class="headerlink" href="#surrogates.AbstractSurrogateModel.n_chemicals" title="Link to this definition">¶</a></dt>
+<dd><p>The number of chemicals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.n_timesteps">
+<span class="sig-name descname"><span class="pre">n_timesteps</span></span><a class="headerlink" href="#surrogates.AbstractSurrogateModel.n_timesteps" title="Link to this definition">¶</a></dt>
+<dd><p>The number of timesteps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.L1">
+<span class="sig-name descname"><span class="pre">L1</span></span><a class="headerlink" href="#surrogates.AbstractSurrogateModel.L1" title="Link to this definition">¶</a></dt>
+<dd><p>The L1 loss function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>nn.L1Loss</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.config">
+<span class="sig-name descname"><span class="pre">config</span></span><a class="headerlink" href="#surrogates.AbstractSurrogateModel.config" title="Link to this definition">¶</a></dt>
+<dd><p>The configuration dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">forward(inputs</span></span></dt>
+<dd><p>Any) -&gt; tuple[Tensor, Tensor]:
+Forward pass of the model.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">prepare_data(</span></span></dt>
+<dd><p>dataset_train: np.ndarray,
+dataset_test: np.ndarray | None,
+dataset_val: np.ndarray | None,
+timesteps: np.ndarray,
+batch_size: int,
+shuffle: bool,</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">)</span> <span class="pre">-&gt;</span> <span class="pre">tuple[DataLoader,</span> <span class="pre">DataLoader,</span> <span class="pre">DataLoader]</span></span></dt>
+<dd><p>Gets the data loaders for training, testing, and validation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">fit(</span></span></dt>
+<dd><p>train_loader: DataLoader,
+test_loader: DataLoader,
+epochs: int | None,
+position: int,
+description: str,</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></span></dt>
+<dd><p>Trains the model on the training data. Sets the train_loss and test_loss attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">predict(data_loader</span></span></dt>
+<dd><p>DataLoader) -&gt; tuple[torch.Tensor, torch.Tensor]:
+Evaluates the model on the given data loader.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">save(</span></span></dt>
+<dd><p>model_name: str,
+subfolder: str,
+training_id: str,
+data_params: dict,</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></span></dt>
+<dd><p>Saves the model to disk.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">load(training_id</span></span></dt>
+<dd><p>str, surr_name: str, model_identifier: str) -&gt; None:
+Loads a trained surrogate model.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">setup_progress_bar(epochs</span></span></dt>
+<dd><p>int, position: int, description: str) -&gt; tqdm:
+Helper function to set up a progress bar for training.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">denormalize(data</span></span></dt>
+<dd><p>torch.Tensor) -&gt; torch.Tensor:
+Denormalizes the data back to the original scale.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.denormalize">
+<span class="sig-name descname"><span class="pre">denormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel.denormalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.AbstractSurrogateModel.denormalize" title="Link to this definition">¶</a></dt>
+<dd><p>Denormalize the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>np.ndarray</em>) – The data to denormalize.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The denormalized data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.fit">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.AbstractSurrogateModel.fit" title="Link to this definition">¶</a></dt>
+<dd><p>Perform the training of the model. Sets the train_loss and test_loss attributes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the training data.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the testing data.</p></li>
+<li><p><strong>epochs</strong> (<em>int</em>) – The number of epochs to train the model for.</p></li>
+<li><p><strong>position</strong> (<em>int</em>) – The position of the progress bar.</p></li>
+<li><p><strong>description</strong> (<em>str</em>) – The description of the progress bar.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.forward">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.AbstractSurrogateModel.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Forward pass of the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inputs</strong> (<em>Any</em>) – The input data as recieved from the dataloader.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The model predictions and the targets.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[Tensor, Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_identifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.AbstractSurrogateModel.load" title="Link to this definition">¶</a></dt>
+<dd><p>Load a trained surrogate model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
+<li><p><strong>training_id</strong> (<em>str</em>) – The training identifier.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>model_identifier</strong> (<em>str</em>) – The identifier of the model (e.g., ‘main’).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None. The model is loaded in place.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.AbstractSurrogateModel.predict" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the model on the given dataloader.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the data the
+model is evaluated on.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The predictions and targets.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[torch.Tensor, torch.Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.prepare_data">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoader</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoader</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel.prepare_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.AbstractSurrogateModel.prepare_data" title="Link to this definition">¶</a></dt>
+<dd><p>Prepare the data for training, testing, and validation. This method should
+return the DataLoader objects for the training, testing, and validation data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset_train</strong> (<em>np.ndarray</em>) – The training dataset.</p></li>
+<li><p><strong>dataset_test</strong> (<em>np.ndarray</em>) – The testing dataset.</p></li>
+<li><p><strong>dataset_val</strong> (<em>np.ndarray</em>) – The validation dataset.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) – The batch size.</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em>) – Whether to shuffle the data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The DataLoader objects for the</dt><dd><p>training, testing, and validation data.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[DataLoader, DataLoader, DataLoader]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subfolder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.AbstractSurrogateModel.save" title="Link to this definition">¶</a></dt>
+<dd><p>Save the model to disk.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_name</strong> (<em>str</em>) – The name of the model.</p></li>
+<li><p><strong>subfolder</strong> (<em>str</em>) – The subfolder to save the model in.</p></li>
+<li><p><strong>training_id</strong> (<em>str</em>) – The training identifier.</p></li>
+<li><p><strong>data_params</strong> (<em>dict</em>) – The data parameters.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.AbstractSurrogateModel.setup_progress_bar">
+<span class="sig-name descname"><span class="pre">setup_progress_bar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/surrogates.html#AbstractSurrogateModel.setup_progress_bar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.AbstractSurrogateModel.setup_progress_bar" title="Link to this definition">¶</a></dt>
+<dd><p>Helper function to set up a progress bar for training.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>epochs</strong> (<em>int</em>) – The number of epochs.</p></li>
+<li><p><strong>position</strong> (<em>int</em>) – The position of the progress bar.</p></li>
+<li><p><strong>description</strong> (<em>str</em>) – The description of the progress bar.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The progress bar.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tqdm</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">CODES Benchmark</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="benchmark.html">benchmark module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark.html">benchmark module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data.html">data package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generate_simple_ode_data.html">generate_simple_ode_data module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="make_new_dataset.html">make_new_dataset module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">surrogates package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-surrogates.surrogate_classes">surrogates.surrogate_classes module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-surrogates.surrogates">surrogates.surrogates module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.train_loss"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.train_loss</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.test_loss"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.test_loss</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.MAE"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.MAE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.normalisation"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.normalisation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.train_duration"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.train_duration</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.device"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.device</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.n_chemicals"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_chemicals</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.n_timesteps"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_timesteps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.L1"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.L1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.config"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.denormalize"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.denormalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.fit"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.forward"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.load"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.predict"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.prepare_data"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.prepare_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.save"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel.setup_progress_bar"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.setup_progress_bar()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-surrogates">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#surrogates.AbstractSurrogateModel"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.train_loss"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.train_loss</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.test_loss"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.test_loss</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.MAE"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.MAE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.normalisation"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.normalisation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.train_duration"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.train_duration</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.device"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.device</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.n_chemicals"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_chemicals</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.n_timesteps"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_timesteps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.L1"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.L1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.config"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.denormalize"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.denormalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.fit"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.forward"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.load"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.predict"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.prepare_data"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.prepare_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.save"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.setup_progress_bar"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.setup_progress_bar()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="train.html">train module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="train.html">train module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">utils package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="make_new_dataset.html" title="previous chapter">make_new_dataset module</a></li>
+      <li>Next: <a href="train.html" title="next chapter">train module</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Robin Janssen, Immanuel Sulzer.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/surrogates.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

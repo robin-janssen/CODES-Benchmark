@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>benchmark.bench_utils &#8212; CODES Benchmark 09.09.2024 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=c058f7c8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../_static/documentation_options.js?v=47c521fd"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for benchmark.bench_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">importlib.util</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">asdict</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+
+<span class="kn">from</span> <span class="nn">surrogates.surrogate_classes</span> <span class="kn">import</span> <span class="n">surrogate_classes</span>
+<span class="kn">from</span> <span class="nn">surrogates.surrogates</span> <span class="kn">import</span> <span class="n">SurrogateModel</span>
+
+
+<div class="viewcode-block" id="check_surrogate">
+<a class="viewcode-back" href="../../index.html#benchmark.check_surrogate">[docs]</a>
+<span class="k">def</span> <span class="nf">check_surrogate</span><span class="p">(</span><span class="n">surrogate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">conf</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check whether the required models for the benchmark are present in the expected directories.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        surrogate (str): The name of the surrogate model to check.</span>
+<span class="sd">        conf (dict): The configuration dictionary.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        FileNotFoundError: If any required models are missing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">training_id</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;training_id&quot;</span><span class="p">]</span>
+    <span class="n">base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+    <span class="n">base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="s2">&quot;trained&quot;</span><span class="p">,</span> <span class="n">training_id</span><span class="p">,</span> <span class="n">surrogate</span><span class="p">)</span>
+
+    <span class="n">required_models</span> <span class="o">=</span> <span class="n">get_required_models_list</span><span class="p">(</span><span class="n">surrogate</span><span class="p">,</span> <span class="n">conf</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">model_name</span> <span class="ow">in</span> <span class="n">required_models</span><span class="p">:</span>
+        <span class="n">model_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">model_path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Required model </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2"> for surrogate </span><span class="si">{</span><span class="n">surrogate</span><span class="si">}</span><span class="s2"> not found in </span><span class="si">{</span><span class="n">base_dir</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;All required models for surrogate </span><span class="si">{</span><span class="n">surrogate</span><span class="si">}</span><span class="s2"> are present.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="check_benchmark">
+<a class="viewcode-back" href="../../index.html#benchmark.check_benchmark">[docs]</a>
+<span class="k">def</span> <span class="nf">check_benchmark</span><span class="p">(</span><span class="n">conf</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check whether there are any configuration issues with the benchmark.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        conf (dict): The configuration dictionary.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        FileNotFoundError: If the training ID directory is missing or if the .yaml file is missing.</span>
+<span class="sd">        ValueError: If the configuration is missing required keys or the values do not match the training configuration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check for the training directory and load the training configuration</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Checking benchmark configuration...&quot;</span><span class="p">)</span>
+    <span class="n">training_id</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;training_id&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">training_id</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Configuration must include a &#39;training_id&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="n">trained_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s2">&quot;trained&quot;</span><span class="p">,</span> <span class="n">training_id</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">trained_dir</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Training ID directory </span><span class="si">{</span><span class="n">training_id</span><span class="si">}</span><span class="s2"> not found.&quot;</span><span class="p">)</span>
+
+    <span class="n">yaml_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">trained_dir</span><span class="p">,</span> <span class="s2">&quot;config.yaml&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">yaml_file</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Training configuration file not found in directory </span><span class="si">{</span><span class="n">trained_dir</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">yaml_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">training_conf</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+
+    <span class="c1"># 1. Check Surrogates</span>
+    <span class="n">training_surrogates</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">training_conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;surrogates&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+    <span class="n">benchmark_surrogates</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;surrogates&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">benchmark_surrogates</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">training_surrogates</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Benchmark configuration includes surrogates that were not in the training configuration.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># 2. Check Batch Size</span>
+    <span class="k">if</span> <span class="s2">&quot;batch_size&quot;</span> <span class="ow">in</span> <span class="n">conf</span><span class="p">:</span>
+        <span class="n">training_batch_size</span> <span class="o">=</span> <span class="n">training_conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;batch_size&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">benchmark_batch_size</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;batch_size&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">training_batch_size</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">benchmark_batch_size</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Mismatch in number of batch sizes between training and benchmark configuration.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Check if batch sizes correspond to the correct surrogates</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">surrogate</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;surrogates&quot;</span><span class="p">,</span> <span class="p">[])):</span>
+            <span class="k">if</span> <span class="n">surrogate</span> <span class="ow">in</span> <span class="n">training_conf</span><span class="p">[</span><span class="s2">&quot;surrogates&quot;</span><span class="p">]:</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="n">training_conf</span><span class="p">[</span><span class="s2">&quot;surrogates&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">surrogate</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">training_batch_size</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">!=</span> <span class="n">benchmark_batch_size</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Warning: Batch size for surrogate &#39;</span><span class="si">{</span><span class="n">surrogate</span><span class="si">}</span><span class="s2">&#39; has changed from </span><span class="si">{</span><span class="n">training_batch_size</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">benchmark_batch_size</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="p">)</span>
+
+    <span class="c1"># 3. Check Dataset Settings</span>
+    <span class="n">training_dataset</span> <span class="o">=</span> <span class="n">training_conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dataset&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">benchmark_dataset</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dataset&quot;</span><span class="p">,</span> <span class="p">{})</span>
+
+    <span class="c1"># Check if any dataset keys or values do not match</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">training_value</span> <span class="ow">in</span> <span class="n">training_dataset</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">benchmark_value</span> <span class="o">=</span> <span class="n">benchmark_dataset</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">benchmark_value</span> <span class="o">!=</span> <span class="n">training_value</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Dataset setting &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; does not match between training and benchmark configurations. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Training value: </span><span class="si">{</span><span class="n">training_value</span><span class="si">}</span><span class="s2">, Benchmark value: </span><span class="si">{</span><span class="n">benchmark_value</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="c1"># Check if there are any additional keys in the benchmark dataset not present in training</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">benchmark_dataset</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">training_dataset</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Additional dataset setting &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; found in benchmark configuration that is not present in training configuration.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="c1"># 4. Check Modalities (Interpolation, Extrapolation, Sparse, Batch Scaling, Uncertainty)</span>
+    <span class="n">modalities</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;interpolation&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;extrapolation&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sparse&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;batch_scaling&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;uncertainty&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="k">for</span> <span class="n">modality</span> <span class="ow">in</span> <span class="n">modalities</span><span class="p">:</span>
+        <span class="n">training_modality</span> <span class="o">=</span> <span class="n">training_conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">modality</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">benchmark_modality</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">modality</span><span class="p">,</span> <span class="p">{})</span>
+
+        <span class="c1"># Check if enabled state has changed incorrectly</span>
+        <span class="k">if</span> <span class="n">benchmark_modality</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">training_modality</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;enabled&quot;</span><span class="p">,</span> <span class="kc">False</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Modality &#39;</span><span class="si">{</span><span class="n">modality</span><span class="si">}</span><span class="s2">&#39; is enabled in benchmark but was not enabled in training.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Check values within each modality</span>
+        <span class="k">if</span> <span class="n">training_modality</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">benchmark_modality</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;enabled&quot;</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">training_modality</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Benchmark configuration provides a value for &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; in &#39;</span><span class="si">{</span><span class="n">modality</span><span class="si">}</span><span class="s2">&#39; not present in training.&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">training_modality</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">[]))):</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Benchmark configuration provides values for &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; in &#39;</span><span class="si">{</span><span class="n">modality</span><span class="si">}</span><span class="s2">&#39; not trained for.&quot;</span>
+                        <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">modality</span> <span class="o">==</span> <span class="s2">&quot;uncertainty&quot;</span> <span class="ow">and</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;ensemble_size&quot;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="n">training_modality</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+                            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;Benchmark ensemble_size for &#39;</span><span class="si">{</span><span class="n">modality</span><span class="si">}</span><span class="s2">&#39; cannot be larger than in training.&quot;</span>
+                            <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="n">training_modality</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+                            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;Benchmark configuration value for &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; in &#39;</span><span class="si">{</span><span class="n">modality</span><span class="si">}</span><span class="s2">&#39; does not match training configuration.&quot;</span>
+                            <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Configuration check passed successfully.&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">get_required_models_list</span><span class="p">(</span><span class="n">surrogate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">conf</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a list of required models based on the configuration settings.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        surrogate (str): The name of the surrogate model.</span>
+<span class="sd">        conf (dict): The configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: A list of required model names.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">required_models</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">required_models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surrogate</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_main.pth&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Gradients does not require a separate model</span>
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">]:</span>
+        <span class="k">pass</span>
+
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;interpolation&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="n">intervals</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;interpolation&quot;</span><span class="p">][</span><span class="s2">&quot;intervals&quot;</span><span class="p">]</span>
+        <span class="n">required_models</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surrogate</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_interpolation_</span><span class="si">{</span><span class="n">interval</span><span class="si">}</span><span class="s2">.pth&quot;</span>
+                <span class="k">for</span> <span class="n">interval</span> <span class="ow">in</span> <span class="n">intervals</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;extrapolation&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="n">cutoffs</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;extrapolation&quot;</span><span class="p">][</span><span class="s2">&quot;cutoffs&quot;</span><span class="p">]</span>
+        <span class="n">required_models</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surrogate</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_extrapolation_</span><span class="si">{</span><span class="n">cutoff</span><span class="si">}</span><span class="s2">.pth&quot;</span> <span class="k">for</span> <span class="n">cutoff</span> <span class="ow">in</span> <span class="n">cutoffs</span><span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;sparse&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="n">factors</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;sparse&quot;</span><span class="p">][</span><span class="s2">&quot;factors&quot;</span><span class="p">]</span>
+        <span class="n">required_models</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surrogate</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_sparse_</span><span class="si">{</span><span class="n">factor</span><span class="si">}</span><span class="s2">.pth&quot;</span> <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">factors</span><span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;uncertainty&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="n">n_models</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;uncertainty&quot;</span><span class="p">][</span><span class="s2">&quot;ensemble_size&quot;</span><span class="p">]</span>
+        <span class="n">required_models</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surrogate</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_UQ_</span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">.pth&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_models</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">required_models</span>
+
+
+<span class="k">def</span> <span class="nf">read_yaml_config</span><span class="p">(</span><span class="n">config_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read the YAML configuration file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        config_path (str): Path to the YAML configuration file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: The configuration dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;uft-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">conf</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">conf</span>
+
+
+<span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">training_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model_identifier</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load a trained surrogate model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Instance of the surrogate model class.</span>
+<span class="sd">        training_id (str): The training identifier.</span>
+<span class="sd">        surr_name (str): The name of the surrogate model.</span>
+<span class="sd">        model_identifier (str): The identifier of the model (e.g., &#39;main&#39;).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The loaded surrogate model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">statedict_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="s2">&quot;trained&quot;</span><span class="p">,</span> <span class="n">training_id</span><span class="p">,</span> <span class="n">surr_name</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">model_identifier</span><span class="si">}</span><span class="s2">.pth&quot;</span>
+    <span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">statedict_path</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">model</span>
+
+
+<span class="k">def</span> <span class="nf">count_trainable_parameters</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Count the number of trainable parameters in the model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model (torch.nn.Module): The PyTorch model.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int: The number of trainable parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">measure_memory_footprint</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+    <span class="n">inputs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Measure the memory footprint of the model during the forward and backward pass.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model (torch.nn.Module): The PyTorch model.</span>
+<span class="sd">        inputs (tuple): The input data for the model.</span>
+<span class="sd">        conf (dict): The configuration dictionary.</span>
+<span class="sd">        surr_name (str): The name of the surrogate model.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A dictionary containing memory footprint measurements.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># def get_memory_usage():</span>
+    <span class="c1">#     process = psutil.Process(os.getpid())</span>
+    <span class="c1">#     return process.memory_info().rss</span>
+
+    <span class="k">def</span> <span class="nf">get_memory_usage</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">memory_allocated</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+    <span class="n">before_load</span> <span class="o">=</span> <span class="n">get_memory_usage</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="c1"># Measure memory usage before the forward pass</span>
+    <span class="n">after_load</span> <span class="o">=</span> <span class="n">get_memory_usage</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="n">inputs</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">tuple</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span>
+        <span class="k">else</span> <span class="n">inputs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">before_forward</span> <span class="o">=</span> <span class="n">get_memory_usage</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">)</span>
+    <span class="n">after_forward</span> <span class="o">=</span> <span class="n">get_memory_usage</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="c1"># Measure memory usage before the backward pass</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="p">(</span><span class="n">preds</span> <span class="o">-</span> <span class="n">targets</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>  <span class="c1"># Example loss function</span>
+    <span class="n">before_backward</span> <span class="o">=</span> <span class="n">get_memory_usage</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+    <span class="n">after_backward</span> <span class="o">=</span> <span class="n">get_memory_usage</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="k">del</span> <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">loss</span>
+
+    <span class="c1"># Measure pure forward pass memory usage</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+    <span class="n">before_forward_nograd</span> <span class="o">=</span> <span class="n">get_memory_usage</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">)</span>
+    <span class="n">after_forward_nograd</span> <span class="o">=</span> <span class="n">get_memory_usage</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="n">memory_usage</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;model_memory&quot;</span><span class="p">:</span> <span class="n">after_load</span> <span class="o">-</span> <span class="n">before_load</span><span class="p">,</span>
+        <span class="s2">&quot;forward_memory&quot;</span><span class="p">:</span> <span class="n">after_forward</span> <span class="o">-</span> <span class="n">before_forward</span><span class="p">,</span>
+        <span class="s2">&quot;backward_memory&quot;</span><span class="p">:</span> <span class="n">after_backward</span> <span class="o">-</span> <span class="n">before_backward</span><span class="p">,</span>
+        <span class="s2">&quot;forward_memory_nograd&quot;</span><span class="p">:</span> <span class="n">after_forward_nograd</span> <span class="o">-</span> <span class="n">before_forward_nograd</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">memory_usage</span><span class="p">,</span> <span class="n">model</span>
+
+
+<span class="k">def</span> <span class="nf">convert_to_standard_types</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recursively convert data to standard types that can be serialized to YAML.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data: The data to convert.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The converted data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">convert_to_standard_types</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">convert_to_standard_types</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
+        <span class="k">return</span> <span class="n">data</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">discard_numpy_entries</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recursively remove dictionary entries that contain NumPy arrays.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        d (dict): The input dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A new dictionary without entries containing NumPy arrays.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="n">clean_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">cleaned_value</span> <span class="o">=</span> <span class="n">discard_numpy_entries</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cleaned_value</span><span class="p">:</span>  <span class="c1"># Only add non-empty dictionaries</span>
+                <span class="n">clean_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">cleaned_value</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">clean_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">return</span> <span class="n">clean_dict</span>
+
+
+<span class="k">def</span> <span class="nf">clean_metrics</span><span class="p">(</span><span class="n">metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">conf</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Clean the metrics dictionary to remove problematic entries.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        metrics (dict): The benchmark metrics.</span>
+<span class="sd">        conf (dict): The configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: The cleaned metrics dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Make a deep copy of the metrics</span>
+    <span class="n">write_metrics</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
+
+    <span class="c1"># Remove problematic entries</span>
+    <span class="n">write_metrics</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;timesteps&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">write_metrics</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;absolute_errors&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">write_metrics</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;relative_errors&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">]:</span>
+        <span class="n">write_metrics</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;gradients&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">write_metrics</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;max_counts&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">write_metrics</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;max_gradient&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">write_metrics</span><span class="p">[</span><span class="s2">&quot;gradients&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;max_error&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;interpolation&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="n">write_metrics</span><span class="p">[</span><span class="s2">&quot;interpolation&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;model_errors&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">write_metrics</span><span class="p">[</span><span class="s2">&quot;interpolation&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;intervals&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;extrapolation&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="n">write_metrics</span><span class="p">[</span><span class="s2">&quot;extrapolation&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;model_errors&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">write_metrics</span><span class="p">[</span><span class="s2">&quot;extrapolation&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;cutoffs&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;sparse&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="n">write_metrics</span><span class="p">[</span><span class="s2">&quot;sparse&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;model_errors&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">write_metrics</span><span class="p">[</span><span class="s2">&quot;sparse&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;n_train_samples&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;uncertainty&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+        <span class="n">write_metrics</span><span class="p">[</span><span class="s2">&quot;UQ&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;pred_uncertainty&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">write_metrics</span><span class="p">[</span><span class="s2">&quot;UQ&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;max_counts&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">write_metrics</span><span class="p">[</span><span class="s2">&quot;UQ&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;axis_max&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">write_metrics</span>
+
+
+<span class="k">def</span> <span class="nf">write_metrics_to_yaml</span><span class="p">(</span><span class="n">surr_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">conf</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write the benchmark metrics to a YAML file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        surr_name (str): The name of the surrogate model.</span>
+<span class="sd">        conf (dict): The configuration dictionary.</span>
+<span class="sd">        metrics (dict): The benchmark metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Clean the metrics</span>
+    <span class="n">write_metrics</span> <span class="o">=</span> <span class="n">clean_metrics</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">conf</span><span class="p">)</span>
+
+    <span class="c1"># Convert metrics to standard types</span>
+    <span class="n">write_metrics</span> <span class="o">=</span> <span class="n">convert_to_standard_types</span><span class="p">(</span><span class="n">write_metrics</span><span class="p">)</span>
+
+    <span class="c1"># Make results directory</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;results/</span><span class="si">{</span><span class="n">conf</span><span class="p">[</span><span class="s1">&#39;training_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">FileExistsError</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;results/</span><span class="si">{</span><span class="n">conf</span><span class="p">[</span><span class="s1">&#39;training_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">surr_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_metrics.yaml&quot;</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+        <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">write_metrics</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_surrogate">
+<a class="viewcode-back" href="../../index.html#benchmark.get_surrogate">[docs]</a>
+<span class="k">def</span> <span class="nf">get_surrogate</span><span class="p">(</span><span class="n">surrogate_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SurrogateModel</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if the surrogate model exists.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        surrogate_name (str): The name of the surrogate model.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        SurrogateModel | None: The surrogate model class if it exists, otherwise None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">surrogate</span> <span class="ow">in</span> <span class="n">surrogate_classes</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">surrogate_name</span> <span class="o">==</span> <span class="n">surrogate</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">surrogate</span>
+
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">format_time</span><span class="p">(</span><span class="n">mean_time</span><span class="p">,</span> <span class="n">std_time</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Format mean and std time consistently in ns, µs, ms, or s.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mean_time: The mean time.</span>
+<span class="sd">        std_time: The standard deviation of the time.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The formatted time string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">mean_time</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">:</span>
+        <span class="c1"># Both in ns</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mean_time</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> ns ± </span><span class="si">{</span><span class="n">std_time</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> ns&quot;</span>
+    <span class="k">elif</span> <span class="n">mean_time</span> <span class="o">&lt;</span> <span class="mf">1e-3</span><span class="p">:</span>
+        <span class="c1"># Both in µs</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mean_time</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e6</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> µs ± </span><span class="si">{</span><span class="n">std_time</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e6</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> µs&quot;</span>
+    <span class="k">elif</span> <span class="n">mean_time</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># Both in ms</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mean_time</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> ms ± </span><span class="si">{</span><span class="n">std_time</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> ms&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Both in s</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mean_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> s ± </span><span class="si">{</span><span class="n">std_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> s&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">format_seconds</span><span class="p">(</span><span class="n">seconds</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Format a duration given in seconds as hh:mm:ss.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        seconds (int): The duration in seconds.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The formatted duration string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hours</span> <span class="o">=</span> <span class="n">seconds</span> <span class="o">//</span> <span class="mi">3600</span>
+    <span class="n">minutes</span> <span class="o">=</span> <span class="p">(</span><span class="n">seconds</span> <span class="o">%</span> <span class="mi">3600</span><span class="p">)</span> <span class="o">//</span> <span class="mi">60</span>
+    <span class="n">seconds</span> <span class="o">=</span> <span class="n">seconds</span> <span class="o">%</span> <span class="mi">60</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hours</span><span class="si">:</span><span class="s2">02</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">minutes</span><span class="si">:</span><span class="s2">02</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">seconds</span><span class="si">:</span><span class="s2">02</span><span class="si">}</span><span class="s2">&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">flatten_dict</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">parent_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">sep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot; - &quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Flatten a nested dictionary.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        d (dict): The dictionary to flatten.</span>
+<span class="sd">        parent_key (str): The base key string.</span>
+<span class="sd">        sep (str): The separator between keys.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: Flattened dictionary with composite keys.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">new_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">parent_key</span><span class="si">}{</span><span class="n">sep</span><span class="si">}{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">parent_key</span> <span class="k">else</span> <span class="n">k</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">flatten_dict</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">new_key</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="n">sep</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">new_key</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">convert_dict_to_scientific_notation</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">precision</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert all numerical values in a dictionary to scientific notation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        d (dict): The input dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: The dictionary with numerical values in scientific notation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="n">k</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">v</span><span class="si">:</span><span class="s2">.</span><span class="si">{</span><span class="n">precision</span><span class="si">}</span><span class="s2">e</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span> <span class="k">else</span> <span class="n">v</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">make_comparison_csv</span><span class="p">(</span><span class="n">metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a CSV file comparing metrics for different surrogate models.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.</span>
+<span class="sd">        config (dict): Configuration dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Clean the metrics</span>
+    <span class="k">for</span> <span class="n">surr_name</span> <span class="ow">in</span> <span class="n">metrics</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="n">surr_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">clean_metrics</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="n">surr_name</span><span class="p">],</span> <span class="n">config</span><span class="p">)</span>
+
+    <span class="c1"># cleaned_metrics = convert_to_standard_types(metrics)</span>
+
+    <span class="c1"># Flatten the metrics dictionary for each surrogate model</span>
+    <span class="n">flattened_metrics</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">surr_name</span><span class="p">:</span> <span class="n">flatten_dict</span><span class="p">(</span><span class="n">met</span><span class="p">)</span> <span class="k">for</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">met</span> <span class="ow">in</span> <span class="n">metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Convert all numerical values to scientific notation</span>
+    <span class="k">for</span> <span class="n">surr_name</span> <span class="ow">in</span> <span class="n">flattened_metrics</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">flattened_metrics</span><span class="p">[</span><span class="n">surr_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">convert_dict_to_scientific_notation</span><span class="p">(</span>
+            <span class="n">flattened_metrics</span><span class="p">[</span><span class="n">surr_name</span><span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Get all unique keys across all models (i.e., all possible metric categories)</span>
+    <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">surr_name</span><span class="p">,</span> <span class="n">flat_met</span> <span class="ow">in</span> <span class="n">flattened_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">all_keys</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">flat_met</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="c1"># Convert the set of keys to a sorted list</span>
+    <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">all_keys</span><span class="p">)</span>
+
+    <span class="c1"># Prepare the CSV file path</span>
+    <span class="n">csv_file_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;results/</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;training_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/metrics.csv&quot;</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">csv_file_path</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Write to the CSV file</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">csv_file_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csv_file</span><span class="p">:</span>
+        <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">csv_file</span><span class="p">)</span>
+
+        <span class="c1"># Write the header row</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Category&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+
+        <span class="c1"># Write each row with the values corresponding to each model</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">surr_name</span> <span class="ow">in</span> <span class="n">metrics</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">flattened_metrics</span><span class="p">[</span><span class="n">surr_name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="n">key</span><span class="p">,</span> <span class="s2">&quot;N/A&quot;</span>
+                <span class="p">)</span>  <span class="c1"># Use &#39;N/A&#39; if key is missing</span>
+                <span class="n">row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;verbose&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparison CSV file saved at </span><span class="si">{</span><span class="n">csv_file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_model_config</span><span class="p">(</span><span class="n">surr_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the model configuration for a specific surrogate model from the dataset folder.</span>
+<span class="sd">    Returns an empty dictionary if the configuration file is not found.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        surr_name (str): The name of the surrogate model.</span>
+<span class="sd">        dataset_name (str): The name of the dataset.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: The model configuration dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dataset_name</span> <span class="o">=</span> <span class="n">dataset_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">dataset_folder</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;data/</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">config_file</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dataset_folder</span><span class="si">}</span><span class="s2">/surrogates_config.py&quot;</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">config_file</span><span class="p">):</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">spec_from_file_location</span><span class="p">(</span><span class="s2">&quot;config_module&quot;</span><span class="p">,</span> <span class="n">config_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to import config module from </span><span class="si">{</span><span class="n">config_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">config_module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">module_from_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">loader</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load config module from </span><span class="si">{</span><span class="n">config_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">spec</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">exec_module</span><span class="p">(</span><span class="n">config_module</span><span class="p">)</span>
+
+        <span class="c1"># Look for the dataclass matching the surr_name + &#39;Config&#39;</span>
+        <span class="n">config_class</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">target_class_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surr_name</span><span class="si">}</span><span class="s2">config&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">config_module</span><span class="p">,</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;__dataclass_fields__&quot;</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">target_class_name</span>
+            <span class="p">):</span>
+                <span class="n">config_class</span> <span class="o">=</span> <span class="n">obj</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">config_class</span><span class="p">:</span>
+            <span class="c1"># Instantiate the dataclass and convert it to a dictionary</span>
+            <span class="n">config_instance</span> <span class="o">=</span> <span class="n">config_class</span><span class="p">()</span>
+            <span class="n">model_config</span> <span class="o">=</span> <span class="n">asdict</span><span class="p">(</span><span class="n">config_instance</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">model_config</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">model_config</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">return</span> <span class="n">model_config</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">CODES Benchmark</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Robin Janssen, Immanuel Sulzer.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

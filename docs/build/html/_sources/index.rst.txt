@@ -6,27 +6,15 @@
 CODES Benchmark documentation
 =============================
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
-
+.. include:: ../README.md
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 4
 
-.. automodule:: surrogates
-   :members:
-
-.. automodule:: benchmark
-   :members:
-
-.. automodule:: data
-   :members:
-
-.. automodule:: train
-   :members:
-
-.. automodule:: utils
-   :members:
-
+   benchmark
+   data
+   generate_simple_ode_data
+   make_new_dataset
+   surrogates
+   train
+   utils

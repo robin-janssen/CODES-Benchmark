@@ -162,8 +162,8 @@ def check_and_load_data(
 
 def normalize_data(
     train_data: np.ndarray,
-    test_data: np.ndarray = None,
-    val_data: np.ndarray = None,
+    test_data: np.ndarray | None = None,
+    val_data: np.ndarray | None = None,
     mode: str = "standardise",
 ) -> tuple:
     """
