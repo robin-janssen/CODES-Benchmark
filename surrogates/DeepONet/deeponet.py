@@ -164,19 +164,13 @@ class MultiONet(OperatorNetwork):
         device: str | None = None,
         n_chemicals: int = 29,
         n_timesteps: int = 100,
-        config: dict = {},
+        config: dict | None = None,
     ):
-        try:
-            config = MultiONetBaseConfig(**config)
-        except TypeError as e:
-            raise TypeError(
-                f"Invalid configuration for MultiONet model: {e} \n This likely means that the model config contains keys that are not in the models base config."
-            ) from e
+        config = config if config is not None else {}
+        self.config = MultiONetBaseConfig(**config)
         super().__init__(
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
         )
-
-        self.config = config
         self.device = device
         self.N = n_chemicals  # Number of chemicals
         self.outputs = (

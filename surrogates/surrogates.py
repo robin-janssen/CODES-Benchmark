@@ -260,7 +260,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
                     delattr(self, attr)
 
         # Add some additional information to the model and hyperparameters
-        self.train_duration = self.fit.duration
+        self.train_duration = self.fit.duration if hasattr(self.fit, "duration") else None
         hyperparameters["train_duration"] = self.train_duration
         self.normalisation = data_params
         hyperparameters["normalisation"] = data_params
