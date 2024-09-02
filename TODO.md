@@ -2,7 +2,7 @@
 
 - [ ] **Write NeurIPS submission**
 - [x] Read into DataHosting on HeiDATA -> use Zenodo for now
-    - [ ] Also upload other datasets and create download function
+    - [x] Also upload other datasets and create download function
 - [ ] Choose a code licence for the code - MIT?
 - [x] Reach out to Lorenzo regarding the dataset
 - [ ] Optuna and final run for all datasets.
@@ -36,7 +36,7 @@
 - [x] Calculate and add error quantities per surrogate to the individal (and comparative) outputs.
 - [ ] Store output in a .txt file
 - [ ] Refactoring for more generality (remove chemistry specific code)
-- [ ] Add user prompt on whether to use task list or overwrite it.
+- [x] Add user prompt on whether to use task list or overwrite it.
 - [ ] Continue training of the existing models in case further convergence is needed
 - [ ] Accumulation of error when predicting quantities iteratively
 - [ ] Inter-/extrapolation in the initial conditions (domain shift)
