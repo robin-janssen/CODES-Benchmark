@@ -842,9 +842,7 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
         surrogate_class = get_surrogate(surr_name)
         n_timesteps = metrics[surr_name]["timesteps"].shape[0]
         n_chemicals = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
-        model = surrogate_class(
-            device, n_chemicals, n_timesteps, None
-        )
+        model = surrogate_class(device, n_chemicals, n_timesteps, None)
 
         def load_losses(model_identifier: str):
             model.load(training_id, surr_name, model_identifier=model_identifier)

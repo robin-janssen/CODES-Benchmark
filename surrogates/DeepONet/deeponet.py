@@ -174,19 +174,19 @@ class MultiONet(OperatorNetwork):
         self.device = device
         self.N = n_chemicals  # Number of chemicals
         self.outputs = (
-            n_chemicals * config.output_factor
+            n_chemicals * self.config.output_factor
         )  # Number of neurons in the last layer
         self.branch_net = BranchNet(
-            n_chemicals - (config.trunk_input_size - 1),  # +1 due to time
-            config.hidden_size,
+            n_chemicals - (self.config.trunk_input_size - 1),  # +1 due to time
+            self.config.hidden_size,
             self.outputs,
-            config.branch_hidden_layers,
+            self.config.branch_hidden_layers,
         ).to(device)
         self.trunk_net = TrunkNet(
-            config.trunk_input_size,  # = time + optional additional quantities
-            config.hidden_size,
+            self.config.trunk_input_size,  # = time + optional additional quantities
+            self.config.hidden_size,
             self.outputs,
-            config.trunk_hidden_layers,
+            self.config.trunk_hidden_layers,
         ).to(device)
 
     def forward(self, inputs) -> tuple[torch.Tensor, torch.Tensor]:
