@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>utils.utils &#8212; CODES Benchmark 09.09.2024 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=c058f7c8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../_static/documentation_options.js?v=47c521fd"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for utils.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+
+<span class="k">def</span> <span class="nf">read_yaml_config</span><span class="p">(</span><span class="n">config_path</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">config</span>
+
+
+<div class="viewcode-block" id="time_execution">
+<a class="viewcode-back" href="../../index.html#utils.time_execution">[docs]</a>
+<span class="k">def</span> <span class="nf">time_execution</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decorator to time the execution of a function and store the duration</span>
+<span class="sd">    as an attribute of the function.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        func (callable): The function to be timed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">wrapper</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="n">end_time</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="c1"># tqdm.write(f&quot;{func.__name__} executed in {wrapper.duration:.2f} seconds.&quot;)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="n">wrapper</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">wrapper</span></div>
+
+
+
+<div class="viewcode-block" id="create_model_dir">
+<a class="viewcode-back" href="../../index.html#utils.create_model_dir">[docs]</a>
+<span class="k">def</span> <span class="nf">create_model_dir</span><span class="p">(</span>
+    <span class="n">base_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">subfolder</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;trained&quot;</span><span class="p">,</span> <span class="n">unique_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a directory based on a unique identifier inside a specified subfolder of the base directory.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        base_dir (str): The base directory where the subfolder and unique directory will be created.</span>
+<span class="sd">        subfolder (str): The subfolder inside the base directory to include before the unique directory.</span>
+<span class="sd">        unique_id (str): A unique identifier to be included in the directory name.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The path of the created unique directory within the specified subfolder.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">full_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="n">subfolder</span><span class="p">,</span> <span class="n">unique_id</span><span class="p">)</span>
+
+    <span class="c1"># Check if the directory exists, and create it if it doesn&#39;t</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">full_path</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">full_path</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">full_path</span></div>
+
+
+
+<div class="viewcode-block" id="load_and_save_config">
+<a class="viewcode-back" href="../../index.html#utils.load_and_save_config">[docs]</a>
+<span class="k">def</span> <span class="nf">load_and_save_config</span><span class="p">(</span><span class="n">config_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;config.yaml&quot;</span><span class="p">,</span> <span class="n">save</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load configuration from a YAML file and save a copy to the specified directory.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        config_path (str): The path to the configuration YAML file.</span>
+<span class="sd">        save (bool): Whether to save a copy of the configuration file. Default is True.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: The loaded configuration dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Load configuration from YAML</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+        <span class="c1"># Get training ID from the config</span>
+        <span class="n">training_id</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;training_id&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Create the directory if it does not exist</span>
+        <span class="n">save_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;trained&quot;</span><span class="p">,</span> <span class="n">training_id</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Copy the config file to the directory</span>
+        <span class="n">config_save_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">save_dir</span><span class="p">,</span> <span class="s2">&quot;config.yaml&quot;</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="n">config_save_path</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">config</span></div>
+
+
+
+<div class="viewcode-block" id="set_random_seeds">
+<a class="viewcode-back" href="../../index.html#utils.set_random_seeds">[docs]</a>
+<span class="k">def</span> <span class="nf">set_random_seeds</span><span class="p">(</span><span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Set random seeds for reproducibility.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        seed (int): The random seed to set.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">manual_seed_all</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">cudnn</span><span class="o">.</span><span class="n">deterministic</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">cudnn</span><span class="o">.</span><span class="n">benchmark</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="nice_print">
+<a class="viewcode-back" href="../../index.html#utils.nice_print">[docs]</a>
+<span class="k">def</span> <span class="nf">nice_print</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">80</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Print a message in a nicely formatted way with a fixed width.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        message (str): The message to print.</span>
+<span class="sd">        width (int): The width of the printed box. Default is 80.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Calculate padding</span>
+    <span class="n">padding</span> <span class="o">=</span> <span class="p">(</span><span class="n">width</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">padding_left</span> <span class="o">=</span> <span class="n">padding</span>
+    <span class="n">padding_right</span> <span class="o">=</span> <span class="n">padding</span>
+
+    <span class="c1"># If message length is odd, add one more space to the right</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">width</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="p">))</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">padding_right</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">border</span> <span class="o">=</span> <span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="n">width</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">border</span><span class="si">}</span><span class="se">\n</span><span class="s2">|</span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">padding_left</span><span class="si">}{</span><span class="n">message</span><span class="si">}{</span><span class="s1">&#39; &#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">padding_right</span><span class="si">}</span><span class="s2">|</span><span class="se">\n</span><span class="si">{</span><span class="n">border</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="make_description">
+<a class="viewcode-back" href="../../index.html#utils.make_description">[docs]</a>
+<span class="k">def</span> <span class="nf">make_description</span><span class="p">(</span><span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">metric</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">surrogate_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a formatted description for the progress bar that ensures consistent alignment.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mode (str): The benchmark mode (e.g., &quot;accuracy&quot;, &quot;interpolation&quot;, &quot;extrapolation&quot;, &quot;sparse&quot;, &quot;UQ&quot;).</span>
+<span class="sd">        device (str): The device to use for training (e.g., &#39;cuda:0&#39;).</span>
+<span class="sd">        metric (str): The specific metric for the mode (e.g., interval, cutoff, factor, batch size).</span>
+<span class="sd">        surrogate_name (str): The name of the surrogate model.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: A formatted description string for the progress bar.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">surrogate_name</span> <span class="o">=</span> <span class="n">surrogate_name</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">14</span><span class="p">)</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">13</span><span class="p">)</span>
+    <span class="n">metric</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">device</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">device</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">device</span><span class="si">}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+
+    <span class="n">description</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">surrogate_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">device</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">return</span> <span class="n">description</span></div>
+
+
+
+<div class="viewcode-block" id="get_progress_bar">
+<a class="viewcode-back" href="../../index.html#utils.get_progress_bar">[docs]</a>
+<span class="k">def</span> <span class="nf">get_progress_bar</span><span class="p">(</span><span class="n">tasks</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tqdm</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a progress bar with a specific description.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tasks (list): The list of tasks to be executed.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tqdm: The created progress bar.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">overall_progress_bar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span>
+        <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">tasks</span><span class="p">),</span>
+        <span class="n">desc</span><span class="o">=</span><span class="n">make_description</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;Overall Progress&quot;</span><span class="p">),</span>
+        <span class="n">position</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">leave</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">bar_format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{l_bar}{bar}</span><span class="s2"> | </span><span class="si">{n_fmt:&gt;3}</span><span class="s2">/</span><span class="si">{total_fmt}</span><span class="s2"> models trained [elapsed time: </span><span class="si">{elapsed}</span><span class="s2">]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">overall_progress_bar</span></div>
+
+
+
+<div class="viewcode-block" id="worker_init_fn">
+<a class="viewcode-back" href="../../index.html#utils.worker_init_fn">[docs]</a>
+<span class="k">def</span> <span class="nf">worker_init_fn</span><span class="p">(</span><span class="n">worker_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initialize the random seed for each worker in PyTorch DataLoader.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        worker_id (int): The worker ID.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">torch_seed</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+    <span class="n">np_seed</span> <span class="o">=</span> <span class="n">torch_seed</span> <span class="o">//</span> <span class="mi">2</span><span class="o">**</span><span class="mi">32</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">np_seed</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="save_task_list">
+<a class="viewcode-back" href="../../index.html#utils.save_task_list">[docs]</a>
+<span class="k">def</span> <span class="nf">save_task_list</span><span class="p">(</span><span class="n">tasks</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Save a list of tasks to a JSON file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tasks (list): The list of tasks to save.</span>
+<span class="sd">        filepath (str): The path to the JSON file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">tasks</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="load_task_list">
+<a class="viewcode-back" href="../../index.html#utils.load_task_list">[docs]</a>
+<span class="k">def</span> <span class="nf">load_task_list</span><span class="p">(</span><span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load a list of tasks from a JSON file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filepath (str): The path to the JSON file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: The loaded list of tasks</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">tasks</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tasks</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
+
+
+
+<div class="viewcode-block" id="check_training_status">
+<a class="viewcode-back" href="../../index.html#utils.check_training_status">[docs]</a>
+<span class="k">def</span> <span class="nf">check_training_status</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if the training is already completed by looking for a completion marker file.</span>
+<span class="sd">    If the training is not complete, compare the configurations and ask for a confirmation if there are differences.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        config (dict): The configuration dictionary.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The path to the task list file.</span>
+<span class="sd">        bool: Whether to copy the configuration file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">training_id</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;training_id&quot;</span><span class="p">]</span>
+    <span class="n">task_list_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;trained/</span><span class="si">{</span><span class="n">training_id</span><span class="si">}</span><span class="s2">/train_tasks.json&quot;</span><span class="p">)</span>
+    <span class="n">completion_marker_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;trained/</span><span class="si">{</span><span class="n">training_id</span><span class="si">}</span><span class="s2">/completed.txt&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Check if training is already complete</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">completion_marker_filepath</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Training is already completed. Exiting. </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Check if the configuration is different from the saved configuration</span>
+        <span class="n">saved_config_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;trained/</span><span class="si">{</span><span class="n">training_id</span><span class="si">}</span><span class="s2">/config.yaml&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">saved_config_path</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">task_list_filepath</span><span class="p">,</span> <span class="kc">True</span>
+
+        <span class="n">saved_config</span> <span class="o">=</span> <span class="n">read_yaml_config</span><span class="p">(</span><span class="n">saved_config_path</span><span class="p">)</span>
+
+        <span class="c1"># Check if the configurations are the same</span>
+        <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">saved_config</span><span class="p">:</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; not found in saved configuration.&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">value</span> <span class="o">!=</span> <span class="n">saved_config</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">sub_key</span><span class="p">,</span> <span class="n">sub_value</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="k">if</span> <span class="n">sub_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">saved_config</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;Key &#39;</span><span class="si">{</span><span class="n">sub_key</span><span class="si">}</span><span class="s2">&#39; not found in &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; of saved configuration.&quot;</span>
+                            <span class="p">)</span>
+                        <span class="k">elif</span> <span class="n">sub_value</span> <span class="o">!=</span> <span class="n">saved_config</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">sub_key</span><span class="p">]:</span>
+                            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;Value of &#39;</span><span class="si">{</span><span class="n">sub_key</span><span class="si">}</span><span class="s2">&#39; in &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; is different from saved configuration:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                                <span class="sa">f</span><span class="s2">&quot;    Previous: </span><span class="si">{</span><span class="n">saved_config</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">sub_key</span><span class="p">]</span><span class="si">}</span><span class="s2">, current: </span><span class="si">{</span><span class="n">sub_value</span><span class="si">}</span><span class="s2">&quot;</span>
+                            <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Value of &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; is different from saved configuration:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;    Previous: </span><span class="si">{</span><span class="n">saved_config</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="si">}</span><span class="s2">, current: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The current configuration differs from the saved configuration:&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">error</span> <span class="ow">in</span> <span class="n">errors</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;You can overwrite the saved configuration or resume the training with the previous configuration.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">confirmation</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Overwrite? [y/n]: &quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">confirmation</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Overwriting the saved configuration.&quot;</span><span class="p">)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">task_list_filepath</span><span class="p">)</span>
+                <span class="n">copy_config</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Continuing training with the previous configuration.&quot;</span><span class="p">)</span>
+                <span class="n">nice_print</span><span class="p">(</span><span class="s2">&quot;Resuming training.&quot;</span><span class="p">)</span>
+                <span class="n">copy_config</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nice_print</span><span class="p">(</span><span class="s2">&quot;Resuming training.&quot;</span><span class="p">)</span>
+            <span class="n">copy_config</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">return</span> <span class="n">task_list_filepath</span><span class="p">,</span> <span class="n">copy_config</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">CODES Benchmark</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Robin Janssen, Immanuel Sulzer.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
