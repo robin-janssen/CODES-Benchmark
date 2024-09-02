@@ -1,5 +1,13 @@
 import torch
+from torch import nn
+from torch.utils.data import DataLoader
+from torch.optim import Adam
 from torch.utils.data import Dataset
+import numpy as np
+
+from surrogates.surrogates import AbstractSurrogateModel
+from surrogates.MySurrogate.my_surrogate_config import MySurrogateConfig
+from utils import time_execution
 
 
 class MyDataset(Dataset):
@@ -17,18 +25,6 @@ class MyDataset(Dataset):
 
     def __len__(self):
         return self.length
-
-
-from surrogates.surrogates import AbstractSurrogateModel
-from torch import nn
-
-from surrogates.MySurrogate.my_surrogate_config import MySurrogateConfig
-
-from torch.utils.data import DataLoader
-import numpy as np
-
-from torch.optim import Adam
-from utils import time_execution
 
 
 class MySurrogate(AbstractSurrogateModel):
@@ -52,7 +48,7 @@ class MySurrogate(AbstractSurrogateModel):
         for _ in range(self.config.hidden_layers):
             modules.append(nn.Linear(self.config.layer_width, self.config.layer_width))
             modules.append(self.config.activation)
-        modules.append(nn.Linear(self.config.layer_width, n_chemicals*n_timesteps))
+        modules.append(nn.Linear(self.config.layer_width, n_chemicals * n_timesteps))
 
         self.model = nn.Sequential(*modules).to(device)
 
