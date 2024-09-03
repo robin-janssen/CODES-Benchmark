@@ -30,11 +30,12 @@ class BranchNet(nn.Module):
         hidden_size: int,
         output_size: int,
         num_hidden_layers: int,
+        activation: nn.Module = nn.ReLU(),
     ):
         super(BranchNet, self).__init__()
-        layers = [nn.Linear(input_size, hidden_size), nn.ReLU()]
+        layers = [nn.Linear(input_size, hidden_size), activation]
         for _ in range(num_hidden_layers - 1):
-            layers += [nn.Linear(hidden_size, hidden_size), nn.ReLU()]
+            layers += [nn.Linear(hidden_size, hidden_size), activation]
         layers.append(nn.Linear(hidden_size, output_size))
         self.network = nn.Sequential(*layers)
 
@@ -65,11 +66,12 @@ class TrunkNet(nn.Module):
         hidden_size: int,
         output_size: int,
         num_hidden_layers: int,
+        activation: nn.Module = nn.ReLU(),
     ):
         super(TrunkNet, self).__init__()
-        layers = [nn.Linear(input_size, hidden_size), nn.ReLU()]
+        layers = [nn.Linear(input_size, hidden_size), activation]
         for _ in range(num_hidden_layers - 1):
-            layers += [nn.Linear(hidden_size, hidden_size), nn.ReLU()]
+            layers += [nn.Linear(hidden_size, hidden_size), activation]
         layers.append(nn.Linear(hidden_size, output_size))
         self.network = nn.Sequential(*layers)
 
@@ -181,12 +183,14 @@ class MultiONet(OperatorNetwork):
             self.config.hidden_size,
             self.outputs,
             self.config.branch_hidden_layers,
+            self.config.activation,
         ).to(device)
         self.trunk_net = TrunkNet(
             self.config.trunk_input_size,  # = time + optional additional quantities
             self.config.hidden_size,
             self.outputs,
             self.config.trunk_hidden_layers,
+            self.config.activation,
         ).to(device)
 
     def forward(self, inputs) -> tuple[torch.Tensor, torch.Tensor]:
