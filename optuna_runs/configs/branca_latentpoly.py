@@ -3,14 +3,15 @@ config = {
         "name": "LatentPoly",
     },
     "dataset": {
-        "name": "osu2008",
+        "name": "branca24",
         "log10_transform": True,
         "normalise": "minmax",
+        "subset_factor": 8,
     },
-    "device": "cuda:2",
+    "device": "cuda:6",
     "seed": 42,
     "batch_size": 128,
-    "epochs": 10000,
+    "epochs": 2000,
     "n_trials": 200,
     "optuna_params": {
         "degree": {"type": "int", "low": 1, "high": 8},

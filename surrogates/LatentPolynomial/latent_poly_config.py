@@ -10,7 +10,8 @@ class LatentPolynomialBaseConfig:
     latent_features: int = 5
     degree: int = 2
     coder_hidden: int = 4
-    coder_layers: list[int] = field(default_factory=lambda: [32, 16, 8])
+    layers_factor: int = 16  # coder_layers is multiplied by this factor
+    # coder_layers: list[int] = field(default_factory=lambda: [32, 16, 8])
     coder_activation: str = "ReLU"
     learning_rate: float = 1e-3
 
