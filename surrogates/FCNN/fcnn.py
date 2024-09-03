@@ -10,11 +10,18 @@ from utils import time_execution, worker_init_fn
 
 
 class FullyConnectedNet(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, num_hidden_layers):
+    def __init__(
+        self,
+        input_size,
+        hidden_size,
+        output_size,
+        num_hidden_layers,
+        activation=nn.ReLU(),
+    ):
         super(FullyConnectedNet, self).__init__()
-        layers = [nn.Linear(input_size, hidden_size), nn.ReLU()]
+        layers = [nn.Linear(input_size, hidden_size), activation]
         for _ in range(num_hidden_layers - 1):
-            layers += [nn.Linear(hidden_size, hidden_size), nn.ReLU()]
+            layers += [nn.Linear(hidden_size, hidden_size), activation]
         layers.append(nn.Linear(hidden_size, output_size))
         self.network = nn.Sequential(*layers)
 
@@ -40,7 +47,7 @@ class FullyConnected(AbstractSurrogateModel):
         device: str | None = None,
         n_chemicals: int = 29,
         n_timesteps: int = 100,
-        config: dict | None = None,
+        config: dict = {},
     ):
         """
         Initialize the FullyConnected model with a configuration.
@@ -55,8 +62,8 @@ class FullyConnected(AbstractSurrogateModel):
         super().__init__(
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
         )
-        config = config if config is not None else {}
-        self.config = FCNNBaseConfig(**config)
+        config = FCNNBaseConfig(**config)
+        self.config = config
         self.device = device
         self.N = n_chemicals
         self.model = FullyConnectedNet(
@@ -64,6 +71,7 @@ class FullyConnected(AbstractSurrogateModel):
             config.hidden_size,
             self.N,
             config.num_hidden_layers,
+            config.activation,
         ).to(device)
 
     def forward(
