@@ -218,7 +218,7 @@ def load_task_list(filepath: str | None) -> list:
         return []
 
 
-def check_training_status(config: dict) -> str:
+def check_training_status(config: dict) -> tuple[str, bool]:
     """
     Check if the training is already completed by looking for a completion marker file.
     If the training is not complete, compare the configurations and ask for a confirmation if there are differences.
