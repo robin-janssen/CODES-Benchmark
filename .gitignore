@@ -19,3 +19,4 @@ lorenzo_data.ipynb
 optuna_runs/models
 optuna_runs/studies
 scripts
+.*

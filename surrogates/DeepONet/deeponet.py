@@ -179,7 +179,7 @@ class MultiONet(OperatorNetwork):
             n_chemicals * self.config.output_factor
         )  # Number of neurons in the last layer
         self.branch_net = BranchNet(
-            n_chemicals - (config.trunk_input_size - 1),  # +1 due to time
+            n_chemicals - (self.config.trunk_input_size - 1),  # +1 due to time
             self.config.hidden_size,
             self.outputs,
             self.config.branch_hidden_layers,
