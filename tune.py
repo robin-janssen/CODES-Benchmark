@@ -2,7 +2,7 @@ import argparse
 
 import optuna
 
-from optuna_runs import create_objective, load_config_from_pyfile
+from optuna_runs import create_objective, load_config_from_pyfile, save_optuna_config
 
 
 def parse_arguments():
@@ -18,7 +18,7 @@ def parse_arguments():
     parser.add_argument(
         "--config",
         type=str,
-        default="osu_latentneuralode.py",
+        default="branca_multionet.py",
         help="The name of the Python config file (e.g., 'config_1.py').",
     )
     return parser.parse_args()
@@ -26,7 +26,7 @@ def parse_arguments():
 
 def run(config, study_name):
     # Save the configuration before starting the study
-    # save_optuna_config(config)
+    save_optuna_config(config, study_name)
     sampler = optuna.samplers.TPESampler(seed=config["seed"])
     study = optuna.create_study(
         study_name=study_name,

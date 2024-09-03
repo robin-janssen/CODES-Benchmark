@@ -27,19 +27,29 @@ def load_config_from_pyfile(pyfile_name):
     return config_module.config
 
 
-def save_optuna_config(config, folder_path="optuna_runs/studies/"):
+def save_optuna_config(config, study_name, folder_path="optuna_runs/studies/"):
     """
     Function to save the Optuna configuration to a YAML file.
 
     Args:
-        config (dict): The configuration dictionary to save.
+        config (dict): The configuration dictionary to be saved.
+        study_name (str): The name of the study.
         folder_path (str): The folder path where the YAML file will be saved.
     """
     # Create directory if it doesn't exist
     os.makedirs(folder_path, exist_ok=True)
 
     # Define the file path
-    file_path = os.path.join(folder_path, f"{config['study_name']}_config.yaml")
+    file_path = os.path.join(folder_path, f"{study_name}_config.yaml")
+
+    # Increase number of the name if file already exists until it doesn't
+    if os.path.exists(file_path):
+        i = 1
+        new_file_path = os.path.join(folder_path, f"{study_name}_{i}_config.yaml")
+        while os.path.exists(new_file_path):
+            i += 1
+            new_file_path = os.path.join(folder_path, f"{study_name}_{i}_config.yaml")
+        file_path = new_file_path
 
     # Save the configuration as a YAML file
     with open(file_path, "w") as file:
