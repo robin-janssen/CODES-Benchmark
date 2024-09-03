@@ -8,6 +8,7 @@
 - [ ] Optuna and final run for all datasets.
 - [ ] Copy over actions and other settings from the SSC Cookiecutter Template
 - [ ] **Add links in the documentation to respective other sections**
+- [ ] Rename main scripts on the website (run_benchmark.py, run_training.py)
 
 ## Refactor
 - [x] Remove the # model.n_timesteps = 100 lines in bench_fcts once new models are trained.
