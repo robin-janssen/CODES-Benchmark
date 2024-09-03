@@ -38,17 +38,141 @@
 <li class="toctree-l1"><a class="reference internal" href="benchmark.html">benchmark module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.check_benchmark"><code class="docutils literal notranslate"><span class="pre">check_benchmark()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.check_surrogate"><code class="docutils literal notranslate"><span class="pre">check_surrogate()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.clean_metrics"><code class="docutils literal notranslate"><span class="pre">clean_metrics()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_MAE"><code class="docutils literal notranslate"><span class="pre">compare_MAE()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_UQ"><code class="docutils literal notranslate"><span class="pre">compare_UQ()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_batchsize"><code class="docutils literal notranslate"><span class="pre">compare_batchsize()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_dynamic_accuracy"><code class="docutils literal notranslate"><span class="pre">compare_dynamic_accuracy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_extrapolation"><code class="docutils literal notranslate"><span class="pre">compare_extrapolation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_inference_time"><code class="docutils literal notranslate"><span class="pre">compare_inference_time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_interpolation"><code class="docutils literal notranslate"><span class="pre">compare_interpolation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_main_losses"><code class="docutils literal notranslate"><span class="pre">compare_main_losses()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_models"><code class="docutils literal notranslate"><span class="pre">compare_models()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_relative_errors"><code class="docutils literal notranslate"><span class="pre">compare_relative_errors()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_sparse"><code class="docutils literal notranslate"><span class="pre">compare_sparse()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.convert_dict_to_scientific_notation"><code class="docutils literal notranslate"><span class="pre">convert_dict_to_scientific_notation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.convert_to_standard_types"><code class="docutils literal notranslate"><span class="pre">convert_to_standard_types()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.count_trainable_parameters"><code class="docutils literal notranslate"><span class="pre">count_trainable_parameters()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.discard_numpy_entries"><code class="docutils literal notranslate"><span class="pre">discard_numpy_entries()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.evaluate_UQ"><code class="docutils literal notranslate"><span class="pre">evaluate_UQ()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.evaluate_accuracy"><code class="docutils literal notranslate"><span class="pre">evaluate_accuracy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.evaluate_batchsize"><code class="docutils literal notranslate"><span class="pre">evaluate_batchsize()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.evaluate_compute"><code class="docutils literal notranslate"><span class="pre">evaluate_compute()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.evaluate_dynamic_accuracy"><code class="docutils literal notranslate"><span class="pre">evaluate_dynamic_accuracy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.evaluate_extrapolation"><code class="docutils literal notranslate"><span class="pre">evaluate_extrapolation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.evaluate_interpolation"><code class="docutils literal notranslate"><span class="pre">evaluate_interpolation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.evaluate_sparse"><code class="docutils literal notranslate"><span class="pre">evaluate_sparse()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.flatten_dict"><code class="docutils literal notranslate"><span class="pre">flatten_dict()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.format_seconds"><code class="docutils literal notranslate"><span class="pre">format_seconds()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.format_time"><code class="docutils literal notranslate"><span class="pre">format_time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.get_custom_palette"><code class="docutils literal notranslate"><span class="pre">get_custom_palette()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.get_model_config"><code class="docutils literal notranslate"><span class="pre">get_model_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.get_required_models_list"><code class="docutils literal notranslate"><span class="pre">get_required_models_list()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.get_surrogate"><code class="docutils literal notranslate"><span class="pre">get_surrogate()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.inference_time_bar_plot"><code class="docutils literal notranslate"><span class="pre">inference_time_bar_plot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.int_ext_sparse"><code class="docutils literal notranslate"><span class="pre">int_ext_sparse()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.load_model"><code class="docutils literal notranslate"><span class="pre">load_model()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.make_comparison_csv"><code class="docutils literal notranslate"><span class="pre">make_comparison_csv()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.measure_memory_footprint"><code class="docutils literal notranslate"><span class="pre">measure_memory_footprint()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_MAE_comparison"><code class="docutils literal notranslate"><span class="pre">plot_MAE_comparison()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_MAE_comparison_train_duration"><code class="docutils literal notranslate"><span class="pre">plot_MAE_comparison_train_duration()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_average_errors_over_time"><code class="docutils literal notranslate"><span class="pre">plot_average_errors_over_time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_average_uncertainty_over_time"><code class="docutils literal notranslate"><span class="pre">plot_average_uncertainty_over_time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_comparative_dynamic_correlation_heatmaps"><code class="docutils literal notranslate"><span class="pre">plot_comparative_dynamic_correlation_heatmaps()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_comparative_error_correlation_heatmaps"><code class="docutils literal notranslate"><span class="pre">plot_comparative_error_correlation_heatmaps()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_dynamic_correlation"><code class="docutils literal notranslate"><span class="pre">plot_dynamic_correlation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_dynamic_correlation_heatmap"><code class="docutils literal notranslate"><span class="pre">plot_dynamic_correlation_heatmap()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_error_correlation_heatmap"><code class="docutils literal notranslate"><span class="pre">plot_error_correlation_heatmap()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_error_distribution_comparative"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_comparative()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_error_distribution_per_chemical"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_per_chemical()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_example_predictions_with_uncertainty"><code class="docutils literal notranslate"><span class="pre">plot_example_predictions_with_uncertainty()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_generalization_error_comparison"><code class="docutils literal notranslate"><span class="pre">plot_generalization_error_comparison()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_generalization_errors"><code class="docutils literal notranslate"><span class="pre">plot_generalization_errors()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_loss_comparison"><code class="docutils literal notranslate"><span class="pre">plot_loss_comparison()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_losses"><code class="docutils literal notranslate"><span class="pre">plot_losses()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_relative_errors"><code class="docutils literal notranslate"><span class="pre">plot_relative_errors()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_relative_errors_over_time"><code class="docutils literal notranslate"><span class="pre">plot_relative_errors_over_time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_surr_losses"><code class="docutils literal notranslate"><span class="pre">plot_surr_losses()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_uncertainty_over_time_comparison"><code class="docutils literal notranslate"><span class="pre">plot_uncertainty_over_time_comparison()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_uncertainty_vs_errors"><code class="docutils literal notranslate"><span class="pre">plot_uncertainty_vs_errors()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.read_yaml_config"><code class="docutils literal notranslate"><span class="pre">read_yaml_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.rel_errors_and_uq"><code class="docutils literal notranslate"><span class="pre">rel_errors_and_uq()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.run_benchmark"><code class="docutils literal notranslate"><span class="pre">run_benchmark()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.save_plot"><code class="docutils literal notranslate"><span class="pre">save_plot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.save_plot_counter"><code class="docutils literal notranslate"><span class="pre">save_plot_counter()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.tabular_comparison"><code class="docutils literal notranslate"><span class="pre">tabular_comparison()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.time_inference"><code class="docutils literal notranslate"><span class="pre">time_inference()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.write_metrics_to_yaml"><code class="docutils literal notranslate"><span class="pre">write_metrics_to_yaml()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="benchmark.html">benchmark module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.check_benchmark"><code class="docutils literal notranslate"><span class="pre">check_benchmark()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.check_surrogate"><code class="docutils literal notranslate"><span class="pre">check_surrogate()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.clean_metrics"><code class="docutils literal notranslate"><span class="pre">clean_metrics()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_MAE"><code class="docutils literal notranslate"><span class="pre">compare_MAE()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_UQ"><code class="docutils literal notranslate"><span class="pre">compare_UQ()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_batchsize"><code class="docutils literal notranslate"><span class="pre">compare_batchsize()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_dynamic_accuracy"><code class="docutils literal notranslate"><span class="pre">compare_dynamic_accuracy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_extrapolation"><code class="docutils literal notranslate"><span class="pre">compare_extrapolation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_inference_time"><code class="docutils literal notranslate"><span class="pre">compare_inference_time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_interpolation"><code class="docutils literal notranslate"><span class="pre">compare_interpolation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_main_losses"><code class="docutils literal notranslate"><span class="pre">compare_main_losses()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_models"><code class="docutils literal notranslate"><span class="pre">compare_models()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_relative_errors"><code class="docutils literal notranslate"><span class="pre">compare_relative_errors()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.compare_sparse"><code class="docutils literal notranslate"><span class="pre">compare_sparse()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.convert_dict_to_scientific_notation"><code class="docutils literal notranslate"><span class="pre">convert_dict_to_scientific_notation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.convert_to_standard_types"><code class="docutils literal notranslate"><span class="pre">convert_to_standard_types()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.count_trainable_parameters"><code class="docutils literal notranslate"><span class="pre">count_trainable_parameters()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.discard_numpy_entries"><code class="docutils literal notranslate"><span class="pre">discard_numpy_entries()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.evaluate_UQ"><code class="docutils literal notranslate"><span class="pre">evaluate_UQ()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.evaluate_accuracy"><code class="docutils literal notranslate"><span class="pre">evaluate_accuracy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.evaluate_batchsize"><code class="docutils literal notranslate"><span class="pre">evaluate_batchsize()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.evaluate_compute"><code class="docutils literal notranslate"><span class="pre">evaluate_compute()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.evaluate_dynamic_accuracy"><code class="docutils literal notranslate"><span class="pre">evaluate_dynamic_accuracy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.evaluate_extrapolation"><code class="docutils literal notranslate"><span class="pre">evaluate_extrapolation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.evaluate_interpolation"><code class="docutils literal notranslate"><span class="pre">evaluate_interpolation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.evaluate_sparse"><code class="docutils literal notranslate"><span class="pre">evaluate_sparse()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.flatten_dict"><code class="docutils literal notranslate"><span class="pre">flatten_dict()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.format_seconds"><code class="docutils literal notranslate"><span class="pre">format_seconds()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.format_time"><code class="docutils literal notranslate"><span class="pre">format_time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.get_custom_palette"><code class="docutils literal notranslate"><span class="pre">get_custom_palette()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.get_model_config"><code class="docutils literal notranslate"><span class="pre">get_model_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.get_required_models_list"><code class="docutils literal notranslate"><span class="pre">get_required_models_list()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.get_surrogate"><code class="docutils literal notranslate"><span class="pre">get_surrogate()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.inference_time_bar_plot"><code class="docutils literal notranslate"><span class="pre">inference_time_bar_plot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.int_ext_sparse"><code class="docutils literal notranslate"><span class="pre">int_ext_sparse()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.load_model"><code class="docutils literal notranslate"><span class="pre">load_model()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.make_comparison_csv"><code class="docutils literal notranslate"><span class="pre">make_comparison_csv()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.measure_memory_footprint"><code class="docutils literal notranslate"><span class="pre">measure_memory_footprint()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_MAE_comparison"><code class="docutils literal notranslate"><span class="pre">plot_MAE_comparison()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_MAE_comparison_train_duration"><code class="docutils literal notranslate"><span class="pre">plot_MAE_comparison_train_duration()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_average_errors_over_time"><code class="docutils literal notranslate"><span class="pre">plot_average_errors_over_time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_average_uncertainty_over_time"><code class="docutils literal notranslate"><span class="pre">plot_average_uncertainty_over_time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_comparative_dynamic_correlation_heatmaps"><code class="docutils literal notranslate"><span class="pre">plot_comparative_dynamic_correlation_heatmaps()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_comparative_error_correlation_heatmaps"><code class="docutils literal notranslate"><span class="pre">plot_comparative_error_correlation_heatmaps()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_dynamic_correlation"><code class="docutils literal notranslate"><span class="pre">plot_dynamic_correlation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_dynamic_correlation_heatmap"><code class="docutils literal notranslate"><span class="pre">plot_dynamic_correlation_heatmap()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_error_correlation_heatmap"><code class="docutils literal notranslate"><span class="pre">plot_error_correlation_heatmap()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_error_distribution_comparative"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_comparative()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_error_distribution_per_chemical"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_per_chemical()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_example_predictions_with_uncertainty"><code class="docutils literal notranslate"><span class="pre">plot_example_predictions_with_uncertainty()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_generalization_error_comparison"><code class="docutils literal notranslate"><span class="pre">plot_generalization_error_comparison()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_generalization_errors"><code class="docutils literal notranslate"><span class="pre">plot_generalization_errors()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_loss_comparison"><code class="docutils literal notranslate"><span class="pre">plot_loss_comparison()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_losses"><code class="docutils literal notranslate"><span class="pre">plot_losses()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_relative_errors"><code class="docutils literal notranslate"><span class="pre">plot_relative_errors()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_relative_errors_over_time"><code class="docutils literal notranslate"><span class="pre">plot_relative_errors_over_time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_surr_losses"><code class="docutils literal notranslate"><span class="pre">plot_surr_losses()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_uncertainty_over_time_comparison"><code class="docutils literal notranslate"><span class="pre">plot_uncertainty_over_time_comparison()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.plot_uncertainty_vs_errors"><code class="docutils literal notranslate"><span class="pre">plot_uncertainty_vs_errors()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.read_yaml_config"><code class="docutils literal notranslate"><span class="pre">read_yaml_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.rel_errors_and_uq"><code class="docutils literal notranslate"><span class="pre">rel_errors_and_uq()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.run_benchmark"><code class="docutils literal notranslate"><span class="pre">run_benchmark()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.save_plot"><code class="docutils literal notranslate"><span class="pre">save_plot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.save_plot_counter"><code class="docutils literal notranslate"><span class="pre">save_plot_counter()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.tabular_comparison"><code class="docutils literal notranslate"><span class="pre">tabular_comparison()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.time_inference"><code class="docutils literal notranslate"><span class="pre">time_inference()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html#benchmark.write_metrics_to_yaml"><code class="docutils literal notranslate"><span class="pre">write_metrics_to_yaml()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data.html">data package</a><ul>
@@ -67,7 +191,9 @@
 <li class="toctree-l3"><a class="reference internal" href="data.html#data.check_and_load_data"><code class="docutils literal notranslate"><span class="pre">check_and_load_data()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="data.html#data.create_dataset"><code class="docutils literal notranslate"><span class="pre">create_dataset()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="data.html#data.create_hdf5_dataset"><code class="docutils literal notranslate"><span class="pre">create_hdf5_dataset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#data.download_data"><code class="docutils literal notranslate"><span class="pre">download_data()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="data.html#data.get_data_subset"><code class="docutils literal notranslate"><span class="pre">get_data_subset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#data.normalize_data"><code class="docutils literal notranslate"><span class="pre">normalize_data()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -129,6 +255,126 @@
 <li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.AbstractSurrogateModel.setup_progress_bar"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.setup_progress_bar()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="surrogates.html#surrogates.BranchNet"><code class="docutils literal notranslate"><span class="pre">BranchNet</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.BranchNet.forward"><code class="docutils literal notranslate"><span class="pre">BranchNet.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="surrogates.html#surrogates.ChemDataset"><code class="docutils literal notranslate"><span class="pre">ChemDataset</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="surrogates.html#surrogates.Decoder"><code class="docutils literal notranslate"><span class="pre">Decoder</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Decoder.out_features"><code class="docutils literal notranslate"><span class="pre">Decoder.out_features</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Decoder.latent_features"><code class="docutils literal notranslate"><span class="pre">Decoder.latent_features</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Decoder.width_list"><code class="docutils literal notranslate"><span class="pre">Decoder.width_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Decoder.activation"><code class="docutils literal notranslate"><span class="pre">Decoder.activation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Decoder.mlp"><code class="docutils literal notranslate"><span class="pre">Decoder.mlp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Decoder.forward"><code class="docutils literal notranslate"><span class="pre">Decoder.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id0"><code class="docutils literal notranslate"><span class="pre">Decoder.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="surrogates.html#surrogates.Encoder"><code class="docutils literal notranslate"><span class="pre">Encoder</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Encoder.in_features"><code class="docutils literal notranslate"><span class="pre">Encoder.in_features</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Encoder.latent_features"><code class="docutils literal notranslate"><span class="pre">Encoder.latent_features</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Encoder.n_hidden"><code class="docutils literal notranslate"><span class="pre">Encoder.n_hidden</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Encoder.width_list"><code class="docutils literal notranslate"><span class="pre">Encoder.width_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Encoder.activation"><code class="docutils literal notranslate"><span class="pre">Encoder.activation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Encoder.mlp"><code class="docutils literal notranslate"><span class="pre">Encoder.mlp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Encoder.forward"><code class="docutils literal notranslate"><span class="pre">Encoder.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id1"><code class="docutils literal notranslate"><span class="pre">Encoder.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="surrogates.html#surrogates.FullyConnected"><code class="docutils literal notranslate"><span class="pre">FullyConnected</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.FullyConnected.create_dataloader"><code class="docutils literal notranslate"><span class="pre">FullyConnected.create_dataloader()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.FullyConnected.epoch"><code class="docutils literal notranslate"><span class="pre">FullyConnected.epoch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.FullyConnected.fit"><code class="docutils literal notranslate"><span class="pre">FullyConnected.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.FullyConnected.forward"><code class="docutils literal notranslate"><span class="pre">FullyConnected.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.FullyConnected.prepare_data"><code class="docutils literal notranslate"><span class="pre">FullyConnected.prepare_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.FullyConnected.setup_optimizer_and_scheduler"><code class="docutils literal notranslate"><span class="pre">FullyConnected.setup_optimizer_and_scheduler()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="surrogates.html#surrogates.FullyConnectedNet"><code class="docutils literal notranslate"><span class="pre">FullyConnectedNet</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.FullyConnectedNet.forward"><code class="docutils literal notranslate"><span class="pre">FullyConnectedNet.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="surrogates.html#surrogates.LatentNeuralODE"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.LatentNeuralODE.model"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.LatentNeuralODE.config"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.LatentNeuralODE.forward"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.LatentNeuralODE.fit"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id2"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id3"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.LatentNeuralODE.prepare_data"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.prepare_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="surrogates.html#surrogates.LatentPoly"><code class="docutils literal notranslate"><span class="pre">LatentPoly</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.LatentPoly.config"><code class="docutils literal notranslate"><span class="pre">LatentPoly.config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.LatentPoly.model"><code class="docutils literal notranslate"><span class="pre">LatentPoly.model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.LatentPoly.device"><code class="docutils literal notranslate"><span class="pre">LatentPoly.device</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.LatentPoly.forward"><code class="docutils literal notranslate"><span class="pre">LatentPoly.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.LatentPoly.prepare_data"><code class="docutils literal notranslate"><span class="pre">LatentPoly.prepare_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.LatentPoly.fit"><code class="docutils literal notranslate"><span class="pre">LatentPoly.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id4"><code class="docutils literal notranslate"><span class="pre">LatentPoly.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id5"><code class="docutils literal notranslate"><span class="pre">LatentPoly.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id6"><code class="docutils literal notranslate"><span class="pre">LatentPoly.prepare_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="surrogates.html#surrogates.ModelWrapper"><code class="docutils literal notranslate"><span class="pre">ModelWrapper</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ModelWrapper.config"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ModelWrapper.loss_weights"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.loss_weights</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ModelWrapper.encoder"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.encoder</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ModelWrapper.decoder"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.decoder</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ModelWrapper.ode"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.ode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ModelWrapper.forward"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ModelWrapper.renormalize_loss_weights"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.renormalize_loss_weights()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ModelWrapper.total_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.total_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ModelWrapper.identity_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.identity_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ModelWrapper.l2_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.l2_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ModelWrapper.deriv_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ModelWrapper.deriv2_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv2_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ModelWrapper.deriv"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ModelWrapper.deriv2"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv2()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id7"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id8"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv2()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id9"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv2_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id10"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id11"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id12"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.identity_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id13"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.l2_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id14"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.renormalize_loss_weights()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id15"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.total_loss()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="surrogates.html#surrogates.MultiONet"><code class="docutils literal notranslate"><span class="pre">MultiONet</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.MultiONet.create_dataloader"><code class="docutils literal notranslate"><span class="pre">MultiONet.create_dataloader()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.MultiONet.epoch"><code class="docutils literal notranslate"><span class="pre">MultiONet.epoch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.MultiONet.fit"><code class="docutils literal notranslate"><span class="pre">MultiONet.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.MultiONet.forward"><code class="docutils literal notranslate"><span class="pre">MultiONet.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.MultiONet.prepare_data"><code class="docutils literal notranslate"><span class="pre">MultiONet.prepare_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.MultiONet.setup_criterion"><code class="docutils literal notranslate"><span class="pre">MultiONet.setup_criterion()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.MultiONet.setup_optimizer_and_scheduler"><code class="docutils literal notranslate"><span class="pre">MultiONet.setup_optimizer_and_scheduler()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="surrogates.html#surrogates.ODE"><code class="docutils literal notranslate"><span class="pre">ODE</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ODE.tanh_reg"><code class="docutils literal notranslate"><span class="pre">ODE.tanh_reg</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ODE.reg_factor"><code class="docutils literal notranslate"><span class="pre">ODE.reg_factor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ODE.activation"><code class="docutils literal notranslate"><span class="pre">ODE.activation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ODE.mlp"><code class="docutils literal notranslate"><span class="pre">ODE.mlp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.ODE.forward"><code class="docutils literal notranslate"><span class="pre">ODE.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id16"><code class="docutils literal notranslate"><span class="pre">ODE.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="surrogates.html#surrogates.Polynomial"><code class="docutils literal notranslate"><span class="pre">Polynomial</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Polynomial.degree"><code class="docutils literal notranslate"><span class="pre">Polynomial.degree</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Polynomial.dimension"><code class="docutils literal notranslate"><span class="pre">Polynomial.dimension</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Polynomial.coef"><code class="docutils literal notranslate"><span class="pre">Polynomial.coef</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Polynomial.t_matrix"><code class="docutils literal notranslate"><span class="pre">Polynomial.t_matrix</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Polynomial.forward"><code class="docutils literal notranslate"><span class="pre">Polynomial.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.Polynomial._prepare_t"><code class="docutils literal notranslate"><span class="pre">Polynomial._prepare_t()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#id17"><code class="docutils literal notranslate"><span class="pre">Polynomial.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="surrogates.html#surrogates.TrunkNet"><code class="docutils literal notranslate"><span class="pre">TrunkNet</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="surrogates.html#surrogates.TrunkNet.forward"><code class="docutils literal notranslate"><span class="pre">TrunkNet.forward()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -138,6 +384,7 @@
 <li class="toctree-l2"><a class="reference internal" href="train.html#train.parallel_training"><code class="docutils literal notranslate"><span class="pre">parallel_training()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="train.html#train.sequential_training"><code class="docutils literal notranslate"><span class="pre">sequential_training()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="train.html#train.train_and_save_model"><code class="docutils literal notranslate"><span class="pre">train_and_save_model()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="train.html#train.worker"><code class="docutils literal notranslate"><span class="pre">worker()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="train.html">train module</a><ul>
@@ -145,6 +392,7 @@
 <li class="toctree-l2"><a class="reference internal" href="train.html#train.parallel_training"><code class="docutils literal notranslate"><span class="pre">parallel_training()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="train.html#train.sequential_training"><code class="docutils literal notranslate"><span class="pre">sequential_training()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="train.html#train.train_and_save_model"><code class="docutils literal notranslate"><span class="pre">train_and_save_model()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="train.html#train.worker"><code class="docutils literal notranslate"><span class="pre">worker()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="utils.html">utils package</a><ul>
@@ -213,14 +461,14 @@
 <script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="benchmark.html">benchmark module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="benchmark.html">benchmark module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data.html">data package</a></li>
 <li class="toctree-l1"><a class="reference internal" href="generate_simple_ode_data.html">generate_simple_ode_data module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="make_new_dataset.html">make_new_dataset module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="surrogates.html">surrogates package</a></li>
 <li class="toctree-l1"><a class="reference internal" href="train.html">train module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="train.html">train module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utils.html">utils package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="run_training.html">run_training module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="run_benchmark.html">run_benchmark module</a></li>
 </ul>
 
 <div class="relations">

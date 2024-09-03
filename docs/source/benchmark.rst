@@ -1,5 +1,5 @@
-benchmark module
-================
+Benchmark
+=========
 
 .. automodule:: benchmark
    :members:

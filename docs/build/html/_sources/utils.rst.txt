@@ -1,5 +1,5 @@
-utils package
-=============
+General Utilities
+=================
 
 Submodules
 ----------

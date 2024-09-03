@@ -1,5 +1,5 @@
-data package
-============
+Data Utilities
+==============
 
 Submodules
 ----------

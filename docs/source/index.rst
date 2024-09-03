@@ -11,10 +11,12 @@ CODES Benchmark documentation
 .. toctree::
    :maxdepth: 4
 
-   benchmark
-   data
-   generate_simple_ode_data
-   make_new_dataset
+   run_training
+   run_benchmark
    surrogates
    train
+   benchmark
+   data
+   data_gen
    utils
+   

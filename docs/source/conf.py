@@ -43,3 +43,4 @@ html_static_path = ['_static']
 #
 # To generate the html files, run the following command:
 # sphinx-build -M html source build
+# sphinx-build -M html /export/data/isulzer/DON-vs-NODE/docs/source /export/data/isulzer/DON-vs-NODE/docs/build

@@ -1,5 +1,5 @@
-train module
-============
+Training Utilities
+==================
 
 .. automodule:: train
    :members:

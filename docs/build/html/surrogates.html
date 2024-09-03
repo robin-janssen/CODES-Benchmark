@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>surrogates package &#8212; CODES Benchmark 09.09.2024 documentation</title>
+    <title>Surrogates &#8212; CODES Benchmark 09.09.2024 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
     <link rel="stylesheet" type="text/css" href="_static/basic.css?v=c058f7c8" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
@@ -14,8 +14,8 @@
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="train module" href="train.html" />
-    <link rel="prev" title="make_new_dataset module" href="make_new_dataset.html" />
+    <link rel="next" title="Training Utilities" href="train.html" />
+    <link rel="prev" title="Execute Benchmark" href="run_benchmark.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -33,8 +33,8 @@
 
           <div class="body" role="main">
             
-  <section id="surrogates-package">
-<h1>surrogates package<a class="headerlink" href="#surrogates-package" title="Link to this heading">¶</a></h1>
+  <section id="surrogates">
+<h1>Surrogates<a class="headerlink" href="#surrogates" title="Link to this heading">¶</a></h1>
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
 </section>
@@ -782,6 +782,1245 @@ return the DataLoader objects for the training, testing, and validation data.</p
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="surrogates.BranchNet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surrogates.</span></span><span class="sig-name descname"><span class="pre">BranchNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_hidden_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/DeepONet/deeponet.html#BranchNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.BranchNet" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Class that defines the branch network for the MultiONet model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_size</strong> (<em>int</em>) – The input size for the network.</p></li>
+<li><p><strong>hidden_size</strong> (<em>int</em>) – The number of hidden units in each layer.</p></li>
+<li><p><strong>output_size</strong> (<em>int</em>) – The number of output units.</p></li>
+<li><p><strong>num_hidden_layers</strong> (<em>int</em>) – The number of hidden layers.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.BranchNet.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/surrogates/DeepONet/deeponet.html#BranchNet.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.BranchNet.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Forward pass for the branch network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – The input tensor.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="surrogates.ChemDataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surrogates.</span></span><span class="sig-name descname"><span class="pre">ChemDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/utilities.html#ChemDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.ChemDataset" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code></p>
+<p>Dataset class for the latent neural ODE model. The data is
+a 3D tensor with dimensions (batch, timesteps, species). The
+dataset also returns the timesteps for the data, as they are
+requred for the integration.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="surrogates.Decoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surrogates.</span></span><span class="sig-name descname"><span class="pre">Decoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out_features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latent_features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">ReLU()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#Decoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.Decoder" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>The decoder neural network. The decoder is a simple feedforward neural network
+the output of which is of a higher dimension than the input. Acts as the approximate
+inverse of the encoder.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.Decoder.out_features">
+<span class="sig-name descname"><span class="pre">out_features</span></span><a class="headerlink" href="#surrogates.Decoder.out_features" title="Link to this definition">¶</a></dt>
+<dd><p>The number of output features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.Decoder.latent_features">
+<span class="sig-name descname"><span class="pre">latent_features</span></span><a class="headerlink" href="#surrogates.Decoder.latent_features" title="Link to this definition">¶</a></dt>
+<dd><p>The number of latent features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.Decoder.width_list">
+<span class="sig-name descname"><span class="pre">width_list</span></span><a class="headerlink" href="#surrogates.Decoder.width_list" title="Link to this definition">¶</a></dt>
+<dd><p>The width of the hidden layers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.Decoder.activation">
+<span class="sig-name descname"><span class="pre">activation</span></span><a class="headerlink" href="#surrogates.Decoder.activation" title="Link to this definition">¶</a></dt>
+<dd><p>The activation function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Module</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.Decoder.mlp">
+<span class="sig-name descname"><span class="pre">mlp</span></span><a class="headerlink" href="#surrogates.Decoder.mlp" title="Link to this definition">¶</a></dt>
+<dd><p>The neural network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Sequential</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.Decoder.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#Decoder.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.Decoder.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Perform a forward pass through the neural network. (“Decode” the input)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#Decoder.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<dd><p>Perform a forward pass through the neural network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – The input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The output of the neural network. (“Decoded” input)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="surrogates.Encoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surrogates.</span></span><span class="sig-name descname"><span class="pre">Encoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latent_features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">ReLU()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#Encoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.Encoder" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>The encoder neural network. The encoder is a simple feedforward neural network
+the output of which is of a lower dimension than the input.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.Encoder.in_features">
+<span class="sig-name descname"><span class="pre">in_features</span></span><a class="headerlink" href="#surrogates.Encoder.in_features" title="Link to this definition">¶</a></dt>
+<dd><p>The number of input features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.Encoder.latent_features">
+<span class="sig-name descname"><span class="pre">latent_features</span></span><a class="headerlink" href="#surrogates.Encoder.latent_features" title="Link to this definition">¶</a></dt>
+<dd><p>The number of latent features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.Encoder.n_hidden">
+<span class="sig-name descname"><span class="pre">n_hidden</span></span><a class="headerlink" href="#surrogates.Encoder.n_hidden" title="Link to this definition">¶</a></dt>
+<dd><p>The number of hidden layers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.Encoder.width_list">
+<span class="sig-name descname"><span class="pre">width_list</span></span><a class="headerlink" href="#surrogates.Encoder.width_list" title="Link to this definition">¶</a></dt>
+<dd><p>The width of the hidden layers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.Encoder.activation">
+<span class="sig-name descname"><span class="pre">activation</span></span><a class="headerlink" href="#surrogates.Encoder.activation" title="Link to this definition">¶</a></dt>
+<dd><p>The activation function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Module</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.Encoder.mlp">
+<span class="sig-name descname"><span class="pre">mlp</span></span><a class="headerlink" href="#surrogates.Encoder.mlp" title="Link to this definition">¶</a></dt>
+<dd><p>The neural network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Sequential</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.Encoder.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#Encoder.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.Encoder.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Perform a forward pass through the neural network. (“Encode” the input)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#Encoder.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
+<dd><p>Perform a forward pass through the neural network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – The input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The output of the neural network. (“Encoded” input)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="surrogates.FullyConnected">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surrogates.</span></span><span class="sig-name descname"><span class="pre">FullyConnected</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chemicals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/FCNN/fcnn.html#FullyConnected"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.FullyConnected" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel" title="surrogates.surrogates.AbstractSurrogateModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractSurrogateModel</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.FullyConnected.create_dataloader">
+<span class="sig-name descname"><span class="pre">create_dataloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataLoader</span></span></span><a class="reference internal" href="_modules/surrogates/FCNN/fcnn.html#FullyConnected.create_dataloader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.FullyConnected.create_dataloader" title="Link to this definition">¶</a></dt>
+<dd><p>Create a DataLoader from a dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<em>np.ndarray</em>) – The dataset.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) – The batch size.</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to shuffle the data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The DataLoader object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataLoader</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.FullyConnected.epoch">
+<span class="sig-name descname"><span class="pre">epoch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">criterion</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optimizer</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/surrogates/FCNN/fcnn.html#FullyConnected.epoch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.FullyConnected.epoch" title="Link to this definition">¶</a></dt>
+<dd><p>Perform one training epoch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the training data.</p></li>
+<li><p><strong>criterion</strong> (<em>nn.Module</em>) – The loss function.</p></li>
+<li><p><strong>optimizer</strong> (<em>torch.optim.Optimizer</em>) – The optimizer.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The total loss for the training step.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.FullyConnected.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Training</span> <span class="pre">FullyConnected'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/surrogates/FCNN/fcnn.html#FullyConnected.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.FullyConnected.fit" title="Link to this definition">¶</a></dt>
+<dd><p>Train the FullyConnected model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the training data.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
+<li><p><strong>epochs</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of epochs to train the model.</p></li>
+<li><p><strong>position</strong> (<em>int</em>) – The position of the progress bar.</p></li>
+<li><p><strong>description</strong> (<em>str</em>) – The description for the progress bar.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.FullyConnected.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/surrogates/FCNN/fcnn.html#FullyConnected.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.FullyConnected.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Forward pass for the FullyConnected model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inputs</strong> (<em>tuple</em><em>[</em><em>torch.Tensor</em><em>, </em><em>torch.Tensor</em><em>]</em>) – The input tensor and the target tensor.</p></li>
+<li><p><strong>Note</strong> – The targets are not used in the forward pass but are included for compatibility with the DataLoader.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – The timesteps array.</p></li>
+<li><p><strong>Note</strong> – The timesteps are not used in the forward pass but are included for compatibility with the benchmarking code.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Output tensor of the model.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.FullyConnected.prepare_data">
+<span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoader</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/surrogates/FCNN/fcnn.html#FullyConnected.prepare_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.FullyConnected.prepare_data" title="Link to this definition">¶</a></dt>
+<dd><p>Prepare the data for the predict or fit methods.
+Note: All datasets must have shape (n_samples, n_timesteps, n_chemicals).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset_train</strong> (<em>np.ndarray</em>) – The training data.</p></li>
+<li><p><strong>dataset_test</strong> (<em>np.ndarray</em>) – The test data.</p></li>
+<li><p><strong>dataset_val</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – The validation data.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The batch size.</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to shuffle the data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The training, test, and validation DataLoaders.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.FullyConnected.setup_optimizer_and_scheduler">
+<span class="sig-name descname"><span class="pre">setup_optimizer_and_scheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Optimizer</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_LRScheduler</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/surrogates/FCNN/fcnn.html#FullyConnected.setup_optimizer_and_scheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.FullyConnected.setup_optimizer_and_scheduler" title="Link to this definition">¶</a></dt>
+<dd><p>Utility function to set up the optimizer and scheduler for training.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>epochs</strong> (<em>int</em>) – The number of epochs to train the model.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The optimizer and scheduler.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="surrogates.FullyConnectedNet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surrogates.</span></span><span class="sig-name descname"><span class="pre">FullyConnectedNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_hidden_layers</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/FCNN/fcnn.html#FullyConnectedNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.FullyConnectedNet" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.FullyConnectedNet.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/surrogates/FCNN/fcnn.html#FullyConnectedNet.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.FullyConnectedNet.forward" title="Link to this definition">¶</a></dt>
+<dd><p>One forward pass through the network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inputs</strong> (<em>torch.Tensor</em>) – The input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The output tensor of the model.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="surrogates.LatentNeuralODE">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surrogates.</span></span><span class="sig-name descname"><span class="pre">LatentNeuralODE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chemicals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#LatentNeuralODE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.LatentNeuralODE" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel" title="surrogates.surrogates.AbstractSurrogateModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractSurrogateModel</span></code></a></p>
+<p>LatentNeuralODE is a class that represents a latent neural ordinary differential
+equation model. It includes an encoder, decoder, and neural ODE. The integrator is
+implemented by the torchode framework.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.LatentNeuralODE.model">
+<span class="sig-name descname"><span class="pre">model</span></span><a class="headerlink" href="#surrogates.LatentNeuralODE.model" title="Link to this definition">¶</a></dt>
+<dd><p>The neural network model wrapped in a ModelWrapper object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#surrogates.ModelWrapper" title="surrogates.ModelWrapper">ModelWrapper</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.LatentNeuralODE.config">
+<span class="sig-name descname"><span class="pre">config</span></span><a class="headerlink" href="#surrogates.LatentNeuralODE.config" title="Link to this definition">¶</a></dt>
+<dd><p>The configuration for the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>LatentNeuralODEBaseConfig</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.LatentNeuralODE.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#LatentNeuralODE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.LatentNeuralODE.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Takes whatever the dataloader outputs, performs a forward pass
+through the model and returns the predictions with the respective targets.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">prepare_data(dataset_train,</span> <span class="pre">dataset_test,</span> <span class="pre">dataset_val,</span> <span class="pre">timesteps,</span> <span class="pre">batch_size,</span></span></dt>
+<dd><p>shuffle): Prepares the data for training by creating a DataLoader object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.LatentNeuralODE.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#LatentNeuralODE.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.LatentNeuralODE.fit" title="Link to this definition">¶</a></dt>
+<dd><p>Fits the model to
+the training data. Sets the train_loss and test_loss attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Training</span> <span class="pre">LatentNeuralODE'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#LatentNeuralODE.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition">¶</a></dt>
+<dd><p>Fits the model to the training data. Sets the train_loss and test_loss attributes.
+After 10 epochs, the loss weights are renormalized to scale the individual loss terms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_loader</strong> (<em>DataLoader</em>) – The data loader for the training data.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The data loader for the test data.</p></li>
+<li><p><strong>epochs</strong> (<em>int</em><em> | </em><em>None</em>) – The number of epochs to train the model. If None, uses the value from the config.</p></li>
+<li><p><strong>position</strong> (<em>int</em>) – The position of the progress bar.</p></li>
+<li><p><strong>description</strong> (<em>str</em>) – The description for the progress bar.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#LatentNeuralODE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition">¶</a></dt>
+<dd><p>Takes whatever the dataloader outputs, performs a forward pass through the
+model and returns the predictions with the respective targets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inputs</strong> (<em>Any</em>) – the data from the dataloader</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>predictions and targets</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[torch.Tensor, torch.Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.LatentNeuralODE.prepare_data">
+<span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoader</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoader</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#LatentNeuralODE.prepare_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.LatentNeuralODE.prepare_data" title="Link to this definition">¶</a></dt>
+<dd><p>Prepares the data for training by creating a DataLoader object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset_train</strong> (<em>np.ndarray</em>) – The training dataset.</p></li>
+<li><p><strong>dataset_test</strong> (<em>np.ndarray</em>) – The test dataset.</p></li>
+<li><p><strong>dataset_val</strong> (<em>np.ndarray</em>) – The validation dataset.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The array of timesteps.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) – The batch size for the DataLoader.</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em>) – Whether to shuffle the data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The DataLoader object containing the prepared data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataLoader</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="surrogates.LatentPoly">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surrogates.</span></span><span class="sig-name descname"><span class="pre">LatentPoly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chemicals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentPolynomial/latent_poly.html#LatentPoly"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.LatentPoly" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#surrogates.surrogates.AbstractSurrogateModel" title="surrogates.surrogates.AbstractSurrogateModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractSurrogateModel</span></code></a></p>
+<p>LatentPoly class for training a polynomial model on latent space trajectories.
+Includes an Encoder, Decoder and learnable Polynomial.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.LatentPoly.config">
+<span class="sig-name descname"><span class="pre">config</span></span><a class="headerlink" href="#surrogates.LatentPoly.config" title="Link to this definition">¶</a></dt>
+<dd><p>The configuration for the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>LatentPolynomialBaseConfig</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.LatentPoly.model">
+<span class="sig-name descname"><span class="pre">model</span></span><a class="headerlink" href="#surrogates.LatentPoly.model" title="Link to this definition">¶</a></dt>
+<dd><p>The model for the polynomial.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PolynomialModelWrapper</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.LatentPoly.device">
+<span class="sig-name descname"><span class="pre">device</span></span><a class="headerlink" href="#surrogates.LatentPoly.device" title="Link to this definition">¶</a></dt>
+<dd><p>The device to use for training.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.LatentPoly.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentPolynomial/latent_poly.html#LatentPoly.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.LatentPoly.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Perform a forward pass through the model.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.LatentPoly.prepare_data">
+<span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentPolynomial/latent_poly.html#LatentPoly.prepare_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.LatentPoly.prepare_data" title="Link to this definition">¶</a></dt>
+<dd><p>Prepares the data for training by creating a DataLoader object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.LatentPoly.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentPolynomial/latent_poly.html#LatentPoly.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.LatentPoly.fit" title="Link to this definition">¶</a></dt>
+<dd><p>Fits the model to the training data. Sets the train_loss and test_loss attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Training</span> <span class="pre">LatentPoly'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/surrogates/LatentPolynomial/latent_poly.html#LatentPoly.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition">¶</a></dt>
+<dd><p>Fits the model to the training data. Sets the train_loss and test_loss attributes.
+After 10 epochs, the loss weights are renormalized to scale the individual loss terms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_loader</strong> (<em>DataLoader</em>) – The data loader for the training data.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The data loader for the test data.</p></li>
+<li><p><strong>epochs</strong> (<em>int</em><em> | </em><em>None</em>) – The number of epochs to train the model. If None, uses the value from the config.</p></li>
+<li><p><strong>position</strong> (<em>int</em>) – The position of the progress bar.</p></li>
+<li><p><strong>description</strong> (<em>str</em>) – The description for the progress bar.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/surrogates/LatentPolynomial/latent_poly.html#LatentPoly.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition">¶</a></dt>
+<dd><p>Perform a forward pass through the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inputs</strong> (<em>torch.Tensor</em>) – The input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>predictions and targets</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[torch.Tensor, torch.Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoader</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoader</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/surrogates/LatentPolynomial/latent_poly.html#LatentPoly.prepare_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition">¶</a></dt>
+<dd><p>Prepares the data for training by creating a DataLoader object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<em>np.ndarray</em>) – The input dataset.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps for the dataset.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em><em> | </em><em>None</em>) – The batch size for the DataLoader. If None, the entire dataset is loaded as a single batch.</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em>) – Whether to shuffle the data during training.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The DataLoader object containing the prepared data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataLoader</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="surrogates.ModelWrapper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surrogates.</span></span><span class="sig-name descname"><span class="pre">ModelWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chemicals</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.ModelWrapper" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>This class wraps the encoder, decoder and ODE term into a single model. It also
+provides the integration of the ODE term and the loss calculation.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.ModelWrapper.config">
+<span class="sig-name descname"><span class="pre">config</span></span><a class="headerlink" href="#surrogates.ModelWrapper.config" title="Link to this definition">¶</a></dt>
+<dd><p>The configuration for the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>LatentNeuralODEBaseConfig</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.ModelWrapper.loss_weights">
+<span class="sig-name descname"><span class="pre">loss_weights</span></span><a class="headerlink" href="#surrogates.ModelWrapper.loss_weights" title="Link to this definition">¶</a></dt>
+<dd><p>The weights for the loss terms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.ModelWrapper.encoder">
+<span class="sig-name descname"><span class="pre">encoder</span></span><a class="headerlink" href="#surrogates.ModelWrapper.encoder" title="Link to this definition">¶</a></dt>
+<dd><p>The encoder neural network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#surrogates.Encoder" title="surrogates.Encoder">Encoder</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.ModelWrapper.decoder">
+<span class="sig-name descname"><span class="pre">decoder</span></span><a class="headerlink" href="#surrogates.ModelWrapper.decoder" title="Link to this definition">¶</a></dt>
+<dd><p>The decoder neural network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#surrogates.Decoder" title="surrogates.Decoder">Decoder</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.ModelWrapper.ode">
+<span class="sig-name descname"><span class="pre">ode</span></span><a class="headerlink" href="#surrogates.ModelWrapper.ode" title="Link to this definition">¶</a></dt>
+<dd><p>The neural ODE term.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#surrogates.ODE" title="surrogates.ODE">ODE</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.ModelWrapper.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_range</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.ModelWrapper.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Performs a forward pass through the model.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.ModelWrapper.renormalize_loss_weights">
+<span class="sig-name descname"><span class="pre">renormalize_loss_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.renormalize_loss_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.ModelWrapper.renormalize_loss_weights" title="Link to this definition">¶</a></dt>
+<dd><p>Renormalizes the loss weights.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.ModelWrapper.total_loss">
+<span class="sig-name descname"><span class="pre">total_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.total_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.ModelWrapper.total_loss" title="Link to this definition">¶</a></dt>
+<dd><p>Calculates the total loss.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.ModelWrapper.identity_loss">
+<span class="sig-name descname"><span class="pre">identity_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.identity_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.ModelWrapper.identity_loss" title="Link to this definition">¶</a></dt>
+<dd><p>Calculates the identity loss (encoder -&gt; decoder).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.ModelWrapper.l2_loss">
+<span class="sig-name descname"><span class="pre">l2_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.l2_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.ModelWrapper.l2_loss" title="Link to this definition">¶</a></dt>
+<dd><p>Calculates the L2 loss.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.ModelWrapper.deriv_loss">
+<span class="sig-name descname"><span class="pre">deriv_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.deriv_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.ModelWrapper.deriv_loss" title="Link to this definition">¶</a></dt>
+<dd><p>Calculates the derivative loss.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.ModelWrapper.deriv2_loss">
+<span class="sig-name descname"><span class="pre">deriv2_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.deriv2_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.ModelWrapper.deriv2_loss" title="Link to this definition">¶</a></dt>
+<dd><p>Calculates the second derivative loss.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.ModelWrapper.deriv">
+<span class="sig-name descname"><span class="pre">deriv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.deriv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.ModelWrapper.deriv" title="Link to this definition">¶</a></dt>
+<dd><p>Calculates the first derivative.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.ModelWrapper.deriv2">
+<span class="sig-name descname"><span class="pre">deriv2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.deriv2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.ModelWrapper.deriv2" title="Link to this definition">¶</a></dt>
+<dd><p>Calculates the second derivative.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">deriv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.deriv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate the numerical derivative.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – The input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The numerical derivative.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">deriv2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.deriv2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate the numerical second derivative.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – The input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The numerical second derivative.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id9">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">deriv2_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.deriv2_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition">¶</a></dt>
+<dd><p>Difference between the curvature of the predicted and true trajectories.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_true</strong> (<em>torch.Tensor</em>) – The true trajectory.</p></li>
+<li><p><strong>x_pred</strong> (<em>torch.Tensor</em>) – The predicted trajectory</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The second derivative loss.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id10">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">deriv_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.deriv_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition">¶</a></dt>
+<dd><p>Difference between the slopes of the predicted and true trajectories.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_true</strong> (<em>torch.Tensor</em>) – The true trajectory.</p></li>
+<li><p><strong>x_pred</strong> (<em>torch.Tensor</em>) – The predicted trajectory</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The derivative loss.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_range</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition">¶</a></dt>
+<dd><p>Perform a forward pass through the model. Applies the encoder to the initial state,
+then propagates through time in the latent space by integrating the neural ODE term.
+Finally, the decoder is applied to the latent state to obtain the predicted trajectory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>torch.Tensor</em>) – The input tensor.</p></li>
+<li><p><strong>t_range</strong> (<em>torch.Tensor</em>) – The range of timesteps.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The predicted trajectory.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id12">
+<span class="sig-name descname"><span class="pre">identity_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.identity_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate the identity loss (Encoder -&gt; Decoder).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – The input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The identity loss.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id13">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">l2_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.l2_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate the L2 loss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_true</strong> (<em>torch.Tensor</em>) – The true trajectory.</p></li>
+<li><p><strong>x_pred</strong> (<em>torch.Tensor</em>) – The predicted trajectory</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The L2 loss.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id14">
+<span class="sig-name descname"><span class="pre">renormalize_loss_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.renormalize_loss_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Link to this definition">¶</a></dt>
+<dd><p>Renormalize the loss weights based on the current loss values so that they are accurately
+weighted based on the provided weights. To be used once after a short burn in phase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_true</strong> (<em>torch.Tensor</em>) – The true trajectory.</p></li>
+<li><p><strong>x_pred</strong> (<em>torch.Tensor</em>) – The predicted trajectory</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id15">
+<span class="sig-name descname"><span class="pre">total_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ModelWrapper.total_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id15" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate the total loss based on the loss weights.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_true</strong> (<em>torch.Tensor</em>) – The true trajectory.</p></li>
+<li><p><strong>x_pred</strong> (<em>torch.Tensor</em>) – The predicted trajectory</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The total loss.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="surrogates.MultiONet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surrogates.</span></span><span class="sig-name descname"><span class="pre">MultiONet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chemicals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/DeepONet/deeponet.html#MultiONet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.MultiONet" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">OperatorNetwork</span></code></p>
+<p>Class that implements the MultiONet model.
+It differs from a standard DeepONet in that it has multiple outputs, which are obtained by
+splitting the outputs of branch and trunk networks and calculating the scalar product of the splits.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>optional</em>) – The device to use for training (e.g., ‘cpu’, ‘cuda:0’).</p></li>
+<li><p><strong>n_chemicals</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of chemicals.</p></li>
+<li><p><strong>n_timesteps</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of timesteps.</p></li>
+<li><p><strong>config</strong> (<em>dict</em><em>, </em><em>optional</em>) – The configuration for the model.</p></li>
+<li><p><strong>information</strong> (<em>The configuration must provide the following</em>)</p></li>
+<li><p><strong>trunk_input_size</strong> (<em>-</em>) – The input size for the trunk network.</p></li>
+<li><p><strong>hidden_size</strong> (<em>-</em>) – The number of hidden units in each layer of the branch and trunk networks.</p></li>
+<li><p><strong>branch_hidden_layers</strong> (<em>-</em>) – The number of hidden layers in the branch network.</p></li>
+<li><p><strong>trunk_hidden_layers</strong> (<em>-</em>) – The number of hidden layers in the trunk network.</p></li>
+<li><p><strong>output_factor</strong> (<em>-</em>) – The factor by which the number of outputs is multiplied.</p></li>
+<li><p><strong>learning_rate</strong> (<em>-</em>) – The learning rate for the optimizer.</p></li>
+<li><p><strong>schedule</strong> (<em>-</em>) – Whether to use a learning rate schedule.</p></li>
+<li><p><strong>regularization_factor</strong> (<em>-</em>) – The regularization factor for the optimizer.</p></li>
+<li><p><strong>masses</strong> (<em>-</em>) – The masses for mass conservation loss.</p></li>
+<li><p><strong>massloss_factor</strong> (<em>-</em>) – The factor for the mass conservation loss.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>TypeError</strong> – Invalid configuration for MultiONet model.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.MultiONet.create_dataloader">
+<span class="sig-name descname"><span class="pre">create_dataloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/DeepONet/deeponet.html#MultiONet.create_dataloader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.MultiONet.create_dataloader" title="Link to this definition">¶</a></dt>
+<dd><p>Create a DataLoader for the given data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>np.ndarray</em>) – The data to load. Must have shape (n_samples, n_timesteps, n_chemicals).</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The batch size.</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to shuffle the data.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.MultiONet.epoch">
+<span class="sig-name descname"><span class="pre">epoch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">criterion</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optimizer</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/surrogates/DeepONet/deeponet.html#MultiONet.epoch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.MultiONet.epoch" title="Link to this definition">¶</a></dt>
+<dd><p>Perform one training epoch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the training data.</p></li>
+<li><p><strong>criterion</strong> (<em>nn.Module</em>) – The loss function.</p></li>
+<li><p><strong>optimizer</strong> (<em>torch.optim.Optimizer</em>) – The optimizer.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The total loss for the training step.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.MultiONet.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Training</span> <span class="pre">DeepONet'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/surrogates/DeepONet/deeponet.html#MultiONet.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.MultiONet.fit" title="Link to this definition">¶</a></dt>
+<dd><p>Train the MultiONet model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the training data.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
+<li><p><strong>epochs</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of epochs to train the model.</p></li>
+<li><p><strong>position</strong> (<em>int</em>) – The position of the progress bar.</p></li>
+<li><p><strong>description</strong> (<em>str</em>) – The description for the progress bar.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None. The training loss, test loss, and MAE are stored in the model.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.MultiONet.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/surrogates/DeepONet/deeponet.html#MultiONet.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.MultiONet.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Forward pass for the MultiONet model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inputs</strong> (<em>tuple</em>) – The input tuple containing branch_input, trunk_input, and targets.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The model outputs and the targets.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.MultiONet.prepare_data">
+<span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoader</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/surrogates/DeepONet/deeponet.html#MultiONet.prepare_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.MultiONet.prepare_data" title="Link to this definition">¶</a></dt>
+<dd><p>Prepare the data for the predict or fit methods.
+Note: All datasets must have shape (n_samples, n_timesteps, n_chemicals).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset_train</strong> (<em>np.ndarray</em>) – The training data.</p></li>
+<li><p><strong>dataset_test</strong> (<em>np.ndarray</em>) – The test data.</p></li>
+<li><p><strong>dataset_val</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – The validation data.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The batch size.</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to shuffle the data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The training, test, and validation DataLoaders.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.MultiONet.setup_criterion">
+<span class="sig-name descname"><span class="pre">setup_criterion</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">callable</span></span></span><a class="reference internal" href="_modules/surrogates/DeepONet/deeponet.html#MultiONet.setup_criterion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.MultiONet.setup_criterion" title="Link to this definition">¶</a></dt>
+<dd><p>Utility function to set up the loss function for training.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The loss function.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>callable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.MultiONet.setup_optimizer_and_scheduler">
+<span class="sig-name descname"><span class="pre">setup_optimizer_and_scheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Optimizer</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_LRScheduler</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/surrogates/DeepONet/deeponet.html#MultiONet.setup_optimizer_and_scheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.MultiONet.setup_optimizer_and_scheduler" title="Link to this definition">¶</a></dt>
+<dd><p>Utility function to set up the optimizer and scheduler for training.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>epochs</strong> (<em>int</em>) – The number of epochs to train the model.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The optimizer and scheduler.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="surrogates.ODE">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surrogates.</span></span><span class="sig-name descname"><span class="pre">ODE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_hidden</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tanh_reg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ODE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.ODE" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>The neural ODE term. The term itself is a simple feedforward neural network,
+a scaled tanh function is applied to the output if tanh_reg is set to True.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.ODE.tanh_reg">
+<span class="sig-name descname"><span class="pre">tanh_reg</span></span><a class="headerlink" href="#surrogates.ODE.tanh_reg" title="Link to this definition">¶</a></dt>
+<dd><p>Whether to apply a tanh regularization to the output.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.ODE.reg_factor">
+<span class="sig-name descname"><span class="pre">reg_factor</span></span><a class="headerlink" href="#surrogates.ODE.reg_factor" title="Link to this definition">¶</a></dt>
+<dd><p>The regularization factor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.ODE.activation">
+<span class="sig-name descname"><span class="pre">activation</span></span><a class="headerlink" href="#surrogates.ODE.activation" title="Link to this definition">¶</a></dt>
+<dd><p>The activation function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Module</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.ODE.mlp">
+<span class="sig-name descname"><span class="pre">mlp</span></span><a class="headerlink" href="#surrogates.ODE.mlp" title="Link to this definition">¶</a></dt>
+<dd><p>The neural network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Sequential</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.ODE.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ODE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.ODE.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Perform a forward pass through the neural network.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id16">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentNeuralODE/latent_neural_ode.html#ODE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id16" title="Link to this definition">¶</a></dt>
+<dd><p>The forward pass through the neural network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t</strong> (<em>torch.Tensor</em>) – The time tensor.</p></li>
+<li><p><strong>x</strong> (<em>torch.Tensor</em>) – The input tensor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The output of the neural network.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="surrogates.Polynomial">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surrogates.</span></span><span class="sig-name descname"><span class="pre">Polynomial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">degree</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentPolynomial/latent_poly.html#Polynomial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.Polynomial" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Polynomial class with learnable parameters derived from nn.Module.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.Polynomial.degree">
+<span class="sig-name descname"><span class="pre">degree</span></span><a class="headerlink" href="#surrogates.Polynomial.degree" title="Link to this definition">¶</a></dt>
+<dd><p>the degree of the polynomial</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.Polynomial.dimension">
+<span class="sig-name descname"><span class="pre">dimension</span></span><a class="headerlink" href="#surrogates.Polynomial.dimension" title="Link to this definition">¶</a></dt>
+<dd><p>The dimension of the in- and output variables</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.Polynomial.coef">
+<span class="sig-name descname"><span class="pre">coef</span></span><a class="headerlink" href="#surrogates.Polynomial.coef" title="Link to this definition">¶</a></dt>
+<dd><p>The linear layer for the polynomial coefficients</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>nn.Linear</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surrogates.Polynomial.t_matrix">
+<span class="sig-name descname"><span class="pre">t_matrix</span></span><a class="headerlink" href="#surrogates.Polynomial.t_matrix" title="Link to this definition">¶</a></dt>
+<dd><p>The matrix of time values</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.Polynomial.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentPolynomial/latent_poly.html#Polynomial.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.Polynomial.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the polynomial at the given timesteps.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.Polynomial._prepare_t">
+<span class="sig-name descname"><span class="pre">_prepare_t</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentPolynomial/latent_poly.html#Polynomial._prepare_t"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.Polynomial._prepare_t" title="Link to this definition">¶</a></dt>
+<dd><p>Prepare the time values in matrix form for the polynomial.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id17">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/LatentPolynomial/latent_poly.html#Polynomial.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id17" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the polynomial at the given timesteps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t</strong> (<em>torch.Tensor</em>) – The input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The evaluated polynomial.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="surrogates.TrunkNet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surrogates.</span></span><span class="sig-name descname"><span class="pre">TrunkNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_hidden_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surrogates/DeepONet/deeponet.html#TrunkNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.TrunkNet" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Class that defines the trunk network for the MultiONet model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_size</strong> (<em>int</em>) – The input size for the network.</p></li>
+<li><p><strong>hidden_size</strong> (<em>int</em>) – The number of hidden units in each layer.</p></li>
+<li><p><strong>output_size</strong> (<em>int</em>) – The number of output units.</p></li>
+<li><p><strong>num_hidden_layers</strong> (<em>int</em>) – The number of hidden layers.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="surrogates.TrunkNet.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/surrogates/DeepONet/deeponet.html#TrunkNet.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surrogates.TrunkNet.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Forward pass for the trunk network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – The input tensor.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 </section>
 
@@ -812,12 +2051,9 @@ return the DataLoader objects for the training, testing, and validation data.</p
 </search>
 <script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="benchmark.html">benchmark module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="benchmark.html">benchmark module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="data.html">data package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="generate_simple_ode_data.html">generate_simple_ode_data module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="make_new_dataset.html">make_new_dataset module</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">surrogates package</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="run_training.html">Execute Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="run_benchmark.html">Execute Benchmark</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Surrogates</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-surrogates.surrogate_classes">surrogates.surrogate_classes module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-surrogates.surrogates">surrogates.surrogates module</a><ul>
@@ -866,21 +2102,143 @@ return the DataLoader objects for the training, testing, and validation data.</p
 <li class="toctree-l4"><a class="reference internal" href="#surrogates.AbstractSurrogateModel.setup_progress_bar"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.setup_progress_bar()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#surrogates.BranchNet"><code class="docutils literal notranslate"><span class="pre">BranchNet</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.BranchNet.forward"><code class="docutils literal notranslate"><span class="pre">BranchNet.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#surrogates.ChemDataset"><code class="docutils literal notranslate"><span class="pre">ChemDataset</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#surrogates.Decoder"><code class="docutils literal notranslate"><span class="pre">Decoder</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Decoder.out_features"><code class="docutils literal notranslate"><span class="pre">Decoder.out_features</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Decoder.latent_features"><code class="docutils literal notranslate"><span class="pre">Decoder.latent_features</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Decoder.width_list"><code class="docutils literal notranslate"><span class="pre">Decoder.width_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Decoder.activation"><code class="docutils literal notranslate"><span class="pre">Decoder.activation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Decoder.mlp"><code class="docutils literal notranslate"><span class="pre">Decoder.mlp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Decoder.forward"><code class="docutils literal notranslate"><span class="pre">Decoder.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">Decoder.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#surrogates.Encoder"><code class="docutils literal notranslate"><span class="pre">Encoder</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Encoder.in_features"><code class="docutils literal notranslate"><span class="pre">Encoder.in_features</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Encoder.latent_features"><code class="docutils literal notranslate"><span class="pre">Encoder.latent_features</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Encoder.n_hidden"><code class="docutils literal notranslate"><span class="pre">Encoder.n_hidden</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Encoder.width_list"><code class="docutils literal notranslate"><span class="pre">Encoder.width_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Encoder.activation"><code class="docutils literal notranslate"><span class="pre">Encoder.activation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Encoder.mlp"><code class="docutils literal notranslate"><span class="pre">Encoder.mlp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Encoder.forward"><code class="docutils literal notranslate"><span class="pre">Encoder.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">Encoder.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#surrogates.FullyConnected"><code class="docutils literal notranslate"><span class="pre">FullyConnected</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.FullyConnected.create_dataloader"><code class="docutils literal notranslate"><span class="pre">FullyConnected.create_dataloader()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.FullyConnected.epoch"><code class="docutils literal notranslate"><span class="pre">FullyConnected.epoch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.FullyConnected.fit"><code class="docutils literal notranslate"><span class="pre">FullyConnected.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.FullyConnected.forward"><code class="docutils literal notranslate"><span class="pre">FullyConnected.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.FullyConnected.prepare_data"><code class="docutils literal notranslate"><span class="pre">FullyConnected.prepare_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.FullyConnected.setup_optimizer_and_scheduler"><code class="docutils literal notranslate"><span class="pre">FullyConnected.setup_optimizer_and_scheduler()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#surrogates.FullyConnectedNet"><code class="docutils literal notranslate"><span class="pre">FullyConnectedNet</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.FullyConnectedNet.forward"><code class="docutils literal notranslate"><span class="pre">FullyConnectedNet.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#surrogates.LatentNeuralODE"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.LatentNeuralODE.model"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.LatentNeuralODE.config"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.LatentNeuralODE.forward"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.LatentNeuralODE.fit"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.LatentNeuralODE.prepare_data"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.prepare_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#surrogates.LatentPoly"><code class="docutils literal notranslate"><span class="pre">LatentPoly</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.LatentPoly.config"><code class="docutils literal notranslate"><span class="pre">LatentPoly.config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.LatentPoly.model"><code class="docutils literal notranslate"><span class="pre">LatentPoly.model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.LatentPoly.device"><code class="docutils literal notranslate"><span class="pre">LatentPoly.device</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.LatentPoly.forward"><code class="docutils literal notranslate"><span class="pre">LatentPoly.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.LatentPoly.prepare_data"><code class="docutils literal notranslate"><span class="pre">LatentPoly.prepare_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.LatentPoly.fit"><code class="docutils literal notranslate"><span class="pre">LatentPoly.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">LatentPoly.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id5"><code class="docutils literal notranslate"><span class="pre">LatentPoly.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id6"><code class="docutils literal notranslate"><span class="pre">LatentPoly.prepare_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#surrogates.ModelWrapper"><code class="docutils literal notranslate"><span class="pre">ModelWrapper</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ModelWrapper.config"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ModelWrapper.loss_weights"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.loss_weights</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ModelWrapper.encoder"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.encoder</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ModelWrapper.decoder"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.decoder</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ModelWrapper.ode"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.ode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ModelWrapper.forward"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ModelWrapper.renormalize_loss_weights"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.renormalize_loss_weights()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ModelWrapper.total_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.total_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ModelWrapper.identity_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.identity_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ModelWrapper.l2_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.l2_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ModelWrapper.deriv_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ModelWrapper.deriv2_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv2_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ModelWrapper.deriv"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ModelWrapper.deriv2"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv2()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id7"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id8"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv2()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id9"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv2_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id10"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id11"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id12"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.identity_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id13"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.l2_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id14"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.renormalize_loss_weights()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id15"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.total_loss()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#surrogates.MultiONet"><code class="docutils literal notranslate"><span class="pre">MultiONet</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.MultiONet.create_dataloader"><code class="docutils literal notranslate"><span class="pre">MultiONet.create_dataloader()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.MultiONet.epoch"><code class="docutils literal notranslate"><span class="pre">MultiONet.epoch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.MultiONet.fit"><code class="docutils literal notranslate"><span class="pre">MultiONet.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.MultiONet.forward"><code class="docutils literal notranslate"><span class="pre">MultiONet.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.MultiONet.prepare_data"><code class="docutils literal notranslate"><span class="pre">MultiONet.prepare_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.MultiONet.setup_criterion"><code class="docutils literal notranslate"><span class="pre">MultiONet.setup_criterion()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.MultiONet.setup_optimizer_and_scheduler"><code class="docutils literal notranslate"><span class="pre">MultiONet.setup_optimizer_and_scheduler()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#surrogates.ODE"><code class="docutils literal notranslate"><span class="pre">ODE</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ODE.tanh_reg"><code class="docutils literal notranslate"><span class="pre">ODE.tanh_reg</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ODE.reg_factor"><code class="docutils literal notranslate"><span class="pre">ODE.reg_factor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ODE.activation"><code class="docutils literal notranslate"><span class="pre">ODE.activation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ODE.mlp"><code class="docutils literal notranslate"><span class="pre">ODE.mlp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.ODE.forward"><code class="docutils literal notranslate"><span class="pre">ODE.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id16"><code class="docutils literal notranslate"><span class="pre">ODE.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#surrogates.Polynomial"><code class="docutils literal notranslate"><span class="pre">Polynomial</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Polynomial.degree"><code class="docutils literal notranslate"><span class="pre">Polynomial.degree</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Polynomial.dimension"><code class="docutils literal notranslate"><span class="pre">Polynomial.dimension</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Polynomial.coef"><code class="docutils literal notranslate"><span class="pre">Polynomial.coef</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Polynomial.t_matrix"><code class="docutils literal notranslate"><span class="pre">Polynomial.t_matrix</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Polynomial.forward"><code class="docutils literal notranslate"><span class="pre">Polynomial.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.Polynomial._prepare_t"><code class="docutils literal notranslate"><span class="pre">Polynomial._prepare_t()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id17"><code class="docutils literal notranslate"><span class="pre">Polynomial.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#surrogates.TrunkNet"><code class="docutils literal notranslate"><span class="pre">TrunkNet</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#surrogates.TrunkNet.forward"><code class="docutils literal notranslate"><span class="pre">TrunkNet.forward()</span></code></a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="train.html">train module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="train.html">train module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="train.html">Training Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark.html">Benchmark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data.html">Data Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_gen.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">General Utilities</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="make_new_dataset.html" title="previous chapter">make_new_dataset module</a></li>
-      <li>Next: <a href="train.html" title="next chapter">train module</a></li>
+      <li>Previous: <a href="run_benchmark.html" title="previous chapter">Execute Benchmark</a></li>
+      <li>Next: <a href="train.html" title="next chapter">Training Utilities</a></li>
   </ul></li>
 </ul>
 </div>

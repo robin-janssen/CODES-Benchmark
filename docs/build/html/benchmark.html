@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>benchmark module &#8212; CODES Benchmark 09.09.2024 documentation</title>
+    <title>Benchmark &#8212; CODES Benchmark 09.09.2024 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
     <link rel="stylesheet" type="text/css" href="_static/basic.css?v=c058f7c8" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
@@ -14,8 +14,8 @@
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="data package" href="data.html" />
-    <link rel="prev" title="CODES Benchmark documentation" href="index.html" />
+    <link rel="next" title="Data Utilities" href="data.html" />
+    <link rel="prev" title="Training Utilities" href="train.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -34,7 +34,7 @@
           <div class="body" role="main">
             
   <section id="module-benchmark">
-<span id="benchmark-module"></span><h1>benchmark module<a class="headerlink" href="#module-benchmark" title="Link to this heading">¶</a></h1>
+<span id="benchmark"></span><h1>Benchmark<a class="headerlink" href="#module-benchmark" title="Link to this heading">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="benchmark.check_benchmark">
 <span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">check_benchmark</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_utils.html#check_benchmark"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.check_benchmark" title="Link to this definition">¶</a></dt>
@@ -70,9 +70,564 @@
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="benchmark.clean_metrics">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">clean_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/benchmark/bench_utils.html#clean_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.clean_metrics" title="Link to this definition">¶</a></dt>
+<dd><p>Clean the metrics dictionary to remove problematic entries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metrics</strong> (<em>dict</em>) – The benchmark metrics.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The cleaned metrics dictionary.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.compare_MAE">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">compare_MAE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#compare_MAE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.compare_MAE" title="Link to this definition">¶</a></dt>
+<dd><p>Compare the MAE of different surrogate models over the course of training.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metrics</strong> (<em>dict</em>) – dictionary containing the benchmark metrics for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.compare_UQ">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">compare_UQ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#compare_UQ"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.compare_UQ" title="Link to this definition">¶</a></dt>
+<dd><p>Compare the uncertainty quantification (UQ) metrics of different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>all_metrics</strong> (<em>dict</em>) – dictionary containing the benchmark metrics for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.compare_batchsize">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">compare_batchsize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#compare_batchsize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.compare_batchsize" title="Link to this definition">¶</a></dt>
+<dd><p>Compare the batch size training errors of different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>all_metrics</strong> (<em>dict</em>) – dictionary containing the benchmark metrics for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.compare_dynamic_accuracy">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">compare_dynamic_accuracy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#compare_dynamic_accuracy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.compare_dynamic_accuracy" title="Link to this definition">¶</a></dt>
+<dd><p>Compare the gradients of different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metrics</strong> (<em>dict</em>) – dictionary containing the benchmark metrics for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.compare_extrapolation">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">compare_extrapolation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#compare_extrapolation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.compare_extrapolation" title="Link to this definition">¶</a></dt>
+<dd><p>Compare the extrapolation errors of different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>all_metrics</strong> (<em>dict</em>) – dictionary containing the benchmark metrics for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.compare_inference_time">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">compare_inference_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#compare_inference_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.compare_inference_time" title="Link to this definition">¶</a></dt>
+<dd><p>Compare the mean inference time of different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metrics</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>dict</em><em>]</em>) – dictionary containing the benchmark metrics for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+<li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot. Defaults to True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.compare_interpolation">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">compare_interpolation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#compare_interpolation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.compare_interpolation" title="Link to this definition">¶</a></dt>
+<dd><p>Compare the interpolation errors of different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>all_metrics</strong> (<em>dict</em>) – dictionary containing the benchmark metrics for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.compare_main_losses">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">compare_main_losses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#compare_main_losses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.compare_main_losses" title="Link to this definition">¶</a></dt>
+<dd><p>Compare the training and test losses of the main models for different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metrics</strong> (<em>dict</em>) – dictionary containing the benchmark metrics for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="benchmark.compare_models">
 <span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">compare_models</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#compare_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.compare_models" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.compare_relative_errors">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">compare_relative_errors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#compare_relative_errors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.compare_relative_errors" title="Link to this definition">¶</a></dt>
+<dd><p>Compare the relative errors over time for different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metrics</strong> (<em>dict</em>) – dictionary containing the benchmark metrics for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.compare_sparse">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">compare_sparse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#compare_sparse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.compare_sparse" title="Link to this definition">¶</a></dt>
+<dd><p>Compare the sparse training errors of different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>all_metrics</strong> (<em>dict</em>) – dictionary containing the benchmark metrics for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.convert_dict_to_scientific_notation">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">convert_dict_to_scientific_notation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/benchmark/bench_utils.html#convert_dict_to_scientific_notation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.convert_dict_to_scientific_notation" title="Link to this definition">¶</a></dt>
+<dd><p>Convert all numerical values in a dictionary to scientific notation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>d</strong> (<em>dict</em>) – The input dictionary.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The dictionary with numerical values in scientific notation.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.convert_to_standard_types">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">convert_to_standard_types</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmark/bench_utils.html#convert_to_standard_types"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.convert_to_standard_types" title="Link to this definition">¶</a></dt>
+<dd><p>Recursively convert data to standard types that can be serialized to YAML.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – The data to convert.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The converted data.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.count_trainable_parameters">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">count_trainable_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/benchmark/bench_utils.html#count_trainable_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.count_trainable_parameters" title="Link to this definition">¶</a></dt>
+<dd><p>Count the number of trainable parameters in the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> (<em>torch.nn.Module</em>) – The PyTorch model.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The number of trainable parameters.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.discard_numpy_entries">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">discard_numpy_entries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/benchmark/bench_utils.html#discard_numpy_entries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.discard_numpy_entries" title="Link to this definition">¶</a></dt>
+<dd><p>Recursively remove dictionary entries that contain NumPy arrays.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>d</strong> (<em>dict</em>) – The input dictionary.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new dictionary without entries containing NumPy arrays.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.evaluate_UQ">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">evaluate_UQ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#evaluate_UQ"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.evaluate_UQ" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the uncertainty quantification (UQ) performance of the surrogate model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps array.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the chemical species.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing UQ metrics.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.evaluate_accuracy">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">evaluate_accuracy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#evaluate_accuracy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.evaluate_accuracy" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the accuracy of the surrogate model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the chemical species.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing accuracy metrics.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.evaluate_batchsize">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">evaluate_batchsize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#evaluate_batchsize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.evaluate_batchsize" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the performance of the surrogate model with different batch sizes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps array.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing batch size training metrics.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.evaluate_compute">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">evaluate_compute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#evaluate_compute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.evaluate_compute" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the computational resource requirements of the surrogate model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing model complexity metrics.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.evaluate_dynamic_accuracy">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">evaluate_dynamic_accuracy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#evaluate_dynamic_accuracy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.evaluate_dynamic_accuracy" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the gradients of the surrogate model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing gradients metrics.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.evaluate_extrapolation">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">evaluate_extrapolation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#evaluate_extrapolation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.evaluate_extrapolation" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the extrapolation performance of the surrogate model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps array.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing extrapolation metrics.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.evaluate_interpolation">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">evaluate_interpolation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#evaluate_interpolation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.evaluate_interpolation" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the interpolation performance of the surrogate model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps array.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing interpolation metrics.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.evaluate_sparse">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">evaluate_sparse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_train_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#evaluate_sparse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.evaluate_sparse" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the performance of the surrogate model with sparse training data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
+<li><p><strong>n_train_samples</strong> (<em>int</em>) – The number of training samples in the full dataset.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing sparse training metrics.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.flatten_dict">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">flatten_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'</span> <span class="pre">-</span> <span class="pre">'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/benchmark/bench_utils.html#flatten_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.flatten_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Flatten a nested dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>d</strong> (<em>dict</em>) – The dictionary to flatten.</p></li>
+<li><p><strong>parent_key</strong> (<em>str</em>) – The base key string.</p></li>
+<li><p><strong>sep</strong> (<em>str</em>) – The separator between keys.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Flattened dictionary with composite keys.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.format_seconds">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">format_seconds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seconds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/benchmark/bench_utils.html#format_seconds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.format_seconds" title="Link to this definition">¶</a></dt>
+<dd><p>Format a duration given in seconds as hh:mm:ss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>seconds</strong> (<em>int</em>) – The duration in seconds.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The formatted duration string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.format_time">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">format_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmark/bench_utils.html#format_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.format_time" title="Link to this definition">¶</a></dt>
+<dd><p>Format mean and std time consistently in ns, µs, ms, or s.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mean_time</strong> – The mean time.</p></li>
+<li><p><strong>std_time</strong> – The standard deviation of the time.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The formatted time string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.get_custom_palette">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">get_custom_palette</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_colors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmark/bench_plots.html#get_custom_palette"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.get_custom_palette" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a list of colors sampled from a custom color palette.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>num_colors</strong> (<em>int</em>) – The number of colors needed.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of RGBA color tuples.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.get_model_config">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">get_model_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/benchmark/bench_utils.html#get_model_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.get_model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Get the model configuration for a specific surrogate model from the dataset folder.
+Returns an empty dictionary if the configuration file is not found.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>dataset_name</strong> (<em>str</em>) – The name of the dataset.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The model configuration dictionary.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.get_required_models_list">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">get_required_models_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surrogate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="_modules/benchmark/bench_utils.html#get_required_models_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.get_required_models_list" title="Link to this definition">¶</a></dt>
+<dd><p>Generate a list of required models based on the configuration settings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surrogate</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of required model names.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="benchmark.get_surrogate">
@@ -87,6 +642,537 @@
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>SurrogateModel | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.inference_time_bar_plot">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">inference_time_bar_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surrogates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">means</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#inference_time_bar_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.inference_time_bar_plot" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the mean inference time with standard deviation for different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surrogates</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – List of surrogate model names.</p></li>
+<li><p><strong>means</strong> (<em>List</em><em>[</em><em>float</em><em>]</em>) – List of mean inference times for each surrogate model.</p></li>
+<li><p><strong>stds</strong> (<em>List</em><em>[</em><em>float</em><em>]</em>) – List of standard deviation of inference times for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+<li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot. Defaults to True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.int_ext_sparse">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">int_ext_sparse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#int_ext_sparse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.int_ext_sparse" title="Link to this definition">¶</a></dt>
+<dd><p>Function to make one comparative plot of the interpolation, extrapolation, and sparse training errors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>all_metrics</strong> (<em>dict</em>) – dictionary containing the benchmark metrics for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.load_model">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">load_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_identifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Module</span></span></span><a class="reference internal" href="_modules/benchmark/bench_utils.html#load_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.load_model" title="Link to this definition">¶</a></dt>
+<dd><p>Load a trained surrogate model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
+<li><p><strong>training_id</strong> (<em>str</em>) – The training identifier.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>model_identifier</strong> (<em>str</em>) – The identifier of the model (e.g., ‘main’).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The loaded surrogate model.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.make_comparison_csv">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">make_comparison_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_utils.html#make_comparison_csv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.make_comparison_csv" title="Link to this definition">¶</a></dt>
+<dd><p>Generate a CSV file comparing metrics for different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metrics</strong> (<em>dict</em>) – Dictionary containing the benchmark metrics for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.measure_memory_footprint">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">measure_memory_footprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/benchmark/bench_utils.html#measure_memory_footprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.measure_memory_footprint" title="Link to this definition">¶</a></dt>
+<dd><p>Measure the memory footprint of the model during the forward and backward pass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>torch.nn.Module</em>) – The PyTorch model.</p></li>
+<li><p><strong>inputs</strong> (<em>tuple</em>) – The input data for the model.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing memory footprint measurements.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_MAE_comparison">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_MAE_comparison</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">MAEs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_MAE_comparison"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_MAE_comparison" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the MAE for different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>MAE</strong> (<em>tuple</em>) – Tuple of accuracy arrays for each surrogate model.</p></li>
+<li><p><strong>labels</strong> (<em>tuple</em>) – Tuple of labels for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+<li><p><strong>save</strong> (<em>bool</em>) – Whether to save the plot.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_MAE_comparison_train_duration">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_MAE_comparison_train_duration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">MAEs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_durations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_MAE_comparison_train_duration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_MAE_comparison_train_duration" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the MAE for different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>MAE</strong> (<em>tuple</em>) – Tuple of accuracy arrays for each surrogate model.</p></li>
+<li><p><strong>labels</strong> (<em>tuple</em>) – Tuple of labels for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+<li><p><strong>save</strong> (<em>bool</em>) – Whether to save the plot.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_average_errors_over_time">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_average_errors_over_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_average_errors_over_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_average_errors_over_time" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the errors over time for different modes (interpolation, extrapolation, sparse, batchsize).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>errors</strong> (<em>np.ndarray</em>) – Errors array of shape [N_metrics, n_timesteps].</p></li>
+<li><p><strong>metrics</strong> (<em>np.ndarray</em>) – Metrics array of shape [N_metrics].</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – Timesteps array.</p></li>
+<li><p><strong>mode</strong> (<em>str</em>) – The mode of evaluation (‘interpolation’, ‘extrapolation’, ‘sparse’, ‘batchsize’).</p></li>
+<li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot as a file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_average_uncertainty_over_time">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_average_uncertainty_over_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds_std</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_average_uncertainty_over_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_average_uncertainty_over_time" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the average uncertainty over time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>errors_time</strong> (<em>np.ndarray</em>) – Prediction errors over time.</p></li>
+<li><p><strong>preds_std</strong> (<em>np.ndarray</em>) – Standard deviation over time of predictions from the ensemble of models.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – Timesteps array.</p></li>
+<li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot as a file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_comparative_dynamic_correlation_heatmaps">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_comparative_dynamic_correlation_heatmaps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gradients</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">avg_correlations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_err</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_comparative_dynamic_correlation_heatmaps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_comparative_dynamic_correlation_heatmaps" title="Link to this definition">¶</a></dt>
+<dd><p>Plot comparative heatmaps of correlation between gradient and prediction errors
+for multiple surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gradients</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>np.ndarray</em><em>]</em>) – Dictionary of gradients from the ensemble of models.</p></li>
+<li><p><strong>errors</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>np.ndarray</em><em>]</em>) – Dictionary of prediction errors.</p></li>
+<li><p><strong>avg_correlations</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – Dictionary of average correlations between gradients and prediction errors.</p></li>
+<li><p><strong>max_grad</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – Dictionary of maximum gradient values for axis scaling across models.</p></li>
+<li><p><strong>max_err</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – Dictionary of maximum error values for axis scaling across models.</p></li>
+<li><p><strong>max_count</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – Dictionary of maximum count values for heatmap normalization across models.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+<li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot. Defaults to True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_comparative_error_correlation_heatmaps">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_comparative_error_correlation_heatmaps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">preds_std</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">avg_correlations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_comparative_error_correlation_heatmaps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_comparative_error_correlation_heatmaps" title="Link to this definition">¶</a></dt>
+<dd><p>Plot comparative heatmaps of correlation between predictive uncertainty and prediction errors
+for multiple surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>preds_std</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>np.ndarray</em><em>]</em>) – Dictionary of standard deviation of predictions from the ensemble of models.</p></li>
+<li><p><strong>errors</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>np.ndarray</em><em>]</em>) – Dictionary of prediction errors.</p></li>
+<li><p><strong>avg_correlations</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – Dictionary of average correlations between gradients and prediction errors.</p></li>
+<li><p><strong>axis_max</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – Dictionary of maximum values for axis scaling across models.</p></li>
+<li><p><strong>max_count</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – Dictionary of maximum count values for heatmap normalization across models.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+<li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot. Defaults to True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_dynamic_correlation">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_dynamic_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradients</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_dynamic_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_dynamic_correlation" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the correlation between the gradients of the data and the prediction errors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>gradients</strong> (<em>np.ndarray</em>) – The gradients of the data.</p></li>
+<li><p><strong>errors</strong> (<em>np.ndarray</em>) – The prediction errors.</p></li>
+<li><p><strong>save</strong> (<em>bool</em>) – Whether to save the plot.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_dynamic_correlation_heatmap">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_dynamic_correlation_heatmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds_std</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average_correlation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold_factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xcut_percent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.003</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_dynamic_correlation_heatmap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_dynamic_correlation_heatmap" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the correlation between predictive uncertainty and prediction errors using a heatmap.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>preds_std</strong> (<em>np.ndarray</em>) – Standard deviation of predictions from the ensemble of models.</p></li>
+<li><p><strong>errors</strong> (<em>np.ndarray</em>) – Prediction errors.</p></li>
+<li><p><strong>average_correlation</strong> (<em>float</em>) – The average correlation between gradients and prediction errors (pearson correlation).</p></li>
+<li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot as a file.</p></li>
+<li><p><strong>threshold_factor</strong> (<em>float</em><em>, </em><em>optional</em>) – Fraction of max value below which cells are set to 0. Default is 5e-5.</p></li>
+<li><p><strong>cutoff_percent</strong> (<em>float</em><em>, </em><em>optional</em>) – The percentage of total counts to include in the heatmap. Default is 0.95.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_error_correlation_heatmap">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_error_correlation_heatmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds_std</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average_correlation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold_factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_error_correlation_heatmap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_error_correlation_heatmap" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the correlation between predictive uncertainty and prediction errors using a heatmap.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>preds_std</strong> (<em>np.ndarray</em>) – Standard deviation of predictions from the ensemble of models.</p></li>
+<li><p><strong>errors</strong> (<em>np.ndarray</em>) – Prediction errors.</p></li>
+<li><p><strong>average_correlation</strong> (<em>float</em>) – The average correlation between gradients and prediction errors (pearson correlation).</p></li>
+<li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot as a file.</p></li>
+<li><p><strong>threshold_factor</strong> (<em>float</em><em>, </em><em>optional</em>) – Fraction of max value below which cells are set to 0. Default is 0.001.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_error_distribution_comparative">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_error_distribution_comparative</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_error_distribution_comparative"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_error_distribution_comparative" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the comparative distribution of errors for each surrogate model as a smoothed histogram plot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>errors</strong> (<em>dict</em>) – Dictionary containing numpy arrays of shape [num_samples, num_timesteps, num_chemicals] for each model.</p></li>
+<li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot as a file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_error_distribution_per_chemical">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_error_distribution_per_chemical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chemical_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_chemicals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_error_distribution_per_chemical"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_error_distribution_per_chemical" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the distribution of errors for each chemical as a smoothed histogram plot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>errors</strong> (<em>np.ndarray</em>) – Errors array of shape [num_samples, num_timesteps, num_chemicals].</p></li>
+<li><p><strong>chemical_names</strong> (<em>list</em><em>, </em><em>optional</em>) – List of chemical names for labeling the lines.</p></li>
+<li><p><strong>num_chemicals</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of chemicals to plot. Default is 10.</p></li>
+<li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot as a file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_example_predictions_with_uncertainty">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_example_predictions_with_uncertainty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds_mean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds_std</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_chemicals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_example_predictions_with_uncertainty"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_example_predictions_with_uncertainty" title="Link to this definition">¶</a></dt>
+<dd><p>Plot example predictions with uncertainty.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>preds_mean</strong> (<em>np.ndarray</em>) – Mean predictions from the ensemble of models.</p></li>
+<li><p><strong>preds_std</strong> (<em>np.ndarray</em>) – Standard deviation of predictions from the ensemble of models.</p></li>
+<li><p><strong>targets</strong> (<em>np.ndarray</em>) – True targets.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – Timesteps array.</p></li>
+<li><p><strong>example_idx</strong> (<em>int</em><em>, </em><em>optional</em>) – Index of the example to plot. Default is 0.</p></li>
+<li><p><strong>num_chemicals</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of chemicals to plot. Default is 100.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – List of labels for the chemicals.</p></li>
+<li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot as a file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_generalization_error_comparison">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_generalization_error_comparison</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surrogates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">array</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_errors_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">array</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_generalization_error_comparison"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_generalization_error_comparison" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the generalization errors of different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surrogates</strong> (<em>list</em>) – List of surrogate model names.</p></li>
+<li><p><strong>metrics_list</strong> (<em>list</em><em>[</em><em>np.array</em><em>]</em>) – List of numpy arrays containing the metrics for each surrogate model.</p></li>
+<li><p><strong>model_errors_list</strong> (<em>list</em><em>[</em><em>np.array</em><em>]</em>) – List of numpy arrays containing the errors for each surrogate model.</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em>) – Label for the x-axis.</p></li>
+<li><p><strong>filename</strong> (<em>str</em>) – Filename to save the plot.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+<li><p><strong>save</strong> (<em>bool</em>) – Whether to save the plot.</p></li>
+<li><p><strong>xlog</strong> (<em>bool</em>) – Whether to use a log scale for the x-axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_generalization_errors">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_generalization_errors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_generalization_errors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_generalization_errors" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the generalization errors of a model for various metrics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>metrics</strong> (<em>np.ndarray</em>) – The metrics (e.g., intervals, cutoffs, batch sizes, number of training samples).</p></li>
+<li><p><strong>model_errors</strong> (<em>np.ndarray</em>) – The model errors.</p></li>
+<li><p><strong>mode</strong> (<em>str</em>) – The mode of generalization (“interpolation”, “extrapolation”, “sparse”, “batchsize”).</p></li>
+<li><p><strong>save</strong> (<em>bool</em>) – Whether to save the plot.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_loss_comparison">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_loss_comparison</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_losses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_losses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_loss_comparison"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_loss_comparison" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the training and test losses for different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_losses</strong> (<em>tuple</em>) – Tuple of training loss arrays for each surrogate model.</p></li>
+<li><p><strong>test_losses</strong> (<em>tuple</em>) – Tuple of test loss arrays for each surrogate model.</p></li>
+<li><p><strong>labels</strong> (<em>tuple</em>) – Tuple of labels for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+<li><p><strong>save</strong> (<em>bool</em>) – Whether to save the plot.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_losses">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_losses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loss_histories</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Losses'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'main'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_losses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_losses" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the loss trajectories for the training of multiple models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loss_histories</strong> – List of loss history arrays.</p></li>
+<li><p><strong>labels</strong> – List of labels for each loss history.</p></li>
+<li><p><strong>title</strong> – Title of the plot.</p></li>
+<li><p><strong>save</strong> – Whether to save the plot as an image file.</p></li>
+<li><p><strong>conf</strong> – The configuration dictionary.</p></li>
+<li><p><strong>surr_name</strong> – The name of the surrogate model.</p></li>
+<li><p><strong>mode</strong> – The mode of the training.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_relative_errors">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_relative_errors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean_errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">median_errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_relative_errors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_relative_errors" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the relative errors over time for different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mean_errors</strong> (<em>dict</em>) – dictionary containing the mean relative errors for each surrogate model.</p></li>
+<li><p><strong>median_errors</strong> (<em>dict</em>) – dictionary containing the median relative errors for each surrogate model.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – Array of timesteps.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+<li><p><strong>save</strong> (<em>bool</em>) – Whether to save the plot.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_relative_errors_over_time">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_relative_errors_over_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relative_errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_relative_errors_over_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_relative_errors_over_time" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the mean and median relative errors over time with shaded regions for
+the 50th, 90th, and 99th percentiles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>relative_errors</strong> (<em>np.ndarray</em>) – The relative errors of the model.</p></li>
+<li><p><strong>title</strong> (<em>str</em>) – The title of the plot.</p></li>
+<li><p><strong>save</strong> (<em>bool</em>) – Whether to save the plot.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_surr_losses">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_surr_losses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_surr_losses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_surr_losses" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the training and test losses for the surrogate model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps array.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_uncertainty_over_time_comparison">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_uncertainty_over_time_comparison</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uncertainties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absolute_errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_uncertainty_over_time_comparison"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_uncertainty_over_time_comparison" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the uncertainty over time for different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>uncertainties</strong> (<em>dict</em>) – Dictionary containing the uncertainties for each surrogate model.</p></li>
+<li><p><strong>absolute_errors</strong> (<em>dict</em>) – Dictionary containing the absolute errors for each surrogate model.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – Array of timesteps.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+<li><p><strong>save</strong> (<em>bool</em>) – Whether to save the plot.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.plot_uncertainty_vs_errors">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_uncertainty_vs_errors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds_std</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#plot_uncertainty_vs_errors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.plot_uncertainty_vs_errors" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the correlation between predictive uncertainty and prediction errors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>preds_std</strong> (<em>np.ndarray</em>) – Standard deviation of predictions from the ensemble of models.</p></li>
+<li><p><strong>errors</strong> (<em>np.ndarray</em>) – Prediction errors.</p></li>
+<li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot as a file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.read_yaml_config">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">read_yaml_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/benchmark/bench_utils.html#read_yaml_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.read_yaml_config" title="Link to this definition">¶</a></dt>
+<dd><p>Read the YAML configuration file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_path</strong> (<em>str</em>) – Path to the YAML configuration file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The configuration dictionary.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.rel_errors_and_uq">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">rel_errors_and_uq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#rel_errors_and_uq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.rel_errors_and_uq" title="Link to this definition">¶</a></dt>
+<dd><p>Create a figure with two subplots: relative errors over time and uncertainty over time for different surrogate models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metrics</strong> (<em>dict</em>) – Dictionary containing the benchmark metrics for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+<li><p><strong>save</strong> (<em>bool</em>) – Whether to save the plot.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -108,6 +1194,103 @@
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.save_plot">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">save_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#save_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.save_plot" title="Link to this definition">¶</a></dt>
+<dd><p>Save the plot to a file, creating necessary directories if they don’t exist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>plt</strong> (<em>matplotlib.pyplot</em>) – The plot object to save.</p></li>
+<li><p><strong>filename</strong> (<em>str</em>) – The desired filename for the plot.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>dpi</strong> (<em>int</em>) – The resolution of the saved plot.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the configuration dictionary does not contain the required keys.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.save_plot_counter">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">save_plot_counter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/benchmark/bench_plots.html#save_plot_counter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.save_plot_counter" title="Link to this definition">¶</a></dt>
+<dd><p>Save a plot with an incremented filename if a file with the same name already exists.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – The desired filename for the plot.</p></li>
+<li><p><strong>directory</strong> (<em>str</em>) – The directory to save the plot in.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The full path to the saved plot.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.tabular_comparison">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">tabular_comparison</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#tabular_comparison"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.tabular_comparison" title="Link to this definition">¶</a></dt>
+<dd><p>Compare the metrics of different surrogate models in a tabular format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>all_metrics</strong> (<em>dict</em>) – dictionary containing the benchmark metrics for each surrogate model.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.time_inference">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">time_inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_test_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_runs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/benchmark/bench_fcts.html#time_inference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.time_inference" title="Link to this definition">¶</a></dt>
+<dd><p>Time the inference of the surrogate model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps array.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>n_test_samples</strong> (<em>int</em>) – The number of test samples.</p></li>
+<li><p><strong>n_runs</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of times to run the inference for timing.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing timing metrics.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmark.write_metrics_to_yaml">
+<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">write_metrics_to_yaml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/benchmark/bench_utils.html#write_metrics_to_yaml"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.write_metrics_to_yaml" title="Link to this definition">¶</a></dt>
+<dd><p>Write the benchmark metrics to a YAML file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>metrics</strong> (<em>dict</em>) – The benchmark metrics.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -141,37 +1324,91 @@
 </search>
 <script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">benchmark module</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="run_training.html">Execute Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="run_benchmark.html">Execute Benchmark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="surrogates.html">Surrogates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="train.html">Training Utilities</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Benchmark</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#benchmark.check_benchmark"><code class="docutils literal notranslate"><span class="pre">check_benchmark()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#benchmark.check_surrogate"><code class="docutils literal notranslate"><span class="pre">check_surrogate()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.clean_metrics"><code class="docutils literal notranslate"><span class="pre">clean_metrics()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.compare_MAE"><code class="docutils literal notranslate"><span class="pre">compare_MAE()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.compare_UQ"><code class="docutils literal notranslate"><span class="pre">compare_UQ()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.compare_batchsize"><code class="docutils literal notranslate"><span class="pre">compare_batchsize()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.compare_dynamic_accuracy"><code class="docutils literal notranslate"><span class="pre">compare_dynamic_accuracy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.compare_extrapolation"><code class="docutils literal notranslate"><span class="pre">compare_extrapolation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.compare_inference_time"><code class="docutils literal notranslate"><span class="pre">compare_inference_time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.compare_interpolation"><code class="docutils literal notranslate"><span class="pre">compare_interpolation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.compare_main_losses"><code class="docutils literal notranslate"><span class="pre">compare_main_losses()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#benchmark.compare_models"><code class="docutils literal notranslate"><span class="pre">compare_models()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.compare_relative_errors"><code class="docutils literal notranslate"><span class="pre">compare_relative_errors()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.compare_sparse"><code class="docutils literal notranslate"><span class="pre">compare_sparse()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.convert_dict_to_scientific_notation"><code class="docutils literal notranslate"><span class="pre">convert_dict_to_scientific_notation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.convert_to_standard_types"><code class="docutils literal notranslate"><span class="pre">convert_to_standard_types()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.count_trainable_parameters"><code class="docutils literal notranslate"><span class="pre">count_trainable_parameters()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.discard_numpy_entries"><code class="docutils literal notranslate"><span class="pre">discard_numpy_entries()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.evaluate_UQ"><code class="docutils literal notranslate"><span class="pre">evaluate_UQ()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.evaluate_accuracy"><code class="docutils literal notranslate"><span class="pre">evaluate_accuracy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.evaluate_batchsize"><code class="docutils literal notranslate"><span class="pre">evaluate_batchsize()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.evaluate_compute"><code class="docutils literal notranslate"><span class="pre">evaluate_compute()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.evaluate_dynamic_accuracy"><code class="docutils literal notranslate"><span class="pre">evaluate_dynamic_accuracy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.evaluate_extrapolation"><code class="docutils literal notranslate"><span class="pre">evaluate_extrapolation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.evaluate_interpolation"><code class="docutils literal notranslate"><span class="pre">evaluate_interpolation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.evaluate_sparse"><code class="docutils literal notranslate"><span class="pre">evaluate_sparse()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.flatten_dict"><code class="docutils literal notranslate"><span class="pre">flatten_dict()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.format_seconds"><code class="docutils literal notranslate"><span class="pre">format_seconds()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.format_time"><code class="docutils literal notranslate"><span class="pre">format_time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.get_custom_palette"><code class="docutils literal notranslate"><span class="pre">get_custom_palette()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.get_model_config"><code class="docutils literal notranslate"><span class="pre">get_model_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.get_required_models_list"><code class="docutils literal notranslate"><span class="pre">get_required_models_list()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#benchmark.get_surrogate"><code class="docutils literal notranslate"><span class="pre">get_surrogate()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.inference_time_bar_plot"><code class="docutils literal notranslate"><span class="pre">inference_time_bar_plot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.int_ext_sparse"><code class="docutils literal notranslate"><span class="pre">int_ext_sparse()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.load_model"><code class="docutils literal notranslate"><span class="pre">load_model()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.make_comparison_csv"><code class="docutils literal notranslate"><span class="pre">make_comparison_csv()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.measure_memory_footprint"><code class="docutils literal notranslate"><span class="pre">measure_memory_footprint()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_MAE_comparison"><code class="docutils literal notranslate"><span class="pre">plot_MAE_comparison()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_MAE_comparison_train_duration"><code class="docutils literal notranslate"><span class="pre">plot_MAE_comparison_train_duration()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_average_errors_over_time"><code class="docutils literal notranslate"><span class="pre">plot_average_errors_over_time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_average_uncertainty_over_time"><code class="docutils literal notranslate"><span class="pre">plot_average_uncertainty_over_time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_comparative_dynamic_correlation_heatmaps"><code class="docutils literal notranslate"><span class="pre">plot_comparative_dynamic_correlation_heatmaps()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_comparative_error_correlation_heatmaps"><code class="docutils literal notranslate"><span class="pre">plot_comparative_error_correlation_heatmaps()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_dynamic_correlation"><code class="docutils literal notranslate"><span class="pre">plot_dynamic_correlation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_dynamic_correlation_heatmap"><code class="docutils literal notranslate"><span class="pre">plot_dynamic_correlation_heatmap()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_error_correlation_heatmap"><code class="docutils literal notranslate"><span class="pre">plot_error_correlation_heatmap()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_error_distribution_comparative"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_comparative()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_error_distribution_per_chemical"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_per_chemical()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_example_predictions_with_uncertainty"><code class="docutils literal notranslate"><span class="pre">plot_example_predictions_with_uncertainty()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_generalization_error_comparison"><code class="docutils literal notranslate"><span class="pre">plot_generalization_error_comparison()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_generalization_errors"><code class="docutils literal notranslate"><span class="pre">plot_generalization_errors()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_loss_comparison"><code class="docutils literal notranslate"><span class="pre">plot_loss_comparison()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_losses"><code class="docutils literal notranslate"><span class="pre">plot_losses()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_relative_errors"><code class="docutils literal notranslate"><span class="pre">plot_relative_errors()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_relative_errors_over_time"><code class="docutils literal notranslate"><span class="pre">plot_relative_errors_over_time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_surr_losses"><code class="docutils literal notranslate"><span class="pre">plot_surr_losses()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_uncertainty_over_time_comparison"><code class="docutils literal notranslate"><span class="pre">plot_uncertainty_over_time_comparison()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.plot_uncertainty_vs_errors"><code class="docutils literal notranslate"><span class="pre">plot_uncertainty_vs_errors()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.read_yaml_config"><code class="docutils literal notranslate"><span class="pre">read_yaml_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.rel_errors_and_uq"><code class="docutils literal notranslate"><span class="pre">rel_errors_and_uq()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#benchmark.run_benchmark"><code class="docutils literal notranslate"><span class="pre">run_benchmark()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.save_plot"><code class="docutils literal notranslate"><span class="pre">save_plot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.save_plot_counter"><code class="docutils literal notranslate"><span class="pre">save_plot_counter()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.tabular_comparison"><code class="docutils literal notranslate"><span class="pre">tabular_comparison()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.time_inference"><code class="docutils literal notranslate"><span class="pre">time_inference()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benchmark.write_metrics_to_yaml"><code class="docutils literal notranslate"><span class="pre">write_metrics_to_yaml()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">benchmark module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#benchmark.check_benchmark"><code class="docutils literal notranslate"><span class="pre">check_benchmark()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#benchmark.check_surrogate"><code class="docutils literal notranslate"><span class="pre">check_surrogate()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#benchmark.compare_models"><code class="docutils literal notranslate"><span class="pre">compare_models()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#benchmark.get_surrogate"><code class="docutils literal notranslate"><span class="pre">get_surrogate()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#benchmark.run_benchmark"><code class="docutils literal notranslate"><span class="pre">run_benchmark()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="data.html">data package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="generate_simple_ode_data.html">generate_simple_ode_data module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="make_new_dataset.html">make_new_dataset module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="surrogates.html">surrogates package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="train.html">train module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="train.html">train module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">utils package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data.html">Data Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_gen.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">General Utilities</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="previous chapter">CODES Benchmark documentation</a></li>
-      <li>Next: <a href="data.html" title="next chapter">data package</a></li>
+      <li>Previous: <a href="train.html" title="previous chapter">Training Utilities</a></li>
+      <li>Next: <a href="data.html" title="next chapter">Data Utilities</a></li>
   </ul></li>
 </ul>
 </div>

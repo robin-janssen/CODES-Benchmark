@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>surrogates.DeepONet.deeponet &#8212; CODES Benchmark 09.09.2024 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=c058f7c8" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../../_static/documentation_options.js?v=47c521fd"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for surrogates.DeepONet.deeponet</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TypeVar</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">TensorDataset</span>
+
+<span class="c1"># Use the below import to adjust the config class to the specific model</span>
+<span class="kn">from</span> <span class="nn">surrogates.DeepONet.deeponet_config</span> <span class="kn">import</span> <span class="n">MultiONetBaseConfig</span>
+<span class="kn">from</span> <span class="nn">surrogates.surrogates</span> <span class="kn">import</span> <span class="n">AbstractSurrogateModel</span>
+<span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">time_execution</span><span class="p">,</span> <span class="n">worker_init_fn</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">mass_conservation_loss</span>
+
+
+<div class="viewcode-block" id="BranchNet">
+<a class="viewcode-back" href="../../../surrogates.html#surrogates.BranchNet">[docs]</a>
+<span class="k">class</span> <span class="nc">BranchNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class that defines the branch network for the MultiONet model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_size (int): The input size for the network.</span>
+<span class="sd">        hidden_size (int): The number of hidden units in each layer.</span>
+<span class="sd">        output_size (int): The number of output units.</span>
+<span class="sd">        num_hidden_layers (int): The number of hidden layers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">input_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">hidden_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">output_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_hidden_layers</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BranchNet</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">layers</span> <span class="o">=</span> <span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">),</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">()]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_hidden_layers</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">layers</span> <span class="o">+=</span> <span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">),</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">()]</span>
+        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">output_size</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BranchNet.forward">
+<a class="viewcode-back" href="../../../surrogates.html#surrogates.BranchNet.forward">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forward pass for the branch network.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x (torch.Tensor): The input tensor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TrunkNet">
+<a class="viewcode-back" href="../../../surrogates.html#surrogates.TrunkNet">[docs]</a>
+<span class="k">class</span> <span class="nc">TrunkNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class that defines the trunk network for the MultiONet model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_size (int): The input size for the network.</span>
+<span class="sd">        hidden_size (int): The number of hidden units in each layer.</span>
+<span class="sd">        output_size (int): The number of output units.</span>
+<span class="sd">        num_hidden_layers (int): The number of hidden layers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">input_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">hidden_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">output_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_hidden_layers</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TrunkNet</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">layers</span> <span class="o">=</span> <span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">),</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">()]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_hidden_layers</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">layers</span> <span class="o">+=</span> <span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">),</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">()]</span>
+        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">output_size</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TrunkNet.forward">
+<a class="viewcode-back" href="../../../surrogates.html#surrogates.TrunkNet.forward">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forward pass for the trunk network.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x (torch.Tensor): The input tensor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">class</span> <span class="nc">OperatorNetwork</span><span class="p">(</span><span class="n">AbstractSurrogateModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract class for operator networks.</span>
+<span class="sd">    Child classes must implement a forward method and use the branch_net and trunk_net attributes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        device (str, optional): The device to use for training (e.g., &#39;cpu&#39;, &#39;cuda:0&#39;).</span>
+<span class="sd">        n_chemicals (int, optional): The number of chemicals.</span>
+<span class="sd">        n_timesteps (int, optional): The number of timesteps.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        NotImplementedError: Child classes must implement a forward method.</span>
+<span class="sd">        NotImplementedError: Child classes must initialize a branch_net and trunk_net.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">n_chemicals</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">29</span><span class="p">,</span> <span class="n">n_timesteps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">n_chemicals</span><span class="o">=</span><span class="n">n_chemicals</span><span class="p">,</span> <span class="n">n_timesteps</span><span class="o">=</span><span class="n">n_timesteps</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">post_init_check</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;branch_net&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;trunk_net&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;Child classes must initialize a branch_net and trunk_net.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;forward&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Child classes must implement a forward method.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">branch_input</span><span class="p">,</span> <span class="n">trunk_input</span><span class="p">):</span>
+        <span class="c1"># Define a generic forward pass or raise an error to enforce child class implementation</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Forward method must be implemented by subclasses.&quot;</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_calculate_split_sizes</span><span class="p">(</span><span class="n">total_neurons</span><span class="p">,</span> <span class="n">num_splits</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function to calculate split sizes for even distribution&quot;&quot;&quot;</span>
+        <span class="n">base_size</span> <span class="o">=</span> <span class="n">total_neurons</span> <span class="o">//</span> <span class="n">num_splits</span>
+        <span class="n">remainder</span> <span class="o">=</span> <span class="n">total_neurons</span> <span class="o">%</span> <span class="n">num_splits</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">base_size</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">remainder</span> <span class="k">else</span> <span class="n">base_size</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_splits</span><span class="p">)</span>
+        <span class="p">]</span>
+
+
+<span class="n">OperatorNetworkType</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;OperatorNetworkType&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">OperatorNetwork</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="MultiONet">
+<a class="viewcode-back" href="../../../surrogates.html#surrogates.MultiONet">[docs]</a>
+<span class="k">class</span> <span class="nc">MultiONet</span><span class="p">(</span><span class="n">OperatorNetwork</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class that implements the MultiONet model.</span>
+<span class="sd">    It differs from a standard DeepONet in that it has multiple outputs, which are obtained by</span>
+<span class="sd">    splitting the outputs of branch and trunk networks and calculating the scalar product of the splits.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        device (str, optional): The device to use for training (e.g., &#39;cpu&#39;, &#39;cuda:0&#39;).</span>
+<span class="sd">        n_chemicals (int, optional): The number of chemicals.</span>
+<span class="sd">        n_timesteps (int, optional): The number of timesteps.</span>
+<span class="sd">        config (dict, optional): The configuration for the model.</span>
+
+<span class="sd">        The configuration must provide the following information:</span>
+
+<span class="sd">        - trunk_input_size (int): The input size for the trunk network.</span>
+<span class="sd">        - hidden_size (int): The number of hidden units in each layer of the branch and trunk networks.</span>
+<span class="sd">        - branch_hidden_layers (int): The number of hidden layers in the branch network.</span>
+<span class="sd">        - trunk_hidden_layers (int): The number of hidden layers in the trunk network.</span>
+<span class="sd">        - output_factor (int): The factor by which the number of outputs is multiplied.</span>
+<span class="sd">        - learning_rate (float): The learning rate for the optimizer.</span>
+<span class="sd">        - schedule (bool): Whether to use a learning rate schedule.</span>
+<span class="sd">        - regularization_factor (float): The regularization factor for the optimizer.</span>
+<span class="sd">        - masses (np.ndarray, optional): The masses for mass conservation loss.</span>
+<span class="sd">        - massloss_factor (float, optional): The factor for the mass conservation loss.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        TypeError: Invalid configuration for MultiONet model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_chemicals</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">29</span><span class="p">,</span>
+        <span class="n">n_timesteps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">config</span> <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">MultiONetBaseConfig</span><span class="p">(</span><span class="o">**</span><span class="n">config</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">n_chemicals</span><span class="o">=</span><span class="n">n_chemicals</span><span class="p">,</span> <span class="n">n_timesteps</span><span class="o">=</span><span class="n">n_timesteps</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">=</span> <span class="n">n_chemicals</span>  <span class="c1"># Number of chemicals</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">n_chemicals</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">output_factor</span>
+        <span class="p">)</span>  <span class="c1"># Number of neurons in the last layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">branch_net</span> <span class="o">=</span> <span class="n">BranchNet</span><span class="p">(</span>
+            <span class="n">n_chemicals</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trunk_input_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>  <span class="c1"># +1 due to time</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">branch_hidden_layers</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trunk_net</span> <span class="o">=</span> <span class="n">TrunkNet</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trunk_input_size</span><span class="p">,</span>  <span class="c1"># = time + optional additional quantities</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trunk_hidden_layers</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MultiONet.forward">
+<a class="viewcode-back" href="../../../surrogates.html#surrogates.MultiONet.forward">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forward pass for the MultiONet model.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            inputs (tuple): The input tuple containing branch_input, trunk_input, and targets.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: The model outputs and the targets.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">branch_input</span><span class="p">,</span> <span class="n">trunk_input</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">inputs</span>
+        <span class="n">branch_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">branch_net</span><span class="p">(</span><span class="n">branch_input</span><span class="p">)</span>
+        <span class="n">trunk_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trunk_net</span><span class="p">(</span><span class="n">trunk_input</span><span class="p">)</span>
+
+        <span class="c1"># Splitting the outputs for multiple output values</span>
+        <span class="n">split_sizes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_split_sizes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
+        <span class="n">branch_splits</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">branch_output</span><span class="p">,</span> <span class="n">split_sizes</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">trunk_splits</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">trunk_output</span><span class="p">,</span> <span class="n">split_sizes</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">b_split</span><span class="p">,</span> <span class="n">t_split</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">branch_splits</span><span class="p">,</span> <span class="n">trunk_splits</span><span class="p">):</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">b_split</span> <span class="o">*</span> <span class="n">t_split</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">targets</span></div>
+
+
+<div class="viewcode-block" id="MultiONet.prepare_data">
+<a class="viewcode-back" href="../../../surrogates.html#surrogates.MultiONet.prepare_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">prepare_data</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dataset_train</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">dataset_test</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">dataset_val</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">timesteps</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">DataLoader</span><span class="p">,</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">DataLoader</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prepare the data for the predict or fit methods.</span>
+<span class="sd">        Note: All datasets must have shape (n_samples, n_timesteps, n_chemicals).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dataset_train (np.ndarray): The training data.</span>
+<span class="sd">            dataset_test (np.ndarray): The test data.</span>
+<span class="sd">            dataset_val (np.ndarray, optional): The validation data.</span>
+<span class="sd">            timesteps (np.ndarray): The timesteps.</span>
+<span class="sd">            batch_size (int, optional): The batch size.</span>
+<span class="sd">            shuffle (bool, optional): Whether to shuffle the data.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: The training, test, and validation DataLoaders.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dataloaders</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Create the train dataloader</span>
+        <span class="n">dataloader_train</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_dataloader</span><span class="p">(</span>
+            <span class="n">dataset_train</span><span class="p">,</span>
+            <span class="n">timesteps</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">shuffle</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">dataloaders</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dataloader_train</span><span class="p">)</span>
+
+        <span class="c1"># Create the test and validation dataloaders</span>
+        <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="p">[</span><span class="n">dataset_test</span><span class="p">,</span> <span class="n">dataset_val</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">dataset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">dataloader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_dataloader</span><span class="p">(</span>
+                    <span class="n">dataset</span><span class="p">,</span>
+                    <span class="n">timesteps</span><span class="p">,</span>
+                    <span class="n">batch_size</span><span class="p">,</span>
+                    <span class="n">shuffle</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">dataloaders</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dataloader</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dataloaders</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">dataloaders</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dataloaders</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dataloaders</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="MultiONet.fit">
+<a class="viewcode-back" href="../../../surrogates.html#surrogates.MultiONet.fit">[docs]</a>
+    <span class="nd">@time_execution</span>
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">train_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">test_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">position</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Training DeepONet&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Train the MultiONet model.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            train_loader (DataLoader): The DataLoader object containing the training data.</span>
+<span class="sd">            test_loader (DataLoader): The DataLoader object containing the test data.</span>
+<span class="sd">            epochs (int, optional): The number of epochs to train the model.</span>
+<span class="sd">            position (int): The position of the progress bar.</span>
+<span class="sd">            description (str): The description for the progress bar.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None. The training loss, test loss, and MAE are stored in the model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># self.n_timesteps = len(timesteps)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_train_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">)</span>
+
+        <span class="n">criterion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_criterion</span><span class="p">()</span>
+        <span class="n">optimizer</span><span class="p">,</span> <span class="n">scheduler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_optimizer_and_scheduler</span><span class="p">(</span><span class="n">epochs</span><span class="p">)</span>
+
+        <span class="n">train_losses</span><span class="p">,</span> <span class="n">test_losses</span><span class="p">,</span> <span class="n">MAEs</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">epochs</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+
+        <span class="n">progress_bar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_progress_bar</span><span class="p">(</span><span class="n">epochs</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="n">progress_bar</span><span class="p">:</span>
+            <span class="n">train_losses</span><span class="p">[</span><span class="n">epoch</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch</span><span class="p">(</span><span class="n">train_loader</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">)</span>
+
+            <span class="n">clr</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">param_groups</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;lr&quot;</span><span class="p">]</span>
+            <span class="n">print_loss</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">train_losses</span><span class="p">[</span><span class="n">epoch</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">progress_bar</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">({</span><span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">print_loss</span><span class="p">,</span> <span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">clr</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">})</span>
+            <span class="n">scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">test_loader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_loader</span><span class="p">)</span>
+                <span class="n">test_losses</span><span class="p">[</span><span class="n">epoch</span><span class="p">]</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">numel</span><span class="p">(</span>
+                    <span class="n">targets</span>
+                <span class="p">)</span>
+                <span class="n">MAEs</span><span class="p">[</span><span class="n">epoch</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">L1</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+        <span class="n">progress_bar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span> <span class="o">=</span> <span class="n">train_losses</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_loss</span> <span class="o">=</span> <span class="n">test_losses</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MAE</span> <span class="o">=</span> <span class="n">MAEs</span></div>
+
+
+<div class="viewcode-block" id="MultiONet.setup_criterion">
+<a class="viewcode-back" href="../../../surrogates.html#surrogates.MultiONet.setup_criterion">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_criterion</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">callable</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Utility function to set up the loss function for training.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            callable: The loss function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">crit</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;masses&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">masses</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">massloss_factor</span><span class="p">)</span>
+            <span class="n">crit</span> <span class="o">=</span> <span class="n">mass_conservation_loss</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">masses</span><span class="p">,</span> <span class="n">crit</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">crit</span></div>
+
+
+<div class="viewcode-block" id="MultiONet.setup_optimizer_and_scheduler">
+<a class="viewcode-back" href="../../../surrogates.html#surrogates.MultiONet.setup_optimizer_and_scheduler">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_optimizer_and_scheduler</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">_LRScheduler</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Utility function to set up the optimizer and scheduler for training.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            epochs (int): The number of epochs to train the model.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler): The optimizer and scheduler.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span>
+            <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
+            <span class="n">weight_decay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">regularization_factor</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">schedule</span><span class="p">:</span>
+            <span class="n">scheduler</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">LinearLR</span><span class="p">(</span>
+                <span class="n">optimizer</span><span class="p">,</span> <span class="n">start_factor</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">end_factor</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">total_iters</span><span class="o">=</span><span class="n">epochs</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">scheduler</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">LinearLR</span><span class="p">(</span>
+                <span class="n">optimizer</span><span class="p">,</span> <span class="n">start_factor</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">end_factor</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">total_iters</span><span class="o">=</span><span class="n">epochs</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">scheduler</span></div>
+
+
+<div class="viewcode-block" id="MultiONet.epoch">
+<a class="viewcode-back" href="../../../surrogates.html#surrogates.MultiONet.epoch">[docs]</a>
+    <span class="k">def</span> <span class="nf">epoch</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">criterion</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform one training epoch.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data_loader (DataLoader): The DataLoader object containing the training data.</span>
+<span class="sd">            criterion (nn.Module): The loss function.</span>
+<span class="sd">            optimizer (torch.optim.Optimizer): The optimizer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: The total loss for the training step.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+        <span class="n">total_loss</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">dataset_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">data_loader</span><span class="p">:</span>
+            <span class="n">branch_input</span><span class="p">,</span> <span class="n">trunk_input</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">batch</span>
+            <span class="n">branch_input</span><span class="p">,</span> <span class="n">trunk_input</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">branch_input</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+                <span class="n">trunk_input</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+                <span class="n">targets</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+            <span class="n">outputs</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="bp">self</span><span class="p">((</span><span class="n">branch_input</span><span class="p">,</span> <span class="n">trunk_input</span><span class="p">,</span> <span class="n">targets</span><span class="p">))</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+            <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+            <span class="n">total_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+        <span class="n">total_loss</span> <span class="o">/=</span> <span class="n">dataset_size</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">N</span>
+        <span class="k">return</span> <span class="n">total_loss</span></div>
+
+
+<div class="viewcode-block" id="MultiONet.create_dataloader">
+<a class="viewcode-back" href="../../../surrogates.html#surrogates.MultiONet.create_dataloader">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_dataloader</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">timesteps</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a DataLoader for the given data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (np.ndarray): The data to load. Must have shape (n_samples, n_timesteps, n_chemicals).</span>
+<span class="sd">            timesteps (np.ndarray): The timesteps.</span>
+<span class="sd">            batch_size (int, optional): The batch size.</span>
+<span class="sd">            shuffle (bool, optional): Whether to shuffle the data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize lists to store the inputs and targets</span>
+        <span class="n">branch_inputs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">trunk_inputs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Iterate through the grid to select the samples</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">branch_inputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:])</span>
+                <span class="n">trunk_inputs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">timesteps</span><span class="p">[</span><span class="n">j</span><span class="p">]])</span>
+                <span class="n">targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="p">:])</span>
+
+        <span class="c1"># Convert to PyTorch tensors</span>
+        <span class="n">branch_inputs_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">branch_inputs</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span>
+        <span class="p">)</span>
+        <span class="n">trunk_inputs_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">trunk_inputs</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">targets_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">targets</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="c1"># Create a TensorDataset and DataLoader</span>
+        <span class="n">branch_inputs_tensor</span> <span class="o">=</span> <span class="n">branch_inputs_tensor</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">trunk_inputs_tensor</span> <span class="o">=</span> <span class="n">trunk_inputs_tensor</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">targets_tensor</span> <span class="o">=</span> <span class="n">targets_tensor</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">TensorDataset</span><span class="p">(</span>
+            <span class="n">branch_inputs_tensor</span><span class="p">,</span> <span class="n">trunk_inputs_tensor</span><span class="p">,</span> <span class="n">targets_tensor</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">DataLoader</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">shuffle</span><span class="o">=</span><span class="n">shuffle</span><span class="p">,</span>
+            <span class="n">worker_init_fn</span><span class="o">=</span><span class="n">worker_init_fn</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">CODES Benchmark</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../benchmark.html">benchmark module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data.html">data package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../generate_simple_ode_data.html">generate_simple_ode_data module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../make_new_dataset.html">make_new_dataset module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../surrogates.html">surrogates package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../train.html">train module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../utils.html">utils package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../run_training.html">run_training module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../run_benchmark.html">run_benchmark module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Robin Janssen, Immanuel Sulzer.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

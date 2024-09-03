@@ -1,5 +1,5 @@
-surrogates package
-==================
+Surrogates
+==========
 
 Submodules
 ----------
