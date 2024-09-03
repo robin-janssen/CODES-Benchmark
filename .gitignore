@@ -7,7 +7,7 @@
 /log
 *test.ipynb
 .vscode
-*__pycache__
+*__pycache__*
 pylintrc
 .flake8
 profiling*
