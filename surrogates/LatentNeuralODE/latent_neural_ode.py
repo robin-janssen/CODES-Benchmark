@@ -43,18 +43,8 @@ class LatentNeuralODE(AbstractSurrogateModel):
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
         )
         model_config = model_config if model_config is not None else {}
-        coder_act = (
-            model_config["coder_activation"]
-            if hasattr(self.config, "coder_activation")
-            else "ReLU"
-        )
-        model_config["coder_activation"] = self.get_activation_function(coder_act)
-        ode_act = (
-            model_config["ode_activation"]
-            if hasattr(self.config, "ode_activation")
-            else "ReLU"
-        )
-        model_config["ode_activation"] = self.get_activation_function(ode_act)
+        coder_layers = [4, 2, 1]
+        self.config.coder_layers = [layer * self.config.layers_factor for layer in coder_layers]
         self.config = LatentNeuralODEBaseConfig(**model_config)
         self.model = ModelWrapper(config=self.config, n_chemicals=n_chemicals).to(
             device

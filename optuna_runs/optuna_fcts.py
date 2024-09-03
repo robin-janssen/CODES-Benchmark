@@ -56,6 +56,46 @@ def save_optuna_config(config, study_name, folder_path="optuna_runs/studies/"):
         yaml.dump(config, file, default_flow_style=False)
 
 
+def get_activation_function(model_dict):
+    """
+    Get and replace activation functions in the model dictionary.
+
+    Args:
+        model_dict (dict): The model dictionary containing the activation functions.
+
+    Returns:
+        model_dict (dict): The model dictionary with the activation functions replaced by the corresponding PyTorch functions.
+    """
+
+    def get_activation(activation):
+        activation = activation.strip().lower()
+        if activation == "relu":
+            return nn.ReLU()
+        elif activation == "leakyrelu":
+            return nn.LeakyReLU()
+        elif activation == "tanh":
+            return nn.Tanh()
+        elif activation == "gelu":
+            return nn.GELU()
+        elif activation == "softplus":
+            return nn.Softplus()
+        elif activation == "sigmoid":
+            return nn.Sigmoid()
+        elif activation == "identity":
+            return nn.Identity()
+        elif activation == "elu":
+            return nn.ELU()
+        else:
+            raise ValueError(f"Activation function {activation} not supported.")
+
+    if "activation" in model_dict:
+        for key in model_dict:
+            if "activation" in key:
+                model_dict[key] = get_activation(model_dict[key])
+
+    return model_dict
+
+
 def make_optuna_params(trial, optuna_params):
     """
     Function to generate suggested parameters for Optuna based on the optuna_params configuration.
@@ -126,7 +166,11 @@ def training_run(trial, config):
 
     # Generate suggested parameters using the make_optuna_params function
     suggested_params = make_optuna_params(trial, config["optuna_params"])
-
+    # See whether "activation" is part of any of the strings in the suggested_params
+    if "activation" in suggested_params:
+        for key in suggested_params:
+            if "activation" in key:
+                suggested_params[key] = get_activation_function(suggested_params[key])
     n_timesteps = train_data.shape[1]
     n_chemicals = train_data.shape[2]
 

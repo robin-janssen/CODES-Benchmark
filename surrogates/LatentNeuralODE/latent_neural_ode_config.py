@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass
@@ -6,7 +6,7 @@ class LatentNeuralODEBaseConfig:
     """Standard model config for LatentNeuralODE"""
 
     latent_features: int = 5
-    coder_layers: list[int] = field(default_factory=lambda: [32, 16, 8])
+    # coder_layers: list[int] = field(default_factory=lambda: [32, 16, 8])
     coder_activation: str = "ReLU"
     ode_activation: str = "Tanh"
     ode_hidden: int = 4

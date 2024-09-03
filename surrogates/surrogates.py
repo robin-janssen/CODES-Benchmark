@@ -365,29 +365,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
                 data = data * std + mean
 
         return data
-    
-    def get_activation_function(self, activation: str) -> nn.Module:
-        """
-        Get the activation function.
-
-        Args:
-            activation (str): The name of the activation function.
-
-        Returns:
-            nn.Module: The activation function.
-        """
-        if activation == "ReLU":
-            return nn.ReLU()
-        elif activation == "LeakyReLU":
-            return nn.LeakyReLU()
-        elif activation == "Tanh":
-            return nn.Tanh()
-        elif activation == "GELU":
-            return nn.GELU()
-        elif activation == "Softplus":
-            return nn.Softplus()
-        else:
-            raise ValueError(f"Activation function {activation} not supported.")
 
 
 SurrogateModel = TypeVar("SurrogateModel", bound=AbstractSurrogateModel)

@@ -38,12 +38,6 @@ class LatentPoly(AbstractSurrogateModel):
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
         )
         model_config = model_config if model_config is not None else {}
-        act_fct = (
-            model_config.coder_activation
-            if hasattr(model_config, "coder_activation")
-            else "ReLU"
-        )
-        model_config["coder_activation"] = self.get_activation_function(act_fct)
         self.config = LatentPolynomialBaseConfig(**model_config)
         coder_layers = [4, 2, 1]
         self.config.coder_layers = [layer * self.config.layers_factor for layer in coder_layers]
