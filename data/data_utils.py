@@ -10,6 +10,7 @@ class DatasetError(Exception):
     """
     Error for missing data or dataset or if the data shape is incorrect.
     """
+
     pass
 
 
@@ -428,13 +429,19 @@ def create_dataset(
     print(f"Dataset '{name}' created at {dataset_dir}")
 
 
-def download_data(dataset_name: str):
+def download_data(dataset_name: str, path: str | None = None):
     """
     Download the specified dataset if it is not present
     Args:
         dataset_name (str): The name of the dataset.
+        path (str, optional): The path to save the dataset. If None, the default data directory is used.
     """
-    if os.path.isfile(f"data/{dataset_name.lower()}/data.hdf5"):
+    data_path = (
+        os.path.abspath(f"data/{dataset_name.lower()}/data.hdf5")
+        if path is None
+        else os.path.abspath(path)
+    )
+    if os.path.isfile(data_path):
         return
 
     with open("data/data_sources.yaml", "r", encoding="utf-8") as file:
@@ -442,13 +449,13 @@ def download_data(dataset_name: str):
 
     try:
         url = data_sources[dataset_name]
-    except KeyError as exc:
+    except KeyError as e:
         raise ValueError(
             f"Dataset '{dataset_name}' not found in data_sources.yaml"
-        ) from exc
+        ) from e
 
-    os.makedirs(f"data/{dataset_name.lower()}", exist_ok=True)
+    os.makedirs(os.path.dirname(data_path), exist_ok=True)
 
     print(f"Downloading dataset '{dataset_name}'...")
-    urllib.request.urlretrieve(url, f"data/{dataset_name.lower()}/data.hdf5")
+    urllib.request.urlretrieve(url, data_path)
     print(f"Dataset '{dataset_name}' downloaded successfully.")
