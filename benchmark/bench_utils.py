@@ -82,10 +82,6 @@ def check_benchmark(conf: dict) -> None:
     if "batch_size" in conf:
         training_batch_size = training_conf.get("batch_size", [])
         benchmark_batch_size = conf.get("batch_size", [])
-        if len(training_batch_size) != len(benchmark_batch_size):
-            raise ValueError(
-                "Mismatch in number of batch sizes between training and benchmark configuration."
-            )
 
         # Check if batch sizes correspond to the correct surrogates
         for i, surrogate in enumerate(conf.get("surrogates", [])):
@@ -95,6 +91,13 @@ def check_benchmark(conf: dict) -> None:
                     print(
                         f"Warning: Batch size for surrogate '{surrogate}' has changed from {training_batch_size[index]} to {benchmark_batch_size[i]}."
                     )
+                    # Get user input to confirm the change
+                    user_input = input("Do you want to continue? (y/n): ")
+                    if user_input.lower() == "y":
+                        print(f"Continuing with batch size {benchmark_batch_size[i]}.")
+                    else:
+                        print("Exiting...")
+                        exit()
 
     # 3. Check Dataset Settings
     training_dataset = training_conf.get("dataset", {})

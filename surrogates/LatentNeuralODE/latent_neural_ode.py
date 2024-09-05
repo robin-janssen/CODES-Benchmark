@@ -46,6 +46,10 @@ class LatentNeuralODE(AbstractSurrogateModel):
             config=model_config,
         )
         self.config = LatentNeuralODEBaseConfig(**self.config)
+        coder_layers = [4, 2, 1]
+        self.config.coder_layers = [
+            layer * self.config.layers_factor for layer in coder_layers
+        ]
         self.model = ModelWrapper(config=self.config, n_chemicals=n_chemicals).to(
             device
         )

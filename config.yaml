@@ -1,19 +1,19 @@
 # Global settings for the benchmark
-training_id: "all_models"
-surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
-batch_size: [1024, 1024, 256, 256]
-epochs: [1000, 1000, 15000, 10000]
+training_id: "test_train_config_handling_2"
+surrogates: ["MultiONet", "FullyConnected", "LatentPoly"]
+batch_size: [1024, 1024, 128]
+epochs: [2,2,2,2]
 dataset: 
   name: "osu2008"
-  log10_transform: False
+  log10_transform: True
   normalise: "minmax" # "standardise", "minmax", "disable"
-devices: ["cuda:0", "cuda:2", "cuda:3", "cuda:4"]
+devices: ["cuda:7"]
 seed: 42
 verbose: False
 
 # Models to train
 interpolation: 
-  enabled: True
+  enabled: False
   intervals: [2, 3, 4, 5, 6, 7, 8, 10]
 extrapolation: 
   enabled: False
@@ -29,10 +29,10 @@ uncertainty:
   ensemble_size: 5  # Number of models for deep ensemble
 
 # Evaluations during benchmark
-losses: True
-gradients: True
-timing: True
-compute: True
+losses: False
+gradients: False
+timing: False
+compute: False
 compare: True # Whether to compare the surrogates
 
 

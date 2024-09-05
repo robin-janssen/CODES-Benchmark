@@ -41,6 +41,10 @@ class LatentPoly(AbstractSurrogateModel):
             config=model_config,
         )
         self.config = LatentPolynomialBaseConfig(**self.config)
+        coder_layers = [4, 2, 1]
+        self.config.coder_layers = [
+            layer * self.config.layers_factor for layer in coder_layers
+        ]
         self.config.in_features = n_chemicals
         self.model = PolynomialModelWrapper(config=self.config, device=self.device)
 

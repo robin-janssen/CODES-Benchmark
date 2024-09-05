@@ -19,10 +19,10 @@
 - [x] **Check the time benchmarking**
 - [x] **Check whether the training is indeed deterministic.**
 - [x] **Implement optional log scale labels in plots**
-- [ ] **Check the memory benchmarking**
+- [x] **Check the memory benchmarking**
 - [ ] **Save Plots as SVG for immaculate quality**
 - [ ] Rename batch_scaling to batch.
-- [ ] **Docstrings completion.**
+- [x] **Docstrings completion.**
 - [ ] **Make a clean requirements.txt, clean up the python environment and do a fresh test install**
 - [ ] **Make tutorial notebooks/examples**
 - [ ] **Check/update the config maker**
@@ -34,18 +34,18 @@
 - [x] **Make a table in the CLI at the end of the benchmark with the most important metrics**
 - [x] **Make a csv file with the most important metrics**
 - [x] **Make a json file with the most important metrics**
-- [ ] **Add and document Lorenzo's Dataset**
+- [x] **Add and document Lorenzo's Dataset**
+- [x] Optuna tuning script
 - [x] Calculate and add error quantities per surrogate to the individal (and comparative) outputs.
+- [x] Add user prompt on whether to use task list or overwrite it.
+- [x] Add additional baseline datasets -> implement dynamic datasets
+- [ ] Time estimation using training duration of the main models an effective number of models to train.
 - [ ] Store output in a .txt file
 - [ ] Refactoring for more generality (remove chemistry specific code)
-- [x] Add user prompt on whether to use task list or overwrite it.
 - [ ] Continue training of the existing models in case further convergence is needed
 - [ ] Accumulation of error when predicting quantities iteratively
 - [ ] Inter-/extrapolation in the initial conditions (domain shift)
 - [ ] Dataset Visualizations - also include how the distribution changes over time (for iterative preds)
-- [ ] Add additional baseline datasets -> implement dynamic datasets
-- [ ] Datasets by Lorenzo and Simon Glover
-- [ ] Optuna tuning script
 - [ ] Determine optimal model parameters for the baseline models per dataset
 - [ ] Integrate Torch Compile for potentially better performance
 
