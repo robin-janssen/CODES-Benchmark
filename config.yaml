@@ -32,6 +32,7 @@ uncertainty:
 losses: False
 gradients: False
 timing: False
+compute: False
 compare: True # Whether to compare the surrogates
 
 
