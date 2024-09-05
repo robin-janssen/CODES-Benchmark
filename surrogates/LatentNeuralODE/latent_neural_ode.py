@@ -40,9 +40,11 @@ class LatentNeuralODE(AbstractSurrogateModel):
         model_config: dict | None = None,
     ):
         super().__init__(
-            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+            device=device,
+            n_chemicals=n_chemicals,
+            n_timesteps=n_timesteps,
+            config=model_config,
         )
-        model_config = model_config if model_config is not None else {}
         self.config = LatentNeuralODEBaseConfig(**model_config)
         self.model = ModelWrapper(config=self.config, n_chemicals=n_chemicals).to(
             device

@@ -101,10 +101,17 @@ class OperatorNetwork(AbstractSurrogateModel):
     """
 
     def __init__(
-        self, device: str | None = None, n_chemicals: int = 29, n_timesteps: int = 100
+        self,
+        device: str | None = None,
+        n_chemicals: int = 29,
+        n_timesteps: int = 100,
+        config: dict | None = None,
     ):
         super().__init__(
-            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+            device=device,
+            n_chemicals=n_chemicals,
+            n_timesteps=n_timesteps,
+            config=config,
         )
 
     def post_init_check(self):
@@ -168,11 +175,13 @@ class MultiONet(OperatorNetwork):
         n_timesteps: int = 100,
         config: dict | None = None,
     ):
-        config = config if config is not None else {}
-        self.config = MultiONetBaseConfig(**config)
         super().__init__(
-            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+            device=device,
+            n_chemicals=n_chemicals,
+            n_timesteps=n_timesteps,
+            config=config,
         )
+        self.config = MultiONetBaseConfig(**config)
         self.device = device
         self.N = n_chemicals  # Number of chemicals
         self.outputs = (

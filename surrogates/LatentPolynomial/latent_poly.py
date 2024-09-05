@@ -35,9 +35,11 @@ class LatentPoly(AbstractSurrogateModel):
         model_config: dict | None = None,
     ):
         super().__init__(
-            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+            device=device,
+            n_chemicals=n_chemicals,
+            n_timesteps=n_timesteps,
+            config=model_config,
         )
-        model_config = model_config if model_config is not None else {}
         self.config = LatentPolynomialBaseConfig(**model_config)
         self.config.in_features = n_chemicals
         self.model = PolynomialModelWrapper(config=self.config, device=self.device)

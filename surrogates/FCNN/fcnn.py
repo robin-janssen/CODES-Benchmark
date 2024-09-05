@@ -47,7 +47,7 @@ class FullyConnected(AbstractSurrogateModel):
         device: str | None = None,
         n_chemicals: int = 29,
         n_timesteps: int = 100,
-        config: dict = {},
+        config: dict | None = None,
     ):
         """
         Initialize the FullyConnected model with a configuration.
@@ -60,18 +60,20 @@ class FullyConnected(AbstractSurrogateModel):
         - schedule (bool): Whether to use a learning rate schedule.
         """
         super().__init__(
-            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+            device=device,
+            n_chemicals=n_chemicals,
+            n_timesteps=n_timesteps,
+            config=config,
         )
-        config = FCNNBaseConfig(**config)
-        self.config = config
+        self.config = FCNNBaseConfig(**config)
         self.device = device
         self.N = n_chemicals
         self.model = FullyConnectedNet(
             self.N + 1,  # 29 chemicals + 1 time input
-            config.hidden_size,
+            self.config.hidden_size,
             self.N,
-            config.num_hidden_layers,
-            config.activation,
+            self.config.num_hidden_layers,
+            self.config.activation,
         ).to(device)
 
     def forward(

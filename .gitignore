@@ -18,4 +18,5 @@ sindy
 lorenzo_data.ipynb
 optuna_runs/models
 optuna_runs/studies
+optuna_runs/plots
 scripts
