@@ -109,10 +109,11 @@ def train_and_save_model(
     # Save the model (making the name lowercase and removing any underscores)
     model_name = f"{surr_name.lower()}_{mode}_{str(metric)}".strip("_")
     model_name = model_name.replace("__", "_")
+    base_dir = os.path.join(os.getcwd(), "trained")
     model.save(
         model_name=model_name,
         training_id=config["training_id"],
-        subfolder="trained",
+        base_dir=base_dir,
         data_params=data_params,
     )
 
