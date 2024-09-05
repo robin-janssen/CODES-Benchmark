@@ -40,7 +40,7 @@ class LatentPoly(AbstractSurrogateModel):
             n_timesteps=n_timesteps,
             config=model_config,
         )
-        self.config = LatentPolynomialBaseConfig(**model_config)
+        self.config = LatentPolynomialBaseConfig(**self.config)
         self.config.in_features = n_chemicals
         self.model = PolynomialModelWrapper(config=self.config, device=self.device)
 

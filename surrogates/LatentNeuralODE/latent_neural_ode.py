@@ -45,7 +45,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
             n_timesteps=n_timesteps,
             config=model_config,
         )
-        self.config = LatentNeuralODEBaseConfig(**model_config)
+        self.config = LatentNeuralODEBaseConfig(**self.config)
         self.model = ModelWrapper(config=self.config, n_chemicals=n_chemicals).to(
             device
         )
