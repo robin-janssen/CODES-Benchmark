@@ -1,8 +1,8 @@
 # Global settings for the benchmark
 training_id: "continue_training_test_3"
-surrogates: ["LatentPoly"] # ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
-batch_size: [128]
-epochs: [100]
+surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
+batch_size: [1024, 1024, 128, 128]
+epochs: [3, 3, 3, 3]
 dataset: 
   name: "osu2008"
   log10_transform: False
@@ -13,7 +13,7 @@ verbose: False
 
 # Models to train
 interpolation: 
-  enabled: True
+  enabled: False
   intervals: [2, 3, 4, 5, 6, 7, 8, 10]
 extrapolation: 
   enabled: False

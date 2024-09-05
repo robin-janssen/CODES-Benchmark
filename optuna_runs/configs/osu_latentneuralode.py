@@ -7,7 +7,7 @@ config = {
         "log10_transform": True,
         "normalise": "minmax",
     },
-    "device": "cuda:4",
+    "device": "cuda:1",
     "seed": 42,
     "batch_size": 1024,
     "epochs": 5000,
@@ -15,10 +15,7 @@ config = {
     "optuna_params": {
         "latent_features": {"type": "int", "low": 3, "high": 10},
         "learning_rate": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
-        "coder_activation": {
-            "type": "categorical",
-            "choices": ["ReLU", "LeakyReLU", "Tanh", "GELU", "Softplus"],
-        },
+        "layers_factor": {"type": "int", "low": 1, "high": 50},
         "ode_activation": {
             "type": "categorical",
             "choices": ["ReLU", "LeakyReLU", "Tanh", "GELU", "Softplus"],

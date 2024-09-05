@@ -56,44 +56,34 @@ def save_optuna_config(config, study_name, folder_path="optuna_runs/studies/"):
         yaml.dump(config, file, default_flow_style=False)
 
 
-def get_activation_function(model_dict):
+def get_activation_function(name: str) -> nn.Module:
     """
-    Get and replace activation functions in the model dictionary.
+    Convert a string name to a corresponding torch.nn activation function.
 
     Args:
-        model_dict (dict): The model dictionary containing the activation functions.
+        name (str): The name of the activation function.
 
     Returns:
-        model_dict (dict): The model dictionary with the activation functions replaced by the corresponding PyTorch functions.
+        nn.Module: The PyTorch activation function corresponding to the given name.
+
+    Raises:
+        ValueError: If the activation function name is not supported.
     """
+    activation_functions = {
+        "relu": nn.ReLU(),
+        "leakyrelu": nn.LeakyReLU(),
+        "tanh": nn.Tanh(),
+        "gelu": nn.GELU(),
+        "softplus": nn.Softplus(),
+        "sigmoid": nn.Sigmoid(),
+        "identity": nn.Identity(),
+        "elu": nn.ELU(),
+    }
 
-    def get_activation(activation):
-        activation = activation.strip().lower()
-        if activation == "relu":
-            return nn.ReLU()
-        elif activation == "leakyrelu":
-            return nn.LeakyReLU()
-        elif activation == "tanh":
-            return nn.Tanh()
-        elif activation == "gelu":
-            return nn.GELU()
-        elif activation == "softplus":
-            return nn.Softplus()
-        elif activation == "sigmoid":
-            return nn.Sigmoid()
-        elif activation == "identity":
-            return nn.Identity()
-        elif activation == "elu":
-            return nn.ELU()
-        else:
-            raise ValueError(f"Activation function {activation} not supported.")
-
-    if "activation" in model_dict:
-        for key in model_dict:
-            if "activation" in key:
-                model_dict[key] = get_activation(model_dict[key])
-
-    return model_dict
+    try:
+        return activation_functions[name.lower()]
+    except KeyError:
+        raise ValueError(f"Activation function '{name}' not supported.")
 
 
 def make_optuna_params(trial, optuna_params):
@@ -165,12 +155,14 @@ def training_run(trial, config):
     surr_name = config["surrogate"]["name"]
 
     # Generate suggested parameters using the make_optuna_params function
+
     suggested_params = make_optuna_params(trial, config["optuna_params"])
-    # See whether "activation" is part of any of the strings in the suggested_params
-    if "activation" in suggested_params:
-        for key in suggested_params:
-            if "activation" in key:
-                suggested_params[key] = get_activation_function(suggested_params[key])
+
+    # Iterate over the dictionary keys to check if "activation" is a substring of the key
+    for key in suggested_params.keys():
+        if "activation" in key:
+            suggested_params[key] = get_activation_function(suggested_params[key])
+
     n_timesteps = train_data.shape[1]
     n_chemicals = train_data.shape[2]
 

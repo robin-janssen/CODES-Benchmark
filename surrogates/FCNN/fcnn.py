@@ -47,7 +47,7 @@ class FullyConnected(AbstractSurrogateModel):
         device: str | None = None,
         n_chemicals: int = 29,
         n_timesteps: int = 100,
-        config: dict = {},
+        config: dict | None = None,
     ):
         """
         Initialize the FullyConnected model with a configuration.
@@ -62,12 +62,16 @@ class FullyConnected(AbstractSurrogateModel):
         super().__init__(
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
         )
-        config = FCNNBaseConfig(**config)
+        config = {} if config is None else config
+        try:
+            config = FCNNBaseConfig(**config)
+        except TypeError as e:
+            raise KeyError(
+                f"Error loading the model configuration. {e}.\n This is probably caused by a parameter in the provided config that is not part of the FCNNBaseConfig class."
+            )
         self.config = config
         self.device = device
         self.N = n_chemicals
-        act_fct = config.activation if hasattr(config, "activation") else "ReLU"
-        config.activation = self.get_activation_function(act_fct)
         self.model = FullyConnectedNet(
             self.N + 1,  # 29 chemicals + 1 time input
             config.hidden_size,

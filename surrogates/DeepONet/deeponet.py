@@ -166,25 +166,24 @@ class MultiONet(OperatorNetwork):
         device: str | None = None,
         n_chemicals: int = 29,
         n_timesteps: int = 100,
-        config: dict = {},
+        config: dict | None = None,
     ):
-        try:
-            config = MultiONetBaseConfig(**config)
-        except TypeError as e:
-            raise TypeError(
-                f"Invalid configuration for MultiONet model: {e} \n This likely means that the model config contains keys that are not in the models base config."
-            ) from e
         super().__init__(
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
         )
+        config = {} if config is None else config
+        try:
+            config = MultiONetBaseConfig(**config)
+        except TypeError as e:
+            raise KeyError(
+                f"Error loading the model configuration. {e}.\n This is probably caused by a parameter in the provided config that is not part of the MultiONetBaseConfig class."
+            )
         self.config = config
         self.device = device
         self.N = n_chemicals  # Number of chemicals
         self.outputs = (
             n_chemicals * config.output_factor
         )  # Number of neurons in the last layer
-        act_fct = config.activation if hasattr(config, "activation") else "ReLU"
-        config.activation = self.get_activation_function(act_fct)
         self.branch_net = BranchNet(
             n_chemicals - (config.trunk_input_size - 1),  # +1 due to time
             config.hidden_size,

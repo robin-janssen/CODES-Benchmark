@@ -38,9 +38,16 @@ class LatentPoly(AbstractSurrogateModel):
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
         )
         model_config = model_config if model_config is not None else {}
-        self.config = LatentPolynomialBaseConfig(**model_config)
+        try:
+            self.config = LatentPolynomialBaseConfig(**model_config)
+        except TypeError as e:
+            raise KeyError(
+                f"Error loading the model configuration. {e}.\n This is probably caused by a parameter in the provided model_config that is not part of the LatentPolynomialBaseConfig class."
+            )
         coder_layers = [4, 2, 1]
-        self.config.coder_layers = [layer * self.config.layers_factor for layer in coder_layers]
+        self.config.coder_layers = [
+            layer * self.config.layers_factor for layer in coder_layers
+        ]
         self.config.in_features = n_chemicals
         self.model = PolynomialModelWrapper(config=self.config, device=self.device)
 

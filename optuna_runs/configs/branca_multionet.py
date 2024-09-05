@@ -8,7 +8,7 @@ config = {
         "normalise": "minmax",
         "subset_factor": 8,
     },
-    "device": "cuda:9",
+    "device": "cuda:4",
     "seed": 42,
     "batch_size": 1024,
     "epochs": 200,
@@ -19,5 +19,9 @@ config = {
         "hidden_size": {"type": "int", "low": 50, "high": 300},
         "learning_rate": {"type": "float", "low": 1e-5, "high": 1e-2, "log": True},
         "output_factor": {"type": "int", "low": 1, "high": 30},
+        "activation": {
+            "type": "categorical",
+            "choices": ["ReLU", "LeakyReLU", "Tanh", "GELU", "Softplus"],
+        },
     },
 }

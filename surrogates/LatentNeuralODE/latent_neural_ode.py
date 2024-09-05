@@ -44,8 +44,15 @@ class LatentNeuralODE(AbstractSurrogateModel):
         )
         model_config = model_config if model_config is not None else {}
         coder_layers = [4, 2, 1]
-        self.config.coder_layers = [layer * self.config.layers_factor for layer in coder_layers]
-        self.config = LatentNeuralODEBaseConfig(**model_config)
+        try:
+            self.config = LatentNeuralODEBaseConfig(**model_config)
+        except TypeError as e:
+            raise KeyError(
+                f"Error loading the model configuration. {e}. This is probably caused by a parameter in the provided model_config that is not part of the LatentNeuralODEBaseConfig class."
+            )
+        self.config.coder_layers = [
+            layer * self.config.layers_factor for layer in coder_layers
+        ]
         self.model = ModelWrapper(config=self.config, n_chemicals=n_chemicals).to(
             device
         )

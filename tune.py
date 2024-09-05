@@ -18,7 +18,7 @@ def parse_arguments():
     parser.add_argument(
         "--config",
         type=str,
-        default="branca_multionet.py",
+        default="osu_latentneuralode.py",
         help="The name of the Python config file (e.g., 'config_1.py').",
     )
     return parser.parse_args()

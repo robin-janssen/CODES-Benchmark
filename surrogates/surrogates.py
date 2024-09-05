@@ -290,7 +290,13 @@ class AbstractSurrogateModel(ABC, nn.Module):
         model_path = os.path.join(model_dir, f"{model_name}.pth")
         torch.save(model_dict, model_path)
 
-    def load(self, training_id: str, surr_name: str, model_identifier: str) -> None:
+    def load(
+        self,
+        training_id: str,
+        surr_name: str,
+        model_identifier: str,
+        folder_name: str = "trained",
+    ) -> None:
         """
         Load a trained surrogate model.
 
@@ -299,12 +305,13 @@ class AbstractSurrogateModel(ABC, nn.Module):
             training_id (str): The training identifier.
             surr_name (str): The name of the surrogate model.
             model_identifier (str): The identifier of the model (e.g., 'main').
+            folder_name (str): The name of the folder where the model is saved.
 
         Returns:
             None. The model is loaded in place.
         """
         model_dict_path = os.path.join(
-            "trained", training_id, surr_name, f"{model_identifier}.pth"
+            folder_name, training_id, surr_name, f"{model_identifier}.pth"
         )
         model_dict = torch.load(model_dict_path, map_location=self.device)
         self.load_state_dict(model_dict["state_dict"])
