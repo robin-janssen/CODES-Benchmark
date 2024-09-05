@@ -181,7 +181,7 @@ class MultiONet(OperatorNetwork):
             n_timesteps=n_timesteps,
             config=config,
         )
-        self.config = MultiONetBaseConfig(**config)
+        self.config = MultiONetBaseConfig(**self.config)
         self.device = device
         self.N = n_chemicals  # Number of chemicals
         self.outputs = (

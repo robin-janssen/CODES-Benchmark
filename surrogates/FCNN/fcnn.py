@@ -65,7 +65,7 @@ class FullyConnected(AbstractSurrogateModel):
             n_timesteps=n_timesteps,
             config=config,
         )
-        self.config = FCNNBaseConfig(**config)
+        self.config = FCNNBaseConfig(**self.config)
         self.device = device
         self.N = n_chemicals
         self.model = FullyConnectedNet(
