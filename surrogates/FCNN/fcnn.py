@@ -60,18 +60,20 @@ class FullyConnected(AbstractSurrogateModel):
         - schedule (bool): Whether to use a learning rate schedule.
         """
         super().__init__(
-            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
+            device=device,
+            n_chemicals=n_chemicals,
+            n_timesteps=n_timesteps,
+            config=config,
         )
-        config = config if config is not None else {}
         self.config = FCNNBaseConfig(**config)
         self.device = device
         self.N = n_chemicals
         self.model = FullyConnectedNet(
             self.N + 1,  # 29 chemicals + 1 time input
-            config.hidden_size,
+            self.config.hidden_size,
             self.N,
-            config.num_hidden_layers,
-            config.activation,
+            self.config.num_hidden_layers,
+            self.config.activation,
         ).to(device)
 
     def forward(

@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+import torch.nn as nn
+
 # from typing import Optional
 
 
@@ -12,6 +14,7 @@ class FCNNBaseConfig:
     learning_rate: float = 1e-4
     schedule: bool = False
     regularization_factor: float = 0.012
+    activation: nn.Module = nn.ReLU()
 
 
 @dataclass

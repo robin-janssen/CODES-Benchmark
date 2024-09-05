@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from torch import nn
+
 # from data.osu2008.osu_chemicals import osu_masses
 
 
@@ -17,6 +19,7 @@ class MultiONetBaseConfig:
     schedule: bool = False
     regularization_factor: float = 0.0  # 0.012
     massloss_factor: float = 0.0  # 0.012
+    activation: nn.Module = nn.ReLU()
 
 
 @dataclass
