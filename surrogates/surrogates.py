@@ -219,7 +219,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
     def save(
         self,
         model_name: str,
-        subfolder: str,
+        base_dir: str,
         training_id: str,
         data_params: dict,
     ) -> None:
@@ -234,8 +234,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         """
 
         # Make the model directory
-        base_dir = os.getcwd()
-        subfolder = os.path.join(subfolder, training_id, self.__class__.__name__)
+        subfolder = os.path.join(base_dir, training_id, self.__class__.__name__)
         model_dir = create_model_dir(base_dir, subfolder)
 
         # Load and clean the hyperparameters
@@ -260,7 +259,9 @@ class AbstractSurrogateModel(ABC, nn.Module):
                     delattr(self, attr)
 
         # Add some additional information to the model and hyperparameters
-        self.train_duration = self.fit.duration
+        self.train_duration = (
+            self.fit.duration if hasattr(self.fit, "duration") else None
+        )
         hyperparameters["train_duration"] = self.train_duration
         self.normalisation = data_params
         hyperparameters["normalisation"] = data_params
@@ -290,12 +291,17 @@ class AbstractSurrogateModel(ABC, nn.Module):
         model_path = os.path.join(model_dir, f"{model_name}.pth")
         torch.save(model_dict, model_path)
 
-    def load(self, training_id: str, surr_name: str, model_identifier: str) -> None:
+    def load(
+        self,
+        training_id: str,
+        surr_name: str,
+        model_identifier: str,
+        model_dir: str | None = None,
+    ) -> None:
         """
         Load a trained surrogate model.
 
         Args:
-            model: Instance of the surrogate model class.
             training_id (str): The training identifier.
             surr_name (str): The name of the surrogate model.
             model_identifier (str): The identifier of the model (e.g., 'main').
@@ -303,9 +309,14 @@ class AbstractSurrogateModel(ABC, nn.Module):
         Returns:
             None. The model is loaded in place.
         """
-        model_dict_path = os.path.join(
-            "trained", training_id, surr_name, f"{model_identifier}.pth"
-        )
+        if model_dir is None:
+            model_dict_path = os.path.join(
+                os.getcwd(), "trained", training_id, surr_name, f"{model_identifier}.pth"
+            )
+        else:
+            model_dict_path = os.path.join(
+                model_dir, training_id, surr_name, f"{model_identifier}.pth"
+            )
         model_dict = torch.load(model_dict_path, map_location=self.device)
         self.load_state_dict(model_dict["state_dict"])
         for key, value in model_dict["attributes"].items():

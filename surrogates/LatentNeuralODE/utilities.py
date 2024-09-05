@@ -10,7 +10,11 @@ class ChemDataset(torch.utils.data.Dataset):
     """
 
     def __init__(self, raw_data, timesteps, device):
-        self.data = torch.tensor(raw_data, dtype=torch.float64)
+        if not isinstance(raw_data, torch.Tensor):
+            raw_data = torch.tensor(raw_data, dtype=torch.float64)
+        else:
+            raw_data = raw_data.to(torch.float64)
+        self.data = raw_data
         self.length = self.data.shape[0]
         self.data = self.data.to(device)
         if not isinstance(timesteps, torch.Tensor):

@@ -30,11 +30,12 @@ class BranchNet(nn.Module):
         hidden_size: int,
         output_size: int,
         num_hidden_layers: int,
+        activation: nn.Module = nn.ReLU(),
     ):
         super(BranchNet, self).__init__()
-        layers = [nn.Linear(input_size, hidden_size), nn.ReLU()]
+        layers = [nn.Linear(input_size, hidden_size), activation]
         for _ in range(num_hidden_layers - 1):
-            layers += [nn.Linear(hidden_size, hidden_size), nn.ReLU()]
+            layers += [nn.Linear(hidden_size, hidden_size), activation]
         layers.append(nn.Linear(hidden_size, output_size))
         self.network = nn.Sequential(*layers)
 
@@ -65,11 +66,12 @@ class TrunkNet(nn.Module):
         hidden_size: int,
         output_size: int,
         num_hidden_layers: int,
+        activation: nn.Module = nn.ReLU(),
     ):
         super(TrunkNet, self).__init__()
-        layers = [nn.Linear(input_size, hidden_size), nn.ReLU()]
+        layers = [nn.Linear(input_size, hidden_size), activation]
         for _ in range(num_hidden_layers - 1):
-            layers += [nn.Linear(hidden_size, hidden_size), nn.ReLU()]
+            layers += [nn.Linear(hidden_size, hidden_size), activation]
         layers.append(nn.Linear(hidden_size, output_size))
         self.network = nn.Sequential(*layers)
 
@@ -164,35 +166,31 @@ class MultiONet(OperatorNetwork):
         device: str | None = None,
         n_chemicals: int = 29,
         n_timesteps: int = 100,
-        config: dict = {},
+        config: dict | None = None,
     ):
-        try:
-            config = MultiONetBaseConfig(**config)
-        except TypeError as e:
-            raise TypeError(
-                f"Invalid configuration for MultiONet model: {e} \n This likely means that the model config contains keys that are not in the models base config."
-            ) from e
+        config = config if config is not None else {}
+        self.config = MultiONetBaseConfig(**config)
         super().__init__(
             device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
         )
-
-        self.config = config
         self.device = device
         self.N = n_chemicals  # Number of chemicals
         self.outputs = (
-            n_chemicals * config.output_factor
+            n_chemicals * self.config.output_factor
         )  # Number of neurons in the last layer
         self.branch_net = BranchNet(
-            n_chemicals - (config.trunk_input_size - 1),  # +1 due to time
-            config.hidden_size,
+            n_chemicals - (self.config.trunk_input_size - 1),  # +1 due to time
+            self.config.hidden_size,
             self.outputs,
-            config.branch_hidden_layers,
+            self.config.branch_hidden_layers,
+            self.config.activation,
         ).to(device)
         self.trunk_net = TrunkNet(
-            config.trunk_input_size,  # = time + optional additional quantities
-            config.hidden_size,
+            self.config.trunk_input_size,  # = time + optional additional quantities
+            self.config.hidden_size,
             self.outputs,
-            config.trunk_hidden_layers,
+            self.config.trunk_hidden_layers,
+            self.config.activation,
         ).to(device)
 
     def forward(self, inputs) -> tuple[torch.Tensor, torch.Tensor]:

@@ -83,7 +83,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     n_timesteps = train_data.shape[1]
     n_chemicals = train_data.shape[2]
     n_test_samples = n_timesteps * val_data.shape[0]
-    model = surrogate_class(device, n_chemicals, n_timesteps)
+    model = surrogate_class(device, n_chemicals, n_timesteps, None)
 
     # Placeholder for metrics
     metrics = {}
@@ -842,9 +842,7 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
         surrogate_class = get_surrogate(surr_name)
         n_timesteps = metrics[surr_name]["timesteps"].shape[0]
         n_chemicals = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
-        model = surrogate_class(
-            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
-        )
+        model = surrogate_class(device, n_chemicals, n_timesteps, None)
 
         def load_losses(model_identifier: str):
             model.load(training_id, surr_name, model_identifier=model_identifier)
@@ -882,9 +880,7 @@ def compare_MAE(metrics: dict, config: dict) -> None:
         surrogate_class = get_surrogate(surr_name)
         n_timesteps = metrics[surr_name]["timesteps"].shape[0]
         n_chemicals = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
-        model = surrogate_class(
-            device=device, n_chemicals=n_chemicals, n_timesteps=n_timesteps
-        )
+        model = surrogate_class(device, n_chemicals, n_timesteps, None)
         model_identifier = f"{surr_name.lower()}_main"
         model.load(training_id, surr_name, model_identifier=model_identifier)
         MAE.append(model.MAE)

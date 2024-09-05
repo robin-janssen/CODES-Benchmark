@@ -3,6 +3,8 @@ from .data_utils import (
     check_and_load_data,
     get_data_subset,
     create_dataset,
+    normalize_data,
+    download_data
 )
 
 __all__ = [
@@ -10,4 +12,6 @@ __all__ = [
     "check_and_load_data",
     "get_data_subset",
     "create_dataset",
+    "normalize_data",
+    "download_data"
 ]

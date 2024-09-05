@@ -7,7 +7,7 @@
 /log
 *test.ipynb
 .vscode
-*__pycache__
+*__pycache__*
 pylintrc
 .flake8
 profiling*
@@ -19,3 +19,4 @@ lorenzo_data.ipynb
 optuna_runs/models
 optuna_runs/studies
 scripts
+.*
