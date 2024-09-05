@@ -1,13 +1,13 @@
 # Global settings for the benchmark
-training_id: "determinism_test_1"
-surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
-batch_size: [1024, 1024, 128, 128]
-epochs: [20, 20, 20, 20]
+training_id: "test_train_config_handling_2"
+surrogates: ["MultiONet", "FullyConnected", "LatentPoly"]
+batch_size: [1024, 1024, 128]
+epochs: [2,2,2,2]
 dataset: 
   name: "osu2008"
-  log10_transform: False
+  log10_transform: True
   normalise: "minmax" # "standardise", "minmax", "disable"
-devices: ["cuda:3"]
+devices: ["cuda:7"]
 seed: 42
 verbose: False
 
@@ -32,7 +32,7 @@ uncertainty:
 losses: False
 gradients: False
 timing: False
-compute: True
+compute: False
 compare: True # Whether to compare the surrogates
 
 
