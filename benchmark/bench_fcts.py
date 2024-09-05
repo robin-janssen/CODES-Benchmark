@@ -1194,10 +1194,7 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
         f"{value*100:.2f} %" if i != best_mre_index else f"* {value*100:.2f} % *"
         for i, value in enumerate(mre_values)
     ]
-    epochs_row = ["Epochs"] + [
-        f"{value}" if i != best_mse_index else f"* {value} *"
-        for i, value in enumerate(epochs)
-    ]
+    epochs_row = ["Epochs"] + [value for i, value in enumerate(epochs)]
     train_strings = [f"{format_seconds(time)}" for time in train_times]
     tt_row = ["Train Time (hh:mm:ss)"] + [
         f"{time}" if i != best_time_index else f"* {time} *"
