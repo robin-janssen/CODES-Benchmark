@@ -26,6 +26,7 @@
 - [ ] **Do a fresh test install of the repo and verify everything is running**
 - [ ] **Check/update the config maker**
 - [ ] **Add testing (for workshop)**
+- [ ] Fix the task list for faulty runs in the benchmark
 - [ ] Rename batch_scaling to batch.
 - [ ] Think about the error plots - where should absolute errors be used, where relative errors? Does it make sense to use relative errors for the chemical error plots?
 - [ ] Make tutorial notebooks/examples
