@@ -1,5 +1,5 @@
 # Global settings for the benchmark
-training_id: "test_train_config_handling_2"
+training_id: "test_train_config_handling_3"
 surrogates: ["MultiONet", "FullyConnected", "LatentPoly"]
 batch_size: [1024, 1024, 128]
 epochs: [2,2,2,2]

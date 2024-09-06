@@ -6,9 +6,9 @@
 - [ ] Choose a code licence for the code - MIT?
 - [x] Reach out to Lorenzo regarding the dataset
 - [ ] Optuna and final run for all datasets.
-- [ ] Copy over actions and other settings from the SSC Cookiecutter Template
+- [ ] Setup repository: Copy over actions and other settings from the SSC Cookiecutter Template
 - [ ] **Add links in the documentation to respective other sections**
-- [ ] Rename main scripts on the website (run_benchmark.py, run_training.py)
+- [x] Rename main scripts on the website (run_benchmark.py, run_training.py)
 
 ## Refactor
 - [x] Remove the # model.n_timesteps = 100 lines in bench_fcts once new models are trained.
@@ -20,14 +20,15 @@
 - [x] **Check whether the training is indeed deterministic.**
 - [x] **Implement optional log scale labels in plots**
 - [x] **Check the memory benchmarking**
-- [ ] **Save Plots as SVG for immaculate quality**
-- [ ] Rename batch_scaling to batch.
 - [x] **Docstrings completion.**
-- [ ] **Make a clean requirements.txt, clean up the python environment and do a fresh test install**
-- [ ] **Make tutorial notebooks/examples**
+- [x] **Make a clean requirements.txt**
+- [ ] **Save Plots as SVG for immaculate quality**
+- [ ] **Do a fresh test install of the repo and verify everything is running**
 - [ ] **Check/update the config maker**
-- [ ] Think about the error plots - where should absolute errors be used, where relative errors? Does it make sense to use relative errors for the chemical error plots?
 - [ ] **Add testing (for workshop)**
+- [ ] Rename batch_scaling to batch.
+- [ ] Think about the error plots - where should absolute errors be used, where relative errors? Does it make sense to use relative errors for the chemical error plots?
+- [ ] Make tutorial notebooks/examples
 
 ## New Features
 - [x] **Javascript config maker**

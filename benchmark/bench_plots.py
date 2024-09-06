@@ -18,6 +18,8 @@ def save_plot(
     conf: dict,
     surr_name: str = "",
     dpi: int = 300,
+    base_dir: str = "plots",  # Base directory for saving plots
+    increase_count: bool = True,  # Whether to increase the count for existing filenames
 ) -> None:
     """
     Save the plot to a file, creating necessary directories if they don't exist.
@@ -28,6 +30,8 @@ def save_plot(
         conf (dict): The configuration dictionary.
         surr_name (str): The name of the surrogate model.
         dpi (int): The resolution of the saved plot.
+        base_dir (str, optional): The base directory where plots will be saved. Default is "plots".
+        increase_count (bool, optional): Whether to increment the filename count if a file already exists. Default is True.
 
     Raises:
         ValueError: If the configuration dictionary does not contain the required keys.
@@ -36,27 +40,35 @@ def save_plot(
         raise ValueError("Configuration dictionary must contain 'training_id'.")
 
     training_id = conf["training_id"]
-    plot_dir = os.path.join("plots", training_id, surr_name)
+    plot_dir = os.path.join(base_dir, training_id, surr_name)
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
 
-    filepath = save_plot_counter(filename, plot_dir)
+    # Call save_plot_counter with increase_count option
+    filepath = save_plot_counter(filename, plot_dir, increase_count=increase_count)
     plt.savefig(filepath, dpi=dpi, bbox_inches="tight")
     if conf["verbose"]:
         print(f"Plot saved as: {filepath}")
 
 
-def save_plot_counter(filename: str, directory: str) -> str:
+def save_plot_counter(
+    filename: str, directory: str, increase_count: bool = True
+) -> str:
     """
     Save a plot with an incremented filename if a file with the same name already exists.
 
     Args:
         filename (str): The desired filename for the plot.
         directory (str): The directory to save the plot in.
+        increase_count (bool, optional): Whether to increment the filename count if a file already exists. Default is True.
 
     Returns:
         str: The full path to the saved plot.
     """
+    if not increase_count:
+        filepath = os.path.join(directory, filename)
+        return filepath
+
     base, ext = os.path.splitext(filename)
     counter = 1
     filepath = os.path.join(directory, filename)
