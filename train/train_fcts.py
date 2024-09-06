@@ -56,7 +56,7 @@ def train_and_save_model(
         )
     )
 
-    model_config = get_model_config(surr_name, config["dataset"]["name"])
+    model_config = get_model_config(surr_name, config)
 
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(

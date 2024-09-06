@@ -80,7 +80,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
             normalisation_mode=conf["dataset"]["normalise"],
         )
     )
-    model_config = get_model_config(surr_name, conf["dataset"]["name"])
+    model_config = get_model_config(surr_name, conf)
     n_timesteps = train_data.shape[1]
     n_chemicals = train_data.shape[2]
     n_test_samples = n_timesteps * val_data.shape[0]
@@ -881,7 +881,7 @@ def compare_MAE(metrics: dict, config: dict) -> None:
         surrogate_class = get_surrogate(surr_name)
         n_timesteps = metrics[surr_name]["timesteps"].shape[0]
         n_chemicals = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
-        model_config = get_model_config(surr_name, config["dataset"]["name"])
+        model_config = get_model_config(surr_name, config)
         model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
         model_identifier = f"{surr_name.lower()}_main"
         model.load(training_id, surr_name, model_identifier=model_identifier)
