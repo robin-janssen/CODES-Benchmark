@@ -843,7 +843,8 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
         surrogate_class = get_surrogate(surr_name)
         n_timesteps = metrics[surr_name]["timesteps"].shape[0]
         n_chemicals = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
-        model = surrogate_class(device, n_chemicals, n_timesteps, None)
+        model_config = get_model_config(surr_name, config)
+        model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
 
         def load_losses(model_identifier: str):
             model.load(training_id, surr_name, model_identifier=model_identifier)
@@ -1185,11 +1186,11 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
     best_time_index = np.argmin(train_times)
 
     mse_row = ["MSE"] + [
-        f"{value:.4f}" if i != best_mse_index else f"* {value:.4f} *"
+        f"{value:.2e}" if i != best_mse_index else f"* {value:.2e} *"
         for i, value in enumerate(mse_values)
     ]
     mae_row = ["MAE"] + [
-        f"{value:.4f}" if i != best_mae_index else f"* {value:.4f} *"
+        f"{value:.2e}" if i != best_mae_index else f"* {value:.2e} *"
         for i, value in enumerate(mae_values)
     ]
     mre_row = ["MRE"] + [
@@ -1244,11 +1245,11 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
             f'{metrics["compute"]["num_trainable_parameters"]}'
             for metrics in all_metrics.values()
         ]
-        memory_row = ["Memory Footprint (MB)"] + [
-            f'{(metrics["compute"]["memory_footprint"]["forward_memory_nograd"]/1e6):.2f}'
-            for metrics in all_metrics.values()
-        ]
-        rows.extend([num_params_row, memory_row])
+        # memory_row = ["Memory Footprint (MB)"] + [
+        #     f'{(metrics["compute"]["memory_footprint"]["forward_memory_nograd"]/1e6):.2f}'
+        #     for metrics in all_metrics.values()
+        # ]
+        rows.extend([num_params_row])
 
     # UQ metrics (if enabled)
     if config.get("uncertainty", False).get("enabled", False):
@@ -1259,7 +1260,7 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
             metrics["UQ"]["correlation_metrics"] for metrics in all_metrics.values()
         ]
         avg_unc_row = ["Avg. Uncertainty"] + [
-            f"{value:.4f}" for value in avg_uncertainties
+            f"{value:.2e}" for value in avg_uncertainties
         ]
         uq_corr_row = ["UQ Corr."] + [f"{value:.4f}" for value in uq_corr_values]
         rows.extend([avg_unc_row, uq_corr_row])

@@ -623,9 +623,9 @@ def get_model_config(surr_name: str, config: dict) -> dict:
     Returns:
         dict: The model configuration dictionary.
     """
-    if not config["dataset"]["use_optimal_params"]:
+    if not config["dataset"].get("use_optimal_params", True):
         return {}
-    
+
     dataset_name = config["dataset"]["name"].lower()
     dataset_folder = f"data/{dataset_name}"
     config_file = f"{dataset_folder}/surrogates_config.py"
