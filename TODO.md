@@ -19,7 +19,7 @@
 - [x] **Check the time benchmarking**
 - [x] **Check whether the training is indeed deterministic.**
 - [x] **Implement optional log scale labels in plots**
-- [x] **Check the memory benchmarking**
+- [ ] **Check the memory benchmarking**
 - [x] **Docstrings completion.**
 - [x] **Make a clean requirements.txt**
 - [ ] **Save Plots as SVG for immaculate quality**
@@ -62,6 +62,9 @@
 - [x] Heatmaps comparative plot
 - [x] Layout of chemical error distribution plot similar to example UQ plots
 - [x] **Add overall quantities to the plots (e.g. mean, std, etc.)**
+- [ ] Add the name of the surrogate and dataset to the error_dist per quantitiy and mention relative errors in title and axis labels
+- [ ] Add "absolute" to the y axis of the uq heatmaps plot
+- [ ] Change the figsize of the heatmap plots
 - [ ] Contour plots to compare dynamics/UQ correlations
 - [ ] **Average prediction error over time + average gradient over time**
 - [ ] Scatter plot of absolute/relative error vs. inference time comparing surrogates.

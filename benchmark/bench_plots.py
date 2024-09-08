@@ -19,7 +19,7 @@ def save_plot(
     surr_name: str = "",
     dpi: int = 300,
     base_dir: str = "plots",  # Base directory for saving plots
-    increase_count: bool = True,  # Whether to increase the count for existing filenames
+    increase_count: bool = False,  # Whether to increase the count for existing filenames
 ) -> None:
     """
     Save the plot to a file, creating necessary directories if they don't exist.
@@ -316,7 +316,7 @@ def plot_average_errors_over_time(
     plt.xlabel("Time")
     plt.xlim(timesteps[0], timesteps[-1])
     plt.ylabel("Mean Absolute Error")
-    title = f"{mode.capitalize()} Errors Over Time"
+    title = f"Mean Absolute Errors over Time ({mode.capitalize()}, {surr_name})"
     filename = f"{mode}_errors_over_time.png"
 
     plt.title(title)
@@ -674,7 +674,7 @@ def plot_error_distribution_per_chemical(
     # Reshape errors to combine samples and timesteps
     total_chemicals = errors.shape[2]
     errors = errors.reshape(-1, total_chemicals)
-    n_errors = len(errors.reshape(-1))
+    # n_errors = len(errors.reshape(-1))
 
     # Cap the number of chemicals to plot at 50
     num_chemicals = min(num_chemicals, 50)
@@ -754,10 +754,12 @@ def plot_error_distribution_per_chemical(
 
     plt.xscale("log")  # Log scale for error magnitudes
     plt.xlim(10**x_min, 10**x_max)  # Set x-axis range based on log-space calculations
-    plt.xlabel("Magnitude of Error")
-    fig.suptitle(
-        f"Error Distribution per Chemical (Test Samples: {n_errors}, Excluded zeros: {zero_counts})"
-    )
+    plt.xlabel("Relative Error")
+    # Temp!
+    fig.suptitle(f"Relative Error Distribution per Chemical ({surr_name})")
+    # fig.suptitle(
+    #     f"Error Distribution per Chemical (Test Samples: {n_errors}, Excluded zeros: {zero_counts})"
+    # )
 
     plt.tight_layout(rect=[0, 0, 1, 0.97])
 
@@ -1089,8 +1091,10 @@ def inference_time_bar_plot(
 
     # Calculate the upper y-limit to provide space for text
     max_bar = max(means[i] + stds[i] for i in range(len(means)))
-    min_bar = min(means[i] - stds[i] for i in range(len(means)))
-    ax.set_ylim(min_bar * 0.3, max_bar * 2)  # Set limits with some padding
+    # min_bar = min(means[i] - stds[i] for i in range(len(means)))
+    # Temp!
+    # ax.set_ylim(min_bar * 0.3, max_bar * 2)  # Set limits with some padding
+    ax.set_ylim(0, max_bar * 1.2)  # Set limits with some padding
 
     # Add inference time as text to the bars using the format_time function
     for i, (mean, std) in enumerate(zip(means, stds)):
@@ -1106,8 +1110,9 @@ def inference_time_bar_plot(
 
     ax.set_xlabel("Surrogate Model")
     ax.set_ylabel("Mean Inference Time per Run")
-    ax.set_yscale("log")
-    ax.set_title("Comparison of Mean Inference Time with Standard Deviation")
+    # Temp!
+    # ax.set_yscale("log")
+    ax.set_title("Surrogate Mean Inference Time Comparison")
 
     if save:
         save_plot(plt, "timing_inference.png", config)
@@ -1430,10 +1435,12 @@ def plot_error_distribution_comparative(
     plt.xlim(10**x_min, 10**x_max)  # Set x-axis range based on log-space calculations
     plt.xlabel("Magnitude of Error")
     plt.ylabel("Density (PDF)")
-    num_test_samples = len(errors[model_names[0]].flatten()) * num_models
-    plt.title(
-        f"Error Distribution per Model (Test Samples: {num_test_samples}, Excluded zeros: {zero_counts})"
-    )
+    # num_test_samples = len(errors[model_names[0]].flatten()) * num_models
+    # Temp!
+    # plt.title(
+    #     f"Error Distribution per Model (Test Samples: {num_test_samples}, Excluded zeros: {zero_counts})"
+    # )
+    plt.title("Comparison of Surrogate Relative Error Distributions")
 
     plt.legend()
 
@@ -1480,7 +1487,7 @@ def plot_comparative_error_correlation_heatmaps(
 
     # Create subplots, one row per model
     fig, axes = plt.subplots(
-        num_models, 1, figsize=(10, 6 * num_models), sharex=True, sharey=True
+        num_models, 1, figsize=(8, 6 * num_models), sharex=True, sharey=True
     )
 
     # Adjust layout for shared colorbar
@@ -1527,7 +1534,7 @@ def plot_comparative_error_correlation_heatmaps(
             linewidth=1,
         )
 
-    fig.subplots_adjust(top=0.92, bottom=0.06, left=0.08, right=0.9, hspace=0.2)
+    fig.subplots_adjust(top=0.94, bottom=0.06, left=0.08, right=0.9, hspace=0.2)
 
     # Shared colorbar
     fig.colorbar(im, cax=cbar_ax, label=r"$\log_{10}$(Counts)")
@@ -1580,7 +1587,7 @@ def plot_comparative_dynamic_correlation_heatmaps(
 
     # Create subplots, one row per model
     fig, axes = plt.subplots(
-        num_models, 1, figsize=(10, 6 * num_models), sharex=False, sharey=False
+        num_models, 1, figsize=(8, 6 * num_models), sharex=False, sharey=False
     )
 
     # Adjust layout for shared colorbar
@@ -1619,7 +1626,7 @@ def plot_comparative_dynamic_correlation_heatmaps(
 
         ax.set_title(f"{model_name}\nAvg Correlation: {avg_corr:.2f}")
 
-    fig.subplots_adjust(top=0.92, bottom=0.06, left=0.08, right=0.9, hspace=0.2)
+    fig.subplots_adjust(top=0.94, bottom=0.06, left=0.08, right=0.9, hspace=0.2)
 
     # Shared colorbar
     fig.colorbar(im, cax=cbar_ax, label=r"$\log_{10}$(Counts)")
@@ -1886,6 +1893,8 @@ def rel_errors_and_uq(
 
     ax1.set_xlabel("Time")
     ax1.set_xlim(timesteps[0], timesteps[-1])
+    # Temp!
+    ax1.set_ylim(3e-4, 1)
     ax1.set_ylabel("Relative Error")
     ax1.set_yscale("log")
     ax1.set_title("Comparison of Relative Errors Over Time")
@@ -1916,6 +1925,8 @@ def rel_errors_and_uq(
 
     ax2.set_xlabel("Time")
     ax2.set_xlim(timesteps[0], timesteps[-1])
+    # Temp!
+    ax2.set_ylim(0, 0.04)
     ax2.set_ylabel("Uncertainty/Absolute Error")
     ax2.set_title("Comparison of Predictive Uncertainty Over Time")
     ax2.legend(loc="best")
