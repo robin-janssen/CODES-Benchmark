@@ -128,6 +128,18 @@ To cover a wide variety of use-cases, the benchmark is designed such that adding
 
 ## Quickstart
 
+First, clone the [GitHub Repository](https://github.com/robin-janssen/CODES-Benchmark) with  
+`git clone ssh://git@github.com/robin-janssen/CODES-Benchmark`.
+
+Optionally, you can set up a [virtual environment](https://docs.python.org/3/library/venv.html) (recommended).
+
+Then, install the required packages with `pip install -r requirements.txt`.
+
+The installation is now complete. To be able to run and evaluate the benchmark, you need to first set up a configuration YAML file. There is one provided, but it should be configured. For more information, check the [configuration page](https://immi000.github.io/CODES-Benchmark-Docs/documentation.html#config). There, we also offer an interactive Config-Generator tool with some explanations to help you set up your benchmark.
+
+You can also add your own datasets and models to the benchmark to evaluate them against each other or some of our baseline models. For more information on how to do this, please refer to the [documentation](https://immi000.github.io/CODES-Benchmark-Docs/documentation.html).
+
+
 ## Usage
 
 **Move this part to the docs page**
