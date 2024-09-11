@@ -1,14 +1,14 @@
-from surrogates.DeepONet.deeponet import MultiONet, TrunkNet, BranchNet
-from surrogates.FCNN.fcnn import FullyConnected, FullyConnectedNet
-from surrogates.LatentNeuralODE.latent_neural_ode import (
+from .DeepONet.deeponet import MultiONet, TrunkNet, BranchNet
+from .FCNN.fcnn import FullyConnected, FullyConnectedNet
+from .LatentNeuralODE.latent_neural_ode import (
     LatentNeuralODE,
     ModelWrapper,
     ODE,
     Encoder,
     Decoder,
 )
-from surrogates.LatentNeuralODE.utilities import ChemDataset
-from surrogates.LatentPolynomial.latent_poly import LatentPoly, Polynomial
+from .LatentNeuralODE.utilities import ChemDataset
+from .LatentPolynomial.latent_poly import LatentPoly, Polynomial
 
 from .surrogate_classes import surrogate_classes
 from .surrogates import AbstractSurrogateModel, SurrogateModel

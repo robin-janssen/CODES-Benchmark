@@ -6,11 +6,11 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
 # Use the below import to adjust the config class to the specific model
-from surrogates.DeepONet.deeponet_config import MultiONetBaseConfig
-from surrogates.surrogates import AbstractSurrogateModel
-from utils import time_execution, worker_init_fn
+from .deeponet_config import MultiONetBaseConfig
+from codes.surrogates.surrogates import AbstractSurrogateModel
+from codes.utils import time_execution, worker_init_fn
 
-from .utils import mass_conservation_loss
+from .don_utils import mass_conservation_loss
 
 
 class BranchNet(nn.Module):

@@ -4,7 +4,7 @@ import string
 import pytest
 import torch
 
-from surrogates.surrogate_classes import surrogate_classes
+from codes import surrogate_classes
 
 DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
 N_CHEMICALS = 10

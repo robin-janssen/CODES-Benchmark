@@ -7,7 +7,7 @@ from typing import Callable
 import numpy as np
 from scipy.integrate import solve_ivp
 
-from data.data_utils import create_dataset
+from codes.dataset.data_utils import create_dataset
 
 
 def lotka_volterra(t, n):

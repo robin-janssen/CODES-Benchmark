@@ -5,12 +5,12 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 
-from surrogates.LatentNeuralODE.latent_neural_ode_config import (
+from codes.surrogates.LatentNeuralODE.latent_neural_ode_config import (
     LatentNeuralODEBaseConfig,
 )
-from surrogates.LatentNeuralODE.utilities import ChemDataset
-from surrogates.surrogates import AbstractSurrogateModel
-from utils import time_execution, worker_init_fn
+from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
+from codes.surrogates.surrogates import AbstractSurrogateModel
+from codes.utils import time_execution, worker_init_fn
 
 
 class LatentNeuralODE(AbstractSurrogateModel):

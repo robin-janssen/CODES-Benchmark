@@ -4,11 +4,11 @@ from torch import nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from surrogates.LatentNeuralODE.latent_neural_ode import Decoder, Encoder
-from surrogates.LatentNeuralODE.utilities import ChemDataset
-from surrogates.LatentPolynomial.latent_poly_config import LatentPolynomialBaseConfig
-from surrogates.surrogates import AbstractSurrogateModel
-from utils import time_execution
+from codes.surrogates.LatentNeuralODE.latent_neural_ode import Decoder, Encoder
+from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
+from codes.surrogates.LatentPolynomial.latent_poly_config import LatentPolynomialBaseConfig
+from codes.surrogates.surrogates import AbstractSurrogateModel
+from codes.utils import time_execution
 
 
 class LatentPoly(AbstractSurrogateModel):

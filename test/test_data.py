@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from data.data_utils import check_and_load_data, download_data
+from codes.dataset.data_utils import check_and_load_data, download_data
 
 paths = glob.glob("data/*/data.hdf5")
 dataset_names = [path.split("/")[1] for path in paths]

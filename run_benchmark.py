@@ -1,13 +1,13 @@
 from argparse import ArgumentParser
 
-from benchmark import (
+from codes.benchmark import (
     check_benchmark,
     check_surrogate,
     compare_models,
     get_surrogate,
     run_benchmark,
 )
-from utils import nice_print, read_yaml_config
+from codes.utils import nice_print, read_yaml_config
 
 
 def main(args):

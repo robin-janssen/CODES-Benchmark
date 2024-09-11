@@ -9,8 +9,8 @@ import numpy as np
 import torch
 import yaml
 
-from surrogates.surrogate_classes import surrogate_classes
-from surrogates.surrogates import SurrogateModel
+from codes.surrogates import surrogate_classes
+from codes.surrogates import SurrogateModel
 
 
 def check_surrogate(surrogate: str, conf: dict) -> None:
