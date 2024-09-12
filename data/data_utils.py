@@ -1,5 +1,6 @@
 import os
 import urllib.request
+from math import isclose
 
 import h5py
 import numpy as np
@@ -398,7 +399,7 @@ def create_dataset(
             raise TypeError("split values must be floats.")
         if not all(0 <= value <= 1 for value in split):
             raise ValueError("split values must be between 0 and 1.")
-        if not split[0] + split[1] + split[2] == 1:
+        if not isclose(split[0] + split[1] + split[2], 1, abs_tol=1e-5):
             raise ValueError("split values must sum to 1.")
 
     np.random.shuffle(train_data)
@@ -415,6 +416,8 @@ def create_dataset(
         train_data = full_data[:n_train]
         test_data = full_data[n_train : n_train + n_test]
         val_data = full_data[n_train + n_test :]
+        if any(dim == 0 for shape in (train_data.shape, test_data.shape, val_data.shape) for dim in shape):
+            raise ValueError("Split data contains zero samples. One of the splits is too small.")
 
     if labels is not None:
         if not isinstance(labels, list):
