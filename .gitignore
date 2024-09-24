@@ -23,3 +23,4 @@ scripts
 build/
 dist/
 *.egg-info/
+data.hdf5
