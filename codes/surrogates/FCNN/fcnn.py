@@ -4,9 +4,9 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from surrogates.FCNN.fcnn_config import FCNNBaseConfig
-from surrogates.surrogates import AbstractSurrogateModel
-from utils import time_execution, worker_init_fn
+from codes.surrogates.FCNN.fcnn_config import FCNNBaseConfig
+from codes.surrogates.surrogates import AbstractSurrogateModel
+from codes.utils import time_execution, worker_init_fn
 
 
 class FullyConnectedNet(nn.Module):
