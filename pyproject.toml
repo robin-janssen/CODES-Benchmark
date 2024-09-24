@@ -43,6 +43,11 @@ tests = [
     "pytest",
     #"pytest-cov",
 ]
+dev = [
+    "pre-commit",
+    "black",
+    "isort",
+]
 # docs = [
 #     "sphinx",
 #     "sphinx_mdinclude",
@@ -53,10 +58,10 @@ tests = [
 # The following section contains setuptools-specific configuration
 # options. For a full reference of available options, check the overview
 # at https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
-# [tool.setuptools]
-# packages = [
-#     "CODES",
-# ]
+[tool.setuptools]
+packages = [
+    "codes",
+]
 
 # Configure setuptools_scm, which extracts the version number from
 # the version control system. For more information see its documentation:
