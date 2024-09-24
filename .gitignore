@@ -21,3 +21,5 @@ optuna_runs/studies
 optuna_runs/plots
 scripts
 .*
+build
+*.egg-info
