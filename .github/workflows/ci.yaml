@@ -38,5 +38,10 @@ jobs:
     - name: Run isort (auto-reformat)
       run: isort .
 
-    - name: Run pytest
-      run: pytest
+    - name: Run pytest and generate coverage report
+      run: pytest --cov-report=term-missing:skip-covered --cov=codes test/ | tee pytest-coverage.txt
+
+    - name: Pytest coverage comment
+      uses: MishaKav/pytest-coverage-comment@main
+      with:
+        pytest-coverage-path: ./pytest-coverage.txt

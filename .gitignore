@@ -26,3 +26,4 @@ dist/
 data.hdf5
 .venv
 .pytest_cache
+.coverage
