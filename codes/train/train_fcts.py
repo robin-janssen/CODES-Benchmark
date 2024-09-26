@@ -5,8 +5,9 @@ from threading import Thread
 from tqdm import tqdm
 
 from codes.benchmark.bench_utils import get_model_config, get_surrogate
-from codes.dataset import check_and_load_data, get_data_subset
 from codes.utils import (
+    check_and_load_data,
+    get_data_subset,
     get_progress_bar,
     load_and_save_config,
     make_description,

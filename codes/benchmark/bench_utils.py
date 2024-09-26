@@ -627,7 +627,7 @@ def get_model_config(surr_name: str, config: dict) -> dict:
         return {}
 
     dataset_name = config["dataset"]["name"].lower()
-    dataset_folder = f"data/{dataset_name}"
+    dataset_folder = f"datasets/{dataset_name}"
     config_file = f"{dataset_folder}/surrogates_config.py"
 
     if os.path.exists(config_file):

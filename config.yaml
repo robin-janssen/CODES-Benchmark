@@ -1,11 +1,11 @@
 # Global settings for the benchmark
-training_id: "delete_me2"
+training_id: "delete_me3"
 surrogates: ["LatentPoly", "LatentNeuralODE", "FullyConnected", "MultiONet"]
 batch_size: [256, 256, 256, 256]
 epochs: [2, 2, 2, 2]
 dataset: 
   name: "osu2008"
-  log10_transform: True
+  log10_transform: False
   normalise: "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
 devices: ["cuda:1"]

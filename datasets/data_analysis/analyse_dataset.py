@@ -1,11 +1,11 @@
-import os
 import sys
 from argparse import ArgumentParser
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(1, "../..")
 
-from data import check_and_load_data
-from data.data_plots import plot_example_trajectories, plot_example_trajectories_paper
+from codes import check_and_load_data
+
+from .data_plots import plot_example_trajectories, plot_example_trajectories_paper
 
 
 def main(args):
