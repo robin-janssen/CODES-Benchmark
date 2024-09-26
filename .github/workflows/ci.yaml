@@ -62,11 +62,17 @@ jobs:
         git commit -m "Update requirements.txt [skip ci]"
         git push
 
+    # Run Black (auto-reformat) using Poetry
     - name: Run Black (auto-reformat)
-      run: black .
+      run: |
+        poetry run black .
 
+    # Run isort (auto-reformat) using Poetry
     - name: Run isort (auto-reformat)
-      run: isort .
+      run: |
+        poetry run isort .
 
+    # Run pytest using Poetry
     - name: Run pytest
-      run: pytest
+      run: |
+        poetry run pytest
