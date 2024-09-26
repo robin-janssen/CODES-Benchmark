@@ -36,7 +36,7 @@ def check_and_load_data(
     Raises:
         DatasetError: If the dataset or required data is missing or if the data shape is incorrect.
     """
-    data_dir = "data"
+    data_dir = "datasets"
     dataset_name_lower = dataset_name.lower()
 
     # Check if dataset exists
@@ -231,7 +231,7 @@ def create_hdf5_dataset(
     test_data: np.ndarray,
     val_data: np.ndarray,
     dataset_name: str,
-    data_dir: str = "data",
+    data_dir: str = "datasets",
     timesteps: np.ndarray | None = None,
     labels: list[str] | None = None,
 ):
@@ -337,7 +337,7 @@ def create_dataset(
         TypeError: If the train_data is not a numpy array or torch tensor.
         ValueError: If the train_data, test_data, and val_data do not have the correct shape.
     """
-    base_dir = "data"
+    base_dir = "datasets"
     dataset_dir = os.path.join(base_dir, name)
 
     if os.path.exists(dataset_dir):
@@ -440,14 +440,14 @@ def download_data(dataset_name: str, path: str | None = None):
         path (str, optional): The path to save the dataset. If None, the default data directory is used.
     """
     data_path = (
-        os.path.abspath(f"data/{dataset_name.lower()}/data.hdf5")
+        os.path.abspath(f"datasets/{dataset_name.lower()}/data.hdf5")
         if path is None
         else os.path.abspath(path)
     )
     if os.path.isfile(data_path):
         return
 
-    with open("data/data_sources.yaml", "r", encoding="utf-8") as file:
+    with open("datasets/data_sources.yaml", "r", encoding="utf-8") as file:
         data_sources = yaml.safe_load(file)
 
     try:

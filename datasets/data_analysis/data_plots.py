@@ -1,7 +1,11 @@
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 
-from benchmark import save_plot
+sys.path.insert(1, "../..")
+
+from codes import save_plot
 
 
 def plot_example_trajectories(
@@ -72,7 +76,7 @@ def plot_example_trajectories(
             "example_trajectories.png",
             conf,
             dpi=300,
-            base_dir="data",
+            base_dir="datasets",
             increase_count=False,
         )
 
@@ -196,7 +200,7 @@ def plot_example_trajectories_paper(
             "example_trajectories_paper.png",
             conf,
             dpi=300,
-            base_dir="data",
+            base_dir="datasets",
             increase_count=False,
         )
 

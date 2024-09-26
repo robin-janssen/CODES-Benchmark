@@ -56,7 +56,7 @@ def get_project_path(relative_path):
     """
     Construct the absolute path to a project resource (data or model) based on a relative path.
 
-    :param relative_path: A relative path to the resource, e.g., "data/dataset100" or "models/02-28/model.pth".
+    :param relative_path: A relative path to the resource, e.g., "datasets/dataset100" or "models/02-28/model.pth".
     :return: The absolute path to the resource.
     """
     import os

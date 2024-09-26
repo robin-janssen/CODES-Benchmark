@@ -8,7 +8,7 @@ from scipy.stats import pearsonr
 from tabulate import tabulate
 from torch.utils.data import DataLoader
 
-from codes.dataset import check_and_load_data
+from codes.utils import check_and_load_data
 
 from .bench_plots import (
     inference_time_bar_plot,
