@@ -1,0 +1,20 @@
+# .readthedocs.yml
+
+version: 2
+
+# Build configuration
+build:
+  os: ubuntu-20.04
+  tools:
+    python: "3.10"
+
+# Python configuration
+python:
+  install:
+    - method: poetry
+      path: .
+    - requirements: requirements.txt  # If applicable
+
+# Sphinx configuration (RTD needs this)
+sphinx:
+  configuration: docs/conf.py  # RTD requires this, but it's optional for Handsdown
