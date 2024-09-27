@@ -280,7 +280,8 @@ def check_training_status(config: dict) -> tuple[str, bool]:
             confirmation = input("Overwrite? [y/n]: ")
             if confirmation.lower() == "y":
                 print("Overwriting the saved configuration.")
-                os.remove(task_list_filepath)
+                if os.path.exists(task_list_filepath):
+                    os.remove(task_list_filepath)
                 copy_config = True
             else:
                 print("Continuing training with the previous configuration.")
