@@ -20,4 +20,11 @@ optuna_runs/models
 optuna_runs/studies
 optuna_runs/plots
 scripts
-.*
+build/
+dist/
+*.egg-info/
+data.hdf5
+.venv
+.pytest_cachebuild
+*.egg-info
+.flake8

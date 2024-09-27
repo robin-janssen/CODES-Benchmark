@@ -3,9 +3,9 @@ from datetime import timedelta
 
 from tqdm import tqdm
 
-from data.data_utils import download_data
-from train import create_task_list_for_surrogate, parallel_training, sequential_training
-from utils import (
+from codes.utils.data_utils import download_data
+from codes.train import create_task_list_for_surrogate, parallel_training, sequential_training
+from codes.utils import (
     check_training_status,
     load_and_save_config,
     load_task_list,
