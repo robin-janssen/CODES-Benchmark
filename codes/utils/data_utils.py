@@ -20,6 +20,7 @@ def check_and_load_data(
     verbose: bool = True,
     log: bool = True,
     normalisation_mode: str = "standardise",
+    tolerance: float | None = 1e-20,
 ):
     """
     Check the specified dataset and load the data based on the mode (train or test).
@@ -29,6 +30,8 @@ def check_and_load_data(
         verbose (bool): Whether to print information about the loaded data.
         log (bool): Whether to log-transform the data (log10).
         normalisation_mode (str): The normalization mode, either "disable", "minmax", or "standardise".
+        tolerance (float, optional): The tolerance value for log-transformation.
+            Values below this will be set to the tolerance value. Pass None to disable.
 
     Returns:
         tuple: Loaded data and timesteps.
@@ -66,9 +69,14 @@ def check_and_load_data(
                 )
 
         # Load data
-        train_data = np.asarray(f["train"])
-        test_data = np.asarray(f["test"])
-        val_data = np.asarray(f["val"])
+        train_data = np.asarray(f["train"], dtype=np.float32)
+        test_data = np.asarray(f["test"], dtype=np.float32)
+        val_data = np.asarray(f["val"], dtype=np.float32)
+
+        if tolerance is not None:
+            train_data = np.where(train_data < tolerance, tolerance, train_data)
+            test_data = np.where(test_data < tolerance, tolerance, test_data)
+            val_data = np.where(val_data < tolerance, tolerance, val_data)
 
         # Log transformation
         if log:
@@ -416,8 +424,14 @@ def create_dataset(
         train_data = full_data[:n_train]
         test_data = full_data[n_train : n_train + n_test]
         val_data = full_data[n_train + n_test :]
-        if any(dim == 0 for shape in (train_data.shape, test_data.shape, val_data.shape) for dim in shape):
-            raise ValueError("Split data contains zero samples. One of the splits is too small.")
+        if any(
+            dim == 0
+            for shape in (train_data.shape, test_data.shape, val_data.shape)
+            for dim in shape
+        ):
+            raise ValueError(
+                "Split data contains zero samples. One of the splits is too small."
+            )
 
     if labels is not None:
         if not isinstance(labels, list):
