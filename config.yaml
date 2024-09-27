@@ -1,10 +1,10 @@
 # Global settings for the benchmark
-training_id: "delete_me4"
+training_id: "delete_me5"
 surrogates: ["LatentPoly", "FullyConnected", "MultiONet"]
 batch_size: [256, 256, 256]
 epochs: [2, 2, 2]
 dataset: 
-  name: "simple_primordial"
+  name: "osu2008"
   log10_transform: True
   normalise: "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
