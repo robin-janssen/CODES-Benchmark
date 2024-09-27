@@ -9,8 +9,6 @@ on:
     branches:
       - main
       - develop
-  release:
-    types: [created]  # Trigger docs build on release creation
 
 jobs:
   test:
@@ -96,24 +94,12 @@ jobs:
   docs:
     runs-on: ubuntu-latest
 
-    if: github.event_name == 'release' || github.ref == 'refs/heads/develop'
-
+    # No conditional 'if' statement here, because we want to build docs on every push to main or develop
     steps:
     - name: Check out the repository
       uses: actions/checkout@v3
       with:
         fetch-depth: 0  # Fetch full history, including tags
-
-    # This step ensures that the release is from the main branch
-    - name: Check if the release is from main
-      if: github.event_name == 'release'
-      run: |
-        MAIN_COMMIT=$(git rev-parse origin/main)
-        RELEASE_COMMIT=$(git rev-parse ${{ github.event.release.tag_name }}^0)
-        if [ "$MAIN_COMMIT" != "$RELEASE_COMMIT" ]; then
-          echo "This release is not from the main branch. Exiting."
-          exit 1
-        fi
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -124,13 +110,7 @@ jobs:
       run: |
         poetry install --with dev
 
-    # Generate docs with Handsdown (already included in dev dependencies)
+    # Generate Handsdown Documentation
     - name: Generate Handsdown Documentation
       run: |
         handsdown --external --cleanup
-
-    # Trigger Read the Docs build using the API webhook
-    - name: Trigger Read the Docs Build
-      run: |
-        curl -X POST https://readthedocs.org/api/v2/webhook/YOUR_PROJECT_ID/ \
-        --header "Authorization: token ${{ secrets.RTD_TOKEN }}"
