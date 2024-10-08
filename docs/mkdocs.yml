@@ -1,0 +1,22 @@
+site_name: "CODES Benchmark"
+site_url: https://your-github-username.github.io/CODES-Benchmark
+
+nav:
+  - Home: index.html  # This is your custom homepage written in HTML
+  - Overview: README.md  # Optionally, you can include the README as a page
+  - Technical Documentation:
+      - Codes: technical/codes/index.md
+      - Datasets: technical/datasets/index.md
+  - Pages:
+      - Benchmark: pages/benchmark.html
+      - Config: pages/config.html
+      - Documentation: pages/documentation.html
+
+markdown_extensions:
+  - toc
+  - tables
+  - codehilite
+  - admonition
+
+theme:
+  name: material

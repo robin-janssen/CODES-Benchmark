@@ -1,0 +1,546 @@
+<!DOCTYPE HTML>
+<!--
+	Hyperspace by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+
+<head>
+	<title>CODES Benchmark</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="assets/css/main.css" />
+	<noscript>
+		<link rel="stylesheet" href="assets/css/noscript.css" />
+	</noscript>
+</head>
+
+<body class="is-preload">
+
+	<!-- Header -->
+	<header id="header">
+		<a href="index.html" class="title">CODES</a>
+		<nav>
+			<ul>
+				<li><a href="index.html">Overview</a></li>
+				<!-- <li><a href="motivation.html">Overview</a></li> -->
+				<li><a href="pages/benchmark.html" class="active">Benchmark</a></li>
+				<li><a href="pages/documentation.html">Documentation</a></li>
+				<li><a href="pages/config.html">Config Maker</a></li>
+			</ul>
+		</nav>
+	</header>
+
+	<!-- Wrapper -->
+	<div id="wrapper">
+
+		<!-- Main -->
+		<section id="main" class="wrapper">
+			<div class="inner">
+				<h1 class="major">About the Benchmark</h1>
+				<p>This page is not intended to be a tutorial or an in-depth documentation of the benchmark. The goal
+					here is to provide a good overview over what the benchmark covers as well as intuitions on how the
+					different parts work and what to expect from them. For a more technical explanation of the
+					benchmarking code, please refer to the <a href="pages/documentation.html">documentation</a>.</p>
+				<!-- <h1>O</h1> -->
+				<div class="col-6 col-12-medium">
+					<ul class="alt">
+						<li><a href="#features">Features - Overview</a> <br>
+							A non-exhaustive overview of the features of the benchmark.
+						</li>
+						<li><a href="#surrogates">Surrogate Models</a> <br>
+							An overview of the surrogate models that are currently implemented to be benchmarked.
+						</li>
+						<li><a href="#datasets">Data</a> <br>
+							An overview of the datasets that are currently included in the benchmark.
+						</li>
+						<li><a href="#modalities">Modality</a><br>
+							A full account of the different modalities that can be run in the benchmark.
+						</li>
+						<li><a href="#training">Training</a><br>
+							Explanation on how the training process works and how to configure it.
+						</li>
+						<li><a href="#benchmarking">Benchmarking</a><br>
+							Explanations on how the benchmarking process works and how to configure it.
+						</li>
+						<li><a href="#output">Output</a><br>
+							A list of all the output files that are generated during the benchmark.
+						</li>
+					</ul>
+				</div>
+
+
+				<section id="features">
+					<h2>Features</h2>
+
+					<p>A non-exhaustive overview of the features of the benchmark. </p>
+
+					<details>
+						<summary><strong>Baseline Surrogates</strong></summary>
+						<p>The following surrogate models are currently implemented to be benchmarked:</p>
+						<ul>
+							<li><strong>Fully Connected Neural Network:</strong> The vanilla neural network a.k.a.
+								multilayer perceptron.</li>
+							<li><strong>DeepONet:</strong> Two fully connected networks whose outputs are combined using
+								a scalar product.</li>
+							<li><strong>Latent NeuralODE:</strong> NeuralODE combined with an autoencoder.</li>
+							<li><strong>Latent Polynomial:</strong> Uses an autoencoder similar to Latent NeuralODE,
+								fits a polynomial to the trajectories in the latent space.</li>
+						</ul>
+						<p>Find more information on the surrogates <a href="#surrogates">below</a>.</p>
+					</details>
+
+					<details>
+						<summary><strong>Baseline Datasets</strong></summary>
+						<p>The following datasets are currently included in the benchmark:</p>
+						<ul>
+							<li><strong>osu2008:</strong> 1000 samples, 100 timesteps, 29 chemical quantities.</li>
+						</ul>
+						<p>Find more information on the datasets <a href="#datasets">below</a>.</p>
+					</details>
+
+					<details>
+						<summary><strong>Plots, Plots, Plots</strong></summary>
+						<p>While hard metrics are crucial to compare the surrogates, performance cannot always be broken
+							down to a set of numbers. Running the benchmark creates many plots that serve to compare
+							performance of surrogates or provide insights into the performance of each surrogate.</p>
+					</details>
+
+					<details>
+						<summary><strong>Uncertainty Quantification (UQ)</strong></summary>
+						<p>To give an uncertainty estimate that does not rely too much on the specifics of the surrogate
+							architecture, we use DeepEnsemble for UQ.</p>
+					</details>
+
+					<details>
+						<summary><strong>Interpolation, Extrapolation, Sparsity</strong></summary>
+						<p>Surrogates are often used to interpolate or extrapolate data. The benchmark includes models
+							that are trained on subsets of the training data, investigating their performance in
+							interpolation and extrapolation in time as well as their behaviour in data-sparse
+							circumstances.</p>
+					</details>
+
+					<details>
+						<summary><strong>Parallel Training</strong></summary>
+						<p>To gain insights into the surrogates behaviour, many models must be trained on varying
+							subsets of the training data. This task is trivially parallelisable. In addition to
+							utilising all specified devices, the benchmark features some nice progress bars to gain
+							insights into the current status of the training.</p>
+					</details>
+
+					<details>
+						<summary><strong>Dataset Insights (WIP)</strong></summary>
+						<p>"Know your data" is one of the most important rules in machine learning. To aid in this, the
+							benchmark provides plots and visualisations that should help to understand the dataset
+							better.</p>
+					</details>
+
+					<details>
+						<summary><strong>Tabular Benchmark Results</strong></summary>
+						<p>At the end of the benchmark, the most important metrics are displayed in a table.
+							Additionally, all metrics generated during the benchmark are provided as a CSV file.</p>
+					</details>
+
+					<details>
+						<summary><strong>Reproducibility</strong></summary>
+						<p>Randomness is an important part of machine learning and even required in the context of UQ
+							with DeepEnsemble, but reproducibility is key in benchmarking enterprises. The benchmark
+							uses a custom seed that can be set by the user to ensure full reproducibility.</p>
+					</details>
+
+					<details>
+						<summary><strong>Custom Datasets and Own Models</strong></summary>
+						<p>To cover a wide variety of use-cases, the benchmark is designed such that adding own datasets
+							and models is explicitly supported.</p>
+					</details>
+
+					<details>
+						<summary><strong>Interactive Config Maker</strong></summary>
+						<p>The initial setup can be a bit confusing and the benchmark has many features. To make this
+							easier, we provide an interactive Config Maker that helps to set up the benchmark for the
+							first time. Find it <a href="pages/config.html">here</a>!</p>
+					</details>
+					<br>
+				</section>
+
+
+				<section id="surrogates">
+					<h2>Surrogate Models (add images of the surrogates here!)</h2>
+
+					<p>The benchmark includes several surrogate models that can be trained and compared. All surrogates
+						are subclasses to the base class <code>AbstractSurrogateModel</code>, which contains common
+						methods (like obtaining predictions and saving a model) and mandates the implementation of
+						some surrogate-specific methods. The following list provides a brief overview of the models and
+						their characteristics.</p>
+
+					<ul>
+						<li>
+							<strong>Fully Connected Neural Network</strong><br>
+							This is the vanilla neural network, also known as a multilayer perceptron. It is
+							included as the basic model but seems to perform surprisingly well for some cases. The
+							inputs are the initial conditions and the time where the solution is to be evaluated.
+						</li>
+						<li>
+							<strong>DeepONet</strong><br>
+							DeepONet consists of two fully connected networks whose outputs are combined using a
+							scalar product. The trunk net receives as input the initial conditions, while the branch
+							net receives the time where the solution is to be evaluated. <br>
+							In the current implementation, the surrogate is a single DeepONet with multiple outputs
+							(hence it is referred to as MultiONet in the code). This is achieved by splitting the
+							output vectors of branch and trunk net into multiple parts. Corresponding parts of the
+							output vectors are then combined using a scalar product.
+						</li>
+						<li>
+							<strong>Latent NeuralODE</strong><br>
+							Latent NeuralODE combines NeuralODE with an autoencoder. The autoencoder reduces the
+							dimensionality of the dataset before solving the dynamics in the resulting latent space,
+							making it an efficient and powerful surrogate model.
+						</li>
+						<li>
+							<strong>Latent Polynomial</strong><br>
+							This model also uses an autoencoder similar to the Latent NeuralODE, but instead of
+							solving differential equations, it fits a polynomial to the trajectories in the latent
+							space. This approach offers a different trade-off between complexity and accuracy.
+						</li>
+					</ul>
+				</section>
+
+
+				<section id="datasets">
+					<h2>Data</h2>
+
+					<h3>Included Datasets (add example plots of some trajectories here!)</h3>
+					<h4>osu2008</h4>
+					<p>This dataset contains 1000 samples, 100 timesteps, and 29 chemical quantities. It is a
+						dataset
+						provided by the Ohio State University in 2008. The dataset is used to model the dynamics of
+						a
+						chemical reaction. The dataset is included in the benchmark and can be used to compare the
+						performance of the surrogates.</p>
+					</p>
+
+					<h3>Data Structure</h3>
+					<p>All datasets are stored in the <code>datasets</code> folder in the root directory. A dataset can
+						be
+						identified
+						by
+						the name of its folder - the directory containing the osu2008 dataset is
+						<code>datasets/osu2008/</code>.
+						<br>
+						Inside this folder, there is a file data.hdf5, which contains the data as well as some
+						metadata.
+						The data is already split into training, validation and test data. This split depends on how
+						the
+						dataset is created, we recommend 75/5/20 %. The training data (or subsets thereof) is used
+						to
+						train the models, the validation data is only used to compute a slightly more represantive
+						loss
+						and accuracy during training, hence it can be rather small (and should be for performance
+						reasons, as the losses and accuracies are computed every epoch). The test data is then used
+						for
+						the actual benchmark.
+
+					<h3>Model Configuration</h3>
+					<p>Additionally, the dataset folder might contain a file surrogates_config.py. This file
+						contains
+						dataclasses that specify the configuration of each surrogate for the given dataset. While it
+						might
+						be the case that the base configuration (which is stored in the config file in the folder
+						surrogates/surrogate_name/) is sufficient, usually the hyperparameters of a model must be
+						adjusted
+						for each dataset to achieve optimal performance. This can be done by creating a dataclass in
+						surrogates_config.py. The dataclass should have the name surrogate_model_name + "Config"
+						(e.g.
+						MultiONetConfig). It is sufficient to specify parameters here that deviate from those set in
+						the
+						base class. As an example, if we want to reduce the number of layers in our fully connected
+						network, we simply add <code>num_hidden_layers = 4</code> into the
+						<code>FullyConnectedConfig</code> dataclass.
+						The
+						benchmark will then use these parameters for the model on this dataset.
+					</p>
+
+					<h3>Adding a Dataset</h3>
+					<p>Adding a new dataset is pretty easy. The only requirement for the dataset is that it should
+						be a
+						numpy array of shape <br> <code>[num_samples, num_timesteps, num_chemicals]</code>. The
+						technical
+						details can be found in the <a href="pages/documentation.html#add_dset">documentation</a>. The
+						benchmark supports one big numpy array or three separate arrays if you already have a custom
+						split. Since the quantities often span many orders of magnitudes, the surrogates will
+						usually
+						train on and predict normalised log-data. It is recommended to add the data "raw", the
+						benchmark
+						takes care of the log-transformation and normalisation (but it can also handle data that is
+						already in log-format). Optionally, you can provide the corresponding timesteps and labels
+						for
+						the quantities in the dataset, these will then be used for visualisation.</p>
+
+				</section>
+
+				<section id="training">
+					<h2>Training</h2>
+
+					<p>To ensure a fair benchmark, it is important that the surrogate models involved are actually
+						comparable, meaning they are trained under similar circumstances and on the same training
+						data.
+						For this reason, the benchmark involves training the models before comparing them (rather
+						than
+						simply benchmarking models previously trained somewhere else). <br>
+						There is already some application-specificity involved in choosing for how long to
+						train the model - usually, we want to compare best-performing models, which means training
+						each
+						model for as long as it reasonably keeps converging. But if low training time is essential
+						(e.g.
+						for fast re-training), one could also choose to train all models for equal amounts of time
+						or an
+						equal number of epochs. </p>
+
+					<h3> Configurations</h3>
+
+					<p>In the following paragraphs, you can find detailed explanations on the config settings and how
+						they are relevant for the training. For an easy way of making a config file that conforms to the
+						requirements of the benchmark, head over to our <a href="pages/config.html">Config Maker</a>!
+
+					</p>
+
+					<p>The training of the models is configured in the <code>config.yaml</code> file (even more details
+						on the config <a href="pages/documentation.html#config">here</a>). A benchmark run is identfied by a
+						<code>training_id</code>. The <code>surrogates</code> to be included in the benchmark can be
+						provided in the form of a list of strings, where the strings must match the names of the
+						surrogate classes (e.g. <code>["FullyConnected","DeepONet"]</code>). <br>
+						The <code>epochs</code> and <code>batch_size</code> parameters are used to specify the number of
+						epochs to train the models and the batch size to be used during training. They can either be a
+						single integer or a list of integers, where each integer corresponds to a model. The benchmark
+						will train each model for the specified number of epochs and with the specified batch size.
+						<br> The <code>name</code> of the dataset to be used is
+						specified in the
+						<code>dataset</code> section, along with the option to <code>log-transform</code> the data and
+						to specify the <code>normalisation</code> to be used. <br>
+						The <code>device</code> parameter specifies the device(s) to be used for training. They can be
+						specified as a list of strings (e.g. <code>["cuda:0","cuda:1"]</code>), where each string is the
+						name of a device. The devices must be available on the machine and support PyTorch. The
+						benchmark will use all devices specified in the list for training, more on this in the <a
+							href="#parallel">parallel training</a> section. <br> The <code>seed</code> parameter is used
+						to ensure reproducibility of the training process. The seeds for all models are generated from
+						this seed on a per-task basis. <br>
+						The <code>verbose</code> will toggle some additional prints, mostly during the benchmarking
+						process.
+					<p>Besides training one main model on the provided training sets, many additional models will be
+						trained depending on the configuration of the benchmark. These models are required to
+						investigate
+						the behaviour of the model under various circumstances:</p>
+					<ul>
+						<li>Interpolation: If this mode is enabled, one additional model will be trained per
+							interval
+							specified. The train set for this model will be "thinned" in time using numpy array
+							slicing,
+							i.e. <code>train_data = train_data[:,::interval,:]</code>. This means that only every
+							n-th
+							timestep will
+							be given to the model during training, but during testing it will be evaluated on all
+							timesteps, including those in between the provided timesteps.</li>
+						<li>Extrapolation: If this mode is enabled, one additional model will be trained per cutoff
+							specified. The train set for this model will be trimmed in time using numpy array
+							slicing,
+							i.e. <code> train_data = train_data[:,:cutoff,:]</code>. This means that the model is
+							only
+							trained with
+							timesteps up to this cutoff, but must later predict the trajectories for all times.
+						</li>
+						<li>Sparse: If this mode is enabled, one additional model will be trained per fraction
+							specified. The train set for this model will consist of fewer samples than the original
+							training data, obtained using <code>train_data = train_data[::fraction,:,:]</code>. This
+							means that only
+							every n-th sample will be given to the model during training.</li>
+						<li>Batch Scaling: If this mode is enabled, one additional model will be trained per batch
+							size
+							specified. The model will be trained with the specified batch size. This can be useful
+							to
+							investigate the effect of batch size on the model's accuracy or inference time.</li>
+						<li>Uncertainty: If this mode is enabled, <code>n_models - 1</code> additional models will be
+							trained on the full
+							dataset (since the main model can be used in the DeepEnsemble too). Each model will be
+							trained with a different random initialisation and a shuffled training set. Together
+							they
+							form a DeepEnsemble, which can be used to estimate the uncertainty of the model's
+							predictions.</li>
+					</ul>
+					<p> Lastly, there are some settings that do not influence the training process. The parameters
+						<code>gradients</code>, <code>timing</code>, <code>compute</code>, <code>losses</code> and
+						<code>compare</code> are only relevant for the benchmarking process, they will either toggle
+						additional evaluations of the main model or further output based on existing data.
+					</p>
+
+					<h3 id="parallel">Parallel Training</h3>
+					<p>To reduce the potentially long training process due to the large number of models, the
+						benchmark
+						is parallelised. The benchmark will utilise all devices specified in the config file to
+						train
+						the models. The parallelisation works simply by creating a list of all models to be trained
+						("tasks") and then distributing these tasks to the available devices. A progress bar will be
+						displayed for each training in progress as well as for the total progress. In principle one
+						can
+						also train multiple models on the same device, simply by listing it multiple times:
+						<code>["cuda:5","cuda:5"]</code>. Whether this has any benefit depends on the model and
+						device.
+						Of course, it is also possible to train sequentially using a single device only.<br>
+						The task-list approach has two benefits: It is asynchronous in that each device can begin
+						the
+						next task as soon as it finishes its current task, and it makes it easy to continue training
+						the
+						required models at a later time in case the training process gets interrupted.
+					</p>
+
+					<h3>Saved Models</h3>
+					<p>After the training of each model finishes, it is saved to the directory
+						<code>trained/training_id/surrogate_name</code> (e.g. trained/training_1/FullyConnected/). The
+						model names are specific to the task and may not be changed, as the later parts of the benchmark
+						rely on loading the correct models and models are primarily identified by their name. For each
+						model, two files are
+						created, a <code>.pth</code> file and a <code>.yaml</code> file. The former not only contains
+						the model dict with the weights, but also most attributes of the surrogate class, while the
+						latter contains the models hyperparameters as well as some additional information (information
+						about the dataset, train duration, number of training samples and timesteps, ...).
+					</p>
+
+
+				</section>
+
+				<section id="benchmarking">
+					<h2>Benchmarking</h2>
+
+					<p>After the training finished, the models are benchmarked. Similar to training, it is important to
+						treat all models equally during the benchmarking process. This is not trivial, as the models
+						have different architectures and may require differently structured data. The benchmark attempts
+						to equalise the process as much as possible, hence the requirements for implementing additional
+						models are relatively strict. <br>
+						One example of this is that the <code>predict</code> method of the surrogate class is the same
+						for all models, i.e. it is implemented in the abstract base class
+						<code>AbstractSurrogateModel</code>. For this to work, each model must have a
+						<code>forward</code>method that conforms to certain standards. More details on this can be found
+						in the <a href="pages/documentation.html#add_model">documentation</a>. <br>
+					</p>
+					<p> The below sections describe the structure of the benchmark and how to configure it. For precise
+						accounts of the evaluations and plots made by the benchmark, head to the next section, <a
+							href="#output">Output</a>.</p>
+
+					<h3>Structure</h3>
+
+					<p>The general structure of the benchmark is that the models are first benchmarked indivdually and
+						then compared to one another. <br> The individual part mostly consists of obtaining predictions
+						for
+						the trained models on the test set and comparing them to the ground truth. The results for each
+						surrogate are used to make surrogate-specific plots, which are stored in the
+						<code>plots/training_id/surrogate_name/</code> directory. In addition, these results are stored
+						in one large
+						nested dictionary, which roughly conforms to the structure
+						metrics[surrogate_name][category][metric]. <br> This dictionary is the foundation for the
+						comparative
+						part, which creates comparative plots as well as tabular output. The results -
+						<code>.yaml</code> files for each surrogate, a <code>metrics.csv</code> file and
+						<code>metrics_table.txt</code> are stored in <code>results/training_id</code>, while the plots
+						are stored in <code>plots/training_id/</code>.
+
+					<h3>Configurations</h3>
+
+					<p> Below there are explanations on how the config settings are relevant for the benchmarking. For
+						an easy way of making a config file that conforms to the requirements of the benchmark, head
+						over
+						to our <a href="pages/config.html">Config Maker</a>!
+					</p>
+
+					<p>The benchmarking of the models uses the same <code>config.yaml</code> file (more details
+						<a href="pages/documentation.html#config">here</a>) that is also used to configure the training. It is
+						recommended to use the configuration that was specified during training for minimal
+						complications, but it is also possible to change many of the configuration parameters. <br>
+
+						The models for the benchmark are identified by the
+						<code>training_id</code>, and the ID is also used to make directories in the <code>plots/</code>
+						and <code>results/</code> folders. The <code>dataset</code> section should remain untouched, as
+						the training is always dataset specific. It is possible to remove <code>surrogates</code> for
+						the benchmark that were included in the training (but not vice-versa, since you cannot benchmark
+						surrogates for which no models were trained). The <code>dataset</code> section should remain
+						untouched, as the training is always dataset specific. The benchmarking process is not parallel
+						since it is much faster, so only one <code>device</code> is required. If multiple are specified,
+						only the first one in the list will be used. Similarly, the <code>seed</code> is not relevant
+						for the benchmarking process, as the models are already trained. If you want some additional
+						information, use the <code>verbose</code> parameter. <br>
+						The logic of the surrogates also applies for the different modalities of the benchmark - if they
+						were included in the training, they can be removed for the benchmark, but you can not add
+						modalities that were not included during training. It may be possible to reduce the details for
+						each modality the benchmark (i.e. to only use intervals 2-5 when you trained with 2-10), but
+						they best remain untouched. <br>
+						The parameters <code>losses</code>, <code>gradients</code>, <code>timing</code> and
+						<code>compute</code> toggle the respective evaluations of the models. Since they do not change
+						anything about the training process, they can be toggled freely. <br>
+						Lastly, the <code>compare</code> parameter
+						determines whether the models are compared after benchmarking them individually. It is not
+						possible to run only the comparative part of the benchmark, as the individual benchmark results
+						are required before the surrogates can be compared! If only some modalities of the individual
+						benchmarks were run, the models will only be compared for these modalities (e.g. there will be
+						no comparison of the extrapolation performance of the models if
+						<code>extrapolation = False</code>). All details about the outputs and results of the benchmark
+						results are listed in the <a href="#output">Output</a> section. The next section will give an
+						overview over
+
+					<h3 id="#modalities">Modalities</h3>
+
+				</section>
+
+				<section id="output">
+					<h2>Output</h2>
+
+					<p> The benchmark has two kinds of outputs: Metrics and plots. Both are given on a per-surrogate
+						basis and in a comparative way. <br>
+						All metric output is stored in <code>results/training_id/</code>. The individual surrogate
+						metrics are stored in <code>surrogatename_metrics.yaml</code> (e.g.
+						fullyconnected_metrics.yaml), while the comparative parts are stored as <code>metrics.csv</code>
+						and <code>metrics_table.txt</code> (this table is also printed to the CLI at the end of the
+						benchmark). <br>
+						All plots are stored in <code>plots/training_id/</code>, the individual plots for each surrogate
+						in the respective surrogate directory and the comparative plots in the main directory. <br>
+					</p>
+
+					<h3 id="ind_metrics">Individual Metrics</h3>
+
+					<p>The <code>surrogatename_metrics.yaml</code> is the most detailed result file, as it contains
+						every metric that was calculated during the benchmark of the corresponding surrogate. Which
+						metrics are calculated depends on the modalities that are activated in the config. </p>
+
+					<h3 id="comp_metrics">Comparative Metrics</h3>
+
+					<h3 id="ind_plots">Individual Plots</h3>
+
+					<h3 id="comp_plots">Comparative Plots</h3>
+
+				</section>
+
+
+		</section>
+
+	</div>
+
+	<!-- Footer -->
+	<footer id="footer" class="wrapper alt">
+		<div class="inner">
+			<ul class="menu">
+				<li>&copy; Untitled. All rights reserved.</li>
+				<li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
+			</ul>
+		</div>
+	</footer>
+
+	<!-- Scripts -->
+	<script src="assets/js/jquery.min.js"></script>
+	<script src="assets/js/jquery.scrollex.min.js"></script>
+	<script src="assets/js/jquery.scrolly.min.js"></script>
+	<script src="assets/js/browser.min.js"></script>
+	<script src="assets/js/breakpoints.min.js"></script>
+	<script src="assets/js/util.js"></script>
+	<script src="assets/js/main.js"></script>
+
+</body>
+
+</html>

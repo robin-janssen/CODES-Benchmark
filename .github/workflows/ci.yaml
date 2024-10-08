@@ -94,12 +94,9 @@ jobs:
   docs:
     runs-on: ubuntu-latest
 
-    # No conditional 'if' statement here, because we want to build docs on every push to main or develop
     steps:
     - name: Check out the repository
       uses: actions/checkout@v3
-      with:
-        fetch-depth: 0  # Fetch full history, including tags
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -110,7 +107,10 @@ jobs:
       run: |
         poetry install --with dev
 
-    # Generate Handsdown Documentation
     - name: Generate Handsdown Documentation
       run: |
-        handsdown --external --cleanup
+        handsdown --external --cleanup --create-configs --output-path docs/technical/
+
+    - name: Build HTML with MkDocs
+      run: |
+        python -m mkdocs build

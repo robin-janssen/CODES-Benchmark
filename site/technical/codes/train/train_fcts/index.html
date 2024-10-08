@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../../img/favicon.ico" />
+    <title>Train Fcts - Codes-benchmark</title>
+    <link rel="stylesheet" href="../../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Train Fcts";
+        var mkdocs_page_input_path = "technical/codes/train/train_fcts.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../.." class="icon icon-home"> Codes-benchmark
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../../TODO/">Todos for the project</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Technical</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../../">Codes-benchmark Index</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Codes</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../../">Codes</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" >Benchmark</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../benchmark/">Benchmark</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../benchmark/bench_fcts/">Bench Fcts</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../benchmark/bench_plots/">Bench Plots</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../benchmark/bench_utils/">Bench Utils</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" >Surrogates</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../surrogates/">Surrogates</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../surrogates/surrogate_classes/">Surrogate Classes</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../surrogates/surrogates/">Surrogates</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" >Train</a>
+    <ul class="current">
+                <li class="toctree-l3"><a class="reference internal" href="../">Train</a>
+                </li>
+                <li class="toctree-l3 current"><a class="reference internal current" href="#">Train Fcts</a>
+    <ul class="current">
+    <li class="toctree-l4"><a class="reference internal" href="#create_task_list_for_surrogate">create_task_list_for_surrogate</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#parallel_training">parallel_training</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#sequential_training">sequential_training</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#train_and_save_model">train_and_save_model</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#worker">worker</a>
+    </li>
+    </ul>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" >Utils</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../utils/">Utils</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../utils/data_utils/">Data Utils</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../utils/utils/">Utils</a>
+                </li>
+    </ul>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Datasets</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" >Data analysis</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../../datasets/data_analysis/">Data Analysis</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../../datasets/data_analysis/analyse_dataset/">Analyse Dataset</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../../datasets/data_analysis/data_plots/">Data Plots</a>
+                </li>
+    </ul>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../..">Codes-benchmark</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Technical</li>
+          <li class="breadcrumb-item">Codes</li>
+          <li class="breadcrumb-item">Train</li>
+      <li class="breadcrumb-item active">Train Fcts</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/robin-janssen/CODES-Benchmark/edit/master/docs/technical/codes/train/train_fcts.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="train-fcts">Train Fcts</h1>
+<p><a href="../../../#codes-benchmark-index">Codes-benchmark Index</a> / <a href="../../#codes">Codes</a> / <a href="../#train">Train</a> / Train Fcts</p>
+<blockquote>
+<p>Auto-generated documentation for <a href="https://github.com/robin-janssen/CODES-Benchmark/blob/main/codes/train/train_fcts.py">codes.train.train_fcts</a> module.</p>
+</blockquote>
+<ul>
+<li><a href="#train-fcts">Train Fcts</a></li>
+<li><a href="#create_task_list_for_surrogate">create_task_list_for_surrogate</a></li>
+<li><a href="#parallel_training">parallel_training</a></li>
+<li><a href="#sequential_training">sequential_training</a></li>
+<li><a href="#train_and_save_model">train_and_save_model</a></li>
+<li><a href="#worker">worker</a></li>
+</ul>
+<h2 id="create_task_list_for_surrogate">create_task_list_for_surrogate</h2>
+<p><a href="https://github.com/robin-janssen/CODES-Benchmark/blob/main/codes/train/train_fcts.py#L122">Show source in train_fcts.py:122</a></p>
+<p>Creates a list of training tasks for a specific surrogate model based on the
+configuration file.</p>
+<h4 id="arguments">Arguments</h4>
+<ul>
+<li><code>config</code> <em>dict</em> - The configuration dictionary taken from the config file.</li>
+<li><code>surr_name</code> <em>str</em> - The name of the surrogate model.</li>
+</ul>
+<h4 id="returns">Returns</h4>
+<ul>
+<li><code>list</code> - A list of training tasks for the surrogate model.</li>
+</ul>
+<h4 id="signature">Signature</h4>
+<pre><code class="language-python">def create_task_list_for_surrogate(config, surr_name: str) -&gt; list: ...
+</code></pre>
+<h2 id="parallel_training">parallel_training</h2>
+<p><a href="https://github.com/robin-janssen/CODES-Benchmark/blob/main/codes/train/train_fcts.py#L207">Show source in train_fcts.py:207</a></p>
+<p>Execute the training tasks in parallel on multiple devices.</p>
+<h4 id="arguments_1">Arguments</h4>
+<ul>
+<li><code>tasks</code> <em>list</em> - The list of training tasks.</li>
+<li><code>device_list</code> <em>list</em> - The list of devices to use for training.</li>
+<li><code>task_list_filepath</code> <em>str</em> - The filepath to the task list file.</li>
+</ul>
+<h4 id="signature_1">Signature</h4>
+<pre><code class="language-python">def parallel_training(tasks, device_list, task_list_filepath: str): ...
+</code></pre>
+<h2 id="sequential_training">sequential_training</h2>
+<p><a href="https://github.com/robin-janssen/CODES-Benchmark/blob/main/codes/train/train_fcts.py#L251">Show source in train_fcts.py:251</a></p>
+<p>Execute the training tasks sequentially on a single device.</p>
+<h4 id="arguments_2">Arguments</h4>
+<ul>
+<li><code>tasks</code> <em>list</em> - The list of training tasks.</li>
+<li><code>device_list</code> <em>list</em> - The list of devices to use for training.</li>
+<li><code>task_list_filepath</code> <em>str</em> - The filepath to the task list file.</li>
+</ul>
+<h4 id="signature_2">Signature</h4>
+<pre><code class="language-python">def sequential_training(tasks, device_list, task_list_filepath: str): ...
+</code></pre>
+<h2 id="train_and_save_model">train_and_save_model</h2>
+<p><a href="https://github.com/robin-janssen/CODES-Benchmark/blob/main/codes/train/train_fcts.py#L19">Show source in train_fcts.py:19</a></p>
+<p>Train and save a model for a specific benchmark mode. The parameters are determined
+by the task(s) which is created from the config file.</p>
+<h4 id="arguments_3">Arguments</h4>
+<ul>
+<li><code>surr_name</code> <em>str</em> - The name of the surrogate model.</li>
+<li><code>mode</code> <em>str</em> - The benchmark mode (e.g. "main", "interpolation", "extrapolation").</li>
+<li><code>metric</code> <em>int</em> - The metric for the benchmark mode.</li>
+<li><code>training_id</code> <em>str</em> - The training ID for the current training session.</li>
+<li><code>seed</code> <em>int, optional</em> - The random seed for the training. Defaults to None.</li>
+<li><code>epochs</code> <em>int, optional</em> - The number of epochs for the training. Defaults to None.</li>
+<li><code>device</code> <em>str, optional</em> - The device for the training. Defaults to "cpu".</li>
+<li><code>position</code> <em>int, optional</em> - The position of the model in the task list. Defaults to 1.</li>
+</ul>
+<h4 id="signature_3">Signature</h4>
+<pre><code class="language-python">def train_and_save_model(
+    surr_name: str,
+    mode: str,
+    metric: int,
+    training_id: str,
+    seed: int | None = None,
+    epochs: int | None = None,
+    device: str = &quot;cpu&quot;,
+    position: int = 1,
+): ...
+</code></pre>
+<h2 id="worker">worker</h2>
+<p><a href="https://github.com/robin-janssen/CODES-Benchmark/blob/main/codes/train/train_fcts.py#L173">Show source in train_fcts.py:173</a></p>
+<p>Worker function to process tasks from the task queue on the given device.</p>
+<h4 id="arguments_4">Arguments</h4>
+<ul>
+<li><code>task_queue</code> <em>Queue</em> - The task queue containing the training tasks.</li>
+<li><code>device</code> <em>str</em> - The device to use for training.</li>
+<li><code>device_idx</code> <em>int</em> - The index of the device in the device list.</li>
+<li><code>overall_progress_bar</code> <em>tqdm</em> - The overall progress bar for the training.</li>
+<li><code>task_list_filepath</code> <em>str</em> - The filepath to the task list file</li>
+</ul>
+<h4 id="signature_4">Signature</h4>
+<pre><code class="language-python">def worker(
+    task_queue: Queue,
+    device: str,
+    device_idx: int,
+    overall_progress_bar: tqdm,
+    task_list_filepath: str,
+): ...
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../" class="btn btn-neutral float-left" title="Train"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../utils/" class="btn btn-neutral float-right" title="Utils">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/robin-janssen/CODES-Benchmark" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../utils/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../../..";</script>
+    <script src="../../../../js/theme_extra.js"></script>
+    <script src="../../../../js/theme.js"></script>
+      <script src="../../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../../img/favicon.ico" />
+    <title>Data Plots - Codes-benchmark</title>
+    <link rel="stylesheet" href="../../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Data Plots";
+        var mkdocs_page_input_path = "technical/datasets/data_analysis/data_plots.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../.." class="icon icon-home"> Codes-benchmark
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../../TODO/">Todos for the project</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Technical</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../../">Codes-benchmark Index</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Codes</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../codes/">Codes</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" >Benchmark</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../../codes/benchmark/">Benchmark</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../../codes/benchmark/bench_fcts/">Bench Fcts</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../../codes/benchmark/bench_plots/">Bench Plots</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../../codes/benchmark/bench_utils/">Bench Utils</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" >Surrogates</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../../codes/surrogates/">Surrogates</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../../codes/surrogates/surrogate_classes/">Surrogate Classes</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../../codes/surrogates/surrogates/">Surrogates</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" >Train</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../../codes/train/">Train</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../../codes/train/train_fcts/">Train Fcts</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" >Utils</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../../codes/utils/">Utils</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../../codes/utils/data_utils/">Data Utils</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../../codes/utils/utils/">Utils</a>
+                </li>
+    </ul>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Datasets</a>
+    <ul class="current">
+                <li class="toctree-l2 current"><a class="reference internal current" >Data analysis</a>
+    <ul class="current">
+                <li class="toctree-l3"><a class="reference internal" href="../">Data Analysis</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../analyse_dataset/">Analyse Dataset</a>
+                </li>
+                <li class="toctree-l3 current"><a class="reference internal current" href="#">Data Plots</a>
+    <ul class="current">
+    <li class="toctree-l4"><a class="reference internal" href="#plot_example_trajectories">plot_example_trajectories</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#plot_example_trajectories_paper">plot_example_trajectories_paper</a>
+    </li>
+    </ul>
+                </li>
+    </ul>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../..">Codes-benchmark</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Technical</li>
+          <li class="breadcrumb-item">Datasets</li>
+          <li class="breadcrumb-item">Data analysis</li>
+      <li class="breadcrumb-item active">Data Plots</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/robin-janssen/CODES-Benchmark/edit/master/docs/technical/datasets/data_analysis/data_plots.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="data-plots">Data Plots</h1>
+<p><a href="../../../#codes-benchmark-index">Codes-benchmark Index</a> / <code>datasets</code> / <a href="../#data-analysis">Data Analysis</a> / Data Plots</p>
+<blockquote>
+<p>Auto-generated documentation for <a href="https://github.com/robin-janssen/CODES-Benchmark/blob/main/datasets/data_analysis/data_plots.py">datasets.data_analysis.data_plots</a> module.</p>
+</blockquote>
+<ul>
+<li><a href="#data-plots">Data Plots</a></li>
+<li><a href="#plot_example_trajectories">plot_example_trajectories</a></li>
+<li><a href="#plot_example_trajectories_paper">plot_example_trajectories_paper</a></li>
+</ul>
+<h2 id="plot_example_trajectories">plot_example_trajectories</h2>
+<p><a href="https://github.com/robin-janssen/CODES-Benchmark/blob/main/datasets/data_analysis/data_plots.py#L11">Show source in data_plots.py:11</a></p>
+<p>Plot example trajectories for the dataset.</p>
+<h4 id="arguments">Arguments</h4>
+<ul>
+<li><code>dataset_name</code> <em>str</em> - The name of the dataset.</li>
+<li><code>data</code> <em>np.ndarray</em> - The data to plot.</li>
+<li><code>timesteps</code> <em>np.ndarray</em> - Timesteps array.</li>
+<li><code>num_chemicals</code> <em>int, optional</em> - Number of chemicals to plot. Default is 10.</li>
+<li><code>labels</code> <em>list, optional</em> - List of labels for the chemicals.</li>
+<li><code>save</code> <em>bool, optional</em> - Whether to save the plot as a file.</li>
+</ul>
+<h4 id="signature">Signature</h4>
+<pre><code class="language-python">def plot_example_trajectories(
+    dataset_name: str,
+    data: np.ndarray,
+    timesteps: np.ndarray,
+    num_chemicals: int = 10,
+    labels: list[str] | None = None,
+    save: bool = False,
+    sample_idx: int = 0,
+    log: bool = False,
+) -&gt; None: ...
+</code></pre>
+<h2 id="plot_example_trajectories_paper">plot_example_trajectories_paper</h2>
+<p><a href="https://github.com/robin-janssen/CODES-Benchmark/blob/main/datasets/data_analysis/data_plots.py#L88">Show source in data_plots.py:88</a></p>
+<p>Plot example trajectories for the dataset with two subplots, one showing 15 chemicals and another showing the remaining.</p>
+<h4 id="arguments_1">Arguments</h4>
+<ul>
+<li><code>dataset_name</code> <em>str</em> - The name of the dataset.</li>
+<li><code>data</code> <em>np.ndarray</em> - The data to plot.</li>
+<li><code>timesteps</code> <em>np.ndarray</em> - Timesteps array.</li>
+<li><code>save</code> <em>bool, optional</em> - Whether to save the plot as a file.</li>
+<li><code>sample_idx</code> <em>int, optional</em> - Index of the sample to plot.</li>
+<li><code>labels</code> <em>list, optional</em> - List of labels for the chemicals.</li>
+</ul>
+<h4 id="signature_1">Signature</h4>
+<pre><code class="language-python">def plot_example_trajectories_paper(
+    dataset_name: str,
+    data: np.ndarray,
+    timesteps: np.ndarray,
+    save: bool = False,
+    sample_idx: int = 0,
+    labels: list[str] | None = None,
+) -&gt; None: ...
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../analyse_dataset/" class="btn btn-neutral float-left" title="Analyse Dataset"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/robin-janssen/CODES-Benchmark" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../analyse_dataset/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../../..";</script>
+    <script src="../../../../js/theme_extra.js"></script>
+    <script src="../../../../js/theme.js"></script>
+      <script src="../../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
