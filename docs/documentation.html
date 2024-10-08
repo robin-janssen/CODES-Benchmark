@@ -1,0 +1,656 @@
+<!DOCTYPE HTML>
+<!--
+	Hyperspace by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+
+<head>
+	<title>CODES Documentation</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="assets/css/main.css" />
+	<noscript>
+		<link rel="stylesheet" href="assets/css/noscript.css" />
+	</noscript>
+	<link href="assets/css/prism.css" rel="stylesheet" />
+</head>
+
+<body class="is-preload">
+
+	<!-- Header -->
+	<header id="header">
+		<a href="index.html" class="title">CODES</a>
+		<nav>
+			<ul>
+				<!-- <li><a href="index.html">Home</a></li> -->
+				<li><a href="index.html">Overview</a></li>
+				<li><a href="benchmark.html">Benchmark</a></li>
+				<li><a href="documentation.html" class="active">Documentation</a></li>
+				<li><a href="config.html">Config Maker</a></li>
+			</ul>
+		</nav>
+	</header>
+
+	<!-- Wrapper -->
+	<div id="wrapper">
+
+		<!-- Main -->
+		<section id="main" class="wrapper">
+			<div class="inner">
+				<h1 class="major">Documentation</h1>
+				<div class="col-6 col-12-medium">
+					<ul class="alt">
+						<li><a href="#setup">Setup</a></li>
+						<li><a href="#run">Run the benchmark</a></li>
+						<li><a href="#config">Configuring the benchmark</a></li>
+						<li><a href="#add_dset">Add your own dataset</a></li>
+						<li><a href="#add_model">Add your own model</a></li>
+						<li><a href="#docu">Code Documentation</a></li>
+					</ul>
+				</div>
+
+				<section id="setup">
+					<h2>Setup</h2>
+					<p>First, clone the <a href="#">GitHub Repository</a> with
+						<code>git clone ssh://git@github.com/robin-janssen/CODES-Benchmark</code>.
+					</p>
+					<p>Optionally, you can set up a <a href="https://docs.python.org/3/library/venv.html">virtual
+							environment</a> (recommended).</p>
+					<p>Then, install the required packages with <code>pip install -r requirements.txt</code>.</p>
+					<p>The installation is now complete. To be able to run and evaluate the benchmark, you need to first
+						set up a configuration YAML
+						file. There is one provided, but it should be configured. For more information, check the <a
+							href="config.html">configuration page</a>.
+						There, we also offer an interactive Config-Generator tool with some explanations to help you set
+						up your benchmark.</p>
+					<p>You can also add your own datasets and models to the benchmark to evaluate them against each
+						other or some of our baseline models.
+						For more information on how to do this, please refer to the <a href="#three">documentation</a>.
+					</p>
+				</section>
+
+				<section id="run">
+					<h2>Run the benchmark</h2>
+					<p>The first step in running the benchmark is to train all the different models specified in the
+						configuration. As this step usually takes a lot longer than the actual benchmarking, it is
+						executed as a separate step.</p>
+					<p>To start the training, run the <code>run_training.py</code> file. to pass in a config file that
+						has a
+						filename different from the default <code>config.yaml</code>, use the <code>--config</code>
+						argument when executing from the command line like this:
+						<code>/path/to/python3 run_training.py --config MyConfig.yaml</code>.
+					</p>
+					<p>After the training is complete, the benchmark can be run. To start the benchmark, run the
+						<code>run_benchmark.py</code> file. Remember to pass in the same config file as you used for the
+						training.
+					</p>
+				</section>
+
+				<section id="config">
+					<h2>Configuring the benchmark</h2>
+					<p>The training and evaluation of different models is mainly configured from a <a
+							href="https://en.wikipedia.org/wiki/YAML">YAML</a> config file in the base directory of
+						the repository. In this file, all of the tweakble run parameters can be set. This includes</p>
+					<ul>
+						<li>A Name for a benchmark run (also used to create a path to store the results)</li>
+						<li>the surrogates to train and compare</li>
+						<li>the dataset to train and evaluate on</li>
+						<li>training parameters like number of epochs, batch sizes, GPUs</li>
+						<li><strong>what evaluations to perform</strong> and their required parameters</li>
+					</ul>
+					<p>If you don't feel like manually creating or editing your config, check our <a
+							href="config.html">online config generator</a>. You can configure everything and simply
+						download the YAML config file.</p>
+					<p>The config file has the following structure (the order of parameters is not important as long as
+						the nesting is correct):</p>
+					<ul>
+						<h4>Overall training parameters</h4>
+						<li><code>training_id: str</code><br>The name of the benchmark run</li>
+						<li><code>surrogates: list[str]</code><br>The list of surrogates to evaluate. See <a
+								href="benchmark.html#surrogates">our
+								surrogates</a> for available options and <a href="#add_model">how to
+								add your own model</a>. The name corresponds to the name of the
+							surrogate's class.</li>
+						<li><code>batch_size: int | list[int]</code><br>Specifies the batch size for the surrogates
+							during training. Can either be a single integer if all surrogates share a batch size, or a
+							list of batch sizes as long as the list of surrogates.
+						</li>
+						<li><code>epochs: int | list[int]</code><br>The number of epochs to train the surrogates for.
+							Can be
+							a single integer if all surrogates share the same number of epochs, or a list of epochs as
+							long
+							as the list of surrogates.</li>
+						<li><code>dataset:</code></li>
+						<ul>
+							<li><code>name: str</code><br>The dataset to train and evaluate on. See <a
+									href="benchmark.html#datasets">our
+									datasets</a>
+								for available options and <a href="#add_dset">how to add your own dataset</a>.</li>
+							<li><code>log10_transform: bool</code><br>Whether to take the logarithm of the dataset. This
+								may be useful for datasets where the values span many orders of magnitude.</li>
+							<li><code>normalise: str</code><br>How to normalise the data. Options are</li>
+							<ul>
+								<li><code>"minmax"</code> - applies <a
+										href="https://en.wikipedia.org/wiki/Feature_scaling#Rescaling_(min-max_normalization)">min-max
+										normalization</a> to the data to rescale it to [-1, 1].</li>
+								<li><code>"standardise"</code> - applies <a
+										href="https://en.wikipedia.org/wiki/Feature_scaling#Standardization_(Z-score_Normalization)">standardization</a>
+									to the data to have a mean of 0 and a standard deviation of 1.</li>
+								<li><code>"disable"</code> - no normalization is applied.</li>
+								<p>If you want to apply another form of normalization to the data, you may have to <a
+										href="#add_dset">add your own dataset</a> and normalise the data beforehand.</p>
+							</ul>
+						</ul>
+						<li><code>seed: int</code><br>The random seed used to initialize the random seeds for <a
+								href="https://docs.python.org/3/library/random.html#bookkeeping-functions">Python</a>,
+							<a href="https://pytorch.org/docs/stable/notes/randomness.html">PyTorch</a> and <a
+								href="https://numpy.org/doc/stable/reference/random/index.html">NumPy</a>. In some
+							benchmarks, the seed is altered deterministically to train for example an Ensemble (where
+							each model requires a different seed).
+						</li>
+						<li><code>losses: bool</code><br>Whether to record the losses in the output files</li>
+						<li><code>verbose: bool</code><br>Whether to output additional information about the current
+							processing step to the CLI</li>
+						<p></p>
+						<h4>Benchmark parameters</h4>
+						<li><code>accuracy: bool</code><br></li>
+						<li><code>dynamic_accuracy: bool</code><br></li>
+						<li><code>timing: bool</code><br></li>
+						<li><code>compute: bool</code><br></li>
+					</ul>
+					<p>Once the configuration is complete, the configuration YAML file needs to be placed into the root
+						directory of the CODES-Benchmark repository. The default filename the training and benchmark
+						look for is <code>config.yaml</code>, however, you can specify any filename with the
+						<code>--config</code> argument of the <code>run_training.py</code> and
+						<code>run_benchmark.py</code> files.
+					</p>
+				</section>
+
+				<section id="add_dset">
+					<h2>Add your own dataset</h2>
+					<p>Adding your own data to the CODES repository is fairly straight forward using the
+						<code>create_dataset</code> function.
+						You can simply pass your raw (numpy) data to the function along with some additional
+						optional data and it will create the appropriate file(s) in the <code>datasets</code> directory of
+						the
+						repository. After this, you will not need to interact with the data again, as the
+						benchmark handles the data automatically based on the dataset name provided in the
+						configuration.</p>
+
+					<p>A note on dataset availability: The benchmark can be run on local data as soon as you created the
+						dataset with <code>create_dataset</code>
+						(i.e., the data can be completely offline/local).
+						The actual data.hdf5 file in your new dataset directory is ignored by git and
+						should not be added to the repository. If you want to make your dataset available to others
+						(which we highly encourage),
+						you can upload it to Zenodo and provide the download link in
+						<code>datasets/data_sources.yaml</code>.
+						If you choose to do this (which we highly encourage), you can push the created dataset directory
+						to the
+						repository, as it will later be used to store visualisations of the data or a
+						<code>surrogate_config.py</code>
+						that contains the hyperparameters for the surrogate models.</p>
+
+					<p>You can import the <code>create_dataset</code> function from the <code>codes</code>
+						package. It has the following signature:</p>
+					<ul>
+						<li><strong><code>create_dataset</code></strong></li>
+						<ul>
+							<li><code>name: str</code> The name of the dataset and also the directory in which it will
+								be stored, e.g. a dataset called "MyDataset" will be stored in the
+								<code>datasets/mydataset</code> directory.
+							</li>
+							<li><code>train_data: np.ndarray</code> The array of training data. It should be of the
+								shape (n_trajectories, n_timesteps, n_species).</li>
+							<li><code>test_data: np.ndarray | None</code> The array of test data, optional. Should
+								follow the same shape convention as the training data.
+							<li><code>val_data: np.ndarray | None</code> The array of validation data, optional. Should
+								follow the same shape convention as the training data.
+							<li><code>split: tuple[float, float, float] | None</code> If test and validation data are
+								not provided, the training data array can be split into train, test and validation based
+								on the split tuple provided. For example, a value of
+								<code>split=(0.8, 0.15, 0.05)</code> will split the data into 80% training, 15% test and
+								5% validation data.
+							</li>
+							<li><code>timesteps: np.ndarray | None</code> The timesteps array for the data, optional.
+								Can be used if required in the surrogates or to set the time axis in the plots. If not
+								provided, a [0, 1] array will be inferred from the shape of the data.</li>
+							<li><code>labels: list[str] | None</code> The species labels for the evaluation plots.</li>
+						</ul>
+					</ul>
+				</section>
+
+				Supposing you already have a dataset in the form of train, test and validation numpy arrays, you can
+				simply call the <code>create_dataset</code> function like this:
+				<pre><code class="language-py">import numpy as np
+from data.data_utils import create_dataset
+
+# load your data
+train_data = np.load("path/to/train_data.npy")
+test_data = np.load("path/to/test_data.npy")
+val_data = np.load("path/to/val_data.npy")
+timesteps = np.load("path/to/timesteps.npy")
+labels = ["species1", "species2", "species3"]
+
+# create the dataset
+create_dataset(
+	name="MyDataset",
+	train_data=train_data,
+	test_data=test_data,
+	val_data=val_data,
+	timesteps=timesteps,
+	labels=labels
+)</code></pre>
+
+				Alternatively, if you only have a single dataset array and want to split it into train, test and
+				validation data, you can do this:
+				<pre><code class="language-py">import numpy as np
+from data.data_utils import create_dataset
+
+# load your data
+data = np.load("path/to/data.npy")
+timesteps = np.load("path/to/timesteps.npy")
+
+# create the dataset
+create_dataset(
+	name="MyDataset",
+	train_data=data,
+	split=(0.8, 0.15, 0.05),
+	timesteps=timesteps,
+	labels=["species1", "species2", "species3"]
+)</code></pre>
+
+				<p>After calling the <code>create_dataset</code> function, the dataset will be stored in the
+					<code>datasets/mydataset</code> directory of the repository (the dataset name is not case sensitive, it
+					will always be stored in lowercase). The benchmark will automatically load the
+					data from there based on the dataset name provided in the configuration.
+				</p>
+
+				<section id="add_model">
+					<h2>Add your own model</h2>
+					<p>To be able to compare your own models to each other or to some of the baseline models provided by
+						us, you need to add your own surrogate implementation to the repository. The
+						<a
+							href="https://github.com/robin-janssen/CODES-Benchmark/blob/main/surrogates/surrogates.py">AbstractSurrogateModel</a>
+						class offers a blueprint as
+						well as some basic functionality like saving and loading models. Your own model needs to be
+						implemented or wrapped in a class that inherits from the AbstractSurrogateModel class.
+					</p>
+					<p>We recommend you structure your model in such a way that hyperparameters you might want to change
+						and tune in the future be stored in a separate <a
+							href="https://docs.python.org/3/library/dataclasses.html">dataclass</a>. This keeps the
+						hyperparameters and the actual code logic separate and easily acessible and allows you to tune
+						your surrogate without modigying the actual code. Check the <a
+							href="#surrogate_config">Surrogate
+							Configuration</a> section and tutorial with code examples below on how to do this.</p>
+					<p>For the integration into the benchmark, you need to implement four methods for your own model
+						class:</p>
+					<ul>
+						<li>
+							<h3><code>__init__</code></h3>
+							<p>The initialization method. In this method you can instantiate any objects you need during
+								training and set attributes required later. The method should also call the super
+								classes constructor and set the model configuration.</p>
+							</p>
+							<h4>Arguments:</h4>
+							<ul>
+								<li><code>self</code> The required self argument for instance methods</li>
+								<li><code>device: str</code> The device the model will train/evaluate on</li>
+								<li><code>n_chemicals: int</code> The dimensionality (i.e. number of chemicals) in the
+									dataset</li>
+								<li><code>n_timesteps: int</code> The number of timesteps in the dataset</li>
+								<li><code>model_config: dict</code> The configuration dictionary that is passed to the
+									model upon initialization. This dictionary contains all the parameters from the
+									configuration file that are relevant for the model.</li>
+							</ul>
+						</li>
+						<li>
+							<h3><code>prepare_data</code></h3>
+
+							<p>This method serves as a helper function which creates and returns the <a
+									href="https://pytorch.org/tutorials/beginner/basics/data_tutorial.html">torch
+									dataloaders</a> that provide the training data in a suitable format for your model.
+							</p>
+							<h4>Arguments:</h4>
+							<ul>
+								<li><code>self</code> The required self argument for instance methods</li>
+								<li><code>dataset_train: np.ndarray</code> The raw training data as a numpy array.
+									<strong>COMMENT ON DATA FORMAT + LINK</strong>
+								</li>
+								<li><code>dataset_test: np.ndarray | None</code> The raw test data as a numpy array
+									(Optional)</li>
+								<li><code>dataset_val: np.ndarray | None</code> The raw validation data as a numpy array
+									(Optional)</li>
+								<li><code>timesteps: np.ndarray</code> The array of timesteps in the training data. If
+									your
+									model does not explicitly use these, you can just ignore this argument.</li>
+								<li><code>batch_size: int</code> The batch size your dataloader should have. This value
+									is
+									read form the configuration and shoul be directly passed to the Dataloader
+									constructor
+									(see example below).
+								</li>
+								<li><code>shuffle: bool</code> The shuffle argument is set by the benchmark and should
+									be
+									directly passed to the constructor of the Dataloader.</li>
+							</ul>
+							<h4>Return:</h4>
+							<p>The method should return a tuple of three dataloaders in the order train, test, val. If
+								the
+								dataset_test or dataset_val arguments are None, the respective dataloader should also be
+								None instead.</p>
+						</li>
+						<li>
+							<h3><code>fit</code></h3>
+
+							<p>This method's purpose is to execute the training loop and train the
+								<code>self.model</code>
+								instantiated in the <code>__init__</code> method. Optionally, a test prediction can be
+								made
+								on the test dataset to evaluate training progess.
+							</p>
+							<p><strong>Important:</strong> This method should save the training loss (and optionally
+								test
+								loss and the mean absolute error on the test set) as tensors in the in the
+								<code>self.train_loss</code>, <code>self.test_loss</code> and <code>self.MAE</code>
+								attributes. See example below on how to do that.
+							</p>
+							<h4>Arguments:</h4>
+							<ul>
+								<li><code>self</code> The required self argument for instance methods</li>
+								<li><code>train_loader: torch.utils.data.DataLoader</code> The training dataloader</li>
+								<li><code>test_loader: torch.utils.data.DataLoader | None</code> The test dataloader
+									(Optional)</li>
+								<li><code>epochs: int</code> The number of epochs to train the model for. This value is
+									read from the configuration and should be used to determine the number of iterations
+									in
+									the training loop.</li>
+								<li><code>position: int</code> Position argument used for the progress bar. See example
+									below on how to use.</li>
+								<li><code>description: str</code> Label argument used for the progress bar. See example
+									below on how to use.</li>
+							</ul>
+						</li>
+						<li>
+							<h3><code>forward</code></h3>
+							<p>This method should simply call the forward method of the model and return the output
+								together with the targets. </p>
+							<h4>Arguments:</h4>
+							<ul>
+								<li><code>self</code> The required self argument for instance methods</li>
+								<li><code>inputs: Any</code> Whatever the dataloader outputs</li>
+							</ul>
+							<h4>Return:</h4>
+							<p>Returns a tuple of predictions and targets</p>
+						</li>
+					</ul>
+
+					<h3 id="surrogate_config">Surrogate Configuration</h3>
+					<p>To keep hyperparameters (such as model dimensions, activation functions, learning rates, latent
+						space dimensions etc.) of surrogates separate from the code of the actual surrogate model and to
+						subsequently make the modification of those hyperparameters at a later point easy, we employ <a
+							href="https://docs.python.org/3/library/dataclasses.html">dataclasses</a> as configurators
+						for a surrogate model. Since the optimal parameters for a given surrogate will likely vary
+						between datasets, our arcitecture enables you to define a configuration <i>per dataset</i>.</p>
+
+					<p>Each model comes with a default (or fallback) configuration which will be loaded by default. </p>
+
+					<h3>Example Implementation</h3>
+					<p>This short tutorial will go over all the requred steps to add your own Surrogate class to the
+						benchmark and will provide some sample code. The Surrogate we will add is just a variant of
+						a fully connected neural network and serves only to demonstrate the process of adding your own
+						implementation.</p>
+					<p>To get started, add a folder in the <code>surrogates/</code> directory of the repository,
+						named after your model. For this example, the model we will add is called
+						<strong>MySurrogate</strong>, so we create the directory
+						<code>surrogates/MySurrogate/</code>.
+						In this directory, we create the python file which will include the code for our surrogate
+						called <code>my_surrogate.py</code>. We will also create a second file
+						<code>my_surrogate_config.py</code>, where we can define the hyperparameters of our surrogate.
+						If you plan to use several datasets with your surrogate, you can also define a set of
+						hyperparameters per dataset, as the optimal parmeters might vary between datasets. Check the <a
+							href="benchmark.html#datasets">dataset section</a> on how to do this.
+					</p>
+					<p>For this demonstration, we will use the <a href="benchmark.html#datasets">OSU2008</a>
+						dataset. Our demonstration surrogate will simply take the initial abundances and make a
+						prediction based on those.</p>
+					<p>Before implementing the surrogate itself, we will define its configuration dataclass. For this,
+						open the <code>my_surrogate_config.py</code> file you created and add the hyperparameters you
+						might want to change in the future. For this example, we will add the width, depth,
+						activation function and learning rate of our neural network.</p>
+					<pre><code class="language-py">from dataclasses import dataclass
+
+from torch.nn import ReLU, Module
+
+
+@dataclass
+class MySurrogateConfig:
+	"""Model config for MySurrogate for the osu2008 dataset"""
+
+	network_hidden_layers: int = 2
+	network_layer_width: int = 128
+	network_activation: Module = ReLU()
+	learning_rate: float = 1e-3</code></pre>
+
+					<p>Next, we will implement a dataset class for our surrogate. You can put this class into the
+						<code>my_surrogate.py</code> file we just created, or alternatively put it in a separate file
+						and import it to <code>my_surrogate.py</code>.
+					</p>
+
+					<pre><code class="language-py">import torch
+from torch.utils.data import Dataset
+
+class MyDataset(Dataset):
+
+	def __init__(self, abundances, device):
+		# abundances with shape (n_samples, n_timesteps, n_species)
+		self.abundances = torch.tensor(abundances).to(device)
+		self.length = self.abundances.shape[0]
+
+	def __getitem__(self, index):
+		return self.abundances[index, :, :]
+
+	def __len__(self):
+		return self.length</code></pre>
+					<p>Now we implement the surrogate itself. It is important that the custom surrogate
+						class is derived from the <a
+							href="https://github.com/robin-janssen/CODES-Benchmark/blob/main/surrogates/surrogates.py"><code>AbstractSurrogateModel</code></a>
+						class and adheres to its method signatures in order to be compatible with the benchmark.</p>
+					<p>Let's begin by implementing the <code>__init__</code> method. All we need to do here is
+						initialize our neural network and call the super classes constructor, as well as initializing
+						our model config so its parameters are available inside our surrogate class.</p>
+					<pre><code class="language-py">from surrogates.surrogates import AbstractSurrogateModel
+from torch import nn
+
+from surrogates.MySurrogate.my_surrogate_config import MySurrogateConfig
+
+
+class MySurrogate(AbstractSurrogateModel):
+
+	def __init__(
+		self,
+		device: str | None,
+		n_chemicals: int,
+		n_timesteps: int,
+		model_config: dict | None,
+	):
+		super().__init__(device, n_chemicals, n_timesteps, model_config)
+
+		model_config = model_config if model_config is not None else {}
+		self.config = MySurrogateConfig(**model_config)
+
+		# construct the model according to the parameters in the config
+		modules = []
+		modules.append(nn.Linear(n_chemicals, self.config.layer_width))
+		modules.append(self.config.activation)
+		for _ in range(self.config.hidden_layers):
+			modules.append(nn.Linear(self.config.layer_width, self.config.layer_width))
+			modules.append(self.config.activation)
+		modules.append(nn.Linear(self.config.layer_width, n_chemicals*n_timesteps))
+
+		self.model = nn.Sequential(*modules).to(device)</code></pre>
+					<p>The next step is to implement the <code>prepare_data</code> method. There, we instantiate and
+						return the dataloaders for our model using our custom defined dataset.</p>
+					<pre><code class="language-py">from torch.utils.data import DataLoader
+import numpy as np
+
+
+class MySurrogate(AbstractSurrogateModel):
+
+...
+
+	def prepare_data(
+		self,
+		dataset_train: np.ndarray,
+		dataset_test: np.ndarray | None,
+		dataset_val: np.ndarray | None,
+		timesteps: np.ndarray,
+		batch_size: int,
+		shuffle: bool,
+	) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
+		
+		train = MyDataset(dataset_train, self.device)
+		train_loader = DataLoader(
+			train, batch_size=batch_size, shuffle=shuffle
+		)
+
+		if dataset_test is not None:
+			test = MyDataset(dataset_test, self.device)
+			test_loader = DataLoader(
+				test, batch_size=batch_size, shuffle=shuffle
+			)
+		else:
+			test_loader = None
+
+		if dataset_val is not None:
+			val = MyDataset(dataset_val, self.device)
+			val_loader = DataLoader(
+				val, batch_size=batch_size, shuffle=shuffle
+			)
+		else:
+			val_loader = None
+
+		return train_loader, test_loader, val_loader</code></pre>
+					<p>Finally, we implement the training loop inside the <code>fit</code> function and define the
+						<code>forward</code> function. Note that the <code>fit</code> function should set the
+						<code>train_loss</code>, <code>test_loss</code> and <code>MAE</code> (mean absolute error)
+						attributes of the surrogate to ensure their availability for plotting later. To have access to
+						training durations later on, we wrap the <code>fit</code> function with the
+						<code>time_execution</code>function for the utils module.
+					</p>
+					<pre><code class="language-py">from torch.optim import Adam
+
+from utils import time_execution
+
+
+class MySurrogate(AbstractSurrogateModel):
+
+...
+
+	def forward(self, inputs):
+		targets = inputs
+		initial_cond = inputs[..., 0, :]
+		outputs = self.model(initial_cond)
+		return outputs, targets
+
+	@time_execution
+	def fit(
+        self,
+        train_loader: DataLoader,
+        test_loader: DataLoader,
+        epochs: int,
+        position: int,
+        description: str,
+    ):
+
+        criterion = nn.MSELoss()
+        optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
+
+        # initialize the loss tensors
+        losses = torch.empty((epochs, len(train_loader)))
+        test_losses = torch.empty((epochs))
+        MAEs = torch.empty((epochs))
+
+        # setup the progress bar
+        progress_bar = self.setup_progress_bar(epochs, position, description)
+
+        # training loop as usual
+        for epoch in progress_bar:
+            for i, x_true in enumerate(train_loader):
+                optimizer.zero_grad()
+                x_pred, _ = self.forward(x_true)
+                loss = criterion(x_true, x_pred)
+                loss.backward()
+                optimizer.step()
+                losses[epoch, i] = loss.item()
+
+            # set the progress bar output
+            clr = optimizer.param_groups[0]["lr"]
+            print_loss = f"{losses[epoch, -1].item():.2e}"
+            progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
+
+            # evaluate the model on the test set
+            with torch.inference_mode():
+                self.model.eval()
+                preds, targets = self.predict(test_loader)
+                self.model.train()
+                loss = criterion(preds, targets)
+                test_losses[epoch] = loss
+                MAEs[epoch] = self.L1(preds, targets).item()
+
+        progress_bar.close()
+
+        self.train_loss = torch.mean(losses, dim=1)
+        self.test_loss = test_losses
+        self.MAE = MAEs
+					</code></pre>
+					<p>Now that your surrogate class is completely implemented, the last thing left to do is to add it
+						to the <code>surrogate_classes.py</code> file in the <code>surrogates</code> directory of the
+						repository to make it available for the benchmark. In our case this looks like this (other,
+						already existing surrogates are omitted in the code example)</p>
+					<pre><code class="language-py">...
+from surrogates.MySurrogate.my_surrogate import MySurrogate
+
+surrogate_classes = [
+	...
+    # Add any additional surrogate classes here
+    MySurrogate,
+]
+						</code></pre>
+					<p>Now you're all set! You can now use you own surrogate model in the benchmark and compare it with
+						any of the other surrogates present.</p>
+				</section>
+				<section id="docu">
+					<h2>Code documentation</h2>
+					<p>Full doumentation coming Soon!</p>
+				</section>
+			</div>
+		</section>
+
+	</div>
+
+	<!-- Footer -->
+	<footer id="footer" class="wrapper alt">
+		<div class="inner">
+			<ul class="menu">
+				<li>&copy; Untitled. All rights reserved.</li>
+				<li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
+			</ul>
+		</div>
+	</footer>
+
+	<!-- Scripts -->
+	<script src="assets/js/jquery.min.js"></script>
+	<script src="assets/js/jquery.scrollex.min.js"></script>
+	<script src="assets/js/jquery.scrolly.min.js"></script>
+	<script src="assets/js/browser.min.js"></script>
+	<script src="assets/js/breakpoints.min.js"></script>
+	<script src="assets/js/util.js"></script>
+	<script src="assets/js/main.js"></script>
+	<script src="assets/js/prism.js"></script>
+
+</body>
+
+</html>
