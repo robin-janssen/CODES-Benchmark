@@ -16,6 +16,7 @@ def plot_example_trajectories(
     labels: list[str] | None = None,
     save: bool = False,
     sample_idx: int = 0,
+    log: bool = False,
 ) -> None:
     """
     Plot example trajectories for the dataset.
@@ -48,7 +49,7 @@ def plot_example_trajectories(
             gt,
             "-",
             color=color,
-            label=f"Chemical {chem_idx+1}" if labels is None else labels[chem_idx],
+            label=f"Quantity {chem_idx + 1}" if labels is None else labels[chem_idx],
         )
 
     # Set labels and title
@@ -57,9 +58,10 @@ def plot_example_trajectories(
     # Remove all ticks
     plt.tick_params(axis="x", which="both", bottom=False, top=False)
     plt.tick_params(axis="y", which="both", left=False, right=False)
-    plt.ylabel("Chemical Abundance")
+    ylabel = "log(Abundance)" if log else "Abundance"
+    plt.ylabel(ylabel)
     plt.title(f"Example Trajectories for Dataset: {dataset_name}")
-    plt.legend(title="Chemicals")
+    plt.legend(title="Quantity")
     plt.grid(True)
 
     # Save the plot if required
@@ -80,7 +82,7 @@ def plot_example_trajectories(
             increase_count=False,
         )
 
-    plt.show()
+    # plt.show()
 
 
 def plot_example_trajectories_paper(
@@ -106,8 +108,11 @@ def plot_example_trajectories_paper(
     data = data[sample_idx]
 
     # Define the number of chemicals per subplot
-    num_chemicals_subplots = [15, 14]
-    total_chemicals = num_chemicals_subplots[0] + num_chemicals_subplots[1]
+    total_chemicals = data.shape[1]
+    num_chemicals_subplots = [
+        total_chemicals // 2,
+        total_chemicals - total_chemicals // 2,
+    ]
 
     # Ensure the labels list matches the number of chemicals
     if labels is not None:
@@ -130,14 +135,14 @@ def plot_example_trajectories_paper(
     for chem_idx in range(num_chemicals_subplots[0]):
         color = colors1[chem_idx]
         gt = data[:, chem_idx]
-        label = labels[chem_idx] if labels is not None else f"Chemical {chem_idx+1}"
+        label = labels[chem_idx] if labels is not None else f"Chemical {chem_idx + 1}"
         ax1.plot(timesteps, gt, "-", color=color, label=label)
 
     # Plot second set of chemicals on ax2
     for chem_idx in range(num_chemicals_subplots[0], total_chemicals):
         color = colors2[chem_idx - num_chemicals_subplots[0]]
         gt = data[:, chem_idx]
-        label = labels[chem_idx] if labels is not None else f"Chemical {chem_idx+1}"
+        label = labels[chem_idx] if labels is not None else f"Chemical {chem_idx + 1}"
         ax2.plot(timesteps, gt, "-", color=color, label=label)
 
     # Set labels and title
