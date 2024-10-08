@@ -28,3 +28,7 @@ data.hdf5
 .pytest_cachebuild
 *.egg-info
 .flake8
+dont_need.html
+elements.html
+generic.html
+images/

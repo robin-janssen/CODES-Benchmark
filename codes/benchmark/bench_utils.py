@@ -51,6 +51,13 @@ def check_benchmark(conf: dict) -> None:
         FileNotFoundError: If the training ID directory is missing or if the .yaml file is missing.
         ValueError: If the configuration is missing required keys or the values do not match the training configuration.
     """
+    # Check whether cuda devices have been selected and if they are available
+    for device in conf.get("devices", []):
+        if "cuda" in device:
+            if not torch.cuda.is_available():
+                raise ValueError(
+                    "You have selected at least one cuda device, but CUDA is not available. Please adjust the device settings in config.yaml."
+                )
     # Check for the training directory and load the training configuration
     print("\nChecking benchmark configuration...")
     training_id = conf.get("training_id")
