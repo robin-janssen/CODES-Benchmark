@@ -1,20 +1,14 @@
 # .readthedocs.yml
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
 
+# Required
 version: 2
 
-# Build configuration
-build:
-  os: ubuntu-20.04
-  tools:
-    python: "3.10"
+# Build documentation with MkDocs
+mkdocs:
+  configuration: "mkdocs.yml"
+  fail_on_warning: false
 
-# Python configuration
-python:
-  install:
-    - method: poetry
-      path: .
-    - requirements: requirements.txt  # If applicable
-
-# Sphinx configuration (RTD needs this)
-sphinx:
-  configuration: docs/conf.py  # RTD requires this, but it's optional for Handsdown
+# Build all formats
+formats: all
