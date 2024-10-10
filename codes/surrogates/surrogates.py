@@ -19,7 +19,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
     structure of a surrogate model and defines the methods that need to be
     implemented by the subclasses for it to be compatible with the benchmarking
     framework. For more information, see
-    https://immi000.github.io/CODES-Benchmark-Docs/documentation.html#add_model.
+    https://robin-janssen.github.io/CODES-Benchmark/pages/documentation.html#add_model.
 
     Args:
         device (str, optional): The device to run the model on. Defaults to None.

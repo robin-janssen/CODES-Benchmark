@@ -25,9 +25,9 @@
 			<ul>
 				<li><a href="index.html">Overview</a></li>
 				<!-- <li><a href="motivation.html">Overview</a></li> -->
-				<li><a href="benchmark.html" class="active">Benchmark</a></li>
-				<li><a href="documentation.html">Documentation</a></li>
-				<li><a href="config.html">Config Maker</a></li>
+				<li><a href="pages/benchmark.html" class="active">Benchmark</a></li>
+				<li><a href="pages/documentation.html">Documentation</a></li>
+				<li><a href="pages/config.html">Config Maker</a></li>
 			</ul>
 		</nav>
 	</header>
@@ -42,7 +42,7 @@
 				<p>This page is not intended to be a tutorial or an in-depth documentation of the benchmark. The goal
 					here is to provide a good overview over what the benchmark covers as well as intuitions on how the
 					different parts work and what to expect from them. For a more technical explanation of the
-					benchmarking code, please refer to the <a href="documentation.html">documentation</a>.</p>
+					benchmarking code, please refer to the <a href="pages/documentation.html">documentation</a>.</p>
 				<!-- <h1>O</h1> -->
 				<div class="col-6 col-12-medium">
 					<ul class="alt">
@@ -159,7 +159,7 @@
 						<summary><strong>Interactive Config Maker</strong></summary>
 						<p>The initial setup can be a bit confusing and the benchmark has many features. To make this
 							easier, we provide an interactive Config Maker that helps to set up the benchmark for the
-							first time. Find it <a href="config.html">here</a>!</p>
+							first time. Find it <a href="pages/config.html">here</a>!</p>
 					</details>
 					<br>
 				</section>
@@ -266,7 +266,7 @@
 						be a
 						numpy array of shape <br> <code>[num_samples, num_timesteps, num_chemicals]</code>. The
 						technical
-						details can be found in the <a href="documentation.html#add_dset">documentation</a>. The
+						details can be found in the <a href="pages/documentation.html#add_dset">documentation</a>. The
 						benchmark supports one big numpy array or three separate arrays if you already have a custom
 						split. Since the quantities often span many orders of magnitudes, the surrogates will
 						usually
@@ -301,12 +301,12 @@
 
 					<p>In the following paragraphs, you can find detailed explanations on the config settings and how
 						they are relevant for the training. For an easy way of making a config file that conforms to the
-						requirements of the benchmark, head over to our <a href="config.html">Config Maker</a>!
+						requirements of the benchmark, head over to our <a href="pages/config.html">Config Maker</a>!
 
 					</p>
 
 					<p>The training of the models is configured in the <code>config.yaml</code> file (even more details
-						on the config <a href="documentation.html#config">here</a>). A benchmark run is identfied by a
+						on the config <a href="pages/documentation.html#config">here</a>). A benchmark run is identfied by a
 						<code>training_id</code>. The <code>surrogates</code> to be included in the benchmark can be
 						provided in the form of a list of strings, where the strings must match the names of the
 						surrogate classes (e.g. <code>["FullyConnected","DeepONet"]</code>). <br>
@@ -420,7 +420,7 @@
 						for all models, i.e. it is implemented in the abstract base class
 						<code>AbstractSurrogateModel</code>. For this to work, each model must have a
 						<code>forward</code>method that conforms to certain standards. More details on this can be found
-						in the <a href="documentation.html#add_model">documentation</a>. <br>
+						in the <a href="pages/documentation.html#add_model">documentation</a>. <br>
 					</p>
 					<p> The below sections describe the structure of the benchmark and how to configure it. For precise
 						accounts of the evaluations and plots made by the benchmark, head to the next section, <a
@@ -448,11 +448,11 @@
 					<p> Below there are explanations on how the config settings are relevant for the benchmarking. For
 						an easy way of making a config file that conforms to the requirements of the benchmark, head
 						over
-						to our <a href="config.html">Config Maker</a>!
+						to our <a href="pages/config.html">Config Maker</a>!
 					</p>
 
 					<p>The benchmarking of the models uses the same <code>config.yaml</code> file (more details
-						<a href="documentation.html#config">here</a>) that is also used to configure the training. It is
+						<a href="pages/documentation.html#config">here</a>) that is also used to configure the training. It is
 						recommended to use the configuration that was specified during training for minimal
 						complications, but it is also possible to change many of the configuration parameters. <br>
 

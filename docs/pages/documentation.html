@@ -26,9 +26,9 @@
 			<ul>
 				<!-- <li><a href="index.html">Home</a></li> -->
 				<li><a href="index.html">Overview</a></li>
-				<li><a href="benchmark.html">Benchmark</a></li>
-				<li><a href="documentation.html" class="active">Documentation</a></li>
-				<li><a href="config.html">Config Maker</a></li>
+				<li><a href="pages/benchmark.html">Benchmark</a></li>
+				<li><a href="pages/documentation.html" class="active">Documentation</a></li>
+				<li><a href="pages/config.html">Config Maker</a></li>
 			</ul>
 		</nav>
 	</header>
@@ -62,7 +62,7 @@
 					<p>The installation is now complete. To be able to run and evaluate the benchmark, you need to first
 						set up a configuration YAML
 						file. There is one provided, but it should be configured. For more information, check the <a
-							href="config.html">configuration page</a>.
+							href="pages/config.html">configuration page</a>.
 						There, we also offer an interactive Config-Generator tool with some explanations to help you set
 						up your benchmark.</p>
 					<p>You can also add your own datasets and models to the benchmark to evaluate them against each
@@ -101,7 +101,7 @@
 						<li><strong>what evaluations to perform</strong> and their required parameters</li>
 					</ul>
 					<p>If you don't feel like manually creating or editing your config, check our <a
-							href="config.html">online config generator</a>. You can configure everything and simply
+							href="pages/config.html">online config generator</a>. You can configure everything and simply
 						download the YAML config file.</p>
 					<p>The config file has the following structure (the order of parameters is not important as long as
 						the nesting is correct):</p>
@@ -109,7 +109,7 @@
 						<h4>Overall training parameters</h4>
 						<li><code>training_id: str</code><br>The name of the benchmark run</li>
 						<li><code>surrogates: list[str]</code><br>The list of surrogates to evaluate. See <a
-								href="benchmark.html#surrogates">our
+								href="pages/benchmark.html#surrogates">our
 								surrogates</a> for available options and <a href="#add_model">how to
 								add your own model</a>. The name corresponds to the name of the
 							surrogate's class.</li>
@@ -125,7 +125,7 @@
 						<li><code>dataset:</code></li>
 						<ul>
 							<li><code>name: str</code><br>The dataset to train and evaluate on. See <a
-									href="benchmark.html#datasets">our
+									href="pages/benchmark.html#datasets">our
 									datasets</a>
 								for available options and <a href="#add_dset">how to add your own dataset</a>.</li>
 							<li><code>log10_transform: bool</code><br>Whether to take the logarithm of the dataset. This
@@ -411,9 +411,9 @@ create_dataset(
 						<code>my_surrogate_config.py</code>, where we can define the hyperparameters of our surrogate.
 						If you plan to use several datasets with your surrogate, you can also define a set of
 						hyperparameters per dataset, as the optimal parmeters might vary between datasets. Check the <a
-							href="benchmark.html#datasets">dataset section</a> on how to do this.
+							href="pages/benchmark.html#datasets">dataset section</a> on how to do this.
 					</p>
-					<p>For this demonstration, we will use the <a href="benchmark.html#datasets">OSU2008</a>
+					<p>For this demonstration, we will use the <a href="pages/benchmark.html#datasets">OSU2008</a>
 						dataset. Our demonstration surrogate will simply take the initial abundances and make a
 						prediction based on those.</p>
 					<p>Before implementing the surrogate itself, we will define its configuration dataclass. For this,
