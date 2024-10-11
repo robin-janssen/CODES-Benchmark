@@ -1194,7 +1194,7 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
         for i, value in enumerate(mae_values)
     ]
     mre_row = ["MRE"] + [
-        f"{value*100:.2f} %" if i != best_mre_index else f"* {value*100:.2f} % *"
+        f"{value * 100:.2f} %" if i != best_mre_index else f"* {value * 100:.2f} % *"
         for i, value in enumerate(mre_values)
     ]
     epochs_row = ["Epochs"] + [value for i, value in enumerate(epochs)]

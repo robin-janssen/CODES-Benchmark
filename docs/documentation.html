@@ -20,11 +20,15 @@
 <body class="is-preload">
 
 	<!-- Header -->
-	<header id="header">
-		<a href="index.html" class="title">CODES</a>
+	<header id="header" style="display: flex; align-items: center; padding: 10px;">
+		<!-- Image and title -->
+		<a href="index.html" class="logo" style="display: flex; align-items: center; text-decoration: none;">
+			<img src="favicon-96x96.png" alt="CODES Logo" style="width: 50px; height: 50px; margin-right: 10px;">
+			<span style="font-size: 50px; color: #D6CDEA;">CODES</span>
+		</a>
+		<!-- Navigation -->
 		<nav>
-			<ul>
-				<!-- <li><a href="index.html">Home</a></li> -->
+			<ul style="list-style-type: none; display: flex; gap: 20px; margin: 0;">
 				<li><a href="index.html">Overview</a></li>
 				<li><a href="benchmark.html">Benchmark</a></li>
 				<li><a href="documentation.html" class="active">Documentation</a></li>
@@ -40,6 +44,9 @@
 		<section id="main" class="wrapper">
 			<div class="inner">
 				<h1 class="major">Documentation</h1>
+				<p>This documentation page should give you an overview of how to get started with CODES. <br>
+					The <b>technical API documentation</b> can be found <a href=_build/html/index.html>here</a>.
+				</p>
 				<div class="col-6 col-12-medium">
 					<ul class="alt">
 						<li><a href="#setup">Setup</a></li>
@@ -621,10 +628,6 @@ surrogate_classes = [
 						</code></pre>
 					<p>Now you're all set! You can now use you own surrogate model in the benchmark and compare it with
 						any of the other surrogates present.</p>
-				</section>
-				<section id="docu">
-					<h2>Code documentation</h2>
-					<p>Full doumentation coming Soon!</p>
 				</section>
 			</div>
 		</section>
