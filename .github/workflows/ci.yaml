@@ -103,6 +103,12 @@ jobs:
       with:
         python-version: '3.10'
 
+    # Install Poetry (this was missing)
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        export PATH="$HOME/.local/bin:$PATH"
+
     - name: Install project with dev dependencies
       run: |
         poetry install --with dev
