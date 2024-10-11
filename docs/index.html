@@ -8,6 +8,7 @@
 
 <head>
 	<title>CODES Benchmark</title>
+	<link rel="icon" type="image/x-icon" href="favicon-96x96.png">
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 	<link rel="stylesheet" href="assets/css/main.css" />
@@ -19,11 +20,15 @@
 <body class="is-preload">
 
 	<!-- Header -->
-	<header id="header">
-		<a href="index.html" class="title">CODES</a>
+	<header id="header" style="display: flex; align-items: center; padding: 10px;">
+		<!-- Image and title -->
+		<a href="index.html" class="logo" style="display: flex; align-items: center; text-decoration: none;">
+			<img src="favicon-96x96.png" alt="CODES Logo" style="width: 50px; height: 50px; margin-right: 10px;">
+			<span style="font-size: 50px; color: #D6CDEA;">CODES</span>
+		</a>
+		<!-- Navigation -->
 		<nav>
-			<ul>
-				<!-- <li><a href="index.html">Home</a></li> -->
+			<ul style="list-style-type: none; display: flex; gap: 20px; margin: 0;">
 				<li><a href="index.html" class="active">Overview</a></li>
 				<li><a href="benchmark.html">Benchmark</a></li>
 				<li><a href="documentation.html">Documentation</a></li>
@@ -31,6 +36,7 @@
 			</ul>
 		</nav>
 	</header>
+
 
 	<!-- Wrapper -->
 	<div id="wrapper">
@@ -50,10 +56,7 @@
 					and multi-faceted comparison, CODES helps researchers select the most suitable surrogate for their
 					specific dataset and application while deepening our understanding of surrogate learning behaviour.
 				</p>
-			</div>
-		</section>
-		<section id="main" class="wrapper">
-			<div class="inner">
+
 				<h2 class="major">Motivation</h2>
 				<p>There are many efforts to use machine learning models ("surrogates") to replace the costly numerics
 					required involved in solving coupled ODEs. But for the end user, it is not obvious how to choose the
@@ -77,10 +80,7 @@
 				</ul>
 				<p>Besides these practical considerations, one overarching question is always: Does the model only learn
 					the data, or does it "understand" something about the underlying dynamics?</p>
-			</div>
-		</section>
-		<section id="main" class="wrapper">
-			<div class="inner">
+
 				<h2 class="major">Goals</h2>
 				<p>This benchmark aims to aid in choosing the best surrogate model for the task at hand and additionally
 					to shed some light on the above questions.</p>
