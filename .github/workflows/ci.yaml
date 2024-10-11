@@ -107,10 +107,12 @@ jobs:
       run: |
         poetry install --with dev
 
-    - name: Generate Handsdown Documentation
+    # Generate Sphinx Documentation with sphinx-apidoc
+    - name: Generate API Documentation with Sphinx
       run: |
-        handsdown --external --cleanup --create-configs --output-path docs/technical/
+        sphinx-apidoc -o docs/source codes
 
-    - name: Build HTML with MkDocs
+    # Build HTML using Sphinx
+    - name: Build HTML with Sphinx
       run: |
-        python -m mkdocs build
+        sphinx-build -b html docs/source docs/_build/html

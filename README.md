@@ -140,6 +140,6 @@ Then, install the required packages with
 pip install -r requirements.txt
 ```
 
-The installation is now complete. To be able to run and evaluate the benchmark, you need to first set up a configuration YAML file. There is one provided, but it should be configured. For more information, check the [configuration page](https://robin-janssen.github.io/CODES-Benchmark/pages/documentation.html#config). There, we also offer an interactive Config-Generator tool with some explanations to help you set up your benchmark.
+The installation is now complete. To be able to run and evaluate the benchmark, you need to first set up a configuration YAML file. There is one provided, but it should be configured. For more information, check the [configuration page](https://robin-janssen.github.io/CODES-Benchmark/documentation.html#config). There, we also offer an interactive Config-Generator tool with some explanations to help you set up your benchmark.
 
-You can also add your own datasets and models to the benchmark to evaluate them against each other or some of our baseline models. For more information on how to do this, please refer to the [documentation](https://robin-janssen.github.io/CODES-Benchmark/pages/documentation.html).
+You can also add your own datasets and models to the benchmark to evaluate them against each other or some of our baseline models. For more information on how to do this, please refer to the [documentation](https://robin-janssen.github.io/CODES-Benchmark/documentation.html).

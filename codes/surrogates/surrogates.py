@@ -19,7 +19,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
     structure of a surrogate model and defines the methods that need to be
     implemented by the subclasses for it to be compatible with the benchmarking
     framework. For more information, see
-    https://robin-janssen.github.io/CODES-Benchmark/pages/documentation.html#add_model.
+    https://robin-janssen.github.io/CODES-Benchmark/documentation.html#add_model.
 
     Args:
         device (str, optional): The device to run the model on. Defaults to None.
@@ -105,15 +105,15 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
     @abstractmethod
     def forward(self, inputs: Any) -> tuple[Tensor, Tensor]:
-        """
-        Forward pass of the model.
+        # """
+        # Forward pass of the model.
 
-        Args:
-            inputs (Any): The input data as recieved from the dataloader.
+        # Args:
+        #     inputs (Any): The input data as recieved from the dataloader.
 
-        Returns:
-            tuple[Tensor, Tensor]: The model predictions and the targets.
-        """
+        # Returns:
+        #     tuple[Tensor, Tensor]: The model predictions and the targets.
+        # """
         pass
 
     @abstractmethod
