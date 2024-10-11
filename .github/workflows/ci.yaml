@@ -119,8 +119,13 @@ jobs:
       run: |
         poetry run sphinx-apidoc -o docs/source codes
 
-    # Build HTML using Sphinx and output directly to docs/_build
+    # Build HTML using Sphinx
     - name: Build HTML with Sphinx
       run: |
-        poetry run sphinx-build -b html docs/source docs/_build
+        poetry run sphinx-build -b html docs/source docs/_build/html
 
+    # Move files from docs/_build/html to docs/_build
+    - name: Move HTML files to _build
+      run: |
+        mv docs/_build/html/* docs/_build/
+        rm -rf docs/_build/html

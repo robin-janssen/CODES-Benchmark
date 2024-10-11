@@ -66,4 +66,3 @@ html_theme_options = {
     ],
     "icon_links_label": "Quick Links",
 }
-html_static_path = ["_static"]
