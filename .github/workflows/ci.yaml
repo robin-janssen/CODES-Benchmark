@@ -90,3 +90,37 @@ jobs:
       if: env.is-merge == 'false' # Skip if it's a merge commit
       run: |
         poetry run pytest
+
+docs:
+  runs-on: ubuntu-latest
+
+  steps:
+  - name: Check out the repository
+    uses: actions/checkout@v3
+
+  - name: Set up Python
+    uses: actions/setup-python@v4
+    with:
+      python-version: '3.10'
+
+  # Install Poetry
+  - name: Install Poetry
+    run: |
+      curl -sSL https://install.python-poetry.org | python3 -
+      export PATH="$HOME/.local/bin:$PATH"
+
+  # Install project with dev dependencies
+  - name: Install project with dev dependencies
+    run: |
+      poetry install --with dev
+
+  # Generate Sphinx Documentation with sphinx-apidoc
+  - name: Generate API Documentation with Sphinx
+    run: |
+      poetry run sphinx-apidoc -o docs/source codes
+
+  # Build HTML using Sphinx and output directly to docs/_build
+  - name: Build HTML with Sphinx
+    run: |
+      poetry run sphinx-build -b html docs/source docs/_build
+
