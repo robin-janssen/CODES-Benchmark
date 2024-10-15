@@ -94,6 +94,10 @@ jobs:
   docs:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        python-version: ['3.10']
+
     steps:
     - name: Check out the repository
       uses: actions/checkout@v3
@@ -101,7 +105,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: ${{ matrix.python-version }}
 
     # Install Poetry
     - name: Install Poetry
@@ -114,7 +118,7 @@ jobs:
       run: |
         poetry install --with dev
 
-    # Generate Sphinx Documentation with sphinx-apidoc
+    # Generate Sphinx Documentation
     - name: Generate API Documentation with Sphinx
       run: |
         poetry run sphinx-apidoc -o docs/source codes
@@ -122,10 +126,27 @@ jobs:
     # Build HTML using Sphinx
     - name: Build HTML with Sphinx
       run: |
-        poetry run sphinx-build -b html docs/source docs/_build/html
+        poetry run sphinx-build -b html docs/source docs/_build
 
-    # Move files from docs/_build/html to docs/_build
-    - name: Move HTML files to _build
+    # Copy custom HTML files to a temporary folder
+    - name: Copy custom HTML files
       run: |
-        mv docs/_build/html/* docs/_build/
-        rm -rf docs/_build/html
+        cp -r docs/custom_html/ site-root/
+
+    # Deploy both custom HTML files and Sphinx API docs to GitHub Pages
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: site-root
+        destination_dir: /
+        publish_branch: gh-pages
+
+    # Deploy Sphinx API documentation to a subfolder on gh-pages
+    - name: Deploy Sphinx API docs to /api-docs
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/_build/html
+        destination_dir: api-docs
+        publish_branch: gh-pages
