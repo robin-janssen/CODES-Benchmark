@@ -135,7 +135,6 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: docs/_build/html
         publish_branch: gh-pages
-        destination_dir: .
         user_name: "GitHub Actions"
         user_email: "actions@github.com"
 
