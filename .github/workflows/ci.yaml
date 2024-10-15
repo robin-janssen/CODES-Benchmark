@@ -133,21 +133,14 @@ jobs:
       run: |
         cp -r docs/custom_html/ site-root/
 
-    # Deploy both custom HTML files and Sphinx API docs to GitHub Pages
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: site-root
-        destination_dir: .
-        publish_branch: gh-pages
+  # Deploy Sphinx API documentation to /api-docs
+  - name: Deploy Sphinx API docs to /api-docs
+    uses: peaceiris/actions-gh-pages@v3
+    with:
+      github_token: ${{ secrets.GITHUB_TOKEN }}
+      publish_dir: docs/_build/html
+      publish_branch: gh-pages
+      destination_dir: .
+      user_name: "GitHub Actions"
+      user_email: "actions@github.com"
 
-    # Deploy Sphinx API documentation to a subfolder on gh-pages
-    - name: Deploy Sphinx API docs to /api-docs
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: docs/_build/html
-        destination_dir: api-docs
-        publish_branch: gh-pages
-        enable_jekyll: false
