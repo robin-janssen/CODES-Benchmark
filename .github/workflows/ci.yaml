@@ -150,3 +150,4 @@ jobs:
         publish_dir: docs/_build/html
         destination_dir: api-docs
         publish_branch: gh-pages
+        enable_jekyll: false
