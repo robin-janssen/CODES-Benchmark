@@ -128,11 +128,6 @@ jobs:
       run: |
         poetry run sphinx-build -b html docs/source docs/_build
 
-    # Copy custom HTML files to a temporary folder
-    - name: Copy custom HTML files
-      run: |
-        cp -r docs/custom_html/ site-root/
-
     # Deploy Sphinx API documentation to gh-pages
     - name: Deploy Sphinx API docs to gh-pages
       uses: peaceiris/actions-gh-pages@v3
