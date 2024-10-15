@@ -133,8 +133,8 @@ jobs:
       run: |
         cp -r docs/custom_html/ site-root/
 
-  # Deploy Sphinx API documentation to /api-docs
-  - name: Deploy Sphinx API docs to /api-docs
+  # Deploy Sphinx API documentation to gh-pages
+  - name: Deploy Sphinx API docs to gh-pages
     uses: peaceiris/actions-gh-pages@v3
     with:
       github_token: ${{ secrets.GITHUB_TOKEN }}
