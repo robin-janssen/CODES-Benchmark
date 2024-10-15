@@ -23,6 +23,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosummary",
+    "sphinx.ext.githubpages",
     "sphinx_autodoc_typehints",
     "sphinx_book_theme",
 ]
