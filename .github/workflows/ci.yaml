@@ -126,7 +126,7 @@ jobs:
     # Build HTML using Sphinx
     - name: Build HTML with Sphinx
       run: |
-        poetry run sphinx-build -b html docs/source docs/_build
+        poetry run sphinx-build -b html docs/ docs/_build
 
     # Deploy Sphinx API documentation to gh-pages
     - name: Deploy Sphinx API docs to gh-pages
