@@ -1,17 +1,23 @@
-.. CODES documentation master file, created by
-   sphinx-quickstart on Tue Oct 15 14:29:28 2024.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+CODES API Documentation
+=======================
 
-CODES documentation
-===================
+Welcome to the CODES API documentation. 
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
+.. autosummary::
+   :toctree: docs/source/
+   :recursive:
+
+   codes.benchmark 
+   codes.surrogates
+   codes.train
+   codes.utils
 
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+.. .. toctree::
+..    :maxdepth: 2
+..    :caption: API Reference:
 
+..    codes.benchmark 
+..    codes.surrogates
+..    codes.train
+..    codes.utils
