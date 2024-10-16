@@ -112,6 +112,11 @@ jobs:
       run: |
         pip install sphinx==8.0.2 sphinx-book-theme==1.1.3 sphinxcontrib-napoleon==0.7 sphinx-autodoc-typehints==2.5.0
 
+    # Install the `codes` package in editable mode
+    - name: Install `codes` package in editable mode
+      run: |
+        pip install -e .
+
     # Generate Sphinx Documentation
     - name: Generate API Documentation with Sphinx
       run: |
