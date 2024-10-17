@@ -94,13 +94,21 @@ jobs:
     - name: Run pytest and generate coverage report
       if: env.is-merge == 'false' # Skip if it's a merge commit
       run: |
-        poetry run pytest --cov-report=term-missing:skip-covered --cov=codes test/ | tee pytest-coverage.txt
+          poetry run pytest --cov-report=term-missing:skip-covered --cov=codes test/ --cov-report=xml:coverage.xml
 
-    - name: Pytest coverage comment
-      if: env.is-merge == 'false' # Skip if it's a merge commit
-      uses: MishaKav/pytest-coverage-comment@main
+    # - name: Pytest coverage comment
+    #   if: env.is-merge == 'false' # Skip if it's a merge commit
+    #   uses: MishaKav/pytest-coverage-comment@main
+    #   with:
+    #     pytest-coverage-path: ./pytest-coverage.txt
+
+    - name: Upload results to Codecov
+      uses: codecov/codecov-action@v4
       with:
-        pytest-coverage-path: ./pytest-coverage.txt
+        token: ${{ secrets.CODECOV_TOKEN }}  # Only needed for private repos
+        files: ./coverage.xml  # Path to the coverage XML file, adjust if necessary
+        fail_ci_if_error: true  # Optional, ensures the CI fails if Codecov upload fails
+
 
   docs:
     if: github.ref == 'refs/heads/main' || github.event.pull_request.base.ref == 'main' # Only run on the main branch or PRs targeting main
