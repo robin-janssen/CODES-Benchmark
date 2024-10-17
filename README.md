@@ -1,6 +1,6 @@
 # CODES Benchmark
 
-[![codecov](https://codecov.io/github/robin-janssen/CODES-Benchmark/graph/badge.svg?token=TNF9ISCAJK)](https://codecov.io/github/robin-janssen/CODES-Benchmark)
+[![codecov](https://codecov.io/github/robin-janssen/CODES-Benchmark/branch/develop/graph/badge.svg?token=TNF9ISCAJK)](https://codecov.io/github/robin-janssen/CODES-Benchmark)
 
 ![Static Badge](https://img.shields.io/badge/license-GPLv3-blue)
 
