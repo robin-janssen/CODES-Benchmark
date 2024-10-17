@@ -10,7 +10,15 @@ This repo aims to provide a way of benchmarking surrogate models for coupled ODE
 
 <img src="docs/_static/favicon-96x96.png" alt="CODES Logo" width="14"/> The main documentation can be found on the [CODES website](https://codes-docs.web.app/index.html).
 
-<img src="docs/_static/book-solid.svg" alt="CODES API Docs" width="14"/> The technical API documentation is hosted on this [GitHub Page](https://robin-janssen.github.io/CODES-Benchmark/)
+<picture>
+  <!-- Dark mode SVG -->
+  <source media="(prefers-color-scheme: dark)" srcset="docs/_static/book-solid-white.svg">
+  <!-- Light mode SVG -->
+  <source media="(prefers-color-scheme: light)" srcset="docs/_static/book-solid.svg">
+  <!-- Fallback image (light mode by default) -->
+  <img width="14" alt="CODES API Docs" src="docs/_static/book-solid.svg">
+</picture>
+The technical API documentation is hosted on this [GitHub Page](https://robin-janssen.github.io/CODES-Benchmark/)
 
 ## Motivation
 
