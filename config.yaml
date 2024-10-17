@@ -1,14 +1,15 @@
 # Global settings for the benchmark
-training_id: "delete_me2"
-surrogates: ["LatentPoly", "LatentNeuralODE", "FullyConnected", "MultiONet"]
-batch_size: [256, 256, 256, 256]
-epochs: [2, 2, 2, 2]
+training_id: "delete_me5"
+surrogates: ["MultiONet"]
+batch_size: [256]
+epochs: [10]
 dataset: 
-  name: "osu2008"
-  log10_transform: True
-  normalise: "minmax" # "standardise", "minmax", "disable"
+  name: "branca24"
+  log10_transform: False
+  normalise: "disable" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
-devices: ["cuda:1"]
+  tolerance: 1e-30
+devices: ["cpu"]
 seed: 42
 verbose: False
 

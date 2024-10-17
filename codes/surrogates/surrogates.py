@@ -19,7 +19,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
     structure of a surrogate model and defines the methods that need to be
     implemented by the subclasses for it to be compatible with the benchmarking
     framework. For more information, see
-    https://immi000.github.io/CODES-Benchmark-Docs/documentation.html#add_model.
+    https://robin-janssen.github.io/CODES-Benchmark/documentation.html#add_model.
 
     Args:
         device (str, optional): The device to run the model on. Defaults to None.
@@ -105,15 +105,15 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
     @abstractmethod
     def forward(self, inputs: Any) -> tuple[Tensor, Tensor]:
-        """
-        Forward pass of the model.
+        # """
+        # Forward pass of the model.
 
-        Args:
-            inputs (Any): The input data as recieved from the dataloader.
+        # Args:
+        #     inputs (Any): The input data as recieved from the dataloader.
 
-        Returns:
-            tuple[Tensor, Tensor]: The model predictions and the targets.
-        """
+        # Returns:
+        #     tuple[Tensor, Tensor]: The model predictions and the targets.
+        # """
         pass
 
     @abstractmethod
@@ -273,7 +273,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
                 if isinstance(value, torch.Tensor):
                     value = value.cpu().detach().numpy()
                 if isinstance(value, np.ndarray):
-                    value = value.astype(np.float16)
+                    value = value.astype(np.float32)
                 setattr(self, attribute, value)
 
         # Save the hyperparameters as a yaml file
@@ -311,13 +311,19 @@ class AbstractSurrogateModel(ABC, nn.Module):
         """
         if model_dir is None:
             model_dict_path = os.path.join(
-                os.getcwd(), "trained", training_id, surr_name, f"{model_identifier}.pth"
+                os.getcwd(),
+                "trained",
+                training_id,
+                surr_name,
+                f"{model_identifier}.pth",
             )
         else:
             model_dict_path = os.path.join(
                 model_dir, training_id, surr_name, f"{model_identifier}.pth"
             )
-        model_dict = torch.load(model_dict_path, map_location=self.device)
+        model_dict = torch.load(
+            model_dict_path, map_location=self.device, weights_only=False
+        )
         self.load_state_dict(model_dict["state_dict"])
         for key, value in model_dict["attributes"].items():
             # remove self.device from the attributes

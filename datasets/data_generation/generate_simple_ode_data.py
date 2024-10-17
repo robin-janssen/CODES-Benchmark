@@ -1,13 +1,18 @@
 # TODO: move this to an appropriate location
 
 import os
+
+# Add codes package to the path (two keys up)
+import sys
 from argparse import ArgumentParser
 from typing import Callable
 
 import numpy as np
 from scipy.integrate import solve_ivp
 
-from codes.dataset.data_utils import create_dataset
+sys.path.insert(1, "../..")
+
+from codes.utils.data_utils import create_dataset
 
 
 def lotka_volterra(t, n):
@@ -55,7 +60,7 @@ def reaction(t, n):
     array
         Array of the derivatives of the abundances of species s1, s2, s3, s4, s5, and s6.
     """
-    s1, s2, s3, s4, s5, s6 = n[0], n[1], n[2], n[3], n[4], n[5]
+    s1, s2, s3, s4, s5, _ = n[0], n[1], n[2], n[3], n[4], n[5]
     return np.array(
         [
             -0.1 * s1 + 0.1 * s2,
@@ -67,33 +72,6 @@ def reaction(t, n):
         ]
     )
 
-
-# def func(t, n):
-#     """
-#     Differential equations for a simple ODE system.
-
-#     Parameters
-#     ----------
-#     t : float
-#         Time
-#     n : array
-#         Array of concentrations of species A, B, C, D, and E.
-
-#     Returns
-#     -------
-#     array
-#         Array of the derivatives of the concentrations of species A, B, C, D, and E.
-#     """
-#     k = np.array([0.8, 0.5, 0.2])
-#     return np.array(
-#         [
-#             -k[0] * n[0] - k[2] * n[0] * n[2],
-#             k[0] * n[0] - k[1] * n[1] + 2 * k[2] * n[0] * n[2],
-#             k[1] * n[1] - k[2] * n[0] * n[2],
-#             k[2] * n[0] + k[1] / k[0] * n[1],
-#             k[0] * n[0] / k[1] * n[2] - k[1] * n[0] * n[2],
-#         ]
-#     )
 
 FUNCS = {
     "lotka_volterra": {
@@ -130,13 +108,15 @@ def create_data(num: int, func: Callable, timesteps: np.ndarray, dim: int):
 
 def main(args):
 
-    if os.path.exists(f"data/{args.name}"):
+    # Switch cwd to the root directory
+    os.chdir("../..")
+    if os.path.exists(f"datasets/{args.name}"):
         res = input(
-            f"The data directory 'data/{args.name}' already exists. Press Enter to overwrite it."
+            f"The data directory 'datasets/{args.name}' already exists. Press Enter to overwrite it."
         )
         if res != "":
             return
-        os.system(f"rm -r data/data/{args.name}")
+        os.system(f"rm -r datasets/{args.name}")
 
     if not FUNCS.get(args.func):
         print(f"Function {args.func} not found")

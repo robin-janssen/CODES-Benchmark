@@ -32,21 +32,120 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        export PATH="$HOME/.local/bin:$PATH"
+
     - name: Install project with dev dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install .[dev,tests]
+        poetry install --with dev
 
+    # Step to detect if the commit is a merge commit (skip CI on merge commits)
+    - name: Check if commit is a merge commit
+      id: check-merge
+      run: |
+        if git log -1 --pretty=%B | grep -q "Merge pull request"; then
+          echo "is-merge=true" >> $GITHUB_ENV
+        else
+          echo "is-merge=false" >> $GITHUB_ENV
+        fi
+
+    # Step to detect changes in pyproject.toml or poetry.lock
+    - name: Check for dependency changes
+      id: check-deps
+      if: env.is-merge == 'false' # Skip if it's a merge commit
+      run: |
+        if git diff --name-only HEAD~1 | grep -qE 'pyproject.toml|poetry.lock'; then
+          echo "dependencies-changed=true" >> $GITHUB_ENV
+        else
+          echo "dependencies-changed=false" >> $GITHUB_ENV
+        fi
+
+    # Step to generate requirements.txt if dependencies have changed
+    - name: Generate requirements.txt
+      if: env.is-merge == 'false' && env.dependencies-changed == 'true'
+      run: |
+        poetry export -f requirements.txt --output requirements.txt --without-hashes
+
+    # Commit and push the updated requirements.txt if dependencies have changed
+    - name: Commit and push updated requirements.txt
+      if: env.is-merge == 'false' && env.dependencies-changed == 'true'
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add requirements.txt
+        git commit -m "Update requirements.txt [skip ci]"
+        git push
+
+    # Run Black (auto-reformat) using Poetry
     - name: Run Black (auto-reformat)
-      run: black .
+      if: env.is-merge == 'false' # Skip if it's a merge commit
+      run: |
+        poetry run black .
 
+    # Run isort (auto-reformat) using Poetry
     - name: Run isort (auto-reformat)
-      run: isort .
+      if: env.is-merge == 'false' # Skip if it's a merge commit
+      run: |
+        poetry run isort .
 
+    # Run pytest using Poetry
     - name: Run pytest and generate coverage report
-      run: pytest --cov-report=term-missing:skip-covered --cov=codes test/ | tee pytest-coverage.txt
+      if: env.is-merge == 'false' # Skip if it's a merge commit
+      run: |
+        poetry run pytest --cov-report=term-missing:skip-covered --cov=codes test/ | tee pytest-coverage.txt
 
     - name: Pytest coverage comment
+      if: env.is-merge == 'false' # Skip if it's a merge commit
       uses: MishaKav/pytest-coverage-comment@main
       with:
         pytest-coverage-path: ./pytest-coverage.txt
+
+  docs:
+    if: github.ref == 'refs/heads/main' || github.event.pull_request.base.ref == 'main' # Only run on the main branch or PRs targeting main
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ['3.10']
+
+    steps:
+    - name: Check out the repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    # Install Poetry
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        export PATH="$HOME/.local/bin:$PATH"
+
+    # Install project dependencies, including dev dependencies
+    - name: Install project with dev dependencies
+      run: |
+        poetry install --with dev
+
+    # Generate Sphinx Documentation
+    - name: Generate API Documentation with Sphinx
+      run: |
+        poetry run sphinx-apidoc -o docs/ codes
+
+    # Build HTML using Sphinx
+    - name: Build HTML with Sphinx
+      run: |
+        poetry run sphinx-build -b html docs/ docs/_build
+
+    # Deploy Sphinx API documentation to gh-pages
+    - name: Deploy Sphinx API docs to gh-pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/_build
+        publish_branch: gh-pages
+        user_name: "GitHub Actions"
+        user_email: "actions@github.com"

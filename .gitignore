@@ -25,5 +25,14 @@ dist/
 *.egg-info/
 data.hdf5
 .venv
-.pytest_cache
+.pytest_cachebuild
+*.egg-info
+.flake8
+dont_need.html
+elements.html
+generic.html
+images/
+docs/_build/
+.doctrees/
+docs/docs/
 .coverage

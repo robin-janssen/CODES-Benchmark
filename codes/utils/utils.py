@@ -246,6 +246,14 @@ def check_training_status(config: dict) -> tuple[str, bool]:
 
         saved_config = read_yaml_config(saved_config_path)
 
+        # Check if cuda is available if the device is set to cuda
+        for device in config["devices"]:
+            if "cuda" in device:
+                if not torch.cuda.is_available():
+                    raise ValueError(
+                        "You have selected at least one cuda device, but CUDA is not available. Please adjust the device settings in config.yaml."
+                    )
+
         # Check if the configurations are the same
         errors = []
         for key, value in config.items():
@@ -280,7 +288,8 @@ def check_training_status(config: dict) -> tuple[str, bool]:
             confirmation = input("Overwrite? [y/n]: ")
             if confirmation.lower() == "y":
                 print("Overwriting the saved configuration.")
-                os.remove(task_list_filepath)
+                if os.path.exists(task_list_filepath):
+                    os.remove(task_list_filepath)
                 copy_config = True
             else:
                 print("Continuing training with the previous configuration.")

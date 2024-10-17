@@ -20,6 +20,7 @@ def check_and_load_data(
     verbose: bool = True,
     log: bool = True,
     normalisation_mode: str = "standardise",
+    tolerance: float | None = 1e-20,
 ):
     """
     Check the specified dataset and load the data based on the mode (train or test).
@@ -29,6 +30,8 @@ def check_and_load_data(
         verbose (bool): Whether to print information about the loaded data.
         log (bool): Whether to log-transform the data (log10).
         normalisation_mode (str): The normalization mode, either "disable", "minmax", or "standardise".
+        tolerance (float, optional): The tolerance value for log-transformation.
+            Values below this will be set to the tolerance value. Pass None to disable.
 
     Returns:
         tuple: Loaded data and timesteps.
@@ -36,7 +39,7 @@ def check_and_load_data(
     Raises:
         DatasetError: If the dataset or required data is missing or if the data shape is incorrect.
     """
-    data_dir = "data"
+    data_dir = "datasets"
     dataset_name_lower = dataset_name.lower()
 
     # Check if dataset exists
@@ -66,9 +69,14 @@ def check_and_load_data(
                 )
 
         # Load data
-        train_data = np.asarray(f["train"])
-        test_data = np.asarray(f["test"])
-        val_data = np.asarray(f["val"])
+        train_data = np.asarray(f["train"], dtype=np.float32)
+        test_data = np.asarray(f["test"], dtype=np.float32)
+        val_data = np.asarray(f["val"], dtype=np.float32)
+
+        if tolerance is not None:
+            train_data = np.where(train_data < tolerance, tolerance, train_data)
+            test_data = np.where(test_data < tolerance, tolerance, test_data)
+            val_data = np.where(val_data < tolerance, tolerance, val_data)
 
         # Log transformation
         if log:
@@ -231,7 +239,7 @@ def create_hdf5_dataset(
     test_data: np.ndarray,
     val_data: np.ndarray,
     dataset_name: str,
-    data_dir: str = "data",
+    data_dir: str = "datasets",
     timesteps: np.ndarray | None = None,
     labels: list[str] | None = None,
 ):
@@ -337,7 +345,7 @@ def create_dataset(
         TypeError: If the train_data is not a numpy array or torch tensor.
         ValueError: If the train_data, test_data, and val_data do not have the correct shape.
     """
-    base_dir = "data"
+    base_dir = "datasets"
     dataset_dir = os.path.join(base_dir, name)
 
     if os.path.exists(dataset_dir):
@@ -416,8 +424,14 @@ def create_dataset(
         train_data = full_data[:n_train]
         test_data = full_data[n_train : n_train + n_test]
         val_data = full_data[n_train + n_test :]
-        if any(dim == 0 for shape in (train_data.shape, test_data.shape, val_data.shape) for dim in shape):
-            raise ValueError("Split data contains zero samples. One of the splits is too small.")
+        if any(
+            dim == 0
+            for shape in (train_data.shape, test_data.shape, val_data.shape)
+            for dim in shape
+        ):
+            raise ValueError(
+                "Split data contains zero samples. One of the splits is too small."
+            )
 
     if labels is not None:
         if not isinstance(labels, list):
@@ -440,14 +454,14 @@ def download_data(dataset_name: str, path: str | None = None):
         path (str, optional): The path to save the dataset. If None, the default data directory is used.
     """
     data_path = (
-        os.path.abspath(f"data/{dataset_name.lower()}/data.hdf5")
+        os.path.abspath(f"datasets/{dataset_name.lower()}/data.hdf5")
         if path is None
         else os.path.abspath(path)
     )
     if os.path.isfile(data_path):
         return
 
-    with open("data/data_sources.yaml", "r", encoding="utf-8") as file:
+    with open("datasets/data_sources.yaml", "r", encoding="utf-8") as file:
         data_sources = yaml.safe_load(file)
 
     try:
