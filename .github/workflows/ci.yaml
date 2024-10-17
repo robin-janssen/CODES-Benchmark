@@ -10,6 +10,11 @@ on:
       - main
       - develop
 
+permissions:
+  contents: write
+  checks: write
+  pull-requests: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -20,10 +25,10 @@ jobs:
 
     steps:
     - name: Check out the repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -86,10 +91,25 @@ jobs:
         poetry run isort .
 
     # Run pytest using Poetry
-    - name: Run pytest
+    - name: Run pytest and generate coverage report
       if: env.is-merge == 'false' # Skip if it's a merge commit
       run: |
-        poetry run pytest
+          poetry run pytest --cov-report=term-missing:skip-covered --cov=codes test/ --cov-report=xml:coverage.xml
+
+    # - name: Pytest coverage comment
+    #   if: env.is-merge == 'false' # Skip if it's a merge commit
+    #   uses: MishaKav/pytest-coverage-comment@main
+    #   with:
+    #     pytest-coverage-path: ./pytest-coverage.txt
+
+    - name: Upload results to Codecov
+      if: env.is-merge == 'false' # Skip if it's a merge commit
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}  # Only needed for private repos
+        files: ./coverage.xml  # Path to the coverage XML file, adjust if necessary
+        fail_ci_if_error: true  # Optional, ensures the CI fails if Codecov upload fails
+
 
   docs:
     if: github.ref == 'refs/heads/main' || github.event.pull_request.base.ref == 'main' # Only run on the main branch or PRs targeting main
@@ -131,7 +151,7 @@ jobs:
 
     # Deploy Sphinx API documentation to gh-pages
     - name: Deploy Sphinx API docs to gh-pages
-      uses: peaceiris/actions-gh-pages@v3
+      uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: docs/_build

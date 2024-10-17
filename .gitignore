@@ -35,3 +35,4 @@ images/
 docs/_build/
 .doctrees/
 docs/docs/
+.coverage

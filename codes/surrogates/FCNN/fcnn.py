@@ -291,8 +291,16 @@ class FullyConnected(AbstractSurrogateModel):
         flattened_targets = dataset.reshape(-1, n_features)
 
         # Convert to PyTorch tensors
-        inputs_tensor = torch.tensor(flattened_data, dtype=torch.float32)
-        targets_tensor = torch.tensor(flattened_targets, dtype=torch.float32)
+        inputs_tensor = (
+            torch.tensor(flattened_data, dtype=torch.float32)
+            if isinstance(flattened_data, np.ndarray)
+            else flattened_data.type(torch.float32)
+        )
+        targets_tensor = (
+            torch.tensor(flattened_targets, dtype=torch.float32)
+            if isinstance(flattened_targets, np.ndarray)
+            else flattened_targets.type(torch.float32)
+        )
 
         inputs_tensor = inputs_tensor.to(self.device)
         targets_tensor = targets_tensor.to(self.device)

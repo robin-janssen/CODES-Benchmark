@@ -1,5 +1,10 @@
 # CODES Benchmark
 
+[![codecov](https://codecov.io/github/robin-janssen/CODES-Benchmark/graph/badge.svg?token=TNF9ISCAJK)](https://codecov.io/github/robin-janssen/CODES-Benchmark)
+
+![Static Badge](https://img.shields.io/badge/license-GPLv3-blue)
+
+
 ## Benchmarking Coupled ODE Surrogates
 
 This repo aims to provide a way of benchmarking surrogate models for coupled ODE systems, as can be found in the context of chemical reaction networks. 
