@@ -32,3 +32,6 @@ dont_need.html
 elements.html
 generic.html
 images/
+docs/_build/
+.doctrees/
+docs/docs/
