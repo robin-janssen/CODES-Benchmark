@@ -103,6 +103,7 @@ jobs:
     #     pytest-coverage-path: ./pytest-coverage.txt
 
     - name: Upload results to Codecov
+    if: env.is-merge == 'false' # Skip if it's a merge commit
       uses: codecov/codecov-action@v4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}  # Only needed for private repos
