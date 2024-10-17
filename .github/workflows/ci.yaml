@@ -92,6 +92,7 @@ jobs:
         poetry run pytest
 
   docs:
+    if: github.ref == 'refs/heads/main' || github.event.pull_request.base.ref == 'main' # Only run on the main branch or PRs targeting main
     runs-on: ubuntu-latest
 
     strategy:
@@ -137,4 +138,3 @@ jobs:
         publish_branch: gh-pages
         user_name: "GitHub Actions"
         user_email: "actions@github.com"
-
