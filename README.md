@@ -8,7 +8,9 @@
 
 This repo aims to provide a way of benchmarking surrogate models for coupled ODE systems, as can be found in the context of chemical reaction networks. 
 
-<img src="docs/_static/favicon-96x96.png" alt="CODES Logo" width="14"/> The main documentation can be found on the [CODES website](https://codes-docs.web.app/index.html).
+<img src="docs/_static/favicon-96x96.png" alt="CODES Logo" width="20"/> 
+
+The main documentation can be found on the [CODES website](https://codes-docs.web.app/index.html).
 
 <picture>
   <!-- Dark mode SVG -->
@@ -16,13 +18,14 @@ This repo aims to provide a way of benchmarking surrogate models for coupled ODE
   <!-- Light mode SVG -->
   <source media="(prefers-color-scheme: light)" srcset="docs/_static/book-solid.svg">
   <!-- Fallback image (light mode by default) -->
-  <img width="14" alt="CODES API Docs" src="docs/_static/book-solid.svg">
-</picture>
-The technical API documentation is hosted on this [GitHub Page](https://robin-janssen.github.io/CODES-Benchmark/)
+  <img width="20" alt="CODES API Docs" src="docs/_static/book-solid.svg">
+</picture> 
+
+The technical API documentation is hosted on this [GitHub Page](https://robin-janssen.github.io/CODES-Benchmark/).
 
 ## Motivation
 
-There are many efforts to use machine learning models ("surrogates") to replace the costly numerics required involved in solving coupled ODEs. But for the end user, it is not obvious how to choose the right surrogate for a given task. Usually, the best choice depends on both the dataset and the target application.
+There are many efforts to use machine learning models ("surrogates") to replace the costly numerics involved in solving coupled ODEs. But for the end user, it is not obvious how to choose the right surrogate for a given task. Usually, the best choice depends on both the dataset and the target application.
 
 Dataset specifics - how "complex" is the dataset?
 - How many samples are there?
