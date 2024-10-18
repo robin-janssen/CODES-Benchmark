@@ -40,7 +40,7 @@ html_theme_options = {
         },
         {
             "name": "CODES Docs",
-            "url": "https://immi000.github.io/CODES-Benchmark-Docs/index.html",
+            "url": "https://codes-docs.web.app",
             "icon": "_static/favicon-96x96.png",  # Make sure this is the correct path to the favicon
             "type": "local",
         },
