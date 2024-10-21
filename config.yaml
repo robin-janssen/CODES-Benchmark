@@ -2,13 +2,14 @@
 training_id: "branca24_full"
 surrogates: ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
 batch_size: [1024, 1024, 128, 128]
-epochs: [500, 500, 4000, 4000]
+epochs: [250, 250, 2000, 2000]
 dataset: 
   name: "branca24"
   log10_transform: True
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
   tolerance: 1e-30
+  subset_factor: 4
 devices: ["cuda:1", "cuda:2", "cuda:3"]
 seed: 42
 verbose: False

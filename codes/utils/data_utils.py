@@ -280,7 +280,9 @@ def create_hdf5_dataset(
         f.attrs["labels"] = labels
 
 
-def get_data_subset(full_train_data, full_test_data, timesteps, mode, metric):
+def get_data_subset(
+    full_train_data, full_test_data, timesteps, mode, metric, subset_factor=1
+):
     """
     Get the appropriate data subset based on the mode and metric.
 
@@ -290,31 +292,36 @@ def get_data_subset(full_train_data, full_test_data, timesteps, mode, metric):
         timesteps (np.ndarray): The timesteps.
         mode (str): The benchmark mode (e.g., "accuracy", "interpolation", "extrapolation", "sparse", "UQ").
         metric (int): The specific metric for the mode (e.g., interval, cutoff, factor, batch size).
+        subset_factor (int): The factor to subset the data by. Default is 1 (use full train and test data).
 
     Returns:
         tuple: The training data, test data, and timesteps subset.
     """
+    # First select the appropriate data subset
+    train_data = full_train_data[::subset_factor]
+    test_data = full_test_data[::subset_factor]
+
     if mode == "interpolation":
         interval = metric
-        train_data = full_train_data[:, ::interval]
-        test_data = full_test_data[:, ::interval]
+        train_data = train_data[:, ::interval]
+        test_data = test_data[:, ::interval]
         timesteps = timesteps[::interval]
     elif mode == "extrapolation":
         cutoff = metric
-        train_data = full_train_data[:, :cutoff]
-        test_data = full_test_data[:, :cutoff]
+        train_data = train_data[:, :cutoff]
+        test_data = test_data[:, :cutoff]
         timesteps = timesteps[:cutoff]
     elif mode == "sparse":
         factor = metric
-        train_data = full_train_data[::factor]
-        test_data = full_test_data[::factor]
+        train_data = train_data[::factor]
+        test_data = test_data[::factor]
     elif mode == "batch_size":
         factor = 4
-        train_data = full_train_data[::factor]
-        test_data = full_test_data[::factor]
+        train_data = train_data[::factor]
+        test_data = test_data[::factor]
     else:
-        train_data = full_train_data
-        test_data = full_test_data
+        train_data = train_data
+        test_data = test_data
 
     return train_data, test_data, timesteps
 
