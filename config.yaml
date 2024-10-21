@@ -1,13 +1,13 @@
 # Global settings for the benchmark
-training_id: "continue_training_test_3"
+training_id: "lv_test"
 surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
 batch_size: [1024, 1024, 128, 128]
 epochs: [3, 3, 3, 3]
 dataset: 
-  name: "osu2008"
-  log10_transform: False
+  name: "lotka_volterra"
+  log10_transform: True
   normalise: "minmax" # "standardise", "minmax", "disable"
-devices: ["cuda:0"]
+devices: ["cuda:1"]
 seed: 42
 verbose: False
 

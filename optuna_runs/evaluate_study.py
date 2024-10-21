@@ -23,11 +23,11 @@ def parse_arguments():
     parser.add_argument(
         "--study_name",
         type=str,
-        default="osu_latentpoly",
+        default="branca_latentpoly",
         help="The name of the study to evaluate.",
     )
     parser.add_argument(
-        "--top_n", type=int, default=10, help="Number of top models to evaluate."
+        "--top_n", type=int, default=20, help="Number of top models to evaluate."
     )
     return parser.parse_args()
 
