@@ -1,11 +1,13 @@
+import os
 import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.ndimage import gaussian_filter1d
 
 sys.path.insert(1, "../..")
 
-from codes import save_plot
+from codes import get_custom_palette, save_plot
 
 
 def plot_example_trajectories(
@@ -210,3 +212,117 @@ def plot_example_trajectories_paper(
         )
 
     plt.show()
+
+
+def plot_initial_conditions_distribution(
+    dataset_name: str,
+    train_data: np.ndarray,
+    chemical_names: list[str] | None = None,
+    max_chemicals: int = 10,
+) -> None:
+    """
+    Plot the distribution of initial conditions (t=0) for each chemical as a smoothed histogram plot.
+
+    Args:
+        dataset_name (str): The name of the dataset (e.g., "osu2008").
+        train_data (np.ndarray): Dataset array of shape [num_samples, num_timesteps, num_chemicals].
+        chemical_names (list, optional): List of chemical names for labeling the lines.
+        max_chemicals (int, optional): Maximum number of chemicals to plot. Default is 10.
+    """
+    # Extract initial conditions (t=0)
+    initial_conditions = train_data[:, 0, :]  # Extract t=0 (initial conditions)
+
+    # Cap the number of chemicals to plot at 50
+    num_chemicals = min(max_chemicals, 50)
+    initial_conditions = initial_conditions[:, :num_chemicals]
+    chemical_names = (
+        chemical_names[:num_chemicals] if chemical_names is not None else None
+    )
+
+    # Split the chemicals into groups of 10
+    chemicals_per_plot = 10
+    num_plots = int(np.ceil(num_chemicals / chemicals_per_plot))
+
+    # Initialize list to hold log-transformed non-zero initial conditions
+    log_conditions = []
+    zero_counts = 0
+
+    # Transform initial conditions to log-space and filter out zeros
+    for i in range(num_chemicals):
+        chemical_conditions = initial_conditions[:, i]
+        non_zero_chemical_conditions = chemical_conditions[chemical_conditions > 0]
+        log_conditions.append(np.log10(non_zero_chemical_conditions))
+        zero_counts += np.sum(chemical_conditions == 0)
+
+    # Calculate the 1st and 99th percentiles in the log-space
+    min_percentiles = [
+        np.percentile(cond, 1) for cond in log_conditions if len(cond) > 0
+    ]
+    max_percentiles = [
+        np.percentile(cond, 99) for cond in log_conditions if len(cond) > 0
+    ]
+
+    global_min = np.min(min_percentiles)
+    global_max = np.max(max_percentiles)
+
+    # Set up the x-axis range to nearest whole numbers in log-space
+    x_min = np.floor(global_min)
+    x_max = np.ceil(global_max)
+
+    # Create subplots with shared x-axis
+    fig, axes = plt.subplots(num_plots, 1, figsize=(10, 4 * num_plots), sharex=True)
+
+    if num_plots == 1:
+        axes = [axes]  # Ensure axes is iterable even if there's only one plot
+
+    # Get custom color palette
+    colors = get_custom_palette(chemicals_per_plot)
+
+    # Define the x-axis range for plotting
+    x_vals = np.linspace(x_min, x_max + 0.1, 100)
+
+    for plot_idx in range(num_plots):
+        ax = axes[plot_idx]
+        start_idx = plot_idx * chemicals_per_plot
+        end_idx = min((plot_idx + 1) * chemicals_per_plot, num_chemicals)
+
+        for i in range(start_idx, end_idx):
+            # Compute histogram in log-space
+            hist, bin_edges = np.histogram(log_conditions[i], bins=x_vals, density=True)
+
+            # Smooth the histogram with a Gaussian filter
+            smoothed_hist = gaussian_filter1d(hist, sigma=2)
+
+            # Plot the smoothed histogram
+            ax.plot(
+                10 ** bin_edges[:-1],
+                smoothed_hist,
+                label=(
+                    chemical_names[i]
+                    if chemical_names is not None and len(chemical_names) > i
+                    else None
+                ),
+                color=colors[i % chemicals_per_plot],
+            )
+
+        ax.set_yscale("linear")
+        ax.set_ylabel("Density (PDF)")
+        if chemical_names is not None:
+            ax.legend()
+
+    plt.xscale("log")  # Log scale for initial conditions magnitudes
+    plt.xlim(10**x_min, 10**x_max)  # Set x-axis range based on log-space calculations
+    plt.xlabel("Initial Condition Magnitude")
+    fig.suptitle(
+        f"Initial Condition Distribution per Chemical (Dataset: {dataset_name}, {train_data.shape[0]} samples)"
+    )
+
+    plt.tight_layout(rect=[0, 0, 1, 0.97])
+
+    # Save the plot to the dataset directory
+    save_dir = os.path.join("datasets", dataset_name)
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, "initial_conditions_per_quantity.png")
+    plt.savefig(save_path)
+
+    plt.close()

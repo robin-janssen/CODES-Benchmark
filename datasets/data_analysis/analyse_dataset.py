@@ -1,13 +1,29 @@
+import os
 import sys
 from argparse import ArgumentParser
 
-sys.path.insert(1, "../..")
+# Navigate up one level from the current working directory to access 'codes'
+current_path = os.path.dirname(os.path.abspath(__file__))  # Path to this script
+project_root = os.path.abspath(os.path.join(current_path, "../../"))  # Go up two levels
+
+# Add the 'codes' directory to the system path
+codes_path = os.path.join(project_root, "codes")
+print(f"Adding codes path: {codes_path}")
+sys.path.insert(1, codes_path)
+print("Current sys.path:", sys.path)
+
+# Check if the codes directory is accessible
+print("Contents of 'codes' directory:", os.listdir(codes_path))
+
+# codes_path = os.path.join(os.getcwd(), "codes")
+# print(codes_path)
+# sys.path.insert(1, codes_path)
+# print(sys.path)
 
 from codes import check_and_load_data
-
 from datasets.data_analysis.data_plots import (
     plot_example_trajectories,
-    # plot_example_trajectories_paper,
+    plot_initial_conditions_distribution,
 )
 
 
@@ -44,6 +60,11 @@ def main(args):
         log=log,
     )
 
+    # Plot initial conditions distribution
+    plot_initial_conditions_distribution(
+        args.dataset, full_train_data, chemical_names=labels, num_chemicals=50
+    )
+
     # plot_example_trajectories_paper(
     #     args.dataset,
     #     full_train_data,
@@ -56,7 +77,7 @@ def main(args):
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
-        "--dataset", default="branca24", type=str, help="Name of the dataset."
+        "--dataset", default="simple_ode", type=str, help="Name of the dataset."
     )
     args = parser.parse_args()
     main(args)

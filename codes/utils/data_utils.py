@@ -281,7 +281,12 @@ def create_hdf5_dataset(
 
 
 def get_data_subset(
-    full_train_data, full_test_data, timesteps, mode, metric, subset_factor=1
+    full_train_data: np.ndarray,
+    full_test_data: np.ndarray,
+    timesteps: np.ndarray,
+    mode: str,
+    metric: int,
+    subset_factor: int = 1,
 ):
     """
     Get the appropriate data subset based on the mode and metric.
