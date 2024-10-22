@@ -1,4 +1,3 @@
-import os
 import sys
 
 import matplotlib.pyplot as plt
@@ -30,6 +29,8 @@ def plot_example_trajectories(
         num_chemicals (int, optional): Number of chemicals to plot. Default is 10.
         labels (list, optional): List of labels for the chemicals.
         save (bool, optional): Whether to save the plot as a file.
+        sample_idx (int, optional): Index of the sample to plot.
+        log (bool, optional): Whether to plot the data in log-space.
     """
     # Cap the number of chemicals at the number of available chemicals
     num_chemicals = min(data.shape[2], num_chemicals)
@@ -217,24 +218,36 @@ def plot_example_trajectories_paper(
 def plot_initial_conditions_distribution(
     dataset_name: str,
     train_data: np.ndarray,
+    test_data: np.ndarray,
     chemical_names: list[str] | None = None,
     max_chemicals: int = 10,
+    log: bool = True,
 ) -> None:
     """
-    Plot the distribution of initial conditions (t=0) for each chemical as a smoothed histogram plot.
+    Plot the distribution of initial conditions (t=0) for each chemical from both train and test datasets.
 
     Args:
         dataset_name (str): The name of the dataset (e.g., "osu2008").
-        train_data (np.ndarray): Dataset array of shape [num_samples, num_timesteps, num_chemicals].
+        train_data (np.ndarray): Training dataset array of shape [num_samples, num_timesteps, num_chemicals].
+        test_data (np.ndarray): Testing dataset array of shape [num_samples, num_timesteps, num_chemicals].
         chemical_names (list, optional): List of chemical names for labeling the lines.
         max_chemicals (int, optional): Maximum number of chemicals to plot. Default is 10.
+        log (bool, optional): Whether the data is in log-space and should be exponentiated (i.e., data = 10**data).
     """
-    # Extract initial conditions (t=0)
-    initial_conditions = train_data[:, 0, :]  # Extract t=0 (initial conditions)
+    # If data is in log space, exponentiate it
+    if log:
+        train_data = 10**train_data
+        test_data = 10**test_data
+
+    # Extract initial conditions (t=0) for both train and test datasets
+    train_initial_conditions = train_data[:, 0, :]  # Extract t=0 (initial conditions)
+    test_initial_conditions = test_data[:, 0, :]  # Extract t=0 (initial conditions)
 
     # Cap the number of chemicals to plot at 50
-    num_chemicals = min(max_chemicals, 50)
-    initial_conditions = initial_conditions[:, :num_chemicals]
+    num_chemicals = min(max_chemicals, 50, train_initial_conditions.shape[1])
+    train_initial_conditions = train_initial_conditions[:, :num_chemicals]
+    test_initial_conditions = test_initial_conditions[:, :num_chemicals]
+
     chemical_names = (
         chemical_names[:num_chemicals] if chemical_names is not None else None
     )
@@ -244,26 +257,42 @@ def plot_initial_conditions_distribution(
     num_plots = int(np.ceil(num_chemicals / chemicals_per_plot))
 
     # Initialize list to hold log-transformed non-zero initial conditions
-    log_conditions = []
-    zero_counts = 0
+    log_train_conditions = []
+    log_test_conditions = []
+    zero_counts_train = 0
+    zero_counts_test = 0
 
-    # Transform initial conditions to log-space and filter out zeros
+    # Transform data to log-space and filter out zeros
     for i in range(num_chemicals):
-        chemical_conditions = initial_conditions[:, i]
-        non_zero_chemical_conditions = chemical_conditions[chemical_conditions > 0]
-        log_conditions.append(np.log10(non_zero_chemical_conditions))
-        zero_counts += np.sum(chemical_conditions == 0)
+        train_chemical_conditions = train_initial_conditions[:, i]
+        test_chemical_conditions = test_initial_conditions[:, i]
+
+        non_zero_train_chemical_conditions = train_chemical_conditions[
+            train_chemical_conditions > 0
+        ]
+        non_zero_test_chemical_conditions = test_chemical_conditions[
+            test_chemical_conditions > 0
+        ]
+
+        log_train_conditions.append(np.log10(non_zero_train_chemical_conditions))
+        log_test_conditions.append(np.log10(non_zero_test_chemical_conditions))
+
+        zero_counts_train += np.sum(train_chemical_conditions == 0)
+        zero_counts_test += np.sum(test_chemical_conditions == 0)
 
     # Calculate the 1st and 99th percentiles in the log-space
-    min_percentiles = [
-        np.percentile(cond, 1) for cond in log_conditions if len(cond) > 0
-    ]
-    max_percentiles = [
-        np.percentile(cond, 99) for cond in log_conditions if len(cond) > 0
-    ]
+    # min_percentiles = [
+    #     np.percentile(cond, 1) for cond in log_train_conditions if len(cond) > 0
+    # ]
+    # max_percentiles = [
+    #     np.percentile(cond, 99) for cond in log_train_conditions if len(cond) > 0
+    # ]
 
-    global_min = np.min(min_percentiles)
-    global_max = np.max(max_percentiles)
+    min_values = [np.min(cond) for cond in log_train_conditions if len(cond) > 0]
+    max_values = [np.max(cond) for cond in log_train_conditions if len(cond) > 0]
+
+    global_min = np.min(min_values)
+    global_max = np.max(max_values)
 
     # Set up the x-axis range to nearest whole numbers in log-space
     x_min = np.floor(global_min)
@@ -287,16 +316,17 @@ def plot_initial_conditions_distribution(
         end_idx = min((plot_idx + 1) * chemicals_per_plot, num_chemicals)
 
         for i in range(start_idx, end_idx):
-            # Compute histogram in log-space
-            hist, bin_edges = np.histogram(log_conditions[i], bins=x_vals, density=True)
-
+            # Compute histogram for train dataset
+            train_hist, train_bin_edges = np.histogram(
+                log_train_conditions[i], bins=x_vals, density=True
+            )
             # Smooth the histogram with a Gaussian filter
-            smoothed_hist = gaussian_filter1d(hist, sigma=2)
+            train_smoothed_hist = gaussian_filter1d(train_hist, sigma=1)
 
-            # Plot the smoothed histogram
+            # Plot the smoothed histogram for the training data
             ax.plot(
-                10 ** bin_edges[:-1],
-                smoothed_hist,
+                10 ** train_bin_edges[:-1],  # Convert back to original scale
+                train_smoothed_hist,
                 label=(
                     chemical_names[i]
                     if chemical_names is not None and len(chemical_names) > i
@@ -305,24 +335,47 @@ def plot_initial_conditions_distribution(
                 color=colors[i % chemicals_per_plot],
             )
 
+            # Compute histogram for test dataset
+            test_hist, test_bin_edges = np.histogram(
+                log_test_conditions[i], bins=x_vals, density=True
+            )
+            # Smooth the histogram with a Gaussian filter
+            test_smoothed_hist = gaussian_filter1d(test_hist, sigma=1)
+
+            # Plot the smoothed histogram for the test data with dashed line
+            ax.plot(
+                10 ** test_bin_edges[:-1],  # Convert back to original scale
+                test_smoothed_hist,
+                "--",  # Dashed line for test data
+                color=colors[i % chemicals_per_plot],  # Same color as the train plot
+            )
+
         ax.set_yscale("linear")
         ax.set_ylabel("Density (PDF)")
+        ax.set_xlim(10**x_min, 10**x_max)
         if chemical_names is not None:
             ax.legend()
 
     plt.xscale("log")  # Log scale for initial conditions magnitudes
-    plt.xlim(10**x_min, 10**x_max)  # Set x-axis range based on log-space calculations
     plt.xlabel("Initial Condition Magnitude")
     fig.suptitle(
-        f"Initial Condition Distribution per Chemical (Dataset: {dataset_name}, {train_data.shape[0]} samples)"
+        f"Initial Condition Distribution per Chemical (Dataset: {dataset_name}, {train_data.shape[0]} train samples, {test_data.shape[0]} test samples)"
     )
 
     plt.tight_layout(rect=[0, 0, 1, 0.97])
 
-    # Save the plot to the dataset directory
-    save_dir = os.path.join("datasets", dataset_name)
-    os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(save_dir, "initial_conditions_per_quantity.png")
-    plt.savefig(save_path)
+    conf = {
+        "training_id": dataset_name.lower(),  # Use dataset_name as the training_id
+        "verbose": True,
+    }
+
+    save_plot(
+        plt,
+        "IC_distribution.png",
+        conf,
+        dpi=300,
+        base_dir="datasets",
+        increase_count=False,
+    )
 
     plt.close()
