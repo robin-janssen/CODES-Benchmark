@@ -44,6 +44,12 @@ html_theme_options = {
             "icon": "_static/favicon-96x96.png",  # Make sure this is the correct path to the favicon
             "type": "local",
         },
+        {
+            "name": "CODES Paper",
+            "url": "https://arxiv.org/abs/2410.20886",
+            "icon": "fa-solid fa-file-alt",
+            "type": "fontawesome",
+        },
         # {
         #     "name": "Exemplary Badge",
         #     "url": "https://img.shields.io/badge/Exemplary-Yes-brightgreen",
