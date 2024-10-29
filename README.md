@@ -3,14 +3,25 @@
 [![codecov](https://codecov.io/github/robin-janssen/CODES-Benchmark/branch/develop/graph/badge.svg?token=TNF9ISCAJK)](https://codecov.io/github/robin-janssen/CODES-Benchmark)
 ![Static Badge](https://img.shields.io/badge/license-GPLv3-blue)
 
+🎉 CODES was accepted to the ML4PS workshop @ NeurIPS2024 🎉
 
 ## Benchmarking Coupled ODE Surrogates
 
-This repo aims to provide a way of benchmarking surrogate models for coupled ODE systems, as can be found in the context of chemical reaction networks. 
+CODES is a benchmark for coupled ODE surrogate models as can be found in the context of chemical reaction networks.
 
-<img src="docs/_static/favicon-96x96.png" alt="CODES Logo" width="20"/> 
+<picture>
+  <!-- Dark mode SVG -->
+  <source media="(prefers-color-scheme: dark)" srcset="docs/_static/paper-plane-solid-white.svg">
+  <!-- Light mode SVG -->
+  <source media="(prefers-color-scheme: light)" srcset="docs/_static/paper-plane-solid.svg">
+  <!-- Fallback image (light mode by default) -->
+  <img width="14" alt="Paper on arXiv" src="docs/_static/book-solid.svg">
+</picture> A preprint of the paper is now on <a href="https://arxiv.org/abs/2410.20886">arXiV</a> <p></p>
 
-The main documentation can be found on the [CODES website](https://codes-docs.web.app/index.html).
+<picture> 
+<source srcset="docs/_static/favicon-96x96.png">
+<img width="15" alt="CODES Logo" src="docs/_static/favicon-96x96.png">
+</picture> The main documentation can be found on the <a href="https://codes-docs.web.app/index.html">CODES website</a>. <p></p>
 
 <picture>
   <!-- Dark mode SVG -->
@@ -18,10 +29,8 @@ The main documentation can be found on the [CODES website](https://codes-docs.we
   <!-- Light mode SVG -->
   <source media="(prefers-color-scheme: light)" srcset="docs/_static/book-solid.svg">
   <!-- Fallback image (light mode by default) -->
-  <img width="20" alt="CODES API Docs" src="docs/_static/book-solid.svg">
-</picture> 
-
-The technical API documentation is hosted on this [GitHub Page](https://robin-janssen.github.io/CODES-Benchmark/).
+  <img width="14" alt="CODES API Docs" src="docs/_static/book-solid.svg">
+</picture>  The technical API documentation is hosted on this <a href="https://robin-janssen.github.io/CODES-Benchmark/">GitHub Page</a>.
 
 ## Motivation
 
