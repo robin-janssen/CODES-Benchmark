@@ -14,6 +14,9 @@ from codes import check_and_load_data, download_data
 from datasets.data_analysis.data_plots import (
     plot_example_trajectories,
     plot_initial_conditions_distribution,
+    plot_average_gradients_over_time,
+    plot_all_gradients_over_time,
+    plot_all_trajectories_over_time,
 )
 
 
@@ -26,11 +29,11 @@ def main(args):
     download_data(args.dataset)
     (
         full_train_data,
-        full_val_data,
+        _,
         full_test_data,
         timesteps,
         _,
-        data_params,
+        _,
         labels,
     ) = check_and_load_data(
         args.dataset,
@@ -59,6 +62,27 @@ def main(args):
         chemical_names=labels,
         max_chemicals=50,
         log=log,
+    )
+
+    plot_average_gradients_over_time(
+        args.dataset,
+        full_train_data,
+        labels,
+        max_quantities=30,
+    )
+
+    plot_all_gradients_over_time(
+        args.dataset,
+        full_train_data,
+        labels,
+        max_quantities=30,
+    )
+
+    plot_all_trajectories_over_time(
+        args.dataset,
+        full_train_data,
+        labels,
+        max_quantities=30,
     )
 
 

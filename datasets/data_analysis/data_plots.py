@@ -280,14 +280,6 @@ def plot_initial_conditions_distribution(
         zero_counts_train += np.sum(train_chemical_conditions == 0)
         zero_counts_test += np.sum(test_chemical_conditions == 0)
 
-    # Calculate the 1st and 99th percentiles in the log-space
-    # min_percentiles = [
-    #     np.percentile(cond, 1) for cond in log_train_conditions if len(cond) > 0
-    # ]
-    # max_percentiles = [
-    #     np.percentile(cond, 99) for cond in log_train_conditions if len(cond) > 0
-    # ]
-
     min_values = [np.min(cond) for cond in log_train_conditions if len(cond) > 0]
     max_values = [np.max(cond) for cond in log_train_conditions if len(cond) > 0]
 
@@ -375,6 +367,320 @@ def plot_initial_conditions_distribution(
         conf,
         dpi=300,
         base_dir="datasets",
+        increase_count=False,
+    )
+
+    plt.close()
+
+
+def plot_average_gradients_over_time(
+    dataset_name: str,
+    train_data: np.ndarray,
+    chemical_names: list[str] | None = None,
+    max_quantities: int = 10,
+) -> None:
+    """
+    Plot the average gradient of each quantity in the train dataset over time.
+
+    Args:
+        dataset_name (str): The name of the dataset (e.g., "osu2008").
+        train_data (np.ndarray): Training dataset array of shape [n_samples, n_timesteps, n_quantities].
+        chemical_names (list, optional): List of chemical names for labeling the lines.
+        max_quantities (int, optional): Maximum number of quantities to plot. Default is 10.
+    """
+    # Cap the number of quantities to plot at 50
+    num_quantities = min(max_quantities, 50, train_data.shape[2])
+    train_data = train_data[:, :, :num_quantities]
+
+    chemical_names = (
+        chemical_names[:num_quantities] if chemical_names is not None else None
+    )
+
+    # Calculate the gradient for each quantity at each timestep for all samples
+    gradients = np.gradient(train_data, axis=1)  # Calculate gradient along time axis
+
+    # Average the gradients over all samples (axis 0)
+    avg_gradients = np.mean(gradients, axis=0)  # Shape [n_timesteps, n_quantities]
+
+    # Create a time vector assuming timesteps are equally spaced
+    n_timesteps = train_data.shape[1]
+    time = np.arange(n_timesteps)
+
+    # Split the quantities into groups of 10
+    quantities_per_plot = 10
+    num_plots = int(np.ceil(num_quantities / quantities_per_plot))
+
+    # Create subplots with shared x-axis
+    fig, axes = plt.subplots(num_plots, 1, figsize=(10, 4 * num_plots), sharex=True)
+
+    if num_plots == 1:
+        axes = [axes]  # Ensure axes is iterable even if there's only one plot
+
+    # Get custom color palette
+    colors = get_custom_palette(quantities_per_plot)
+
+    # Plot the average gradient for each quantity over time
+    for plot_idx in range(num_plots):
+        ax = axes[plot_idx]
+        start_idx = plot_idx * quantities_per_plot
+        end_idx = min((plot_idx + 1) * quantities_per_plot, num_quantities)
+
+        for i in range(start_idx, end_idx):
+            # Plot the average gradient of the current quantity
+            ax.plot(
+                time,
+                avg_gradients[:, i],
+                label=(
+                    chemical_names[i]
+                    if chemical_names is not None and len(chemical_names) > i
+                    else f"Quantity {i + 1}"
+                ),
+                color=colors[i % quantities_per_plot],
+            )
+
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Average Gradient")
+        if chemical_names is not None:
+            ax.legend()
+
+    fig.suptitle(
+        f"Average Gradient of Each Quantity Over Time (Dataset: {dataset_name})"
+    )
+    plt.tight_layout(rect=[0, 0, 1, 0.97])
+
+    # Saving the plot
+    conf = {
+        "training_id": dataset_name.lower(),  # Use dataset_name as the training_id
+        "verbose": True,
+    }
+
+    save_plot(
+        plt,
+        "average_gradients_over_time.png",  # Save the plot with this name
+        conf,
+        dpi=300,
+        base_dir="datasets",  # Base directory for saving the plot
+        increase_count=False,
+    )
+
+    plt.close()
+
+
+def plot_all_gradients_over_time(
+    dataset_name: str,
+    train_data: np.ndarray,
+    chemical_names: list[str] | None = None,
+    max_quantities: int = 10,
+    spread: float = 0.01,  # Spread for Gaussian noise
+    noise_smoothing: float = 2.0,  # Controls how smooth the noise is along the trajectory
+) -> None:
+    """
+    Plot the average gradient of each quantity in the train dataset over time,
+    with individual sample trajectories shown with low opacity and smooth Gaussian spread.
+
+    Args:
+        dataset_name (str): The name of the dataset (e.g., "osu2008").
+        train_data (np.ndarray): Training dataset array of shape [n_samples, n_timesteps, n_quantities].
+        chemical_names (list, optional): List of chemical names for labeling the lines.
+        max_quantities (int, optional): Maximum number of quantities to plot. Default is 10.
+        spread (float, optional): Spread for adding Gaussian noise to the trajectories. Default is 0.05.
+        noise_smoothing (float, optional): Sigma for smoothing the noise along the trajectory. Default is 2.0.
+    """
+    # Cap the number of quantities to plot at 50
+    num_quantities = min(max_quantities, 50, train_data.shape[2])
+    train_data = train_data[:, :, :num_quantities]
+
+    chemical_names = (
+        chemical_names[:num_quantities] if chemical_names is not None else None
+    )
+
+    # Calculate the gradient for each quantity at each timestep for all samples
+    gradients = np.gradient(
+        train_data, axis=1
+    )  # Shape [n_samples, n_timesteps, n_quantities]
+
+    # Average the gradients over all samples (axis 0)
+    avg_gradients = np.mean(gradients, axis=0)  # Shape [n_timesteps, n_quantities]
+
+    # Create a time vector assuming timesteps are equally spaced
+    n_timesteps = train_data.shape[1]
+    time = np.arange(n_timesteps)
+
+    # Split the quantities into groups of 10
+    quantities_per_plot = 6
+    num_plots = int(np.ceil(num_quantities / quantities_per_plot))
+
+    # Create subplots with shared x-axis
+    fig, axes = plt.subplots(num_plots, 1, figsize=(10, 4 * num_plots), sharex=True)
+
+    if num_plots == 1:
+        axes = [axes]  # Ensure axes is iterable even if there's only one plot
+
+    # Get custom color palette
+    colors = plt.cm.viridis(np.linspace(0, 0.9, quantities_per_plot))
+
+    for plot_idx in range(num_plots):
+        ax = axes[plot_idx]
+        start_idx = plot_idx * quantities_per_plot
+        end_idx = min((plot_idx + 1) * quantities_per_plot, num_quantities)
+
+        for i in range(start_idx, end_idx):
+            # Plot all individual trajectories with low opacity and some smooth Gaussian spread
+            for sample_idx in range(train_data.shape[0]):
+                # Generate smooth Gaussian noise across the trajectory
+                noise = np.random.normal(0, spread, n_timesteps)
+                smooth_noise = gaussian_filter1d(noise, sigma=noise_smoothing)
+
+                # Add smooth noise to the gradient and plot
+                noisy_gradients = gradients[sample_idx, :, i] + smooth_noise
+                ax.plot(
+                    time,
+                    noisy_gradients,
+                    color=colors[i % quantities_per_plot],
+                    alpha=0.01,  # Very low opacity for each individual trajectory
+                )
+
+            # Plot the average gradient of the current quantity
+            ax.plot(
+                time,
+                avg_gradients[:, i],
+                label=(
+                    chemical_names[i]
+                    if chemical_names is not None and len(chemical_names) > i
+                    else f"Quantity {i + 1}"
+                ),
+                color=colors[i % quantities_per_plot],
+                linewidth=2,  # Make the average line more visible
+            )
+
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Gradient")
+        if chemical_names is not None:
+            ax.legend()
+
+    fig.suptitle(
+        f"Average Gradient of Each Quantity Over Time (Dataset: {dataset_name})"
+    )
+    plt.tight_layout(rect=[0, 0, 1, 0.97])
+
+    # Saving the plot
+    conf = {
+        "training_id": dataset_name.lower(),  # Use dataset_name as the training_id
+        "verbose": True,
+    }
+
+    save_plot(
+        plt,
+        "all_gradients_over_time.png",  # Save the plot with this name
+        conf,
+        dpi=300,
+        base_dir="datasets",  # Base directory for saving the plot
+        increase_count=False,
+    )
+
+    plt.close()
+
+
+def plot_all_trajectories_over_time(
+    dataset_name: str,
+    train_data: np.ndarray,
+    chemical_names: list[str] | None = None,
+    max_quantities: int = 10,
+    spread: float = 0.01,  # Spread for Gaussian noise
+) -> None:
+    """
+    Plot the average gradient of each quantity in the train dataset over time,
+    with individual sample trajectories shown with low opacity and some Gaussian spread.
+
+    Args:
+        dataset_name (str): The name of the dataset (e.g., "osu2008").
+        train_data (np.ndarray): Training dataset array of shape [n_samples, n_timesteps, n_quantities].
+        chemical_names (list, optional): List of chemical names for labeling the lines.
+        max_quantities (int, optional): Maximum number of quantities to plot. Default is 10.
+        spread (float, optional): Spread for adding Gaussian noise to the trajectories. Default is 0.05.
+    """
+    # Cap the number of quantities to plot at 50
+    num_quantities = min(max_quantities, 50, train_data.shape[2])
+    train_data = train_data[:, :, :num_quantities]
+
+    chemical_names = (
+        chemical_names[:num_quantities] if chemical_names is not None else None
+    )
+
+    # Average the gradients over all samples (axis 0)
+    avg_trajectories = np.mean(train_data, axis=0)  # Shape [n_timesteps, n_quantities]
+
+    # Create a time vector assuming timesteps are equally spaced
+    n_timesteps = train_data.shape[1]
+    time = np.arange(n_timesteps)
+
+    # Split the quantities into groups of quantities_per_plot
+    quantities_per_plot = 6
+    num_plots = int(np.ceil(num_quantities / quantities_per_plot))
+
+    # Create subplots with shared x-axis
+    fig, axes = plt.subplots(num_plots, 1, figsize=(10, 4 * num_plots), sharex=True)
+
+    if num_plots == 1:
+        axes = [axes]  # Ensure axes is iterable even if there's only one plot
+
+    # Get custom color palette
+    # colors = get_custom_palette(quantities_per_plot)
+    colors = plt.cm.viridis(np.linspace(0, 0.9, quantities_per_plot))
+
+    for plot_idx in range(num_plots):
+        ax = axes[plot_idx]
+        start_idx = plot_idx * quantities_per_plot
+        end_idx = min((plot_idx + 1) * quantities_per_plot, num_quantities)
+
+        for i in range(start_idx, end_idx):
+            # Plot all individual trajectories with low opacity and some Gaussian spread
+            for sample_idx in range(train_data.shape[0]):
+                noisy_gradients = train_data[sample_idx, :, i] + np.random.normal(
+                    0, spread, n_timesteps
+                )
+                ax.plot(
+                    time,
+                    noisy_gradients,
+                    color=colors[i % quantities_per_plot],
+                    alpha=0.01,  # Very low opacity for each individual trajectory
+                )
+
+            # Plot the average gradient of the current quantity
+            ax.plot(
+                time,
+                avg_gradients[:, i],
+                label=(
+                    chemical_names[i]
+                    if chemical_names is not None and len(chemical_names) > i
+                    else f"Quantity {i + 1}"
+                ),
+                color=colors[i % quantities_per_plot],
+                linewidth=2,  # Make the average line more visible
+            )
+
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Gradient")
+        if chemical_names is not None:
+            ax.legend()
+
+    fig.suptitle(
+        f"Average Gradient of Each Quantity Over Time (Dataset: {dataset_name})"
+    )
+    plt.tight_layout(rect=[0, 0, 1, 0.97])
+
+    # Saving the plot
+    conf = {
+        "training_id": dataset_name.lower(),  # Use dataset_name as the training_id
+        "verbose": True,
+    }
+
+    save_plot(
+        plt,
+        "average_gradients_with_trajectories.png",  # Save the plot with this name
+        conf,
+        dpi=300,
+        base_dir="datasets",  # Base directory for saving the plot
         increase_count=False,
     )
 
