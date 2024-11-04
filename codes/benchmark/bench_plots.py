@@ -852,7 +852,7 @@ def plot_loss_comparison(
         zip(train_losses, test_losses, labels)
     ):
         plt.plot(train_loss, label=f"{label} Train Loss", color=colors[i])
-        plt.plot(test_loss, label=f"{label} Test Loss", linestyle="--", color=colors[i])
+        plt.plot(test_loss, label=f"{label} Test Loss", color=colors[i], alpha=0.5)
 
     max_epochs = max(len(loss) for loss in train_losses)
 
@@ -915,7 +915,7 @@ def plot_MAE_comparison_train_duration(
     save: bool = True,
 ) -> None:
     """
-    Plot the MAE for different surrogate models.
+    Plot the MAE for different surrogate models over the course of training.
 
     Args:
         MAE (tuple): Tuple of accuracy arrays for each surrogate model.
@@ -1926,7 +1926,7 @@ def rel_errors_and_uq(
     ax2.set_xlabel("Time")
     ax2.set_xlim(timesteps[0], timesteps[-1])
     # Temp!
-    ax2.set_ylim(0, 0.04)
+    # ax2.set_ylim(0, 0.04)
     ax2.set_ylabel("Uncertainty/Absolute Error")
     ax2.set_title("Comparison of Predictive Uncertainty Over Time")
     ax2.legend(loc="best")
