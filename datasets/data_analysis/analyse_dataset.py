@@ -8,22 +8,15 @@ project_root = os.path.abspath(os.path.join(current_path, "../../"))  # Go up tw
 
 # Add the 'codes' directory to the system path
 codes_path = os.path.join(project_root, "codes")
-print(f"Adding codes path: {codes_path}")
 sys.path.insert(1, codes_path)
-print("Current sys.path:", sys.path)
 
-# Check if the codes directory is accessible
-print("Contents of 'codes' directory:", os.listdir(codes_path))
-
-# codes_path = os.path.join(os.getcwd(), "codes")
-# print(codes_path)
-# sys.path.insert(1, codes_path)
-# print(sys.path)
-
-from codes import check_and_load_data
+from codes import check_and_load_data, download_data
 from datasets.data_analysis.data_plots import (
     plot_example_trajectories,
     plot_initial_conditions_distribution,
+    plot_average_gradients_over_time,
+    plot_all_gradients_over_time,
+    plot_all_trajectories_over_time,
 )
 
 
@@ -33,13 +26,14 @@ def main(args):
     """
     log = True
     # Load full data
+    download_data(args.dataset)
     (
         full_train_data,
+        _,
         full_test_data,
-        full_val_data,
         timesteps,
         _,
-        data_params,
+        _,
         labels,
     ) = check_and_load_data(
         args.dataset,
@@ -53,7 +47,7 @@ def main(args):
         args.dataset,
         full_train_data,
         timesteps,
-        num_chemicals=20,
+        num_chemicals=30,
         save=True,
         labels=labels,
         sample_idx=7,
@@ -62,22 +56,40 @@ def main(args):
 
     # Plot initial conditions distribution
     plot_initial_conditions_distribution(
-        args.dataset, full_train_data, chemical_names=labels, num_chemicals=50
+        args.dataset,
+        full_train_data,
+        full_test_data,
+        chemical_names=labels,
+        max_chemicals=50,
+        log=log,
     )
 
-    # plot_example_trajectories_paper(
-    #     args.dataset,
-    #     full_train_data,
-    #     timesteps,
-    #     save=True,
-    #     labels=labels,
-    # )
+    plot_average_gradients_over_time(
+        args.dataset,
+        full_train_data,
+        labels,
+        max_quantities=30,
+    )
+
+    plot_all_gradients_over_time(
+        args.dataset,
+        full_train_data,
+        labels,
+        max_quantities=30,
+    )
+
+    plot_all_trajectories_over_time(
+        args.dataset,
+        full_train_data,
+        labels,
+        max_quantities=30,
+    )
 
 
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
-        "--dataset", default="simple_ode", type=str, help="Name of the dataset."
+        "--dataset", default="osu2008", type=str, help="Name of the dataset."
     )
     args = parser.parse_args()
     main(args)
