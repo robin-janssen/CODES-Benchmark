@@ -4,7 +4,7 @@ surrogates: ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
 batch_size: [1024, 1024, 128, 128]
 epochs: [1000, 1000, 5000, 15000]
 dataset: 
-  name: "simple_ode"
+  name: "branca_norad"
   log10_transform: True
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True

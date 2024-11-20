@@ -3,8 +3,11 @@ from datetime import timedelta
 
 from tqdm import tqdm
 
-from codes.utils.data_utils import download_data
-from codes.train import create_task_list_for_surrogate, parallel_training, sequential_training
+from codes.train import (
+    create_task_list_for_surrogate,
+    parallel_training,
+    sequential_training,
+)
 from codes.utils import (
     check_training_status,
     load_and_save_config,
@@ -12,6 +15,7 @@ from codes.utils import (
     nice_print,
     save_task_list,
 )
+from codes.utils.data_utils import download_data
 
 
 def main(args):
@@ -28,7 +32,10 @@ def main(args):
     download_data(config["dataset"]["name"])
     task_list_filepath, copy_config = check_training_status(config)
     if copy_config:
-        load_and_save_config(config_path=args.config, save=True)
+        config = load_and_save_config(config_path=args.config, save=True)
+    else:
+        previous_config_path = f"trained/{config['training_id']}/config.yaml"
+        config = load_and_save_config(config_path=previous_config_path, save=False)
     tasks = load_task_list(task_list_filepath)
 
     if not tasks:

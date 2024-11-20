@@ -9,14 +9,15 @@ project_root = os.path.abspath(os.path.join(current_path, "../../"))  # Go up tw
 # Add the 'codes' directory to the system path
 codes_path = os.path.join(project_root, "codes")
 sys.path.insert(1, codes_path)
+print(sys.path)
 
 from codes import check_and_load_data, download_data
 from datasets.data_analysis.data_plots import (
-    plot_example_trajectories,
-    plot_initial_conditions_distribution,
-    plot_average_gradients_over_time,
     plot_all_gradients_over_time,
     plot_all_trajectories_over_time,
+    plot_average_gradients_over_time,
+    plot_example_trajectories,
+    plot_initial_conditions_distribution,
 )
 
 
@@ -41,6 +42,8 @@ def main(args):
         log=log,
         normalisation_mode="disable",
     )
+
+    print(timesteps)
 
     # Plot example trajectories
     plot_example_trajectories(
@@ -89,7 +92,7 @@ def main(args):
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
-        "--dataset", default="osu2008", type=str, help="Name of the dataset."
+        "--dataset", default="branca_norad", type=str, help="Name of the dataset."
     )
     args = parser.parse_args()
     main(args)

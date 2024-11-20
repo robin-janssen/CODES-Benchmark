@@ -649,7 +649,7 @@ def plot_all_trajectories_over_time(
             # Plot the average gradient of the current quantity
             ax.plot(
                 time,
-                avg_gradients[:, i],
+                avg_trajectories[:, i],
                 label=(
                     chemical_names[i]
                     if chemical_names is not None and len(chemical_names) > i

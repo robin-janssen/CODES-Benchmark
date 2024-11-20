@@ -7,7 +7,7 @@ from codes.benchmark import (
     get_surrogate,
     run_benchmark,
 )
-from codes.utils import nice_print, read_yaml_config
+from codes.utils import download_data, nice_print, read_yaml_config
 
 
 def main(args):
@@ -22,6 +22,7 @@ def main(args):
 
     config = read_yaml_config(args.config)
     check_benchmark(config)
+    download_data(config["dataset"]["name"])
     surrogates = config["surrogates"]
     # Create dictionary to store metrics for all surrogate models
     all_metrics = {surrogate: {} for surrogate in surrogates}
