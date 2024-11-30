@@ -17,6 +17,7 @@ from datasets.data_analysis.data_plots import (
     plot_all_trajectories_over_time,
     plot_average_gradients_over_time,
     plot_example_trajectories,
+    plot_example_trajectories_poster,
     plot_initial_conditions_distribution,
 )
 
@@ -57,6 +58,15 @@ def main(args):
         log=log,
     )
 
+    plot_example_trajectories_poster(
+        args.dataset,
+        full_train_data,
+        timesteps,
+        save=True,
+        labels=labels,
+        sample_idx=7,
+    )
+
     # Plot initial conditions distribution
     plot_initial_conditions_distribution(
         args.dataset,
@@ -92,7 +102,7 @@ def main(args):
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
-        "--dataset", default="branca_norad", type=str, help="Name of the dataset."
+        "--dataset", default="osu2008", type=str, help="Name of the dataset."
     )
     args = parser.parse_args()
     main(args)

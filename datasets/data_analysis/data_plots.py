@@ -215,6 +215,143 @@ def plot_example_trajectories_paper(
     plt.show()
 
 
+def plot_example_trajectories_poster(
+    dataset_name: str,
+    data: np.ndarray,
+    timesteps: np.ndarray,
+    save: bool = False,
+    sample_idx: int = 0,
+    labels: list[str] | None = None,
+) -> None:
+    """
+    Plot example trajectories for the dataset with two subplots, one showing 15 chemicals and another showing the remaining.
+
+    Args:
+        dataset_name (str): The name of the dataset.
+        data (np.ndarray): The data to plot.
+        timesteps (np.ndarray): Timesteps array.
+        save (bool, optional): Whether to save the plot as a file.
+        sample_idx (int, optional): Index of the sample to plot.
+        labels (list, optional): List of labels for the chemicals.
+    """
+    # Ensure we are plotting the correct sample
+    data = data[sample_idx]
+
+    # Define the number of chemicals per subplot
+    total_chemicals = data.shape[1]
+    num_chemicals_subplots = [
+        total_chemicals // 2,
+        total_chemicals - total_chemicals // 2,
+    ]
+
+    # Ensure the labels list matches the number of chemicals
+    if labels is not None:
+        assert (
+            len(labels) == total_chemicals
+        ), "Labels must match the number of chemicals."
+
+    # Create subplots
+    fig, (ax1, ax2) = plt.subplots(
+        1, 2, figsize=(10, 4), sharey=True
+    )  # Reduced horizontal width
+
+    # Define color palettes
+    colors1 = plt.cm.viridis(
+        np.linspace(0, 0.95, num_chemicals_subplots[0])
+    )  # First 15 chemicals
+    colors2 = plt.cm.viridis(
+        np.linspace(0, 0.95, num_chemicals_subplots[1])
+    )  # Remaining 14 chemicals
+
+    # Plot first set of chemicals on ax1
+    for chem_idx in range(num_chemicals_subplots[0]):
+        color = colors1[chem_idx]
+        gt = data[:, chem_idx]
+        label = labels[chem_idx] if labels is not None else f"Chemical {chem_idx + 1}"
+        ax1.plot(timesteps, gt, "-", color=color, label=label)
+
+    # Plot second set of chemicals on ax2
+    for chem_idx in range(num_chemicals_subplots[0], total_chemicals):
+        color = colors2[chem_idx - num_chemicals_subplots[0]]
+        gt = data[:, chem_idx]
+        label = labels[chem_idx] if labels is not None else f"Chemical {chem_idx + 1}"
+        ax2.plot(timesteps, gt, "-", color=color, label=label)
+
+    # Set labels and title
+    ax1.set_xlabel("Time", fontsize=12)  # Increased font size
+    ax1.set_ylabel("log(Chemical Abundance)", fontsize=12)  # Increased font size
+    ax2.set_xlabel("Time", fontsize=12)  # Increased font size
+
+    # Remove individual subplot titles and add a global title
+    fig.suptitle(
+        r"Example Trajectories: $\tt{osu2008}$ Dataset", fontsize=14
+    )  # Slightly larger title
+    # fig.subplots_adjust(wspace=0.05)  # Adjust space between subplots
+
+    # Place the legend of the left plot between the two subplots
+    handles1, labels1 = ax1.get_legend_handles_labels()
+    ax1.legend(
+        handles1,
+        labels1,
+        loc="center left",
+        bbox_to_anchor=(1, 0.5),
+        ncol=1,
+        frameon=False,
+        fontsize=10,  # Increased font size for legend
+    )
+
+    # Legend for the second plot can stay outside on the right if needed
+    handles2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(
+        handles2,
+        labels2,
+        loc="center left",
+        bbox_to_anchor=(1, 0.5),
+        ncol=1,
+        frameon=False,
+        fontsize=10,  # Increased font size for legend
+    )
+
+    # Add grid to both subplots
+    ax1.grid(True)
+    ax2.grid(True)
+
+    # Set x-axis limits tightly
+    for ax in [ax1, ax2]:
+        ax.set_xlim(timesteps.min(), timesteps.max())
+
+    # Remove tick marks but keep labels and gridlines
+    ax1.tick_params(
+        axis="both", which="both", length=0, labelsize=10
+    )  # Adjust tick label size
+    ax2.tick_params(
+        axis="both", which="both", length=0, labelsize=10
+    )  # Adjust tick label size
+
+    # Adjust layout to make room for the legend between the subplots
+    plt.tight_layout(rect=[0, 0, 1, 1])  # Adjust the rect parameter
+
+    # Save the plot if required
+    if save:
+        # Create a dummy conf dictionary
+        conf = {
+            "training_id": dataset_name.lower(),  # Use dataset_name as the training_id
+            "verbose": True,
+        }
+
+        # Call save_plot with the dummy conf
+        save_plot(
+            plt,
+            "example_trajectories_poster.png",
+            conf,
+            dpi=300,
+            base_dir="datasets",
+            increase_count=False,
+        )
+
+    plt.show()
+
+
 def plot_initial_conditions_distribution(
     dataset_name: str,
     train_data: np.ndarray,
