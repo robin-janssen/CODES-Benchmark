@@ -593,7 +593,7 @@ def plot_average_gradients_over_time(
 
     save_plot(
         plt,
-        "average_gradients_over_time.png",  # Save the plot with this name
+        "average_gradients.png",  # Save the plot with this name
         conf,
         dpi=300,
         base_dir="datasets",  # Base directory for saving the plot
@@ -623,6 +623,10 @@ def plot_all_gradients_over_time(
         spread (float, optional): Spread for adding Gaussian noise to the trajectories. Default is 0.05.
         noise_smoothing (float, optional): Sigma for smoothing the noise along the trajectory. Default is 2.0.
     """
+    # Ensure that no more than 1000 trajectories are plotted
+    if train_data.shape[0] > 1000:
+        factor = (train_data.shape[0] // 1000) + 1
+        train_data = train_data[::factor]
     # Cap the number of quantities to plot at 50
     num_quantities = min(max_quantities, 50, train_data.shape[2])
     train_data = train_data[:, :, :num_quantities]
@@ -693,7 +697,7 @@ def plot_all_gradients_over_time(
         ax.set_xlabel("Time")
         ax.set_ylabel("Gradient")
         if chemical_names is not None:
-            ax.legend()
+            ax.legend(loc="upper right")
 
     fig.suptitle(
         f"Average Gradient of Each Quantity Over Time (Dataset: {dataset_name})"
@@ -708,7 +712,7 @@ def plot_all_gradients_over_time(
 
     save_plot(
         plt,
-        "all_gradients_over_time.png",  # Save the plot with this name
+        "all_gradients.png",  # Save the plot with this name
         conf,
         dpi=300,
         base_dir="datasets",  # Base directory for saving the plot
@@ -736,6 +740,10 @@ def plot_all_trajectories_over_time(
         max_quantities (int, optional): Maximum number of quantities to plot. Default is 10.
         spread (float, optional): Spread for adding Gaussian noise to the trajectories. Default is 0.05.
     """
+    # Ensure that no more than 1000 trajectories are plotted
+    if train_data.shape[0] > 1000:
+        factor = (train_data.shape[0] // 1000) + 1
+        train_data = train_data[::factor]
     # Cap the number of quantities to plot at 50
     num_quantities = min(max_quantities, 50, train_data.shape[2])
     train_data = train_data[:, :, :num_quantities]
@@ -799,7 +807,7 @@ def plot_all_trajectories_over_time(
         ax.set_xlabel("Time")
         ax.set_ylabel("Gradient")
         if chemical_names is not None:
-            ax.legend()
+            ax.legend(loc="upper right")
 
     fig.suptitle(
         f"Average Gradient of Each Quantity Over Time (Dataset: {dataset_name})"
@@ -814,7 +822,7 @@ def plot_all_trajectories_over_time(
 
     save_plot(
         plt,
-        "average_gradients_with_trajectories.png",  # Save the plot with this name
+        "all_trajectories.png",  # Save the plot with this name
         conf,
         dpi=300,
         base_dir="datasets",  # Base directory for saving the plot

@@ -616,8 +616,8 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
         n_models = conf["uncertainty"]["ensemble_size"]
         uq_train_losses = [main_train_loss]
         uq_test_losses = [main_test_loss]
-        for i in range(1, n_models):
-            train_loss, test_loss = load_losses(f"{surr_name.lower()}_UQ_{i}")
+        for i in range(n_models - 1):
+            train_loss, test_loss = load_losses(f"{surr_name.lower()}_UQ_{i+2}")
             uq_train_losses.append(train_loss)
             uq_test_losses.append(test_loss)
         plot_losses(

@@ -722,7 +722,7 @@ def evaluate_UQ(
     all_predictions = []
     for i in range(n_models):
         model_id = (
-            f"{surr_name.lower()}_main" if i == 0 else f"{surr_name.lower()}_UQ_{i}"
+            f"{surr_name.lower()}_main" if i == 0 else f"{surr_name.lower()}_UQ_{i+1}"
         )
         model.load(training_id, surr_name, model_identifier=model_id)
         preds, targets = model.predict(data_loader=test_loader)

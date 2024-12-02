@@ -12,12 +12,11 @@ sys.path.insert(1, codes_path)
 print(sys.path)
 
 from codes import check_and_load_data, download_data
-from datasets.data_analysis.data_plots import (
+from datasets.data_analysis.data_plots import (  # plot_example_trajectories_poster,
     plot_all_gradients_over_time,
     plot_all_trajectories_over_time,
     plot_average_gradients_over_time,
     plot_example_trajectories,
-    plot_example_trajectories_poster,
     plot_initial_conditions_distribution,
 )
 
@@ -44,8 +43,6 @@ def main(args):
         normalisation_mode="disable",
     )
 
-    print(timesteps)
-
     # Plot example trajectories
     plot_example_trajectories(
         args.dataset,
@@ -58,14 +55,14 @@ def main(args):
         log=log,
     )
 
-    plot_example_trajectories_poster(
-        args.dataset,
-        full_train_data,
-        timesteps,
-        save=True,
-        labels=labels,
-        sample_idx=7,
-    )
+    # plot_example_trajectories_poster(
+    #     args.dataset,
+    #     full_train_data,
+    #     timesteps,
+    #     save=True,
+    #     labels=labels,
+    #     sample_idx=7,
+    # )
 
     # Plot initial conditions distribution
     plot_initial_conditions_distribution(
@@ -102,7 +99,7 @@ def main(args):
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
-        "--dataset", default="osu2008", type=str, help="Name of the dataset."
+        "--dataset", default="simple_reaction", type=str, help="Name of the dataset."
     )
     args = parser.parse_args()
     main(args)
