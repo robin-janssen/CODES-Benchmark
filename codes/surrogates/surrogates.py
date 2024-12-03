@@ -324,7 +324,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         model_dict = torch.load(
             model_dict_path, map_location=self.device, weights_only=False
         )
-        self.load_state_dict(model_dict["state_dict"]) 
+        self.load_state_dict(model_dict["state_dict"])
         for key, value in model_dict["attributes"].items():
             # remove self.device from the attributes
             if key == "device":

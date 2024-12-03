@@ -1,16 +1,16 @@
 # Global settings for the benchmark
 training_id: "brancanorad_fcnn"
 surrogates: ["FullyConnected"]
-batch_size: [128]
-epochs: [5000]
+batch_size: [1024]
+epochs: [30]
 dataset: 
   name: "branca_norad"
   log10_transform: True
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
   tolerance: 1e-30
-  subset_factor: 8
-devices: ["cuda:3"]
+  subset_factor: 1
+devices: ["cuda:4"]
 seed: 42
 verbose: False
 
