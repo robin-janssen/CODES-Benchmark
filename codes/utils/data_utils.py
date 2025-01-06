@@ -5,6 +5,7 @@ from math import isclose
 import h5py
 import numpy as np
 import yaml
+from tqdm import tqdm
 
 
 class DatasetError(Exception):
@@ -20,7 +21,7 @@ def check_and_load_data(
     verbose: bool = True,
     log: bool = True,
     normalisation_mode: str = "standardise",
-    tolerance: float | None = 1e-20,
+    tolerance: float | None = 1e-30,
 ):
     """
     Check the specified dataset and load the data based on the mode (train or test).
@@ -459,9 +460,23 @@ def create_dataset(
     print(f"Dataset '{name}' created at {dataset_dir}")
 
 
+class DownloadProgressBar(tqdm):
+    def update_to(self, b=1, bsize=1, tsize=None):
+        """
+        Update the progress bar.
+        Args:
+            b (int, optional): Number of blocks transferred so far. Default is 1.
+            bsize (int, optional): Size of each block (in tqdm units). Default is 1.
+            tsize (int, optional): Total size (in tqdm units). Default is None.
+        """
+        if tsize is not None:
+            self.total = tsize
+        self.update(b * bsize - self.n)
+
+
 def download_data(dataset_name: str, path: str | None = None):
     """
-    Download the specified dataset if it is not present
+    Download the specified dataset if it is not present, with a progress bar.
     Args:
         dataset_name (str): The name of the dataset.
         path (str, optional): The path to save the dataset. If None, the default data directory is used.
@@ -472,6 +487,7 @@ def download_data(dataset_name: str, path: str | None = None):
         else os.path.abspath(path)
     )
     if os.path.isfile(data_path):
+        print(f"Dataset '{dataset_name}' already exists at {data_path}.")
         return
 
     with open("datasets/data_sources.yaml", "r", encoding="utf-8") as file:
@@ -487,5 +503,8 @@ def download_data(dataset_name: str, path: str | None = None):
     os.makedirs(os.path.dirname(data_path), exist_ok=True)
 
     print(f"Downloading dataset '{dataset_name}'...")
-    urllib.request.urlretrieve(url, data_path)
+    with DownloadProgressBar(
+        unit="B", unit_scale=True, miniters=1, desc=f"Downloading {dataset_name}"
+    ) as t:
+        urllib.request.urlretrieve(url, data_path, reporthook=t.update_to)
     print(f"Dataset '{dataset_name}' downloaded successfully.")

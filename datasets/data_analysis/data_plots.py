@@ -805,12 +805,12 @@ def plot_all_trajectories_over_time(
             )
 
         ax.set_xlabel("Time")
-        ax.set_ylabel("Gradient")
+        ax.set_ylabel("log(Chemical Abundance)")
         if chemical_names is not None:
             ax.legend(loc="upper right")
 
     fig.suptitle(
-        f"Average Gradient of Each Quantity Over Time (Dataset: {dataset_name})"
+        f"Overview over Trajectories for each Quantity over Time (Dataset: {dataset_name})"
     )
     plt.tight_layout(rect=[0, 0, 1, 0.97])
 

@@ -99,7 +99,7 @@ def main(args):
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
-        "--dataset", default="simple_reaction", type=str, help="Name of the dataset."
+        "--dataset", default="branca_large_kyr", type=str, help="Name of the dataset."
     )
     args = parser.parse_args()
     main(args)

@@ -216,7 +216,7 @@ def get_required_models_list(surrogate: str, conf: dict) -> list:
     if conf["uncertainty"]["enabled"]:
         n_models = conf["uncertainty"]["ensemble_size"]
         required_models.extend(
-            [f"{surrogate.lower()}_UQ_{i+2}.pth" for i in range(n_models - 1)]
+            [f"{surrogate.lower()}_UQ_{i+1}.pth" for i in range(n_models - 1)]
         )
 
     return required_models
