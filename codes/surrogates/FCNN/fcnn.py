@@ -160,7 +160,8 @@ class FullyConnected(AbstractSurrogateModel):
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
 
         criterion = nn.MSELoss(reduction="sum")
-        optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
+        # optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
+        optimizer = self.setup_optimizer_and_scheduler()
 
         train_losses, test_losses, MAEs = [np.zeros(epochs) for _ in range(3)]
 
@@ -172,7 +173,7 @@ class FullyConnected(AbstractSurrogateModel):
             clr = optimizer.param_groups[0]["lr"]
             print_loss = f"{train_losses[epoch].item():.2e}"
             progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
-            scheduler.step()
+            # scheduler.step()
 
             if test_loader is not None:
                 self.eval()

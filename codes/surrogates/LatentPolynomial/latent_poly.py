@@ -141,6 +141,7 @@ class LatentPoly(AbstractSurrogateModel):
         optimizer = AdamWScheduleFree(
             self.model.parameters(), lr=self.config.learning_rate
         )
+        optimizer.train()
 
         losses = torch.empty((epochs, len(train_loader)))
         test_losses = torch.empty((epochs))

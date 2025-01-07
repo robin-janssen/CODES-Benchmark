@@ -152,6 +152,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
             self.model.parameters(),
             lr=self.config.learning_rate,
         )
+        optimizer.train()
 
         scheduler = None
         if self.config.final_learning_rate is not None:

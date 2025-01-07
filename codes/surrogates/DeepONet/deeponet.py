@@ -302,7 +302,8 @@ class MultiONet(OperatorNetwork):
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
 
         criterion = self.setup_criterion()
-        optimizer = self.setup_optimizer_and_scheduler(epochs)
+        # optimizer = self.setup_optimizer_and_scheduler(epochs)
+        optimizer = self.setup_optimizer_and_scheduler()
 
         train_losses, test_losses, MAEs = [np.zeros(epochs) for _ in range(3)]
 
