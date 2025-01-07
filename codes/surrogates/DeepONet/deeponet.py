@@ -377,7 +377,7 @@ class MultiONet(OperatorNetwork):
         # return optimizer, scheduler
         optimizer = AdamWScheduleFree(
             self.parameters(),
-            lr=self.config.learning_rate,
+            lr=self.config.learning_rate, 
         )
         return optimizer
 
