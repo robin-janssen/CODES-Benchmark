@@ -1,12 +1,16 @@
 import numpy as np
 import torch
+from schedulefree import AdamWScheduleFree
 from torch import nn
-from torch.optim import Adam
+
+# from torch.optim import Adam
 from torch.utils.data import DataLoader
 
 from codes.surrogates.LatentNeuralODE.latent_neural_ode import Decoder, Encoder
 from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
-from codes.surrogates.LatentPolynomial.latent_poly_config import LatentPolynomialBaseConfig
+from codes.surrogates.LatentPolynomial.latent_poly_config import (
+    LatentPolynomialBaseConfig,
+)
 from codes.surrogates.surrogates import AbstractSurrogateModel
 from codes.utils import time_execution
 
@@ -133,7 +137,10 @@ class LatentPoly(AbstractSurrogateModel):
             position (int): The position of the progress bar.
             description (str): The description for the progress bar.
         """
-        optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
+        # optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
+        optimizer = AdamWScheduleFree(
+            self.model.parameters(), lr=self.config.learning_rate
+        )
 
         losses = torch.empty((epochs, len(train_loader)))
         test_losses = torch.empty((epochs))
@@ -161,8 +168,10 @@ class LatentPoly(AbstractSurrogateModel):
 
             with torch.inference_mode():
                 self.model.eval()
+                optimizer.eval()
                 preds, targets = self.predict(test_loader)
                 self.model.train()
+                optimizer.train()
                 loss = self.model.total_loss(preds, targets)
                 test_losses[epoch] = loss
                 MAEs[epoch] = self.L1(preds, targets).item()

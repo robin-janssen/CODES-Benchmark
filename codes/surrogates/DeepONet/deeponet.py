@@ -3,13 +3,13 @@ from typing import TypeVar
 import numpy as np
 import torch
 import torch.nn as nn
+from schedulefree import AdamWScheduleFree
 from torch.utils.data import DataLoader, TensorDataset
 
-# Use the below import to adjust the config class to the specific model
-from .deeponet_config import MultiONetBaseConfig
 from codes.surrogates.surrogates import AbstractSurrogateModel
 from codes.utils import time_execution, worker_init_fn
 
+from .deeponet_config import MultiONetBaseConfig
 from .don_utils import mass_conservation_loss
 
 
@@ -302,7 +302,7 @@ class MultiONet(OperatorNetwork):
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
 
         criterion = self.setup_criterion()
-        optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
+        optimizer = self.setup_optimizer_and_scheduler(epochs)
 
         train_losses, test_losses, MAEs = [np.zeros(epochs) for _ in range(3)]
 
@@ -314,9 +314,11 @@ class MultiONet(OperatorNetwork):
             clr = optimizer.param_groups[0]["lr"]
             print_loss = f"{train_losses[epoch].item():.2e}"
             progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
-            scheduler.step()
+            # scheduler.step()
 
             if test_loader is not None:
+                self.eval()
+                optimizer.eval()
                 preds, targets = self.predict(test_loader)
                 test_losses[epoch] = criterion(preds, targets).item() / torch.numel(
                     targets
@@ -346,8 +348,9 @@ class MultiONet(OperatorNetwork):
 
     def setup_optimizer_and_scheduler(
         self,
-        epochs: int,
-    ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
+        # epochs: int,
+        # ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
+    ) -> torch.optim.Optimizer:
         """
         Utility function to set up the optimizer and scheduler for training.
 
@@ -357,20 +360,25 @@ class MultiONet(OperatorNetwork):
         Returns:
             tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler): The optimizer and scheduler.
         """
-        optimizer = torch.optim.Adam(
+        # optimizer = torch.optim.Adam(
+        #     self.parameters(),
+        #     lr=self.config.learning_rate,
+        #     weight_decay=self.config.regularization_factor,
+        # )
+        # if self.config.schedule:
+        #     scheduler = torch.optim.lr_scheduler.LinearLR(
+        #         optimizer, start_factor=1, end_factor=0.3, total_iters=epochs
+        #     )
+        # else:
+        #     scheduler = torch.optim.lr_scheduler.LinearLR(
+        #         optimizer, start_factor=1, end_factor=1, total_iters=epochs
+        #     )
+        # return optimizer, scheduler
+        optimizer = AdamWScheduleFree(
             self.parameters(),
             lr=self.config.learning_rate,
-            weight_decay=self.config.regularization_factor,
         )
-        if self.config.schedule:
-            scheduler = torch.optim.lr_scheduler.LinearLR(
-                optimizer, start_factor=1, end_factor=0.3, total_iters=epochs
-            )
-        else:
-            scheduler = torch.optim.lr_scheduler.LinearLR(
-                optimizer, start_factor=1, end_factor=1, total_iters=epochs
-            )
-        return optimizer, scheduler
+        return optimizer
 
     def epoch(
         self,
@@ -390,6 +398,7 @@ class MultiONet(OperatorNetwork):
             float: The total loss for the training step.
         """
         self.train()
+        optimizer.train()
         total_loss = 0
         dataset_size = len(data_loader.dataset)
 

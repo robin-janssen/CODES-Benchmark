@@ -1602,6 +1602,16 @@ socks = ["PySocks (>=1.5.6,!=1.5.7)"]
 use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
+name = "schedulefree"
+version = "1.4"
+description = "Schedule Free Learning in PyTorch"
+optional = false
+python-versions = ">=3.4"
+files = [
+    {file = "schedulefree-1.4.tar.gz", hash = "sha256:59b7ec9ac0f714730cbcdde435b7d9b415d3fc3c5d2133e0f124e07aba4ba86a"},
+]
+
+[[package]]
 name = "scipy"
 version = "1.14.1"
 description = "Fundamental algorithms for scientific computing in Python"
@@ -2126,4 +2136,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "018e36d17c7f7e7f8cadbee23847a89c965230abe1e05b121dcb2b2488232965"
+content-hash = "4cf663207aafae725bc1913cfeca184dc2ba3fb51acb728d726ef9acd88f68be"

@@ -2,6 +2,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from schedulefree import AdamWScheduleFree
 from torch.utils.data import DataLoader, TensorDataset
 
 from codes.surrogates.FCNN.fcnn_config import FCNNBaseConfig
@@ -174,6 +175,8 @@ class FullyConnected(AbstractSurrogateModel):
             scheduler.step()
 
             if test_loader is not None:
+                self.eval()
+                optimizer.eval()
                 preds, targets = self.predict(test_loader)
                 test_losses[epoch] = criterion(preds, targets).item() / torch.numel(
                     targets
@@ -188,8 +191,9 @@ class FullyConnected(AbstractSurrogateModel):
 
     def setup_optimizer_and_scheduler(
         self,
-        epochs: int,
-    ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
+        # epochs: int,
+        # ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
+    ) -> torch.optim.Optimizer:
         """
         Utility function to set up the optimizer and scheduler for training.
 
@@ -199,26 +203,25 @@ class FullyConnected(AbstractSurrogateModel):
         Returns:
             tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler): The optimizer and scheduler.
         """
-        optimizer = torch.optim.Adam(
+        # optimizer = torch.optim.Adam(
+        #     self.parameters(),
+        #     lr=self.config.learning_rate,
+        #     weight_decay=self.config.regularization_factor,
+        # )
+        # if self.config.schedule:
+        #     scheduler = torch.optim.lr_scheduler.LinearLR(
+        #         optimizer, start_factor=1, end_factor=0.3, total_iters=epochs
+        #     )
+        # else:
+        #     scheduler = torch.optim.lr_scheduler.LinearLR(
+        #         optimizer, start_factor=1, end_factor=1, total_iters=epochs
+        #     )
+        # return optimizer, scheduler
+        optimizer = AdamWScheduleFree(
             self.parameters(),
             lr=self.config.learning_rate,
-            weight_decay=self.config.regularization_factor,
         )
-        if self.config.schedule:
-            scheduler = torch.optim.lr_scheduler.LinearLR(
-                optimizer,
-                start_factor=1,
-                end_factor=0.3,
-                total_iters=epochs,
-            )
-        else:
-            scheduler = torch.optim.lr_scheduler.LinearLR(
-                optimizer,
-                start_factor=1,
-                end_factor=1,
-                total_iters=epochs,
-            )
-        return optimizer, scheduler
+        return optimizer
 
     def epoch(
         self,
@@ -238,6 +241,7 @@ class FullyConnected(AbstractSurrogateModel):
             float: The total loss for the training step.
         """
         self.train()
+        optimizer.train()
         total_loss = 0
         dataset_size = len(data_loader.dataset)
 

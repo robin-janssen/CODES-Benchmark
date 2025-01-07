@@ -1,7 +1,9 @@
 import numpy as np
 import torch
 import torchode as to
-from torch.optim import Adam
+from schedulefree import AdamWScheduleFree
+
+# from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 
@@ -145,7 +147,11 @@ class LatentNeuralODE(AbstractSurrogateModel):
             position (int): The position of the progress bar.
             description (str): The description for the progress bar.
         """
-        optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
+        # optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
+        optimizer = AdamWScheduleFree(
+            self.model.parameters(),
+            lr=self.config.learning_rate,
+        )
 
         scheduler = None
         if self.config.final_learning_rate is not None:
@@ -181,8 +187,10 @@ class LatentNeuralODE(AbstractSurrogateModel):
 
             with torch.inference_mode():
                 self.model.eval()
+                optimizer.eval()
                 preds, targets = self.predict(test_loader)
                 self.model.train()
+                optimizer.train()
                 loss = self.model.total_loss(preds, targets)
                 test_losses[epoch] = loss
                 MAEs[epoch] = self.L1(preds, targets).item()
