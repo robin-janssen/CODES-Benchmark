@@ -22,9 +22,8 @@ class LatentNeuralODEConfig:
     latent_features: int = 9
     layers_factor: int = 46
     learning_rate: float = 0.005  # before SF: 0.005
-    ode_activation: nn.Module = nn.Softplus()
     ode_tanh_reg: bool = False
-    coder_activation: nn.Module = nn.ReLU()
+    activation: nn.Module = nn.ReLU()
 
 
 @dataclass
@@ -45,4 +44,4 @@ class LatentPolyConfig:
     degree: int = 6
     learning_rate: float = 0.002  # before SF: 0.002
     layers_factor: int = 50
-    coder_activation: nn.Module = nn.ReLU()
+    activation: nn.Module = nn.ReLU()

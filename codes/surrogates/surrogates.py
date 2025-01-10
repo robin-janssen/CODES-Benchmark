@@ -1,6 +1,7 @@
 import dataclasses
 import os
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Any, TypeVar
 
 import numpy as np
@@ -102,6 +103,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         self.L1 = nn.L1Loss()
         self.config = config if config is not None else {}
         self.train_duration = None
+        self.optuna_trial = None
 
     @abstractmethod
     def forward(self, inputs: Any) -> tuple[Tensor, Tensor]:
@@ -258,6 +260,10 @@ class AbstractSurrogateModel(ABC, nn.Module):
                 if attr == "n_timesteps":
                     delattr(self, attr)
 
+        # Remove optuna_trial from the class attributes
+        if hasattr(self, "optuna_trial"):
+            hyperparameters.pop("optuna_trial", None)
+
         # Add some additional information to the model and hyperparameters
         self.train_duration = (
             self.fit.duration if hasattr(self.fit, "duration") else None
@@ -265,6 +271,13 @@ class AbstractSurrogateModel(ABC, nn.Module):
         hyperparameters["train_duration"] = self.train_duration
         self.normalisation = data_params
         hyperparameters["normalisation"] = data_params
+        hyperparameters["device"] = self.device
+        if "cuda" in self.device:
+            devinfo = torch.cuda.get_device_properties(self.device)
+            hyperparameters["device_info"] = (
+                f"{devinfo.name} ({devinfo.total_memory / 1e9:.2f}GB), CUDA {devinfo.major}.{devinfo.minor}"
+            )
+        hyperparameters["date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Reduce the precision of the losses and accuracy
         for attribute in ["train_loss", "test_loss", "MAE"]:

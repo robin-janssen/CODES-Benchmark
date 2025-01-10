@@ -53,7 +53,7 @@ def main(args):
     else:
         tqdm.write(f"Training models sequentially on device {device_list[0]}")
         elapsed_time = sequential_training(tasks, device_list, task_list_filepath)
-
+ 
     print("\n")
     nice_print("Training completed")
 

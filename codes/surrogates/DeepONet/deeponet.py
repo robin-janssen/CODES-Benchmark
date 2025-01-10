@@ -1,6 +1,7 @@
 from typing import TypeVar
 
 import numpy as np
+import optuna
 import torch
 import torch.nn as nn
 from schedulefree import AdamWScheduleFree
@@ -321,10 +322,14 @@ class MultiONet(OperatorNetwork):
                 self.eval()
                 optimizer.eval()
                 preds, targets = self.predict(test_loader)
-                test_losses[epoch] = criterion(preds, targets).item() / torch.numel(
-                    targets
-                )
+                loss = criterion(preds, targets).item() / torch.numel(targets)
+                test_losses[epoch] = loss
                 MAEs[epoch] = self.L1(preds, targets).item()
+
+                if self.optuna_trial is not None:
+                    self.optuna_trial.report(loss, epoch)
+                    if self.optuna_trial.should_prune():
+                        raise optuna.TrialPruned()
 
         progress_bar.close()
 
@@ -375,10 +380,7 @@ class MultiONet(OperatorNetwork):
         #         optimizer, start_factor=1, end_factor=1, total_iters=epochs
         #     )
         # return optimizer, scheduler
-        optimizer = AdamWScheduleFree(
-            self.parameters(),
-            lr=self.config.learning_rate, 
-        )
+        optimizer = AdamWScheduleFree(self.parameters(), lr=self.config.learning_rate)
         return optimizer
 
     def epoch(

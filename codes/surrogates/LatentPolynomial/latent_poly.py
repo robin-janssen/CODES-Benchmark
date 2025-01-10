@@ -1,4 +1,5 @@
 import numpy as np
+import optuna
 import torch
 from schedulefree import AdamWScheduleFree
 from torch import nn
@@ -177,6 +178,11 @@ class LatentPoly(AbstractSurrogateModel):
                 test_losses[epoch] = loss
                 MAEs[epoch] = self.L1(preds, targets).item()
 
+                if self.optuna_trial is not None:
+                    self.optuna_trial.report(loss, epoch)
+                    if self.optuna_trial.should_prune():
+                        raise optuna.TrialPruned()
+
         progress_bar.close()
 
         self.train_loss = torch.mean(losses, dim=1)
@@ -222,13 +228,13 @@ class PolynomialModelWrapper(nn.Module):
             in_features=config.in_features,
             latent_features=config.latent_features,
             width_list=config.coder_layers,
-            activation=config.coder_activation,
+            activation=config.activation,
         ).to(self.device)
         self.decoder = Decoder(
             out_features=config.in_features,
             latent_features=config.latent_features,
             width_list=config.coder_layers,
-            activation=config.coder_activation,
+            activation=config.activation,
         ).to(self.device)
         self.poly = Polynomial(
             degree=self.config.degree, dimension=self.config.latent_features

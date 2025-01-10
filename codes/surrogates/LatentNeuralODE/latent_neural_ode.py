@@ -1,4 +1,5 @@
 import numpy as np
+import optuna
 import torch
 import torchode as to
 from schedulefree import AdamWScheduleFree
@@ -196,6 +197,11 @@ class LatentNeuralODE(AbstractSurrogateModel):
                 test_losses[epoch] = loss
                 MAEs[epoch] = self.L1(preds, targets).item()
 
+                if self.optuna_trial is not None:
+                    self.optuna_trial.report(loss, epoch)
+                    if self.optuna_trial.should_prune():
+                        raise optuna.TrialPruned()
+
         progress_bar.close()
 
         self.train_loss = torch.mean(losses, dim=1)
@@ -236,19 +242,19 @@ class ModelWrapper(torch.nn.Module):
             in_features=n_chemicals,
             latent_features=config.latent_features,
             width_list=config.coder_layers,
-            activation=config.coder_activation,
+            activation=config.activation,
         )
         self.decoder = Decoder(
             out_features=n_chemicals,
             latent_features=config.latent_features,
             width_list=config.coder_layers,
-            activation=config.coder_activation,
+            activation=config.activation,
         )
         self.ode = ODE(
             input_shape=config.latent_features,
             output_shape=config.latent_features,
             n_hidden=config.ode_hidden,
-            activation=config.ode_activation,
+            activation=config.activation,
             layer_width=config.ode_layer_width,
             tanh_reg=config.ode_tanh_reg,
         )

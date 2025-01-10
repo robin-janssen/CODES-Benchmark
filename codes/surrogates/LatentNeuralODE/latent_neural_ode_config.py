@@ -9,8 +9,7 @@ class LatentNeuralODEBaseConfig:
 
     latent_features: int = 5
     # coder_layers: list[int] = field(default_factory=lambda: [32, 16, 8])
-    coder_activation: nn.Module = nn.ReLU()
-    ode_activation: nn.Module = nn.ReLU()
+    activation: nn.Module = nn.ReLU()
     ode_hidden: int = 4
     ode_layer_width: int = 64
     ode_tanh_reg: bool = True
