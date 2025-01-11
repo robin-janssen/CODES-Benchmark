@@ -1,15 +1,15 @@
 # Global settings for the benchmark
 training_id: "simpleode_profiling"
-surrogates: ["FullyConnected"] # ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
-batch_size: [1024] # [1024, 1024, 256, 256]
-epochs: [100] # [1000, 1000, 10000, 5000]
+surrogates: ["LatentNeuralODE"] # ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
+batch_size: [128] # [1024, 1024, 256, 256]
+epochs: [10] # [1000, 1000, 10000, 5000]
 dataset: 
   name: "simple_ode"
   log10_transform: True
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
   tolerance: 1e-30
-devices: ["cuda:5"]
+devices: ["cuda:9"]
 seed: 42
 verbose: False
 
