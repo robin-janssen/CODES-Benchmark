@@ -1,14 +1,56 @@
-# from torch.profiler import ProfilerActivity, record_function
 import numpy as np
 import optuna
 import torch
 import torch.nn as nn
 from schedulefree import AdamWScheduleFree
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader, Dataset
 
 from codes.surrogates.FCNN.fcnn_config import FCNNBaseConfig
 from codes.surrogates.surrogates import AbstractSurrogateModel
 from codes.utils import time_execution, worker_init_fn
+
+
+def fc_collate_fn(batch):
+    """
+    Custom collate function to ensure tensors are returned in the correct shape.
+    Args:
+        batch: A list of tuples (input_batch, target_batch)
+               where each item is already a precomputed batch of shape:
+                 input_batch -> [batch_size, n_chemicals+1]
+                 target_batch -> [batch_size, n_chemicals]
+    Returns:
+        A tuple of tensors with the final shapes:
+        - inputs: [batch_size, n_chemicals+1]
+        - targets: [batch_size, n_chemicals]
+    """
+    # 'batch' is a list of length=1 if DataLoader has batch_size=1,
+    # and each element is (input_tensor, target_tensor).
+    # We remove the extra [1,...,...] dimension via squeeze(0).
+    inputs = torch.stack([item[0] for item in batch]).squeeze(0)
+    targets = torch.stack([item[1] for item in batch]).squeeze(0)
+    return inputs, targets
+
+
+class FCPrebatchedDataset(Dataset):
+    """
+    Dataset for pre-batched data specifically for the FullyConnected model.
+    Args:
+        inputs_batches (list[Tensor]): List of precomputed input batches.
+        targets_batches (list[Tensor]): List of precomputed target batches.
+    """
+
+    def __init__(self, inputs_batches, targets_batches):
+        self.inputs_batches = inputs_batches
+        self.targets_batches = targets_batches
+
+    def __getitem__(self, index):
+        # Return one precomputed batch:
+        # shape -> ( [batch_size, n_chemicals+1], [batch_size, n_chemicals] )
+        return self.inputs_batches[index], self.targets_batches[index]
+
+    def __len__(self):
+        # Number of precomputed batches
+        return len(self.inputs_batches)
 
 
 class FullyConnectedNet(nn.Module):
@@ -27,19 +69,7 @@ class FullyConnectedNet(nn.Module):
         layers.append(nn.Linear(hidden_size, output_size))
         self.network = nn.Sequential(*layers)
 
-    def forward(
-        self,
-        inputs: torch.Tensor,
-    ) -> torch.Tensor:
-        """
-        One forward pass through the network.
-
-        Args:
-            inputs (torch.Tensor): The input tensor.
-
-        Returns:
-            torch.Tensor: The output tensor of the model.
-        """
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         return self.network(inputs)
 
 
@@ -54,12 +84,13 @@ class FullyConnected(AbstractSurrogateModel):
         """
         Initialize the FullyConnected model with a configuration.
 
-        The configuration must provide the following information:
-        - hidden_size (int): The number of hidden units in each layer of the network.
-        - num_hidden_layers (int): The number of hidden layers in the network.
-        - learning_rate (float): The learning rate for the optimizer.
-        - regularization_factor (float): The L2 regularization factor.
-        - schedule (bool): Whether to use a learning rate schedule.
+        The configuration must provide the following keys:
+        - hidden_size (int)
+        - num_hidden_layers (int)
+        - learning_rate (float)
+        - regularization_factor (float)
+        - schedule (bool)
+        - activation (nn.Module name or instance)
         """
         super().__init__(
             device=device,
@@ -70,29 +101,24 @@ class FullyConnected(AbstractSurrogateModel):
         self.config = FCNNBaseConfig(**self.config)
         self.device = device
         self.N = n_chemicals
+
         self.model = FullyConnectedNet(
-            self.N + 1,  # 29 chemicals + 1 time input
-            self.config.hidden_size,
-            self.N,
-            self.config.num_hidden_layers,
-            self.config.activation,
+            input_size=self.N + 1,  # 29 chemicals + 1 time input
+            hidden_size=self.config.hidden_size,
+            output_size=self.N,
+            num_hidden_layers=self.config.num_hidden_layers,
+            activation=self.config.activation,
         ).to(device)
 
-    def forward(
-        self,
-        inputs: tuple,
-    ) -> torch.Tensor:
+    def forward(self, inputs: tuple) -> torch.Tensor:
         """
         Forward pass for the FullyConnected model.
 
         Args:
-            inputs (tuple[torch.Tensor, torch.Tensor]): The input tensor and the target tensor.
-            Note: The targets are not used in the forward pass but are included for compatibility with the DataLoader.
-            timesteps (np.ndarray, optional): The timesteps array.
-            Note: The timesteps are not used in the forward pass but are included for compatibility with the benchmarking code.
-
+            inputs (tuple[torch.Tensor, torch.Tensor]):
+                (x, targets) - 'targets' is included for a consistent interface
         Returns:
-            torch.Tensor: Output tensor of the model.
+            (outputs, targets)
         """
         x, targets = inputs
         return self.model(x), targets
@@ -108,31 +134,21 @@ class FullyConnected(AbstractSurrogateModel):
     ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
         """
         Prepare the data for the predict or fit methods.
-        Note: All datasets must have shape (n_samples, n_timesteps, n_chemicals).
+        All datasets: shape (n_samples, n_timesteps, n_chemicals)
 
-        Args:
-            dataset_train (np.ndarray): The training data.
-            dataset_test (np.ndarray): The test data.
-            dataset_val (np.ndarray, optional): The validation data.
-            timesteps (np.ndarray): The timesteps.
-            batch_size (int, optional): The batch size.
-            shuffle (bool, optional): Whether to shuffle the data.
-
-        Returns:
-            tuple: The training, test, and validation DataLoaders.
+        Returns: train_loader, test_loader, val_loader
         """
-
-        # Create the DataLoaders
         dataloaders = []
-        for dataset in [dataset_train, dataset_test, dataset_val]:
+        loader = self.create_dataloader(dataset_train, timesteps, batch_size, shuffle)
+        dataloaders.append(loader)
+        for dataset in [dataset_test, dataset_val]:
             if dataset is not None:
-                dataloader = self.create_dataloader(
-                    dataset, timesteps, batch_size, shuffle
+                loader = self.create_dataloader(
+                    dataset, timesteps, batch_size, shuffle=False
                 )
-                dataloaders.append(dataloader)
+                dataloaders.append(loader)
             else:
                 dataloaders.append(None)
-
         return dataloaders[0], dataloaders[1], dataloaders[2]
 
     @time_execution
@@ -144,28 +160,11 @@ class FullyConnected(AbstractSurrogateModel):
         position: int = 0,
         description: str = "Training FullyConnected",
     ) -> None:
-        """
-        Train the FullyConnected model.
-
-        Args:
-            train_loader (DataLoader): The DataLoader object containing the training data.
-            test_loader (DataLoader): The DataLoader object containing the test data.
-            epochs (int, optional): The number of epochs to train the model.
-            position (int): The position of the progress bar.
-            description (str): The description for the progress bar.
-
-        Returns:
-            None
-        """
-        # self.n_timesteps = len(timesteps)
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
-
         criterion = nn.MSELoss(reduction="sum")
-        # optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
         optimizer = self.setup_optimizer_and_scheduler()
 
         train_losses, test_losses, MAEs = [np.zeros(epochs) for _ in range(3)]
-
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
         for epoch in progress_bar:
@@ -174,7 +173,6 @@ class FullyConnected(AbstractSurrogateModel):
             clr = optimizer.param_groups[0]["lr"]
             print_loss = f"{train_losses[epoch].item():.2e}"
             progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
-            # scheduler.step()
 
             if test_loader is not None:
                 self.eval()
@@ -190,39 +188,14 @@ class FullyConnected(AbstractSurrogateModel):
                         raise optuna.TrialPruned()
 
         progress_bar.close()
-
         self.train_loss = train_losses
         self.test_loss = test_losses
         self.MAE = MAEs
 
-    def setup_optimizer_and_scheduler(
-        self,
-        # epochs: int,
-        # ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
-    ) -> torch.optim.Optimizer:
+    def setup_optimizer_and_scheduler(self) -> torch.optim.Optimizer:
         """
-        Utility function to set up the optimizer and scheduler for training.
-
-        Args:
-            epochs (int): The number of epochs to train the model.
-
-        Returns:
-            tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler): The optimizer and scheduler.
+        Utility function to set up the optimizer and (optionally) scheduler.
         """
-        # optimizer = torch.optim.Adam(
-        #     self.parameters(),
-        #     lr=self.config.learning_rate,
-        #     weight_decay=self.config.regularization_factor,
-        # )
-        # if self.config.schedule:
-        #     scheduler = torch.optim.lr_scheduler.LinearLR(
-        #         optimizer, start_factor=1, end_factor=0.3, total_iters=epochs
-        #     )
-        # else:
-        #     scheduler = torch.optim.lr_scheduler.LinearLR(
-        #         optimizer, start_factor=1, end_factor=1, total_iters=epochs
-        #     )
-        # return optimizer, scheduler
         optimizer = AdamWScheduleFree(
             self.parameters(),
             lr=self.config.learning_rate,
@@ -235,17 +208,6 @@ class FullyConnected(AbstractSurrogateModel):
         criterion: nn.Module,
         optimizer: torch.optim.Optimizer,
     ) -> float:
-        """
-        Perform one training epoch.
-
-        Args:
-            data_loader (DataLoader): The DataLoader object containing the training data.
-            criterion (nn.Module): The loss function.
-            optimizer (torch.optim.Optimizer): The optimizer.
-
-        Returns:
-            float: The total loss for the training step.
-        """
         self.train()
         optimizer.train()
         total_loss = 0
@@ -253,10 +215,8 @@ class FullyConnected(AbstractSurrogateModel):
 
         for batch in data_loader:
             inputs, targets = batch
-            inputs, targets = (
-                inputs.to(self.device),
-                targets.to(self.device),
-            )
+            inputs, targets = inputs.to(self.device), targets.to(self.device)
+
             optimizer.zero_grad()
             outputs, targets = self.forward((inputs, targets))
             loss = criterion(outputs, targets)
@@ -275,50 +235,78 @@ class FullyConnected(AbstractSurrogateModel):
         shuffle: bool = False,
     ) -> DataLoader:
         """
-        Create a DataLoader from a dataset.
+        Create a DataLoader with precomputed batches to avoid overhead from slicing.
 
-        Args:
-            dataset (np.ndarray): The dataset.
-            timesteps (np.ndarray): The timesteps.
-            batch_size (int): The batch size.
-            shuffle (bool, optional): Whether to shuffle the data.
-
-        Returns:
-            DataLoader: The DataLoader object.
+        Steps:
+         1) Expand dataset shape to (samples, timesteps, chemicals+1) by adding time.
+         2) Flatten to shape (samples*timesteps, chemicals+1) for FC input
+            and (samples*timesteps, chemicals) for targets.
+         3) Precompute batches of size [batch_size, chemicals+1] and [batch_size, chemicals].
+         4) Store them in a FCPrebatchedDataset.
+         5) Return a DataLoader with batch_size=1 and a custom collate_fn to remove extra dims.
         """
-        # Concatenate timesteps to the dataset as an additional feature
-        n_samples, n_timesteps, n_features = dataset.shape
+        n_samples, n_timesteps_, n_chemicals_ = dataset.shape
+        # Make sure n_chemicals_ == self.N
+        # Add 1 time dimension: shape = (samples, timesteps, chemicals+1)
         dataset_with_time = np.concatenate(
             [
                 dataset,
-                np.tile(timesteps, (n_samples, 1)).reshape(n_samples, n_timesteps, 1),
+                np.tile(timesteps, (n_samples, 1)).reshape(n_samples, n_timesteps_, 1),
             ],
             axis=2,
         )
 
-        # Flatten the dataset for FCNN
-        flattened_data = dataset_with_time.reshape(-1, n_features + 1)
-        flattened_targets = dataset.reshape(-1, n_features)
+        # Flatten data
+        # shape -> (samples*timesteps, chemicals+1)
+        flattened_inputs = dataset_with_time.reshape(-1, self.N + 1)
+        # shape -> (samples*timesteps, chemicals)
+        flattened_targets = dataset.reshape(-1, self.N)
 
-        # Convert to PyTorch tensors
-        inputs_tensor = (
-            torch.tensor(flattened_data, dtype=torch.float32)
-            if isinstance(flattened_data, np.ndarray)
-            else flattened_data.type(torch.float32)
-        )
-        targets_tensor = (
-            torch.tensor(flattened_targets, dtype=torch.float32)
-            if isinstance(flattened_targets, np.ndarray)
-            else flattened_targets.type(torch.float32)
-        )
+        # Precompute batches
+        batched_inputs = []
+        batched_targets = []
 
-        inputs_tensor = inputs_tensor.to(self.device)
-        targets_tensor = targets_tensor.to(self.device)
-        dataset = TensorDataset(inputs_tensor, targets_tensor)
+        temp_inps, temp_tgts = [], []
+        for i in range(flattened_inputs.shape[0]):
+            temp_inps.append(flattened_inputs[i])
+            temp_tgts.append(flattened_targets[i])
 
+            if len(temp_inps) == batch_size:
+                # Convert lists to arrays, then to tensors
+                inp_tensor = torch.tensor(
+                    np.array(temp_inps, dtype=np.float32), dtype=torch.float32
+                )
+                tgt_tensor = torch.tensor(
+                    np.array(temp_tgts, dtype=np.float32), dtype=torch.float32
+                )
+                batched_inputs.append(inp_tensor)
+                batched_targets.append(tgt_tensor)
+                temp_inps, temp_tgts = [], []
+
+        # Handle any leftovers
+        if temp_inps:
+            inp_tensor = torch.tensor(
+                np.array(temp_inps, dtype=np.float32), dtype=torch.float32
+            )
+            tgt_tensor = torch.tensor(
+                np.array(temp_tgts, dtype=np.float32), dtype=torch.float32
+            )
+            batched_inputs.append(inp_tensor)
+            batched_targets.append(tgt_tensor)
+
+        # Move everything to device
+        batched_inputs = [b.to(self.device) for b in batched_inputs]
+        batched_targets = [b.to(self.device) for b in batched_targets]
+
+        # Create a pre-batched dataset
+        dataset_prebatched = FCPrebatchedDataset(batched_inputs, batched_targets)
+
+        # DataLoader returns batch_size=1, each "batch" is actually a full precomputed batch
         return DataLoader(
-            dataset,
-            batch_size=batch_size,
+            dataset_prebatched,
+            batch_size=1,
             shuffle=shuffle,
+            num_workers=0,
+            collate_fn=fc_collate_fn,
             worker_init_fn=worker_init_fn,
         )

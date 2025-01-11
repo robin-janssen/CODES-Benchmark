@@ -192,7 +192,8 @@ class AbstractSurrogateModel(ABC, nn.Module):
             )
 
         # pre-allocate buffers for predictions and targets
-        size = (batch_size * len(data_loader), *out_shape)
+        length = len(data_loader)
+        size = (batch_size * length, *out_shape)
         predictions = torch.zeros(size, dtype=dummy_outputs.dtype).to(self.device)
         targets = torch.zeros(size, dtype=dummy_outputs.dtype).to(self.device)
 

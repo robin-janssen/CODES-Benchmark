@@ -11,7 +11,7 @@ class MultiONetConfig:
     trunk_hidden_layers: int = 7
     hidden_size: int = 150
     output_factor: int = 40
-    learning_rate: float = 0.0005  # before SF: 0.0005
+    learning_rate: float = 0.0005
     activation: nn.Module = nn.LeakyReLU()
 
 
@@ -21,7 +21,7 @@ class LatentNeuralODEConfig:
 
     latent_features: int = 9
     layers_factor: int = 46
-    learning_rate: float = 0.005  # before SF: 0.005
+    learning_rate: float = 0.005
     ode_tanh_reg: bool = False
     activation: nn.Module = nn.ReLU()
 
@@ -32,7 +32,7 @@ class FullyConnectedConfig:
 
     hidden_size: int = 400
     num_hidden_layers: int = 2
-    learning_rate: float = 1.5e-5  # before SF: 1.5e-5
+    learning_rate: float = 1.5e-5
     activation: nn.Module = nn.Tanh()
 
 
@@ -42,6 +42,6 @@ class LatentPolyConfig:
 
     latent_features: int = 5
     degree: int = 6
-    learning_rate: float = 0.002  # before SF: 0.002
+    learning_rate: float = 0.002
     layers_factor: int = 50
     activation: nn.Module = nn.ReLU()

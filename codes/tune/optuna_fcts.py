@@ -116,13 +116,12 @@ def training_run(trial, device, config, study_name):
     loss = criterion(preds, targets).item()
     sname, arch = study_name.split("_")
 
-    base_dir = os.path.join("optuna_runs", sname, "models", arch)
-    os.makedirs(base_dir, exist_ok=True)
+    savepath = os.path.join("optuna_runs", sname, "models")
     model_name = f"{surr_name.lower()}_{trial.number}"
     model.save(
         model_name=model_name,
-        base_dir=base_dir,
-        training_id="",
+        base_dir="",
+        training_id=savepath,
         data_params=data_params,
     )
     return loss

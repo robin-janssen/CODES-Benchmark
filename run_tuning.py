@@ -37,9 +37,14 @@ def run_single_study(config, study_name):
     db_url = f"sqlite:///{db_path}"
     if not config.get("optuna_logging", False):
         optuna.logging.set_verbosity(optuna.logging.WARNING)
-
     sampler = optuna.samplers.TPESampler(seed=config["seed"])
-    pruner = optuna.pruners.SuccessiveHalvingPruner()
+    if config["prune"]:
+        epochs = config["epochs"]
+        pruner = optuna.pruners.HyperbandPruner(
+            min_resource=epochs // 8, max_resource=epochs, reduction_factor=2
+        )
+    else:
+        pruner = optuna.pruners.NopPruner()
     study = optuna.create_study(
         study_name=study_name,
         direction="minimize",
@@ -114,6 +119,7 @@ def run_all_studies(config, main_study_name):
                 "seed": config["seed"],
                 "surrogate": {"name": arch_name},
                 "optuna_params": surr["optuna_params"],
+                "prune": config.get("prune", True),
             }
 
             # Run one study fully
