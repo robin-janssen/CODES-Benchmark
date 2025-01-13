@@ -1,33 +1,33 @@
 # Global settings for the benchmark
-training_id: "simpleode_profiling"
-surrogates: ["LatentNeuralODE"] # ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
-batch_size: [128] # [1024, 1024, 256, 256]
-epochs: [10] # [1000, 1000, 10000, 5000]
+training_id: "osu2008_new"
+surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
+batch_size: [1024, 1024, 128, 128]
+epochs: [100] # [1000, 1000, 10000, 5000]
 dataset: 
   name: "simple_ode"
   log10_transform: True
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
   tolerance: 1e-30
-devices: ["cuda:9"]
+devices: ["cuda:6", "cuda:7", "cuda:8", "cuda:9"]
 seed: 42
 verbose: False
 
 # Models to train
 interpolation: 
-  enabled: False
+  enabled: True
   intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
 extrapolation: 
-  enabled: False
+  enabled: True
   cutoffs: [50, 60, 70, 80, 90]
 sparse: 
-  enabled: False
+  enabled: True
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
   enabled: False
   sizes: [16, 1024, 8192]
 uncertainty: 
-  enabled: False
+  enabled: True
   ensemble_size: 5  # Number of models for deep ensemble
 
 # Evaluations during benchmark

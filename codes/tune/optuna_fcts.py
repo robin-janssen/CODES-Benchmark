@@ -1,6 +1,7 @@
 import os
 from distutils.util import strtobool
 
+import torch
 import torch.nn as nn
 import yaml
 
@@ -53,7 +54,19 @@ def create_objective(config, study_name, device_queue):
     def objective(trial):
         device = device_queue.get()
         try:
-            return training_run(trial, device, config, study_name)
+            try:
+                return training_run(trial, device, config, study_name)
+            except torch.cuda.OutOfMemoryError as e:
+                torch.cuda.empty_cache()
+                print(f"Trial {trial.number} failed due to CUDA Out of Memory.")
+                trial.set_user_attr("exception", str(e))
+                # Optionally, you can set a high loss value or use TrialPruned
+                return float("inf")
+            except Exception as e:
+                torch.cuda.empty_cache()
+                print(f"Trial {trial.number} failed due to an unexpected error: {e}")
+                trial.set_user_attr("exception", str(e))
+                return float("inf")
         finally:
             device_queue.put(device)
 
@@ -109,14 +122,13 @@ def training_run(trial, device, config, study_name):
         description=description,
     )
 
-    import torch
-
     criterion = torch.nn.MSELoss()
     preds, targets = model.predict(test_loader)
     loss = criterion(preds, targets).item()
-    sname, arch = study_name.split("_")
+    sname, _ = study_name.split("_")
 
     savepath = os.path.join("optuna_runs", sname, "models")
+    os.makedirs(savepath, exist_ok=True)  # Ensure the directory exists
     model_name = f"{surr_name.lower()}_{trial.number}"
     model.save(
         model_name=model_name,
