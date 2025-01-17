@@ -15,7 +15,7 @@ from codes.surrogates.LatentNeuralODE.latent_neural_ode_config import (
     LatentNeuralODEBaseConfig,
 )
 from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
-from codes.surrogates.surrogates import AbstractSurrogateModel
+from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
 from codes.utils import time_execution, worker_init_fn
 
 

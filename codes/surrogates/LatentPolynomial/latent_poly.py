@@ -12,7 +12,7 @@ from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
 from codes.surrogates.LatentPolynomial.latent_poly_config import (
     LatentPolynomialBaseConfig,
 )
-from codes.surrogates.surrogates import AbstractSurrogateModel
+from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
 from codes.utils import time_execution
 
 

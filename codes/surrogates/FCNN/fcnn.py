@@ -6,7 +6,7 @@ from schedulefree import AdamWScheduleFree
 from torch.utils.data import DataLoader, Dataset
 
 from codes.surrogates.FCNN.fcnn_config import FCNNBaseConfig
-from codes.surrogates.surrogates import AbstractSurrogateModel
+from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
 from codes.utils import time_execution, worker_init_fn
 
 

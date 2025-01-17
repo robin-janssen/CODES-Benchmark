@@ -2,14 +2,14 @@
 training_id: "lotka_volterra_tests"
 surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
 batch_size: [4096, 4096, 512, 512]
-epochs: [1000, 1000, 1000, 100]
+epochs: [10, 10, 10, 10]
 dataset: 
   name: "lotka_volterra"
   log10_transform: True
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
   tolerance: 1e-30
-devices: ["cuda:4", "cuda:5", "cuda:6", "cuda:7"]
+devices: ["cuda:4"]
 seed: 42
 verbose: False
 

@@ -8,7 +8,7 @@ from schedulefree import AdamWScheduleFree
 from torch.profiler import ProfilerActivity, profile, record_function
 from torch.utils.data import DataLoader, Dataset, TensorDataset
 
-from codes.surrogates.surrogates import AbstractSurrogateModel
+from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
 from codes.utils import time_execution, worker_init_fn
 
 from .deeponet_config import MultiONetBaseConfig
