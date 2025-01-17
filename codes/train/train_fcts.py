@@ -58,8 +58,6 @@ def train_and_save_model(
         )
     )
 
-    model_config = get_model_config(surr_name, config)
-
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(
         full_train_data, full_test_data, timesteps, mode, metric
@@ -70,8 +68,7 @@ def train_and_save_model(
 
     # Get the surrogate class
     surrogate_class = get_surrogate(surr_name)
-
-    # Set the device for the model
+    model_config = get_model_config(surr_name, config)
     model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
     surr_idx = config["surrogates"].index(surr_name)
 

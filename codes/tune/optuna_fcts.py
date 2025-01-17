@@ -1,11 +1,12 @@
 import os
 from distutils.util import strtobool
 
+import optuna
 import torch
 import torch.nn as nn
 import yaml
 
-from codes.benchmark.bench_utils import get_surrogate
+from codes.benchmark.bench_utils import get_model_config, get_surrogate
 from codes.utils import check_and_load_data, make_description, set_random_seeds
 from codes.utils.data_utils import download_data, get_data_subset
 
@@ -58,15 +59,24 @@ def create_objective(config, study_name, device_queue):
                 return training_run(trial, device, config, study_name)
             except torch.cuda.OutOfMemoryError as e:
                 torch.cuda.empty_cache()
-                print(f"Trial {trial.number} failed due to CUDA Out of Memory.")
-                trial.set_user_attr("exception", str(e))
-                # Optionally, you can set a high loss value or use TrialPruned
-                return float("inf")
+                msg = repr(e).strip()
+                if not msg:
+                    msg = "CUDA Out of Memory (no details provided)."
+                print(f"Trial {trial.number} failed due to: {msg}")
+                trial.set_user_attr("exception", msg)
+                raise optuna.TrialPruned(f"OOM error in trial {trial.number}")
+            except optuna.TrialPruned as e:
+                msg = repr(e).strip()
+                trial.set_user_attr("exception", msg)
+                raise
             except Exception as e:
                 torch.cuda.empty_cache()
-                print(f"Trial {trial.number} failed due to an unexpected error: {e}")
-                trial.set_user_attr("exception", str(e))
-                return float("inf")
+                msg = repr(e).strip()
+                if not msg:
+                    msg = "Unknown error occurred."
+                print(f"Trial {trial.number} failed due to an unexpected error: {msg}")
+                trial.set_user_attr("exception", msg)
+                raise optuna.TrialPruned(f"Error in trial {trial.number}: {msg}")
         finally:
             device_queue.put(device)
 
@@ -100,7 +110,9 @@ def training_run(trial, device, config, study_name):
     n_timesteps = train_data.shape[1]
     n_chemicals = train_data.shape[2]
     surrogate_class = get_surrogate(surr_name)
-    model = surrogate_class(device, n_chemicals, n_timesteps, suggested_params)
+    model_config = get_model_config(surr_name, config)
+    model_config.update(suggested_params)
+    model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
     model.optuna_trial = trial
 
     train_loader, test_loader, _ = model.prepare_data(
@@ -128,7 +140,7 @@ def training_run(trial, device, config, study_name):
     sname, _ = study_name.split("_")
 
     savepath = os.path.join("optuna_runs", sname, "models")
-    os.makedirs(savepath, exist_ok=True)  # Ensure the directory exists
+    os.makedirs(savepath, exist_ok=True)
     model_name = f"{surr_name.lower()}_{trial.number}"
     model.save(
         model_name=model_name,
