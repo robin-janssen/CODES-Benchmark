@@ -1,12 +1,4 @@
-from codes.surrogates.DeepONet.deeponet import MultiONet
-from codes.surrogates.FCNN.fcnn import FullyConnected
-from codes.surrogates.LatentNeuralODE.latent_neural_ode import LatentNeuralODE
-from codes.surrogates.LatentPolynomial.latent_poly import LatentPoly
+from codes.surrogates import AbstractSurrogateModel
 
-surrogate_classes = [
-    MultiONet,
-    FullyConnected,
-    LatentNeuralODE,
-    LatentPoly,
-    # Add any additional surrogate classes here
-]
+# Automatically retrieve all registered surrogate model classes
+surrogate_classes = AbstractSurrogateModel.get_registered_classes()

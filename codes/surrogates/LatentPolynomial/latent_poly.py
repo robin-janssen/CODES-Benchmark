@@ -185,6 +185,7 @@ class LatentPoly(AbstractSurrogateModel):
 
         progress_bar.close()
 
+        self.n_epochs = epoch
         self.train_loss = torch.mean(losses, dim=1)
         self.test_loss = test_losses
         self.MAE = MAEs
@@ -423,3 +424,6 @@ class Polynomial(nn.Module):
         """
         t = t[:, None]
         return torch.hstack([t**i for i in range(1, self.degree + 1)]).permute(0, 2, 1)
+
+
+AbstractSurrogateModel.register(LatentPoly)

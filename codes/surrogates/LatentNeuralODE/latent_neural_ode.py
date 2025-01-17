@@ -207,6 +207,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
 
         progress_bar.close()
 
+        self.n_epochs = epoch
         self.train_loss = torch.mean(losses, dim=1)
         self.test_loss = test_losses
         self.MAE = MAEs
@@ -721,3 +722,6 @@ class Decoder(torch.nn.Module):
             torch.Tensor: The output of the neural network. ("Decoded" input)
         """
         return self.mlp(x)
+
+
+AbstractSurrogateModel.register(LatentNeuralODE)

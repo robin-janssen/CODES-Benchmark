@@ -347,7 +347,8 @@ class MultiONet(OperatorNetwork):
                 self.eval()
                 optimizer.eval()
                 preds, targets = self.predict(test_loader)
-                loss = criterion(preds, targets).item() / torch.numel(targets)
+                loss = criterion(preds, targets).item()
+                loss /= len(test_loader.dataset) * self.N
                 test_losses[epoch] = loss
                 MAEs[epoch] = self.L1(preds, targets).item()
 
@@ -358,6 +359,7 @@ class MultiONet(OperatorNetwork):
 
         progress_bar.close()
 
+        self.n_epochs = epoch
         self.train_loss = train_losses
         self.test_loss = test_losses
         self.MAE = MAEs
@@ -759,3 +761,6 @@ def custom_collate_fn(batch):
     trunk_inputs = torch.stack([item[1] for item in batch]).squeeze(0)
     targets = torch.stack([item[2] for item in batch]).squeeze(0)
     return branch_inputs, trunk_inputs, targets
+
+
+AbstractSurrogateModel.register(MultiONet)
