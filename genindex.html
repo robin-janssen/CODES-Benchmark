@@ -15,25 +15,28 @@
     document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
     document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
   </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-  
-  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
-
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=a3416100" />
   
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
-<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
-  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="_static/documentation_options.js?v=9eb32ce0"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
@@ -45,6 +48,7 @@
     <link rel="search" title="Search" href="search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
   </head>
   
   
@@ -60,19 +64,8 @@
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
 
   
-  <input type="checkbox"
-          class="sidebar-toggle"
-          id="pst-primary-sidebar-checkbox"/>
-  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
-  
-  <input type="checkbox"
-          class="sidebar-toggle"
-          id="pst-secondary-sidebar-checkbox"/>
-  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
-  
-  <div class="search-button__wrapper">
-    <div class="search-button__overlay"></div>
-    <div class="search-button__search-container">
+  <dialog id="pst-search-dialog">
+    
 <form class="bd-search d-flex align-items-center"
       action="search.html"
       method="get">
@@ -80,7 +73,6 @@
   <input type="search"
          class="form-control"
          name="q"
-         id="search-input"
          placeholder="Search..."
          aria-label="Search..."
          autocomplete="off"
@@ -88,8 +80,8 @@
          autocapitalize="off"
          spellcheck="false"/>
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
-</form></div>
-  </div>
+</form>
+  </dialog>
 
   <div class="pst-async-banner-revealer d-none">
   <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
@@ -107,7 +99,8 @@
       
         
       
-      <div class="bd-sidebar-primary bd-sidebar">
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -175,15 +168,11 @@
 </ul></div>
         <div class="sidebar-primary-item">
 
- <script>
- document.write(`
-   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <span class="search-button__default-text">Search</span>
-    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-   </button>
- `);
- </script></div>
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
         <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
     <div class="bd-toc-item navbar-nav active">
         <ul class="nav bd-sidenav">
@@ -194,8 +183,11 @@
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="docs/source/codes.surrogates.html">codes.surrogates</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="docs/source/codes.surrogates.AbstractSurrogate.html">codes.surrogates.AbstractSurrogate</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="docs/source/codes.surrogates.AbstractSurrogate.surrogates.html">codes.surrogates.AbstractSurrogate.surrogates</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.surrogates.surrogate_classes.html">codes.surrogates.surrogate_classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="docs/source/codes.surrogates.surrogates.html">codes.surrogates.surrogates</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="docs/source/codes.train.html">codes.train</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -215,9 +207,14 @@
   
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
   </div>
-  
-  <div id="rtd-footer-container"></div>
 
 
       </div>
@@ -266,24 +263,16 @@
 
 
 
-<script>
-document.write(`
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
-  </button>
-`);
-</script>
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
 
 
-<script>
-document.write(`
-  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
+</button>
 
 </div></div>
       
@@ -347,7 +336,9 @@ document.write(`
       <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel">AbstractSurrogateModel (class in codes.surrogates)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel">(class in codes.surrogates.surrogates)</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel">(class in codes.surrogates.AbstractSurrogate)</a>
+</li>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel">(class in codes.surrogates.AbstractSurrogate.surrogates)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -449,17 +440,24 @@ document.write(`
 </li>
       </ul></li>
       <li>
+    codes.surrogates.AbstractSurrogate
+
+      <ul>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#module-codes.surrogates.AbstractSurrogate">module</a>, <a href="docs/source/codes.surrogates.AbstractSurrogate.html#module-codes.surrogates.AbstractSurrogate">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    codes.surrogates.AbstractSurrogate.surrogates
+
+      <ul>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#module-codes.surrogates.AbstractSurrogate.surrogates">module</a>, <a href="docs/source/codes.surrogates.AbstractSurrogate.surrogates.html#module-codes.surrogates.AbstractSurrogate.surrogates">[1]</a>
+</li>
+      </ul></li>
+      <li>
     codes.surrogates.surrogate_classes
 
       <ul>
         <li><a href="codes.surrogates.html#module-codes.surrogates.surrogate_classes">module</a>
-</li>
-      </ul></li>
-      <li>
-    codes.surrogates.surrogates
-
-      <ul>
-        <li><a href="codes.surrogates.html#module-codes.surrogates.surrogates">module</a>, <a href="docs/source/codes.surrogates.surrogates.html#module-codes.surrogates.surrogates">[1]</a>
 </li>
       </ul></li>
       <li>
@@ -474,6 +472,27 @@ document.write(`
 
       <ul>
         <li><a href="codes.train.html#module-codes.train.train_fcts">module</a>, <a href="docs/source/codes.train.train_fcts.html#module-codes.train.train_fcts">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    codes.tune
+
+      <ul>
+        <li><a href="codes.tune.html#module-codes.tune">module</a>
+</li>
+      </ul></li>
+      <li>
+    codes.tune.evaluate_study
+
+      <ul>
+        <li><a href="codes.tune.html#module-codes.tune.evaluate_study">module</a>
+</li>
+      </ul></li>
+      <li>
+    codes.tune.optuna_fcts
+
+      <ul>
+        <li><a href="codes.tune.html#module-codes.tune.optuna_fcts">module</a>
 </li>
       </ul></li>
       <li>
@@ -499,14 +518,14 @@ document.write(`
       </ul></li>
       <li><a href="codes.surrogates.html#codes.surrogates.Polynomial.coef">coef (codes.surrogates.Polynomial attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="codes.benchmark.html#codes.benchmark.compare_batchsize">compare_batchsize() (in module codes.benchmark)</a>
 
       <ul>
         <li><a href="codes.benchmark.html#codes.benchmark.bench_fcts.compare_batchsize">(in module codes.benchmark.bench_fcts)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="codes.benchmark.html#codes.benchmark.compare_dynamic_accuracy">compare_dynamic_accuracy() (in module codes.benchmark)</a>
 
       <ul>
@@ -567,16 +586,18 @@ document.write(`
         <li><a href="codes.benchmark.html#codes.benchmark.bench_fcts.compare_UQ">(in module codes.benchmark.bench_fcts)</a>
 </li>
       </ul></li>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.config">config (codes.surrogates.AbstractSurrogateModel attribute)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.config">config (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel attribute)</a>
 
       <ul>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.config">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel attribute)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.config">(codes.surrogates.AbstractSurrogateModel attribute)</a>
+</li>
         <li><a href="codes.surrogates.html#codes.surrogates.LatentNeuralODE.config">(codes.surrogates.LatentNeuralODE attribute)</a>
 </li>
         <li><a href="codes.surrogates.html#codes.surrogates.LatentPoly.config">(codes.surrogates.LatentPoly attribute)</a>
 </li>
         <li><a href="codes.surrogates.html#codes.surrogates.ModelWrapper.config">(codes.surrogates.ModelWrapper attribute)</a>
-</li>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.config">(codes.surrogates.surrogates.AbstractSurrogateModel attribute)</a>
 </li>
       </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.convert_dict_to_scientific_notation">convert_dict_to_scientific_notation() (in module codes.benchmark)</a>
@@ -603,6 +624,8 @@ document.write(`
         <li><a href="codes.surrogates.html#codes.surrogates.MultiONet.create_dataloader">(codes.surrogates.MultiONet method)</a>
 </li>
       </ul></li>
+      <li><a href="codes.surrogates.html#codes.surrogates.MultiONet.create_dataloader_n">create_dataloader_n() (codes.surrogates.MultiONet method)</a>
+</li>
       <li><a href="codes.utils.html#codes.utils.create_dataset">create_dataset() (in module codes.utils)</a>
 
       <ul>
@@ -619,6 +642,12 @@ document.write(`
 
       <ul>
         <li><a href="codes.utils.html#codes.utils.utils.create_model_dir">(in module codes.utils.utils)</a>
+</li>
+      </ul></li>
+      <li><a href="codes.tune.html#codes.tune.create_objective">create_objective() (in module codes.tune)</a>
+
+      <ul>
+        <li><a href="codes.tune.html#codes.tune.optuna_fcts.create_objective">(in module codes.tune.optuna_fcts)</a>
 </li>
       </ul></li>
       <li><a href="codes.train.html#codes.train.create_task_list_for_surrogate">create_task_list_for_surrogate() (in module codes.train)</a>
@@ -641,16 +670,18 @@ document.write(`
 </li>
       <li><a href="codes.surrogates.html#codes.surrogates.Polynomial.degree">degree (codes.surrogates.Polynomial attribute)</a>
 </li>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.denormalize">denormalize() (codes.surrogates.AbstractSurrogateModel method)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.denormalize">denormalize() (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel method)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.denormalize">(codes.surrogates.surrogates.AbstractSurrogateModel method)</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.denormalize">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel method)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.denormalize">(codes.surrogates.AbstractSurrogateModel method)</a>
 </li>
       </ul></li>
-      <li><a href="codes.surrogates.html#id7">deriv() (codes.surrogates.ModelWrapper class method)</a>
+      <li><a href="codes.surrogates.html#codes.surrogates.ModelWrapper.deriv">deriv() (codes.surrogates.ModelWrapper method)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.ModelWrapper.deriv">(codes.surrogates.ModelWrapper method)</a>
+        <li><a href="codes.surrogates.html#id7">(codes.surrogates.ModelWrapper static method)</a>
 </li>
       </ul></li>
       <li><a href="codes.surrogates.html#id8">deriv2() (codes.surrogates.ModelWrapper class method)</a>
@@ -673,12 +704,14 @@ document.write(`
         <li><a href="codes.surrogates.html#codes.surrogates.ModelWrapper.deriv_loss">(codes.surrogates.ModelWrapper method)</a>
 </li>
       </ul></li>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.device">device (codes.surrogates.AbstractSurrogateModel attribute)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.device">device (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel attribute)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.LatentPoly.device">(codes.surrogates.LatentPoly attribute)</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.device">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel attribute)</a>
 </li>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.device">(codes.surrogates.surrogates.AbstractSurrogateModel attribute)</a>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.device">(codes.surrogates.AbstractSurrogateModel attribute)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.LatentPoly.device">(codes.surrogates.LatentPoly attribute)</a>
 </li>
       </ul></li>
       <li><a href="codes.surrogates.html#codes.surrogates.Polynomial.dimension">dimension (codes.surrogates.Polynomial attribute)</a>
@@ -711,6 +744,8 @@ document.write(`
         <li><a href="codes.surrogates.html#codes.surrogates.MultiONet.epoch">(codes.surrogates.MultiONet method)</a>
 </li>
       </ul></li>
+      <li><a href="codes.surrogates.html#codes.surrogates.MultiONet.epoch_profile">epoch_profile() (codes.surrogates.MultiONet method)</a>
+</li>
       <li><a href="codes.benchmark.html#codes.benchmark.evaluate_accuracy">evaluate_accuracy() (in module codes.benchmark)</a>
 
       <ul>
@@ -767,9 +802,13 @@ document.write(`
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.fit">fit() (codes.surrogates.AbstractSurrogateModel method)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.fit">fit() (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel method)</a>
 
       <ul>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.fit">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel method)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.fit">(codes.surrogates.AbstractSurrogateModel method)</a>
+</li>
         <li><a href="codes.surrogates.html#codes.surrogates.FullyConnected.fit">(codes.surrogates.FullyConnected method)</a>
 </li>
         <li><a href="codes.surrogates.html#codes.surrogates.LatentNeuralODE.fit">(codes.surrogates.LatentNeuralODE method)</a>, <a href="codes.surrogates.html#id2">[1]</a>
@@ -778,7 +817,11 @@ document.write(`
 </li>
         <li><a href="codes.surrogates.html#codes.surrogates.MultiONet.fit">(codes.surrogates.MultiONet method)</a>
 </li>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.fit">(codes.surrogates.surrogates.AbstractSurrogateModel method)</a>
+      </ul></li>
+      <li><a href="codes.surrogates.html#codes.surrogates.LatentNeuralODE.fit_profile">fit_profile() (codes.surrogates.LatentNeuralODE method)</a>
+
+      <ul>
+        <li><a href="codes.surrogates.html#codes.surrogates.MultiONet.fit_profile">(codes.surrogates.MultiONet method)</a>
 </li>
       </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.flatten_dict">flatten_dict() (in module codes.benchmark)</a>
@@ -799,9 +842,13 @@ document.write(`
         <li><a href="codes.benchmark.html#codes.benchmark.bench_utils.format_time">(in module codes.benchmark.bench_utils)</a>
 </li>
       </ul></li>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.forward">forward() (codes.surrogates.AbstractSurrogateModel method)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.forward">forward() (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel method)</a>
 
       <ul>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.forward">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel method)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.forward">(codes.surrogates.AbstractSurrogateModel method)</a>
+</li>
         <li><a href="codes.surrogates.html#codes.surrogates.BranchNet.forward">(codes.surrogates.BranchNet method)</a>
 </li>
         <li><a href="codes.surrogates.html#codes.surrogates.Decoder.forward">(codes.surrogates.Decoder method)</a>, <a href="codes.surrogates.html#id0">[1]</a>
@@ -824,8 +871,6 @@ document.write(`
 </li>
         <li><a href="codes.surrogates.html#codes.surrogates.Polynomial.forward">(codes.surrogates.Polynomial method)</a>, <a href="codes.surrogates.html#id17">[1]</a>
 </li>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.forward">(codes.surrogates.surrogates.AbstractSurrogateModel method)</a>
-</li>
         <li><a href="codes.surrogates.html#codes.surrogates.TrunkNet.forward">(codes.surrogates.TrunkNet method)</a>
 </li>
       </ul></li>
@@ -841,6 +886,12 @@ document.write(`
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="codes.tune.html#codes.tune.get_activation_function">get_activation_function() (in module codes.tune)</a>
+
+      <ul>
+        <li><a href="codes.tune.html#codes.tune.optuna_fcts.get_activation_function">(in module codes.tune.optuna_fcts)</a>
+</li>
+      </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.get_custom_palette">get_custom_palette() (in module codes.benchmark)</a>
 
       <ul>
@@ -865,6 +916,14 @@ document.write(`
 
       <ul>
         <li><a href="codes.utils.html#codes.utils.utils.get_progress_bar">(in module codes.utils.utils)</a>
+</li>
+      </ul></li>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.get_registered_classes">get_registered_classes() (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel class method)</a>
+
+      <ul>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.get_registered_classes">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel class method)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.get_registered_classes">(codes.surrogates.AbstractSurrogateModel class method)</a>
 </li>
       </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.get_required_models_list">get_required_models_list() (in module codes.benchmark)</a>
@@ -909,16 +968,18 @@ document.write(`
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.L1">L1 (codes.surrogates.AbstractSurrogateModel attribute)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.L1">L1 (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel attribute)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.L1">(codes.surrogates.surrogates.AbstractSurrogateModel attribute)</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.L1">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel attribute)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.L1">(codes.surrogates.AbstractSurrogateModel attribute)</a>
 </li>
       </ul></li>
-      <li><a href="codes.surrogates.html#id13">l2_loss() (codes.surrogates.ModelWrapper class method)</a>
+      <li><a href="codes.surrogates.html#codes.surrogates.ModelWrapper.l2_loss">l2_loss() (codes.surrogates.ModelWrapper method)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.ModelWrapper.l2_loss">(codes.surrogates.ModelWrapper method)</a>
+        <li><a href="codes.surrogates.html#id13">(codes.surrogates.ModelWrapper static method)</a>
 </li>
       </ul></li>
       <li><a href="codes.surrogates.html#codes.surrogates.Decoder.latent_features">latent_features (codes.surrogates.Decoder attribute)</a>
@@ -931,14 +992,16 @@ document.write(`
 </li>
       <li><a href="codes.surrogates.html#codes.surrogates.LatentPoly">LatentPoly (class in codes.surrogates)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.load">load() (codes.surrogates.AbstractSurrogateModel method)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.load">load() (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel method)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.load">(codes.surrogates.surrogates.AbstractSurrogateModel method)</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.load">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel method)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.load">(codes.surrogates.AbstractSurrogateModel method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="codes.utils.html#codes.utils.load_and_save_config">load_and_save_config() (in module codes.utils)</a>
 
       <ul>
@@ -951,10 +1014,28 @@ document.write(`
         <li><a href="codes.benchmark.html#codes.benchmark.bench_utils.load_model">(in module codes.benchmark.bench_utils)</a>
 </li>
       </ul></li>
+      <li><a href="codes.tune.html#codes.tune.load_model_test_losses">load_model_test_losses() (in module codes.tune)</a>
+
+      <ul>
+        <li><a href="codes.tune.html#codes.tune.evaluate_study.load_model_test_losses">(in module codes.tune.evaluate_study)</a>
+</li>
+      </ul></li>
+      <li><a href="codes.tune.html#codes.tune.load_study_config">load_study_config() (in module codes.tune)</a>
+
+      <ul>
+        <li><a href="codes.tune.html#codes.tune.evaluate_study.load_study_config">(in module codes.tune.evaluate_study)</a>
+</li>
+      </ul></li>
       <li><a href="codes.utils.html#codes.utils.load_task_list">load_task_list() (in module codes.utils)</a>
 
       <ul>
         <li><a href="codes.utils.html#codes.utils.utils.load_task_list">(in module codes.utils.utils)</a>
+</li>
+      </ul></li>
+      <li><a href="codes.tune.html#codes.tune.load_yaml_config">load_yaml_config() (in module codes.tune)</a>
+
+      <ul>
+        <li><a href="codes.tune.html#codes.tune.optuna_fcts.load_yaml_config">(in module codes.tune.optuna_fcts)</a>
 </li>
       </ul></li>
       <li><a href="codes.surrogates.html#codes.surrogates.ModelWrapper.loss_weights">loss_weights (codes.surrogates.ModelWrapper attribute)</a>
@@ -965,12 +1046,16 @@ document.write(`
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.MAE">MAE (codes.surrogates.AbstractSurrogateModel attribute)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.MAE">MAE (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel attribute)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.MAE">(codes.surrogates.surrogates.AbstractSurrogateModel attribute)</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.MAE">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel attribute)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.MAE">(codes.surrogates.AbstractSurrogateModel attribute)</a>
 </li>
       </ul></li>
+      <li><a href="codes.tune.html#codes.tune.evaluate_study.main">main() (in module codes.tune.evaluate_study)</a>
+</li>
       <li><a href="codes.benchmark.html#codes.benchmark.make_comparison_csv">make_comparison_csv() (in module codes.benchmark)</a>
 
       <ul>
@@ -981,6 +1066,12 @@ document.write(`
 
       <ul>
         <li><a href="codes.utils.html#codes.utils.utils.make_description">(in module codes.utils.utils)</a>
+</li>
+      </ul></li>
+      <li><a href="codes.tune.html#codes.tune.make_optuna_params">make_optuna_params() (in module codes.tune)</a>
+
+      <ul>
+        <li><a href="codes.tune.html#codes.tune.optuna_fcts.make_optuna_params">(in module codes.tune.optuna_fcts)</a>
 </li>
       </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.measure_memory_footprint">measure_memory_footprint() (in module codes.benchmark)</a>
@@ -1005,8 +1096,6 @@ document.write(`
       </ul></li>
       <li><a href="codes.surrogates.html#codes.surrogates.ModelWrapper">ModelWrapper (class in codes.surrogates)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     module
 
@@ -1023,19 +1112,35 @@ document.write(`
 </li>
         <li><a href="codes.surrogates.html#module-codes.surrogates">codes.surrogates</a>, <a href="docs/source/codes.surrogates.html#module-codes.surrogates">[1]</a>
 </li>
-        <li><a href="codes.surrogates.html#module-codes.surrogates.surrogate_classes">codes.surrogates.surrogate_classes</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#module-codes.surrogates.AbstractSurrogate">codes.surrogates.AbstractSurrogate</a>, <a href="docs/source/codes.surrogates.AbstractSurrogate.html#module-codes.surrogates.AbstractSurrogate">[1]</a>
 </li>
-        <li><a href="codes.surrogates.html#module-codes.surrogates.surrogates">codes.surrogates.surrogates</a>, <a href="docs/source/codes.surrogates.surrogates.html#module-codes.surrogates.surrogates">[1]</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#module-codes.surrogates.AbstractSurrogate.surrogates">codes.surrogates.AbstractSurrogate.surrogates</a>, <a href="docs/source/codes.surrogates.AbstractSurrogate.surrogates.html#module-codes.surrogates.AbstractSurrogate.surrogates">[1]</a>
+</li>
+        <li><a href="codes.surrogates.html#module-codes.surrogates.surrogate_classes">codes.surrogates.surrogate_classes</a>
 </li>
         <li><a href="codes.train.html#module-codes.train">codes.train</a>, <a href="docs/source/codes.train.html#module-codes.train">[1]</a>
 </li>
         <li><a href="codes.train.html#module-codes.train.train_fcts">codes.train.train_fcts</a>, <a href="docs/source/codes.train.train_fcts.html#module-codes.train.train_fcts">[1]</a>
+</li>
+        <li><a href="codes.tune.html#module-codes.tune">codes.tune</a>
+</li>
+        <li><a href="codes.tune.html#module-codes.tune.evaluate_study">codes.tune.evaluate_study</a>
+</li>
+        <li><a href="codes.tune.html#module-codes.tune.optuna_fcts">codes.tune.optuna_fcts</a>
 </li>
         <li><a href="codes.utils.html#module-codes.utils">codes.utils</a>, <a href="docs/source/codes.utils.html#module-codes.utils">[1]</a>
 </li>
         <li><a href="codes.utils.html#module-codes.utils.data_utils">codes.utils.data_utils</a>, <a href="docs/source/codes.utils.data_utils.html#module-codes.utils.data_utils">[1]</a>
 </li>
         <li><a href="codes.utils.html#module-codes.utils.utils">codes.utils.utils</a>, <a href="docs/source/codes.utils.utils.html#module-codes.utils.utils">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="codes.tune.html#codes.tune.moving_average">moving_average() (in module codes.tune)</a>
+
+      <ul>
+        <li><a href="codes.tune.html#codes.tune.evaluate_study.moving_average">(in module codes.tune.evaluate_study)</a>
 </li>
       </ul></li>
       <li><a href="codes.surrogates.html#codes.surrogates.MultiONet">MultiONet (class in codes.surrogates)</a>
@@ -1046,18 +1151,22 @@ document.write(`
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.n_chemicals">n_chemicals (codes.surrogates.AbstractSurrogateModel attribute)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.n_chemicals">n_chemicals (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel attribute)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.n_chemicals">(codes.surrogates.surrogates.AbstractSurrogateModel attribute)</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.n_chemicals">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel attribute)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.n_chemicals">(codes.surrogates.AbstractSurrogateModel attribute)</a>
 </li>
       </ul></li>
       <li><a href="codes.surrogates.html#codes.surrogates.Encoder.n_hidden">n_hidden (codes.surrogates.Encoder attribute)</a>
 </li>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.n_timesteps">n_timesteps (codes.surrogates.AbstractSurrogateModel attribute)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.n_timesteps">n_timesteps (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel attribute)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.n_timesteps">(codes.surrogates.surrogates.AbstractSurrogateModel attribute)</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.n_timesteps">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel attribute)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.n_timesteps">(codes.surrogates.AbstractSurrogateModel attribute)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -1068,10 +1177,12 @@ document.write(`
         <li><a href="codes.utils.html#codes.utils.utils.nice_print">(in module codes.utils.utils)</a>
 </li>
       </ul></li>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.normalisation">normalisation (codes.surrogates.AbstractSurrogateModel attribute)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.normalisation">normalisation (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel attribute)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.normalisation">(codes.surrogates.surrogates.AbstractSurrogateModel attribute)</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.normalisation">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel attribute)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.normalisation">(codes.surrogates.AbstractSurrogateModel attribute)</a>
 </li>
       </ul></li>
       <li><a href="codes.utils.html#codes.utils.normalize_data">normalize_data() (in module codes.utils)</a>
@@ -1106,6 +1217,8 @@ document.write(`
         <li><a href="codes.train.html#codes.train.train_fcts.parallel_training">(in module codes.train.train_fcts)</a>
 </li>
       </ul></li>
+      <li><a href="codes.tune.html#codes.tune.evaluate_study.parse_arguments">parse_arguments() (in module codes.tune.evaluate_study)</a>
+</li>
       <li><a href="codes.benchmark.html#codes.benchmark.plot_average_errors_over_time">plot_average_errors_over_time() (in module codes.benchmark)</a>
 
       <ul>
@@ -1178,14 +1291,14 @@ document.write(`
         <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_generalization_errors">(in module codes.benchmark.bench_plots)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="codes.benchmark.html#codes.benchmark.plot_loss_comparison">plot_loss_comparison() (in module codes.benchmark)</a>
 
       <ul>
         <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_loss_comparison">(in module codes.benchmark.bench_plots)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="codes.benchmark.html#codes.benchmark.plot_losses">plot_losses() (in module codes.benchmark)</a>
 
       <ul>
@@ -1222,6 +1335,12 @@ document.write(`
         <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_surr_losses">(in module codes.benchmark.bench_plots)</a>
 </li>
       </ul></li>
+      <li><a href="codes.tune.html#codes.tune.plot_test_losses">plot_test_losses() (in module codes.tune)</a>
+
+      <ul>
+        <li><a href="codes.tune.html#codes.tune.evaluate_study.plot_test_losses">(in module codes.tune.evaluate_study)</a>
+</li>
+      </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.plot_uncertainty_over_time_comparison">plot_uncertainty_over_time_comparison() (in module codes.benchmark)</a>
 
       <ul>
@@ -1236,15 +1355,21 @@ document.write(`
       </ul></li>
       <li><a href="codes.surrogates.html#codes.surrogates.Polynomial">Polynomial (class in codes.surrogates)</a>
 </li>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.predict">predict() (codes.surrogates.AbstractSurrogateModel method)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.predict">predict() (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel method)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.predict">(codes.surrogates.surrogates.AbstractSurrogateModel method)</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.predict">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel method)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.predict">(codes.surrogates.AbstractSurrogateModel method)</a>
 </li>
       </ul></li>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.prepare_data">prepare_data() (codes.surrogates.AbstractSurrogateModel method)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.prepare_data">prepare_data() (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel method)</a>
 
       <ul>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.prepare_data">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel method)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.prepare_data">(codes.surrogates.AbstractSurrogateModel method)</a>
+</li>
         <li><a href="codes.surrogates.html#codes.surrogates.FullyConnected.prepare_data">(codes.surrogates.FullyConnected method)</a>
 </li>
         <li><a href="codes.surrogates.html#codes.surrogates.LatentNeuralODE.prepare_data">(codes.surrogates.LatentNeuralODE method)</a>
@@ -1252,8 +1377,6 @@ document.write(`
         <li><a href="codes.surrogates.html#codes.surrogates.LatentPoly.prepare_data">(codes.surrogates.LatentPoly method)</a>, <a href="codes.surrogates.html#id6">[1]</a>
 </li>
         <li><a href="codes.surrogates.html#codes.surrogates.MultiONet.prepare_data">(codes.surrogates.MultiONet method)</a>
-</li>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.prepare_data">(codes.surrogates.surrogates.AbstractSurrogateModel method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -1274,6 +1397,14 @@ document.write(`
       </ul></li>
       <li><a href="codes.surrogates.html#codes.surrogates.ODE.reg_factor">reg_factor (codes.surrogates.ODE attribute)</a>
 </li>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.register">register() (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel class method)</a>
+
+      <ul>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.register">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel class method)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.register">(codes.surrogates.AbstractSurrogateModel class method)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="codes.benchmark.html#codes.benchmark.rel_errors_and_uq">rel_errors_and_uq() (in module codes.benchmark)</a>
@@ -1296,10 +1427,12 @@ document.write(`
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.save">save() (codes.surrogates.AbstractSurrogateModel method)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.save">save() (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel method)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.save">(codes.surrogates.surrogates.AbstractSurrogateModel method)</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.save">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel method)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.save">(codes.surrogates.AbstractSurrogateModel method)</a>
 </li>
       </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.save_plot">save_plot() (in module codes.benchmark)</a>
@@ -1342,10 +1475,12 @@ document.write(`
         <li><a href="codes.surrogates.html#codes.surrogates.MultiONet.setup_optimizer_and_scheduler">(codes.surrogates.MultiONet method)</a>
 </li>
       </ul></li>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.setup_progress_bar">setup_progress_bar() (codes.surrogates.AbstractSurrogateModel method)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.setup_progress_bar">setup_progress_bar() (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel method)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.setup_progress_bar">(codes.surrogates.surrogates.AbstractSurrogateModel method)</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.setup_progress_bar">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel method)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.setup_progress_bar">(codes.surrogates.AbstractSurrogateModel method)</a>
 </li>
       </ul></li>
       <li><a href="docs/source/codes.surrogates.surrogate_classes.html#codes.surrogates.surrogate_classes">surrogate_classes (in module codes.surrogates)</a>
@@ -1366,10 +1501,12 @@ document.write(`
       </ul></li>
       <li><a href="codes.surrogates.html#codes.surrogates.ODE.tanh_reg">tanh_reg (codes.surrogates.ODE attribute)</a>
 </li>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.test_loss">test_loss (codes.surrogates.AbstractSurrogateModel attribute)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.test_loss">test_loss (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel attribute)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.test_loss">(codes.surrogates.surrogates.AbstractSurrogateModel attribute)</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.test_loss">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel attribute)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.test_loss">(codes.surrogates.AbstractSurrogateModel attribute)</a>
 </li>
       </ul></li>
       <li><a href="codes.utils.html#codes.utils.time_execution">time_execution() (in module codes.utils)</a>
@@ -1394,16 +1531,26 @@ document.write(`
         <li><a href="codes.train.html#codes.train.train_fcts.train_and_save_model">(in module codes.train.train_fcts)</a>
 </li>
       </ul></li>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.train_duration">train_duration (codes.surrogates.AbstractSurrogateModel attribute)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.train_duration">train_duration (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel attribute)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.train_duration">(codes.surrogates.surrogates.AbstractSurrogateModel attribute)</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.train_duration">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel attribute)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.train_duration">(codes.surrogates.AbstractSurrogateModel attribute)</a>
 </li>
       </ul></li>
-      <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.train_loss">train_loss (codes.surrogates.AbstractSurrogateModel attribute)</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.train_loss">train_loss (codes.surrogates.AbstractSurrogate.AbstractSurrogateModel attribute)</a>
 
       <ul>
-        <li><a href="codes.surrogates.html#codes.surrogates.surrogates.AbstractSurrogateModel.train_loss">(codes.surrogates.surrogates.AbstractSurrogateModel attribute)</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.train_loss">(codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel attribute)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.train_loss">(codes.surrogates.AbstractSurrogateModel attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="codes.tune.html#codes.tune.training_run">training_run() (in module codes.tune)</a>
+
+      <ul>
+        <li><a href="codes.tune.html#codes.tune.optuna_fcts.training_run">(in module codes.tune.optuna_fcts)</a>
 </li>
       </ul></li>
       <li><a href="codes.surrogates.html#codes.surrogates.TrunkNet">TrunkNet (class in codes.surrogates)</a>
@@ -1505,8 +1652,8 @@ By Robin Janssen, Immanuel Sulzer
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
-<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
 
   <footer class="bd-footer">
   </footer>

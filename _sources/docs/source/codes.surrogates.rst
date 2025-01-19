@@ -10,5 +10,5 @@
    :toctree:
    :recursive:
 
+   AbstractSurrogate
    surrogate_classes
-   surrogates
