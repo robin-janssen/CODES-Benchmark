@@ -11,7 +11,7 @@ from .LatentNeuralODE.utilities import ChemDataset
 from .LatentPolynomial.latent_poly import LatentPoly, Polynomial
 
 from .surrogate_classes import surrogate_classes
-from .surrogates import AbstractSurrogateModel, SurrogateModel
+from .AbstractSurrogate.surrogates import AbstractSurrogateModel, SurrogateModel
 
 __all__ = [
     "surrogate_classes",

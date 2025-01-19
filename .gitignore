@@ -36,3 +36,4 @@ docs/_build/
 .doctrees/
 docs/docs/
 .coverage
+optuna_runs/

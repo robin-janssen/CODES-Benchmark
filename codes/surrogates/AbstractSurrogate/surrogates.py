@@ -1,6 +1,7 @@
 import dataclasses
 import os
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Any, TypeVar
 
 import numpy as np
@@ -19,7 +20,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
     structure of a surrogate model and defines the methods that need to be
     implemented by the subclasses for it to be compatible with the benchmarking
     framework. For more information, see
-    https://robin-janssen.github.io/CODES-Benchmark/documentation.html#add_model.
+    https://codes-docs.web.app/documentation.html#add_model.
 
     Args:
         device (str, optional): The device to run the model on. Defaults to None.
@@ -63,7 +64,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         ) -> None:
             Trains the model on the training data. Sets the train_loss and test_loss attributes.
 
-        predict(data_loader: DataLoader) -> tuple[torch.Tensor, torch.Tensor]:
+        predict(data_loader: DataLoader) -> tuple[Tensor, Tensor]:
             Evaluates the model on the given data loader.
 
         save(
@@ -80,9 +81,18 @@ class AbstractSurrogateModel(ABC, nn.Module):
         setup_progress_bar(epochs: int, position: int, description: str) -> tqdm:
             Helper function to set up a progress bar for training.
 
-        denormalize(data: torch.Tensor) -> torch.Tensor:
+        denormalize(data: Tensor) -> Tensor:
             Denormalizes the data back to the original scale.
     """
+
+    _registry: list[type["AbstractSurrogateModel"]] = []
+    _protected_methods = [
+        "predict",
+        "save",
+        "load",
+        "denormalize",
+        "setup_progress_bar",
+    ]
 
     def __init__(
         self,
@@ -102,6 +112,28 @@ class AbstractSurrogateModel(ABC, nn.Module):
         self.L1 = nn.L1Loss()
         self.config = config if config is not None else {}
         self.train_duration = None
+        self.optuna_trial = None
+        self.n_epochs = 0
+
+    @classmethod
+    def register(cls, surrogate: type["AbstractSurrogateModel"]):
+        """Registers a surrogate model class into the registry."""
+        if not issubclass(surrogate, cls):
+            raise TypeError(
+                f"{surrogate.__name__} must be a subclass of AbstractSurrogateModel."
+            )
+
+        for method in cls._protected_methods:
+            if method in surrogate.__dict__:
+                raise AttributeError(
+                    f"Method {method} is protected and cannot be overridden."
+                )
+        cls._registry.append(surrogate)
+
+    @classmethod
+    def get_registered_classes(cls) -> list[type["AbstractSurrogateModel"]]:
+        """Returns the list of registered surrogate model classes."""
+        return cls._registry
 
     @abstractmethod
     def forward(self, inputs: Any) -> tuple[Tensor, Tensor]:
@@ -168,7 +200,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
     def predict(
         self,
         data_loader: DataLoader,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[Tensor, Tensor]:
         """
         Evaluate the model on the given dataloader.
 
@@ -177,7 +209,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
                 model is evaluated on.
 
         Returns:
-            tuple[torch.Tensor, torch.Tensor]: The predictions and targets.
+            tuple[Tensor, Tensor]: The predictions and targets.
         """
 
         # infer output size
@@ -190,7 +222,8 @@ class AbstractSurrogateModel(ABC, nn.Module):
             )
 
         # pre-allocate buffers for predictions and targets
-        size = (batch_size * len(data_loader), *out_shape)
+        length = len(data_loader)
+        size = (batch_size * length, *out_shape)
         predictions = torch.zeros(size, dtype=dummy_outputs.dtype).to(self.device)
         targets = torch.zeros(size, dtype=dummy_outputs.dtype).to(self.device)
 
@@ -258,19 +291,31 @@ class AbstractSurrogateModel(ABC, nn.Module):
                 if attr == "n_timesteps":
                     delattr(self, attr)
 
+        # Remove optuna_trial from the class attributes
+        if hasattr(self, "optuna_trial"):
+            hyperparameters.pop("optuna_trial", None)
+
         # Add some additional information to the model and hyperparameters
         self.train_duration = (
             self.fit.duration if hasattr(self.fit, "duration") else None
         )
         hyperparameters["train_duration"] = self.train_duration
+        hyperparameters["n_epochs"] = self.n_epochs + 1
         self.normalisation = data_params
         hyperparameters["normalisation"] = data_params
+        hyperparameters["device"] = self.device
+        if "cuda" in self.device:
+            devinfo = torch.cuda.get_device_properties(self.device)
+            hyperparameters["device_info"] = (
+                f"{devinfo.name} ({devinfo.total_memory / 1e9:.2f}GB), CUDA {devinfo.major}.{devinfo.minor}"
+            )
+        hyperparameters["date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Reduce the precision of the losses and accuracy
         for attribute in ["train_loss", "test_loss", "MAE"]:
             value = getattr(self, attribute)
             if value is not None:
-                if isinstance(value, torch.Tensor):
+                if isinstance(value, Tensor):
                     value = value.cpu().detach().numpy()
                 if isinstance(value, np.ndarray):
                     value = value.astype(np.float32)
@@ -359,7 +404,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         )
         return progress_bar
 
-    def denormalize(self, data: torch.Tensor) -> torch.Tensor:
+    def denormalize(self, data: Tensor) -> Tensor:
         """
         Denormalize the data.
 

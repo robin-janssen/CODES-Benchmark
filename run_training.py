@@ -3,8 +3,11 @@ from datetime import timedelta
 
 from tqdm import tqdm
 
-from codes.utils.data_utils import download_data
-from codes.train import create_task_list_for_surrogate, parallel_training, sequential_training
+from codes.train import (
+    create_task_list_for_surrogate,
+    parallel_training,
+    sequential_training,
+)
 from codes.utils import (
     check_training_status,
     load_and_save_config,
@@ -12,6 +15,7 @@ from codes.utils import (
     nice_print,
     save_task_list,
 )
+from codes.utils.data_utils import download_data
 
 
 def main(args):
@@ -21,7 +25,7 @@ def main(args):
     model and train the models sequentially or in parallel depending on the number of
     devices.
 
-    Args:
+    Args:sc
         args (Namespace): The command line arguments.
     """
     config = load_and_save_config(config_path=args.config, save=False)

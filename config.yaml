@@ -1,33 +1,33 @@
 # Global settings for the benchmark
-training_id: "delete_me5"
-surrogates: ["MultiONet"]
-batch_size: [256]
-epochs: [10]
+training_id: "osu2008_new_lr"
+surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
+batch_size: [4096, 4096, 512, 512]
+epochs: [5000, 5000, 15000, 10000]
 dataset: 
-  name: "branca24"
-  log10_transform: False
-  normalise: "disable" # "minmax" # "standardise", "minmax", "disable"
+  name: "osu2008"
+  log10_transform: True
+  normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
   tolerance: 1e-30
-devices: ["cpu"]
+devices: ["cuda:0", "cuda:1", "cuda:2", "cuda:3"]
 seed: 42
 verbose: False
 
 # Models to train
 interpolation: 
-  enabled: True
-  intervals: [2, 3, 4, 5, 6, 7, 8, 10]
-extrapolation: 
-  enabled: True
+  enabled: False
+  intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
+extrapolation:
+  enabled: False
   cutoffs: [50, 60, 70, 80, 90]
 sparse: 
-  enabled: True
+  enabled: False
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
   enabled: False
   sizes: [16, 1024, 8192]
 uncertainty: 
-  enabled: True
+  enabled: False
   ensemble_size: 5  # Number of models for deep ensemble
 
 # Evaluations during benchmark

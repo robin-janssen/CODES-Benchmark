@@ -10,6 +10,7 @@ from codes.utils import (
     get_data_subset,
     get_progress_bar,
     load_and_save_config,
+    load_task_list,
     make_description,
     save_task_list,
     set_random_seeds,
@@ -57,8 +58,6 @@ def train_and_save_model(
         )
     )
 
-    model_config = get_model_config(surr_name, config)
-
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(
         full_train_data, full_test_data, timesteps, mode, metric
@@ -69,8 +68,7 @@ def train_and_save_model(
 
     # Get the surrogate class
     surrogate_class = get_surrogate(surr_name)
-
-    # Set the device for the model
+    model_config = get_model_config(surr_name, config)
     model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
     surr_idx = config["surrogates"].index(surr_name)
 
@@ -176,54 +174,79 @@ def worker(
     device_idx: int,
     overall_progress_bar: tqdm,
     task_list_filepath: str,
+    errors_encountered: list[bool],
 ):
     """
     Worker function to process tasks from the task queue on the given device.
 
     Args:
-        task_queue (Queue): The task queue containing the training tasks.
+        task_queue (Queue): The in-memory queue containing the training tasks.
         device (str): The device to use for training.
         device_idx (int): The index of the device in the device list.
         overall_progress_bar (tqdm): The overall progress bar for the training.
-        task_list_filepath (str): The filepath to the task list file
+        task_list_filepath (str): The filepath to the JSON task list.
+        errors_encountered (list[bool]): A shared mutable flag array indicating if an error has occurred
+                                         (True if at least one task failed).
     """
     while not task_queue.empty():
         try:
-            task = task_queue.get_nowait()
-            train_and_save_model(*task, device, position=device_idx + 1)
+            task = task_queue.get_nowait()  # Remove the task from the in-memory queue
+            train_and_save_model(*task, device=device, position=device_idx + 1)
+
+            # Mark that we have successfully processed this task
             task_queue.task_done()
             overall_progress_bar.update(1)
 
-            # Save the remaining tasks after completing each one
-            remaining_tasks = list(task_queue.queue)
-            save_task_list(remaining_tasks, task_list_filepath)
+            # Only remove *this* successful task from the JSON
+            current_list = load_task_list(task_list_filepath)
+
+            # Convert the task tuple to a list if you are storing tasks as lists in JSON
+            # (Because json.dump(...) typically stores lists, not tuples.)
+            # Example: if 'task' is a tuple, do this:
+            task_as_list = list(task)
+
+            # Now remove the just-finished task from the JSON list
+            try:
+                current_list.remove(task_as_list)
+            except ValueError:
+                # In case it's already gone or doesn't match exactly
+                pass
+
+            # Re-save the updated list
+            save_task_list(current_list, task_list_filepath)
 
         except Exception as e:
             tqdm.write(f"Exception for task {task[:3]}: {e}")
+            # Mark this task as "done" for the queue, so the loop can move on
             task_queue.task_done()
             overall_progress_bar.update(1)
 
+            # Flag that at least one task has failed
+            errors_encountered[0] = True
+            # Crucially, we do *not* remove the task from JSON here
+            # so that it remains for a future run.
+
 
 def parallel_training(tasks, device_list, task_list_filepath: str):
-    """
-    Execute the training tasks in parallel on multiple devices.
-
-    Args:
-        tasks (list): The list of training tasks.
-        device_list (list): The list of devices to use for training.
-        task_list_filepath (str): The filepath to the task list file.
-    """
     task_queue = Queue()
     for task in tasks:
         task_queue.put(task)
 
-    # Create the overall progress bar
+    errors_encountered = [False]
     overall_progress_bar = get_progress_bar(tasks)
+
     threads = []
     for i, device in enumerate(device_list):
         thread = Thread(
             target=worker,
-            args=(task_queue, device, i, overall_progress_bar, task_list_filepath),
+            args=(
+                task_queue,
+                device,
+                i,
+                overall_progress_bar,
+                task_list_filepath,
+                errors_encountered,
+            ),
         )
         thread.start()
         threads.append(thread)
@@ -234,48 +257,63 @@ def parallel_training(tasks, device_list, task_list_filepath: str):
     overall_progress_bar.close()
     elapsed_time = overall_progress_bar.format_dict["elapsed"]
 
-    # Create a completion marker after all tasks are completed
-    with open(
-        os.path.join(os.path.dirname(task_list_filepath), "completed.txt"),
-        "w",
-        encoding="utf-8",
-    ) as f:
-        f.write("Training completed")
-
-    # Remove the task list file
-    os.remove(task_list_filepath)
+    # If no errors, mark training done & remove tasks file
+    if not errors_encountered[0]:
+        with open(
+            os.path.join(os.path.dirname(task_list_filepath), "completed.txt"),
+            "w",
+            encoding="utf-8",
+        ) as f:
+            f.write("Training completed")
+        os.remove(task_list_filepath)
+    else:
+        tqdm.write(
+            "Some tasks failed. The task list file was NOT removed.\n"
+            "Please fix the error(s) and re-run to complete the remaining tasks."
+        )
 
     return elapsed_time
 
 
 def sequential_training(tasks, device_list, task_list_filepath: str):
-    """
-    Execute the training tasks sequentially on a single device.
-
-    Args:
-        tasks (list): The list of training tasks.
-        device_list (list): The list of devices to use for training.
-        task_list_filepath (str): The filepath to the task list file.
-    """
     overall_progress_bar = get_progress_bar(tasks)
-    for i, task in enumerate(tasks):
-        train_and_save_model(*task, device_list[0])
-        overall_progress_bar.update(1)
-        remaining_tasks = tasks[i + 1 :]
-        save_task_list(remaining_tasks, task_list_filepath)
+    errors_encountered = False
+    device = device_list[0]
+
+    for task in tasks:
+        try:
+            train_and_save_model(*task, device=device)
+            overall_progress_bar.update(1)
+
+            # Only remove *this* task from JSON if success
+            current_list = load_task_list(task_list_filepath)
+            task_as_list = list(task)
+            try:
+                current_list.remove(task_as_list)
+            except ValueError:
+                pass
+            save_task_list(current_list, task_list_filepath)
+
+        except Exception as e:
+            tqdm.write(f"Exception for task {task[:3]}: {e}")
+            overall_progress_bar.update(1)
+            errors_encountered = True
 
     elapsed_time = overall_progress_bar.format_dict["elapsed"]
     overall_progress_bar.close()
 
-    # Create a completion marker after all tasks are completed
-    with open(
-        os.path.join(os.path.dirname(task_list_filepath), "completed.txt"),
-        "w",
-        encoding="utf-8",
-    ) as f:
-        f.write("Training completed")
-
-    # Remove the task list file
-    os.remove(task_list_filepath)
+    if not errors_encountered:
+        with open(
+            os.path.join(os.path.dirname(task_list_filepath), "completed.txt"),
+            "w",
+            encoding="utf-8",
+        ) as f:
+            f.write("Training completed")
+        os.remove(task_list_filepath)
+    else:
+        tqdm.write(
+            "Some tasks failed. The task list file was NOT removed.\n"
+            "Please fix the error(s) and re-run to complete the remaining tasks."
+        )
 
     return elapsed_time
