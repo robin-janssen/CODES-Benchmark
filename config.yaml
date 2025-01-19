@@ -1,15 +1,15 @@
 # Global settings for the benchmark
-training_id: "osu2008_new_lr"
-surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
-batch_size: [4096, 4096, 512, 512]
-epochs: [5000, 5000, 15000, 10000]
+training_id: "osu2008_debug"
+surrogates: ["FullyConnected"] #  ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
+batch_size: [4096] #  [4096, 4096, 512, 512]
+epochs: [10000] # [10000, 10000, 15000, 10000]
 dataset: 
   name: "osu2008"
   log10_transform: True
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
   tolerance: 1e-30
-devices: ["cuda:0", "cuda:1", "cuda:2", "cuda:3"]
+devices: ["cuda:4"] # ["cuda:0", "cuda:1", "cuda:2", "cuda:3"]
 seed: 42
 verbose: False
 

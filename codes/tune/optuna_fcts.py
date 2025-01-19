@@ -1,4 +1,5 @@
 import os
+import queue
 from distutils.util import strtobool
 
 import optuna
@@ -12,11 +13,32 @@ from codes.utils.data_utils import download_data, get_data_subset
 
 
 def load_yaml_config(config_path: str) -> dict:
+    """
+    Load a YAML configuration file.
+
+    Args:
+        config_path (str): Path to the YAML configuration file.
+
+    Returns:
+        dict: Configuration dictionary.
+    """
+
     with open(config_path, "r") as file:
         return yaml.safe_load(file)
 
 
 def get_activation_function(name: str) -> nn.Module:
+    """
+    Get the activation function module from its name.
+    Required for Optuna to suggest activation functions.
+
+    Args:
+        name (str): Name of the activation function.
+
+    Returns:
+        nn.Module: Activation function module.
+    """
+
     activation_functions = {
         "relu": nn.ReLU(),
         "leakyrelu": nn.LeakyReLU(),
@@ -30,7 +52,18 @@ def get_activation_function(name: str) -> nn.Module:
     return activation_functions[name.lower()]
 
 
-def make_optuna_params(trial, optuna_params):
+def make_optuna_params(trial: optuna.Trial, optuna_params: dict) -> dict:
+    """
+    Make Optuna suggested parameters from the optuna_config.yaml file.
+
+    Args:
+        trial (optuna.Trial): Optuna trial object.
+        optuna_params (dict): Optuna parameters dictionary.
+
+    Returns:
+        dict: Suggested parameters.
+    """
+
     suggested_params = {}
     for param_name, param_options in optuna_params.items():
         if param_options["type"] == "int":
@@ -51,7 +84,21 @@ def make_optuna_params(trial, optuna_params):
     return suggested_params
 
 
-def create_objective(config, study_name, device_queue):
+def create_objective(
+    config: dict, study_name: str, device_queue: queue.Queue
+) -> callable:
+    """
+    Create the objective function for Optuna.
+
+    Args:
+        config (dict): Configuration dictionary.
+        study_name (str): Name of the study.
+        device_queue (queue.Queue): Queue of available devices.
+
+    Returns:
+        function: Objective function for Optuna.
+    """
+
     def objective(trial):
         device = device_queue.get()
         try:
@@ -83,7 +130,22 @@ def create_objective(config, study_name, device_queue):
     return objective
 
 
-def training_run(trial, device, config, study_name):
+def training_run(
+    trial: optuna.Trial, device: str, config: dict, study_name: str
+) -> float:
+    """
+    Run the training for a single Optuna trial and return the loss.
+
+    Args:
+        trial (optuna.Trial): Optuna trial object.
+        device (str): Device to run the training on.
+        config (dict): Configuration dictionary.
+        study_name (str): Name of the study.
+
+    Returns:
+        float: Loss value.
+    """
+    
     download_data(config["dataset"]["name"])
     train_data, test_data, val_data, timesteps, _, data_params, _ = check_and_load_data(
         config["dataset"]["name"],

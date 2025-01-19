@@ -137,15 +137,15 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
     @abstractmethod
     def forward(self, inputs: Any) -> tuple[Tensor, Tensor]:
-        # """
-        # Forward pass of the model.
+        """
+        Forward pass of the model.
 
-        # Args:
-        #     inputs (Any): The input data as recieved from the dataloader.
+        Args:
+            inputs (Any): The input data as recieved from the dataloader.
 
-        # Returns:
-        #     tuple[Tensor, Tensor]: The model predictions and the targets.
-        # """
+        Returns:
+            tuple[Tensor, Tensor]: The model predictions and the targets.
+        """
         pass
 
     @abstractmethod
@@ -425,6 +425,9 @@ class AbstractSurrogateModel(ABC, nn.Module):
                 mean = self.normalisation["mean"]
                 std = self.normalisation["std"]
                 data = data * std + mean
+
+            if self.normalisation["log10_transform"]:
+                data = 10**data
 
         return data
 

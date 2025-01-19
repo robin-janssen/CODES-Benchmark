@@ -507,72 +507,72 @@ class MultiONet(OperatorNetwork):
         shuffle: bool = False,
     ):
         """
-        Create a DataLoader for the given data with precomputed batches.
+        Create a DataLoader with optimized memory-safe shuffling using pre-allocated buffers and direct slicing.
 
         Args:
             data (np.ndarray): The data to load. Must have shape (n_samples, n_timesteps, n_chemicals).
-            timesteps (np.ndarray): The timesteps.
-            batch_size (int, optional): The batch size.
-            shuffle (bool, optional): Whether to shuffle the data.
+            timesteps (np.ndarray): The timesteps. Shape: (n_timesteps,).
+            batch_size (int): The batch size.
+            shuffle (bool, optional): Whether to shuffle the data. Defaults to False.
 
         Returns:
             DataLoader: A DataLoader with precomputed batches.
         """
-        # Initialize lists to store the precomputed batches
+        device = self.device
+        n_samples, n_timesteps, n_chemicals = data.shape
+        total_samples = n_samples * n_timesteps
+
+        # Pre-allocate NumPy arrays
+        branch_inputs = np.empty((total_samples, n_chemicals), dtype=np.float32)
+        trunk_inputs = np.empty((total_samples, 1), dtype=np.float32)
+        targets = np.empty((total_samples, n_chemicals), dtype=np.float32)
+
+        # Branch Inputs: Repeat the first timestep across all timesteps for each sample
+        branch_inputs = np.repeat(data[:, 0, :], n_timesteps, axis=0)
+
+        # Trunk Inputs: Tile the timesteps for each sample
+        trunk_inputs = np.tile(timesteps.reshape(1, -1), (n_samples, 1)).reshape(-1, 1)
+
+        # Targets: Flatten the data across samples and timesteps
+        targets = data.reshape(-1, n_chemicals)
+
+        if shuffle:
+            permutation = np.random.permutation(total_samples)
+            branch_inputs = branch_inputs[permutation]
+            trunk_inputs = trunk_inputs[permutation]
+            targets = targets[permutation]
+
+        num_full_batches = total_samples // batch_size
+        remainder = total_samples % batch_size
+
         batched_branch_inputs = []
         batched_trunk_inputs = []
         batched_targets = []
 
-        # Precompute batches
-        branch_inputs, trunk_inputs, targets = [], [], []
-        for i in range(data.shape[0]):
-            for j in range(data.shape[1]):
-                branch_inputs.append(data[i, 0, :])
-                trunk_inputs.append([timesteps[j]])
-                targets.append(data[i, j, :])
+        # Iterate over the full batches and slice the arrays into smaller tensors
+        for batch_idx in range(num_full_batches):
+            start = batch_idx * batch_size
+            end = start + batch_size
 
-                if len(branch_inputs) == batch_size:
-                    batched_branch_inputs.append(
-                        torch.tensor(
-                            np.array(branch_inputs, dtype=np.float32),
-                            dtype=torch.float32,
-                        )
-                    )
-                    batched_trunk_inputs.append(
-                        torch.tensor(
-                            np.array(trunk_inputs, dtype=np.float32),
-                            dtype=torch.float32,
-                        )
-                    )
-                    batched_targets.append(
-                        torch.tensor(
-                            np.array(targets, dtype=np.float32), dtype=torch.float32
-                        )
-                    )
-                    branch_inputs, trunk_inputs, targets = [], [], []
+            batch_branch = torch.from_numpy(branch_inputs[start:end]).float().to(device)
+            batch_trunk = torch.from_numpy(trunk_inputs[start:end]).float().to(device)
+            batch_target = torch.from_numpy(targets[start:end]).float().to(device)
 
-        # Handle any remaining data not fitting into a full batch
-        if branch_inputs:
-            batched_branch_inputs.append(
-                torch.tensor(
-                    np.array(branch_inputs, dtype=np.float32), dtype=torch.float32
-                )
-            )
-            batched_trunk_inputs.append(
-                torch.tensor(
-                    np.array(trunk_inputs, dtype=np.float32), dtype=torch.float32
-                )
-            )
-            batched_targets.append(
-                torch.tensor(np.array(targets, dtype=np.float32), dtype=torch.float32)
-            )
+            batched_branch_inputs.append(batch_branch)
+            batched_trunk_inputs.append(batch_trunk)
+            batched_targets.append(batch_target)
 
-        # Move to the desired device
-        batched_branch_inputs = [b.to(self.device) for b in batched_branch_inputs]
-        batched_trunk_inputs = [t.to(self.device) for t in batched_trunk_inputs]
-        batched_targets = [target.to(self.device) for target in batched_targets]
+        # Handle the remaining samples (if any)
+        if remainder > 0:
+            start = num_full_batches * batch_size
+            batch_branch = torch.from_numpy(branch_inputs[start:]).float().to(device)
+            batch_trunk = torch.from_numpy(trunk_inputs[start:]).float().to(device)
+            batch_target = torch.from_numpy(targets[start:]).float().to(device)
 
-        # Create a PreBatchedDataset with the adjusted length
+            batched_branch_inputs.append(batch_branch)
+            batched_trunk_inputs.append(batch_trunk)
+            batched_targets.append(batch_target)
+
         dataset = PreBatchedDataset(
             batched_branch_inputs,
             batched_trunk_inputs,
@@ -582,7 +582,7 @@ class MultiONet(OperatorNetwork):
         return DataLoader(
             dataset,
             batch_size=1,  # Each "batch" is now a precomputed batch
-            shuffle=shuffle,
+            shuffle=shuffle,  # The DataLoader will shuffle the order of the precomputed batches
             num_workers=0,
             collate_fn=custom_collate_fn,
             worker_init_fn=worker_init_fn,
