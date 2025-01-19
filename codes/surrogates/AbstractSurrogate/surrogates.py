@@ -254,7 +254,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
         model_name: str,
         base_dir: str,
         training_id: str,
-        data_params: dict,
     ) -> None:
         """
         Save the model to disk.
@@ -301,8 +300,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         )
         hyperparameters["train_duration"] = self.train_duration
         hyperparameters["n_epochs"] = self.n_epochs + 1
-        self.normalisation = data_params
-        hyperparameters["normalisation"] = data_params
+        hyperparameters["normalisation"] = self.normalisation
         hyperparameters["device"] = self.device
         if "cuda" in self.device:
             devinfo = torch.cuda.get_device_properties(self.device)

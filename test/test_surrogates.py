@@ -97,9 +97,7 @@ def test_save_load(instance, tmp_path):
     model_name = "".join(
         random.choice(string.ascii_uppercase + string.digits) for _ in range(10)
     )
-    instance.save(
-        model_name=model_name, base_dir=tmp_path, training_id="TestID", data_params={}
-    )
+    instance.save(model_name=model_name, base_dir=tmp_path, training_id="TestID")
     new_instance = instance.__class__(DEVICE, N_CHEMICALS, N_TIMESTEPS)
     new_instance.load(
         training_id="TestID",

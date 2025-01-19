@@ -145,7 +145,7 @@ def training_run(
     Returns:
         float: Loss value.
     """
-    
+
     download_data(config["dataset"]["name"])
     train_data, test_data, val_data, timesteps, _, data_params, _ = check_and_load_data(
         config["dataset"]["name"],
@@ -208,6 +208,5 @@ def training_run(
         model_name=model_name,
         base_dir="",
         training_id=savepath,
-        data_params=data_params,
     )
     return loss
