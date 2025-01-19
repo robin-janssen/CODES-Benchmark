@@ -11,11 +11,11 @@ from torch.profiler import ProfilerActivity, profile, record_function
 # from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 
+from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
 from codes.surrogates.LatentNeuralODE.latent_neural_ode_config import (
     LatentNeuralODEBaseConfig,
 )
 from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
-from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
 from codes.utils import time_execution, worker_init_fn
 
 
@@ -157,6 +157,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
             lr=self.config.learning_rate,
         )
         optimizer.train()
+        criterion = torch.nn.MSELoss()
 
         scheduler = None
         # if self.config.final_learning_rate is not None:
@@ -184,8 +185,8 @@ class LatentNeuralODE(AbstractSurrogateModel):
                         self.model.renormalize_loss_weights(x_true, x_pred)
 
             clr = optimizer.param_groups[0]["lr"]
-            print_loss = f"{losses[epoch, -1].item():.2e}"
-            progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
+            # print_loss = f"{losses[epoch, -1].item():.2e}"
+            # progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
 
             if scheduler is not None:
                 scheduler.step()
@@ -196,9 +197,13 @@ class LatentNeuralODE(AbstractSurrogateModel):
                 preds, targets = self.predict(test_loader)
                 self.model.train()
                 optimizer.train()
-                loss = self.model.total_loss(preds, targets)
+                # loss = self.model.total_loss(preds, targets)
+                loss = criterion(preds, targets)
                 test_losses[epoch] = loss
                 MAEs[epoch] = self.L1(preds, targets).item()
+
+                print_loss = f"{test_losses[epoch].item():.2e}"
+                progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
 
                 if self.optuna_trial is not None:
                     self.optuna_trial.report(loss, epoch)

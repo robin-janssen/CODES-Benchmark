@@ -327,7 +327,8 @@ class MultiONet(OperatorNetwork):
         # self.n_timesteps = len(timesteps)
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
 
-        criterion = self.setup_criterion()
+        # criterion = self.setup_criterion()
+        criterion = nn.MSELoss()
         # optimizer = self.setup_optimizer_and_scheduler(epochs)
         optimizer = self.setup_optimizer_and_scheduler()
 
@@ -339,8 +340,8 @@ class MultiONet(OperatorNetwork):
             train_losses[epoch] = self.epoch(train_loader, criterion, optimizer)
 
             clr = optimizer.param_groups[0]["lr"]
-            print_loss = f"{train_losses[epoch].item():.2e}"
-            progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
+            # print_loss = f"{train_losses[epoch].item():.2e}"
+            # progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
             # scheduler.step()
 
             if test_loader is not None:
@@ -348,9 +349,12 @@ class MultiONet(OperatorNetwork):
                 optimizer.eval()
                 preds, targets = self.predict(test_loader)
                 loss = criterion(preds, targets).item()
-                loss /= len(test_loader.dataset) * self.N
+                # loss /= len(test_loader.dataset) * self.N
                 test_losses[epoch] = loss
                 MAEs[epoch] = self.L1(preds, targets).item()
+
+                print_loss = f"{test_losses[epoch].item():.2e}"
+                progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
 
                 if self.optuna_trial is not None:
                     self.optuna_trial.report(loss, epoch)
@@ -430,7 +434,7 @@ class MultiONet(OperatorNetwork):
         self.train()
         optimizer.train()
         total_loss = 0
-        dataset_size = len(data_loader.dataset)
+        # dataset_size = len(data_loader.dataset)
 
         for batch in data_loader:
             branch_input, trunk_input, targets = batch
@@ -446,7 +450,7 @@ class MultiONet(OperatorNetwork):
             optimizer.step()
             total_loss += loss.item()
 
-        total_loss /= dataset_size * self.N
+        # total_loss /= dataset_size * self.N
         return total_loss
 
     def create_dataloader_n(

@@ -202,7 +202,7 @@ def evaluate_accuracy(
     # Use the model's predict method
     criterion = torch.nn.MSELoss()
     preds, targets = model.predict(data_loader=test_loader)
-    mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
+    mean_squared_error = criterion(preds, targets).item()  # / torch.numel(preds)
     preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
 
     # Calculate relative errors
