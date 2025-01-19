@@ -396,12 +396,24 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.evaluate_study.load_model_test_losses">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_study.</span></span><span class="sig-name descname"><span class="pre">load_model_test_losses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_study.load_model_test_losses" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Load the test losses from the model checkpoint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model_path</strong> (<em>str</em>) – Path to the model checkpoint.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Test losses.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.evaluate_study.load_study_config">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_study.</span></span><span class="sig-name descname"><span class="pre">load_study_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_study.load_study_config" title="Link to this definition">#</a></dt>
-<dd><p>Load the <em>same</em> YAML config used by the study (optuna_config.yaml).</p>
+<dd><p>Load the YAML config used by the study (optuna_config.yaml).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span></p>
@@ -412,14 +424,29 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.evaluate_study.main">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_study.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_study.main" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Main function to evaluate an Optuna study and its top models.
+Usually, viewing the study database with Optuna Dashboard is more informative.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.evaluate_study.moving_average">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_study.</span></span><span class="sig-name descname"><span class="pre">moving_average</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_study.moving_average" title="Link to this definition">#</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Compute the moving average of a 1D array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>np.ndarray</em>) – 1D array to compute the moving average.</p></li>
+<li><p><strong>window_size</strong> (<em>int</em>) – Size of the window for the moving average.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Moving average of the input data.</p>
+</dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the window size is not a positive integer.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -427,14 +454,24 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.evaluate_study.parse_arguments">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_study.</span></span><span class="sig-name descname"><span class="pre">parse_arguments</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_study.parse_arguments" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Parse command-line arguments.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.evaluate_study.plot_test_losses">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_study.</span></span><span class="sig-name descname"><span class="pre">plot_test_losses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_losses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_study.plot_test_losses" title="Link to this definition">#</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+<dd><p>Plot the test losses of the top models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>test_losses</strong> (<em>list</em><em>[</em><em>np.ndarray</em><em>]</em>) – List of test losses.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – List of labels for the test losses.</p></li>
+<li><p><strong>study_name</strong> (<em>str</em>) – Name of the study.</p></li>
+<li><p><strong>window_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Size of the window for the moving average. Defaults to 5.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -445,14 +482,38 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.optuna_fcts.create_objective">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.optuna_fcts.</span></span><span class="sig-name descname"><span class="pre">create_objective</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_queue</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.optuna_fcts.create_objective" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Create the objective function for Optuna.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+<li><p><strong>study_name</strong> (<em>str</em>) – Name of the study.</p></li>
+<li><p><strong>device_queue</strong> (<em>queue.Queue</em>) – Queue of available devices.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Objective function for Optuna.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>function</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.optuna_fcts.get_activation_function">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.optuna_fcts.</span></span><span class="sig-name descname"><span class="pre">get_activation_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.optuna_fcts.get_activation_function" title="Link to this definition">#</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Get the activation function module from its name.
+Required for Optuna to suggest activation functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – Name of the activation function.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Activation function module.</p>
+</dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span></p>
+<dd class="field-odd"><p>nn.Module</p>
 </dd>
 </dl>
 </dd></dl>
@@ -460,9 +521,16 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.optuna_fcts.load_yaml_config">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.optuna_fcts.</span></span><span class="sig-name descname"><span class="pre">load_yaml_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.optuna_fcts.load_yaml_config" title="Link to this definition">#</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Load a YAML configuration file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_path</strong> (<em>str</em>) – Path to the YAML configuration file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Configuration dictionary.</p>
+</dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span></p>
+<dd class="field-odd"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -470,12 +538,44 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.optuna_fcts.make_optuna_params">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.optuna_fcts.</span></span><span class="sig-name descname"><span class="pre">make_optuna_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optuna_params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.optuna_fcts.make_optuna_params" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Make Optuna suggested parameters from the optuna_config.yaml file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trial</strong> (<em>optuna.Trial</em>) – Optuna trial object.</p></li>
+<li><p><strong>optuna_params</strong> (<em>dict</em>) – Optuna parameters dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Suggested parameters.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.optuna_fcts.training_run">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.optuna_fcts.</span></span><span class="sig-name descname"><span class="pre">training_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.optuna_fcts.training_run" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Run the training for a single Optuna trial and return the loss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trial</strong> (<em>optuna.Trial</em>) – Optuna trial object.</p></li>
+<li><p><strong>device</strong> (<em>str</em>) – Device to run the training on.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+<li><p><strong>study_name</strong> (<em>str</em>) – Name of the study.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Loss value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 <section id="module-codes.tune">
@@ -483,14 +583,38 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.create_objective">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">create_objective</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_queue</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.create_objective" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Create the objective function for Optuna.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+<li><p><strong>study_name</strong> (<em>str</em>) – Name of the study.</p></li>
+<li><p><strong>device_queue</strong> (<em>queue.Queue</em>) – Queue of available devices.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Objective function for Optuna.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>function</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.get_activation_function">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">get_activation_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.get_activation_function" title="Link to this definition">#</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Get the activation function module from its name.
+Required for Optuna to suggest activation functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – Name of the activation function.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Activation function module.</p>
+</dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span></p>
+<dd class="field-odd"><p>nn.Module</p>
 </dd>
 </dl>
 </dd></dl>
@@ -498,12 +622,24 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.load_model_test_losses">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">load_model_test_losses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.load_model_test_losses" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Load the test losses from the model checkpoint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model_path</strong> (<em>str</em>) – Path to the model checkpoint.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Test losses.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.load_study_config">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">load_study_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.load_study_config" title="Link to this definition">#</a></dt>
-<dd><p>Load the <em>same</em> YAML config used by the study (optuna_config.yaml).</p>
+<dd><p>Load the YAML config used by the study (optuna_config.yaml).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span></p>
@@ -514,9 +650,16 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.load_yaml_config">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">load_yaml_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.load_yaml_config" title="Link to this definition">#</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Load a YAML configuration file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_path</strong> (<em>str</em>) – Path to the YAML configuration file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Configuration dictionary.</p>
+</dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span></p>
+<dd class="field-odd"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -524,14 +667,42 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.make_optuna_params">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">make_optuna_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optuna_params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.make_optuna_params" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Make Optuna suggested parameters from the optuna_config.yaml file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trial</strong> (<em>optuna.Trial</em>) – Optuna trial object.</p></li>
+<li><p><strong>optuna_params</strong> (<em>dict</em>) – Optuna parameters dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Suggested parameters.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.moving_average">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">moving_average</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.moving_average" title="Link to this definition">#</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Compute the moving average of a 1D array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>np.ndarray</em>) – 1D array to compute the moving average.</p></li>
+<li><p><strong>window_size</strong> (<em>int</em>) – Size of the window for the moving average.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Moving average of the input data.</p>
+</dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the window size is not a positive integer.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -539,9 +710,18 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.plot_test_losses">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">plot_test_losses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_losses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.plot_test_losses" title="Link to this definition">#</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+<dd><p>Plot the test losses of the top models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>test_losses</strong> (<em>list</em><em>[</em><em>np.ndarray</em><em>]</em>) – List of test losses.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – List of labels for the test losses.</p></li>
+<li><p><strong>study_name</strong> (<em>str</em>) – Name of the study.</p></li>
+<li><p><strong>window_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Size of the window for the moving average. Defaults to 5.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -549,7 +729,24 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.training_run">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">training_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.training_run" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Run the training for a single Optuna trial and return the loss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trial</strong> (<em>optuna.Trial</em>) – Optuna trial object.</p></li>
+<li><p><strong>device</strong> (<em>str</em>) – Device to run the training on.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
+<li><p><strong>study_name</strong> (<em>str</em>) – Name of the study.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Loss value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 </section>

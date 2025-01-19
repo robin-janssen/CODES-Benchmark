@@ -772,16 +772,18 @@ Denormalizes the data back to the original scale.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogateModel.forward">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.forward" title="Link to this definition">#</a></dt>
-<dd><p>Define the computation performed at every call.</p>
-<p>Should be overridden by all subclasses.
-:rtype: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Although the recipe for forward pass needs to be defined within
-this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
-instead of this since the former takes care of running the
-registered hooks while the latter silently ignores them.</p>
-</div>
+<dd><p>Forward pass of the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inputs</strong> (<em>Any</em>) – The input data as recieved from the dataloader.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The model predictions and the targets.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[Tensor, Tensor]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -871,7 +873,7 @@ return the DataLoader objects for the training, testing, and validation data.</p
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogateModel.save">
-<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.save" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.save" title="Link to this definition">#</a></dt>
 <dd><p>Save the model to disk.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1143,21 +1145,21 @@ the output of which is of a lower dimension than the input.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.FullyConnected.create_dataloader">
 <span class="sig-name descname"><span class="pre">create_dataloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.FullyConnected.create_dataloader" title="Link to this definition">#</a></dt>
-<dd><p>Create a DataLoader with precomputed batches to avoid overhead from slicing.</p>
+<dd><p>Create a DataLoader with optimized memory-safe shuffling and batching.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code></span></p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<em>np.ndarray</em>) – The data to load. Shape: (n_samples, n_timesteps, n_chemicals).</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps. Shape: (n_timesteps,).</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) – The batch size.</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to shuffle the data. Defaults to False.</p></li>
+</ul>
 </dd>
-</dl>
-<dl class="simple">
-<dt>Steps:</dt><dd><ol class="arabic simple">
-<li><p>Expand dataset shape to (samples, timesteps, chemicals+1) by adding time.</p></li>
-<li><p>Flatten to shape (samples*timesteps, chemicals+1) for FC input
-and (samples*timesteps, chemicals) for targets.</p></li>
-<li><p>Precompute batches of size [batch_size, chemicals+1] and [batch_size, chemicals].</p></li>
-<li><p>Store them in a FCPrebatchedDataset.</p></li>
-<li><p>Return a DataLoader with batch_size=1 and a custom collate_fn to remove extra dims.</p></li>
-</ol>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A DataLoader with precomputed batches.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataLoader</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1836,14 +1838,14 @@ splitting the outputs of branch and trunk networks and calculating the scalar pr
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.MultiONet.create_dataloader">
 <span class="sig-name descname"><span class="pre">create_dataloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.MultiONet.create_dataloader" title="Link to this definition">#</a></dt>
-<dd><p>Create a DataLoader for the given data with precomputed batches.</p>
+<dd><p>Create a DataLoader with optimized memory-safe shuffling using pre-allocated buffers and direct slicing.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong> (<em>np.ndarray</em>) – The data to load. Must have shape (n_samples, n_timesteps, n_chemicals).</p></li>
-<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps.</p></li>
-<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The batch size.</p></li>
-<li><p><strong>shuffle</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to shuffle the data.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps. Shape: (n_timesteps,).</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) – The batch size.</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to shuffle the data. Defaults to False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

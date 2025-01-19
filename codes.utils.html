@@ -706,11 +706,17 @@ bool: Whether to copy the configuration file.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.utils.utils.set_random_seeds">
-<span class="sig-prename descclassname"><span class="pre">codes.utils.utils.</span></span><span class="sig-name descname"><span class="pre">set_random_seeds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.utils.utils.set_random_seeds" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">codes.utils.utils.</span></span><span class="sig-name descname"><span class="pre">set_random_seeds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.utils.utils.set_random_seeds" title="Link to this definition">#</a></dt>
 <dd><p>Set random seeds for reproducibility.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>seed</strong> (<em>int</em>) – The random seed to set.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seed</strong> (<em>int</em>) – The random seed to set.</p></li>
+<li><p><strong>device</strong> (<em>str</em>) – The device to use for training, e.g., ‘cuda:0’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1029,11 +1035,17 @@ Additionally, store metadata about the dataset.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.utils.set_random_seeds">
-<span class="sig-prename descclassname"><span class="pre">codes.utils.</span></span><span class="sig-name descname"><span class="pre">set_random_seeds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.utils.set_random_seeds" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">codes.utils.</span></span><span class="sig-name descname"><span class="pre">set_random_seeds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.utils.set_random_seeds" title="Link to this definition">#</a></dt>
 <dd><p>Set random seeds for reproducibility.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>seed</strong> (<em>int</em>) – The random seed to set.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seed</strong> (<em>int</em>) – The random seed to set.</p></li>
+<li><p><strong>device</strong> (<em>str</em>) – The device to use for training, e.g., ‘cuda:0’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
