@@ -90,7 +90,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     metrics = {}
     metrics["timesteps"] = timesteps
 
-    # Create dataloader for the test data
+    # Create dataloader for the validation data
     _, _, val_loader = model.prepare_data(
         dataset_train=train_data,
         dataset_test=test_data,

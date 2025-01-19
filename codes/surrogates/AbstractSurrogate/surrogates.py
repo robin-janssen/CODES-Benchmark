@@ -86,6 +86,13 @@ class AbstractSurrogateModel(ABC, nn.Module):
     """
 
     _registry: list[type["AbstractSurrogateModel"]] = []
+    _protected_methods = [
+        "predict",
+        "save",
+        "load",
+        "denormalize",
+        "setup_progress_bar",
+    ]
 
     def __init__(
         self,
@@ -115,6 +122,12 @@ class AbstractSurrogateModel(ABC, nn.Module):
             raise TypeError(
                 f"{surrogate.__name__} must be a subclass of AbstractSurrogateModel."
             )
+
+        for method in cls._protected_methods:
+            if method in surrogate.__dict__:
+                raise AttributeError(
+                    f"Method {method} is protected and cannot be overridden."
+                )
         cls._registry.append(surrogate)
 
     @classmethod
