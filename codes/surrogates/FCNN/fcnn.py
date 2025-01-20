@@ -256,16 +256,13 @@ class FullyConnected(AbstractSurrogateModel):
         n_samples, n_timesteps, n_chemicals = dataset.shape
         total_samples = n_samples * n_timesteps
 
-        # Step 1: Expand dataset with time as an additional feature
+        # Expand dataset with time as an additional feature
+        tiled_timesteps = np.tile(timesteps, (n_samples, 1))
         dataset_with_time = np.concatenate(
-            [
-                dataset,
-                np.tile(timesteps, (n_samples, 1)).reshape(n_samples, n_timesteps, 1),
-            ],
-            axis=2,
+            [dataset, tiled_timesteps.reshape(n_samples, n_timesteps, 1)], axis=2
         )
 
-        # Step 2: Flatten the data
+        # Flatten the data
         flattened_inputs = dataset_with_time.reshape(-1, n_chemicals + 1)
         flattened_targets = dataset.reshape(-1, n_chemicals)
 
@@ -274,7 +271,7 @@ class FullyConnected(AbstractSurrogateModel):
             flattened_inputs = flattened_inputs[permutation]
             flattened_targets = flattened_targets[permutation]
 
-        # Step 3: Slice the flattened data into batches
+        # Slice the flattened data into batches
         num_full_batches = total_samples // batch_size
         remainder = total_samples % batch_size
 
@@ -305,14 +302,14 @@ class FullyConnected(AbstractSurrogateModel):
             batched_inputs.append(batch_input)
             batched_targets.append(batch_target)
 
-        # Step 4: Create the pre-batched dataset
+        # Create the pre-batched dataset
         dataset_prebatched = FCPrebatchedDataset(batched_inputs, batched_targets)
 
-        # Step 5: Create the DataLoader with the original configuration
+        # Create the DataLoader with the original configuration
         return DataLoader(
             dataset_prebatched,
             batch_size=1,  # Each "batch" is a precomputed batch
-            shuffle=shuffle,  # Shuffle the order of batches each epoch
+            shuffle=False,  # Shuffle the order of batches each epoch
             num_workers=0,
             collate_fn=fc_collate_fn,
             worker_init_fn=worker_init_fn,
