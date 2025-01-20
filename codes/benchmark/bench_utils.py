@@ -620,7 +620,8 @@ def make_comparison_csv(metrics: dict, config: dict) -> None:
 def get_model_config(surr_name: str, config: dict) -> dict:
     """
     Get the model configuration for a specific surrogate model from the dataset folder.
-    Returns an empty dictionary if the configuration file is not found.
+    Returns an empty dictionary if config["dataset"]["use_optimal_params"] is False,
+    or if no configuration file is found in the dataset folder.
 
     Args:
         surr_name (str): The name of the surrogate model.

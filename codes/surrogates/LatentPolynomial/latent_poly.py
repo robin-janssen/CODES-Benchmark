@@ -1,14 +1,19 @@
 import numpy as np
+import optuna
 import torch
+from schedulefree import AdamWScheduleFree
 from torch import nn
-from torch.optim import Adam
+
+# from torch.optim import Adam
 from torch.utils.data import DataLoader
 
+from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
 from codes.surrogates.LatentNeuralODE.latent_neural_ode import Decoder, Encoder
 from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
-from codes.surrogates.LatentPolynomial.latent_poly_config import LatentPolynomialBaseConfig
-from codes.surrogates.surrogates import AbstractSurrogateModel
-from codes.utils import time_execution
+from codes.surrogates.LatentPolynomial.latent_poly_config import (
+    LatentPolynomialBaseConfig,
+)
+from codes.utils import time_execution, worker_init_fn
 
 
 class LatentPoly(AbstractSurrogateModel):
@@ -109,6 +114,7 @@ class LatentPoly(AbstractSurrogateModel):
                 batch_size=batch_size,
                 shuffle=shuffle,
                 collate_fn=lambda x: (x[0], x[1]),
+                worker_init_fn=worker_init_fn,
             )
 
         return dataloader_train, dataloader_test, dataloader_val
@@ -133,11 +139,16 @@ class LatentPoly(AbstractSurrogateModel):
             position (int): The position of the progress bar.
             description (str): The description for the progress bar.
         """
-        optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
+        # optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
+        optimizer = AdamWScheduleFree(
+            self.model.parameters(), lr=self.config.learning_rate
+        )
+        optimizer.train()
 
         losses = torch.empty((epochs, len(train_loader)))
         test_losses = torch.empty((epochs))
         MAEs = torch.empty((epochs))
+        criterion = nn.MSELoss()
 
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
@@ -156,19 +167,31 @@ class LatentPoly(AbstractSurrogateModel):
                         self.model.renormalize_loss_weights(x_true, x_pred)
 
             clr = optimizer.param_groups[0]["lr"]
-            print_loss = f"{losses[epoch, -1].item():.2e}"
-            progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
+            # print_loss = f"{losses[epoch, -1].item():.2e}"
+            # progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
 
             with torch.inference_mode():
                 self.model.eval()
+                optimizer.eval()
                 preds, targets = self.predict(test_loader)
                 self.model.train()
-                loss = self.model.total_loss(preds, targets)
+                optimizer.train()
+                # loss = self.model.total_loss(preds, targets)
+                loss = criterion(preds, targets)
                 test_losses[epoch] = loss
                 MAEs[epoch] = self.L1(preds, targets).item()
 
+                print_loss = f"{test_losses[epoch].item():.2e}"
+                progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
+
+                if self.optuna_trial is not None:
+                    self.optuna_trial.report(loss, epoch)
+                    if self.optuna_trial.should_prune():
+                        raise optuna.TrialPruned()
+
         progress_bar.close()
 
+        self.n_epochs = epoch
         self.train_loss = torch.mean(losses, dim=1)
         self.test_loss = test_losses
         self.MAE = MAEs
@@ -212,13 +235,13 @@ class PolynomialModelWrapper(nn.Module):
             in_features=config.in_features,
             latent_features=config.latent_features,
             width_list=config.coder_layers,
-            activation=config.coder_activation,
+            activation=config.activation,
         ).to(self.device)
         self.decoder = Decoder(
             out_features=config.in_features,
             latent_features=config.latent_features,
             width_list=config.coder_layers,
-            activation=config.coder_activation,
+            activation=config.activation,
         ).to(self.device)
         self.poly = Polynomial(
             degree=self.config.degree, dimension=self.config.latent_features
@@ -407,3 +430,6 @@ class Polynomial(nn.Module):
         """
         t = t[:, None]
         return torch.hstack([t**i for i in range(1, self.degree + 1)]).permute(0, 2, 1)
+
+
+AbstractSurrogateModel.register(LatentPoly)

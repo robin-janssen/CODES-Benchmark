@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from datetime import timedelta
 
+import torch
 from tqdm import tqdm
 
 from codes.train import (
@@ -25,9 +26,10 @@ def main(args):
     model and train the models sequentially or in parallel depending on the number of
     devices.
 
-    Args:
+    Args:sc
         args (Namespace): The command line arguments.
     """
+    torch.use_deterministic_algorithms(True)
     config = load_and_save_config(config_path=args.config, save=False)
     download_data(config["dataset"]["name"])
     task_list_filepath, copy_config = check_training_status(config)
