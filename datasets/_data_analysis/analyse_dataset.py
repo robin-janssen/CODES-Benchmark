@@ -12,7 +12,7 @@ sys.path.insert(1, codes_path)
 print(sys.path)
 
 from codes import check_and_load_data, download_data
-from datasets.data_analysis.data_plots import (  # plot_example_trajectories_poster,
+from datasets._data_analysis.data_plots import (  # plot_example_trajectories_poster,
     plot_all_gradients_over_time,
     plot_all_trajectories_over_time,
     plot_average_gradients_over_time,
