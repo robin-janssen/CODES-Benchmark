@@ -2,12 +2,14 @@
 
 [![codecov](https://codecov.io/github/robin-janssen/CODES-Benchmark/branch/develop/graph/badge.svg?token=TNF9ISCAJK)](https://codecov.io/github/robin-janssen/CODES-Benchmark)
 ![Static Badge](https://img.shields.io/badge/license-GPLv3-blue)
+![Static Badge](https://img.shields.io/badge/NeurIPS-2024-green)
+
 
 🎉 CODES was accepted to the ML4PS workshop @ NeurIPS2024 🎉
 
 ## Benchmarking Coupled ODE Surrogates
 
-CODES is a benchmark for coupled ODE surrogate models as can be found in the context of chemical reaction networks.
+CODES is a benchmark for coupled ODE surrogate models. 
 
 <picture>
   <!-- Dark mode SVG -->
@@ -16,7 +18,7 @@ CODES is a benchmark for coupled ODE surrogate models as can be found in the con
   <source media="(prefers-color-scheme: light)" srcset="docs/_static/file-alt-solid.svg">
   <!-- Fallback image (light mode by default) -->
   <img width="14" alt="Paper on arXiv" src="docs/_static/book-solid.svg">
-</picture> A preprint of the paper is now on <a href="https://arxiv.org/abs/2410.20886">arXiV</a> <p></p>
+</picture> CODES paper on <a href="https://arxiv.org/abs/2410.20886">arXiV</a>. <p></p>
 
 <picture> 
 <source srcset="docs/_static/favicon-96x96.png">

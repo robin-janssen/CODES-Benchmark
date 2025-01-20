@@ -200,9 +200,9 @@ def evaluate_accuracy(
     n_epochs = conf["epochs"][model_index]
 
     # Use the model's predict method
-    criterion = torch.nn.MSELoss(reduction="sum")
+    criterion = torch.nn.MSELoss()
     preds, targets = model.predict(data_loader=test_loader)
-    mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
+    mean_squared_error = criterion(preds, targets).item()  # / torch.numel(preds)
     preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
 
     # Calculate relative errors
@@ -439,7 +439,7 @@ def evaluate_interpolation(
     errors = np.zeros((len(intervals), len(timesteps)))
 
     # Criterion for prediction loss
-    criterion = torch.nn.MSELoss(reduction="sum")
+    criterion = torch.nn.MSELoss()
 
     # Evaluate models for each interval
     for interval in intervals:
@@ -508,7 +508,7 @@ def evaluate_extrapolation(
     errors = np.zeros((len(cutoffs), len(timesteps)))
 
     # Criterion for prediction loss
-    criterion = torch.nn.MSELoss(reduction="sum")
+    criterion = torch.nn.MSELoss()
 
     # Evaluate models for each cutoff
     for cutoff in cutoffs:
@@ -581,7 +581,7 @@ def evaluate_sparse(
     errors = np.zeros((len(factors), len(timesteps)))
 
     # Criterion for prediction loss
-    criterion = torch.nn.MSELoss(reduction="sum")
+    criterion = torch.nn.MSELoss()
 
     # Evaluate models for each factor
     for factor in factors:
@@ -655,7 +655,7 @@ def evaluate_batchsize(
     errors = np.zeros((len(batch_sizes), len(timesteps)))
 
     # Criterion for prediction loss
-    criterion = torch.nn.MSELoss(reduction="sum")
+    criterion = torch.nn.MSELoss()
 
     # Evaluate models for each batch size
     for i, batch_size in enumerate(batch_sizes):

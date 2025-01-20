@@ -18,6 +18,8 @@ from optuna.visualization import (
 
 
 def parse_arguments():
+    """Parse command-line arguments."""
+
     parser = argparse.ArgumentParser(
         description="Evaluate an Optuna study and its top models."
     )
@@ -35,8 +37,9 @@ def parse_arguments():
 
 def load_study_config(study_name: str) -> dict:
     """
-    Load the *same* YAML config used by the study (optuna_config.yaml).
+    Load the YAML config used by the study (optuna_config.yaml).
     """
+
     config_path = os.path.join(
         "optuna_runs", "studies", study_name, "optuna_config.yaml"
     )
@@ -44,13 +47,36 @@ def load_study_config(study_name: str) -> dict:
         return yaml.safe_load(file)
 
 
-def load_model_test_losses(model_path):
-    # Matches how your model is saved
+def load_model_test_losses(model_path: str) -> np.ndarray:
+    """
+    Load the test losses from the model checkpoint.
+
+    Args:
+        model_path (str): Path to the model checkpoint.
+
+    Returns:
+        np.ndarray: Test losses.
+    """
+
     model_dict = torch.load(model_path, map_location=torch.device("cpu"))
     return model_dict["attributes"]["test_loss"]
 
 
 def moving_average(data: np.ndarray, window_size: int) -> np.ndarray:
+    """
+    Compute the moving average of a 1D array.
+
+    Args:
+        data (np.ndarray): 1D array to compute the moving average.
+        window_size (int): Size of the window for the moving average.
+
+    Returns:
+        np.ndarray: Moving average of the input data.
+
+    Raises:
+        ValueError: If the window size is not a positive integer.
+    """
+
     if window_size <= 0:
         raise ValueError("Window size must be a positive integer.")
     return np.convolve(data, np.ones(window_size) / window_size, mode="valid")
@@ -62,6 +88,16 @@ def plot_test_losses(
     study_name: str,
     window_size: int = 5,
 ) -> None:
+    """
+    Plot the test losses of the top models.
+
+    Args:
+        test_losses (list[np.ndarray]): List of test losses.
+        labels (list[str]): List of labels for the test losses.
+        study_name (str): Name of the study.
+        window_size (int, optional): Size of the window for the moving average. Defaults to 5.
+    """
+
     plt.figure(figsize=(12, 6))
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(test_losses)))
 
@@ -89,6 +125,11 @@ def plot_test_losses(
 
 
 def main():
+    """
+    Main function to evaluate an Optuna study and its top models.
+    Usually, viewing the study database with Optuna Dashboard is more informative.
+    """
+
     args = parse_arguments()
     study_name = args.study_name
     top_n = args.top_n

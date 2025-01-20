@@ -851,7 +851,7 @@ def plot_loss_comparison(
     for i, (train_loss, test_loss, label) in enumerate(
         zip(train_losses, test_losses, labels)
     ):
-        plt.plot(train_loss, label=f"{label} Train Loss", color=colors[i])
+        # plt.plot(train_loss, label=f"{label} Train Loss", color=colors[i])
         plt.plot(test_loss, label=f"{label} Test Loss", linestyle="--", color=colors[i])
 
     max_epochs = max(len(loss) for loss in train_losses)

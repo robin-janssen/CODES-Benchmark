@@ -93,13 +93,17 @@ def load_and_save_config(config_path: str = "config.yaml", save: bool = True) ->
     return config
 
 
-def set_random_seeds(seed: int):
+def set_random_seeds(seed: int, device: str) -> None:
     """
     Set random seeds for reproducibility.
 
     Args:
         seed (int): The random seed to set.
+        device (str): The device to use for training, e.g., 'cuda:0'
     """
+    # Set the device explicitly in case of GPU:
+    if "cuda" in device:
+        torch.cuda.device(torch.device(device))
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)

@@ -44,10 +44,6 @@ def train_and_save_model(
     config_path = f"trained/{training_id}/config.yaml"
     config = load_and_save_config(config_path, save=False)
 
-    # Set the seed for the training
-    if seed is not None:
-        set_random_seeds(seed)
-
     # Load full data
     full_train_data, full_test_data, _, timesteps, _, data_params, _ = (
         check_and_load_data(
@@ -70,6 +66,7 @@ def train_and_save_model(
     surrogate_class = get_surrogate(surr_name)
     model_config = get_model_config(surr_name, config)
     model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
+    model.normalisation = data_params
     surr_idx = config["surrogates"].index(surr_name)
 
     # Determine the batch size
@@ -113,7 +110,6 @@ def train_and_save_model(
         model_name=model_name,
         training_id=config["training_id"],
         base_dir=base_dir,
-        data_params=data_params,
     )
 
 
@@ -191,6 +187,9 @@ def worker(
     while not task_queue.empty():
         try:
             task = task_queue.get_nowait()  # Remove the task from the in-memory queue
+            # Set the seed for the training
+            seed = task[4]
+            set_random_seeds(seed, device)
             train_and_save_model(*task, device=device, position=device_idx + 1)
 
             # Mark that we have successfully processed this task
@@ -282,6 +281,8 @@ def sequential_training(tasks, device_list, task_list_filepath: str):
 
     for task in tasks:
         try:
+            seed = task[4]
+            set_random_seeds(seed, device)
             train_and_save_model(*task, device=device)
             overall_progress_bar.update(1)
 

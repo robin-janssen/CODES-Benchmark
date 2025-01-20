@@ -5,8 +5,8 @@ import torch.nn as nn
 from schedulefree import AdamWScheduleFree
 from torch.utils.data import DataLoader, Dataset
 
-from codes.surrogates.FCNN.fcnn_config import FCNNBaseConfig
 from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
+from codes.surrogates.FCNN.fcnn_config import FCNNBaseConfig
 from codes.utils import time_execution, worker_init_fn
 
 
@@ -161,7 +161,8 @@ class FullyConnected(AbstractSurrogateModel):
         description: str = "Training FullyConnected",
     ) -> None:
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
-        criterion = nn.MSELoss(reduction="sum")
+        # criterion = nn.MSELoss(reduction="sum")
+        criterion = nn.MSELoss()
         optimizer = self.setup_optimizer_and_scheduler()
 
         train_losses, test_losses, MAEs = [np.zeros(epochs) for _ in range(3)]
@@ -171,17 +172,20 @@ class FullyConnected(AbstractSurrogateModel):
             train_losses[epoch] = self.epoch(train_loader, criterion, optimizer)
 
             clr = optimizer.param_groups[0]["lr"]
-            print_loss = f"{train_losses[epoch].item():.2e}"
-            progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
+            # print_loss = f"{train_losses[epoch].item():.2e}"
+            # progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
 
             if test_loader is not None:
                 self.eval()
                 optimizer.eval()
                 preds, targets = self.predict(test_loader)
                 loss = criterion(preds, targets).item()
-                loss /= len(test_loader.dataset) * self.N
+                # loss /= len(test_loader.dataset) * self.N
                 test_losses[epoch] = loss
                 MAEs[epoch] = self.L1(preds, targets).item()
+
+                print_loss = f"{test_losses[epoch].item():.2e}"
+                progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
 
                 if self.optuna_trial is not None:
                     self.optuna_trial.report(loss, epoch)
@@ -213,7 +217,7 @@ class FullyConnected(AbstractSurrogateModel):
         self.train()
         optimizer.train()
         total_loss = 0
-        dataset_size = len(data_loader.dataset)
+        # dataset_size = len(data_loader.dataset)
 
         for batch in data_loader:
             inputs, targets = batch
@@ -226,7 +230,7 @@ class FullyConnected(AbstractSurrogateModel):
             optimizer.step()
             total_loss += loss.item()
 
-        total_loss /= dataset_size * self.N
+        # total_loss /= dataset_size * self.N
         return total_loss
 
     def create_dataloader(
@@ -237,77 +241,78 @@ class FullyConnected(AbstractSurrogateModel):
         shuffle: bool = False,
     ) -> DataLoader:
         """
-        Create a DataLoader with precomputed batches to avoid overhead from slicing.
+        Create a DataLoader with optimized memory-safe shuffling and batching.
 
-        Steps:
-         1) Expand dataset shape to (samples, timesteps, chemicals+1) by adding time.
-         2) Flatten to shape (samples*timesteps, chemicals+1) for FC input
-            and (samples*timesteps, chemicals) for targets.
-         3) Precompute batches of size [batch_size, chemicals+1] and [batch_size, chemicals].
-         4) Store them in a FCPrebatchedDataset.
-         5) Return a DataLoader with batch_size=1 and a custom collate_fn to remove extra dims.
+        Args:
+            dataset (np.ndarray): The data to load. Shape: (n_samples, n_timesteps, n_chemicals).
+            timesteps (np.ndarray): The timesteps. Shape: (n_timesteps,).
+            batch_size (int): The batch size.
+            shuffle (bool, optional): Whether to shuffle the data. Defaults to False.
+
+        Returns:
+            DataLoader: A DataLoader with precomputed batches.
         """
-        n_samples, n_timesteps_, n_chemicals_ = dataset.shape
-        # Make sure n_chemicals_ == self.N
-        # Add 1 time dimension: shape = (samples, timesteps, chemicals+1)
+        device = self.device
+        n_samples, n_timesteps, n_chemicals = dataset.shape
+        total_samples = n_samples * n_timesteps
+
+        # Step 1: Expand dataset with time as an additional feature
         dataset_with_time = np.concatenate(
             [
                 dataset,
-                np.tile(timesteps, (n_samples, 1)).reshape(n_samples, n_timesteps_, 1),
+                np.tile(timesteps, (n_samples, 1)).reshape(n_samples, n_timesteps, 1),
             ],
             axis=2,
         )
 
-        # Flatten data
-        # shape -> (samples*timesteps, chemicals+1)
-        flattened_inputs = dataset_with_time.reshape(-1, self.N + 1)
-        # shape -> (samples*timesteps, chemicals)
-        flattened_targets = dataset.reshape(-1, self.N)
+        # Step 2: Flatten the data
+        flattened_inputs = dataset_with_time.reshape(-1, n_chemicals + 1)
+        flattened_targets = dataset.reshape(-1, n_chemicals)
 
-        # Precompute batches
+        if shuffle:
+            permutation = np.random.permutation(total_samples)
+            flattened_inputs = flattened_inputs[permutation]
+            flattened_targets = flattened_targets[permutation]
+
+        # Step 3: Slice the flattened data into batches
+        num_full_batches = total_samples // batch_size
+        remainder = total_samples % batch_size
+
         batched_inputs = []
         batched_targets = []
 
-        temp_inps, temp_tgts = [], []
-        for i in range(flattened_inputs.shape[0]):
-            temp_inps.append(flattened_inputs[i])
-            temp_tgts.append(flattened_targets[i])
+        for batch_idx in range(num_full_batches):
+            start = batch_idx * batch_size
+            end = start + batch_size
 
-            if len(temp_inps) == batch_size:
-                # Convert lists to arrays, then to tensors
-                inp_tensor = torch.tensor(
-                    np.array(temp_inps, dtype=np.float32), dtype=torch.float32
-                )
-                tgt_tensor = torch.tensor(
-                    np.array(temp_tgts, dtype=np.float32), dtype=torch.float32
-                )
-                batched_inputs.append(inp_tensor)
-                batched_targets.append(tgt_tensor)
-                temp_inps, temp_tgts = [], []
-
-        # Handle any leftovers
-        if temp_inps:
-            inp_tensor = torch.tensor(
-                np.array(temp_inps, dtype=np.float32), dtype=torch.float32
+            batch_input = (
+                torch.from_numpy(flattened_inputs[start:end]).float().to(device)
             )
-            tgt_tensor = torch.tensor(
-                np.array(temp_tgts, dtype=np.float32), dtype=torch.float32
+            batch_target = (
+                torch.from_numpy(flattened_targets[start:end]).float().to(device)
             )
-            batched_inputs.append(inp_tensor)
-            batched_targets.append(tgt_tensor)
 
-        # Move everything to device
-        batched_inputs = [b.to(self.device) for b in batched_inputs]
-        batched_targets = [b.to(self.device) for b in batched_targets]
+            batched_inputs.append(batch_input)
+            batched_targets.append(batch_target)
 
-        # Create a pre-batched dataset
+        if remainder > 0:
+            start = num_full_batches * batch_size
+            batch_input = torch.from_numpy(flattened_inputs[start:]).float().to(device)
+            batch_target = (
+                torch.from_numpy(flattened_targets[start:]).float().to(device)
+            )
+
+            batched_inputs.append(batch_input)
+            batched_targets.append(batch_target)
+
+        # Step 4: Create the pre-batched dataset
         dataset_prebatched = FCPrebatchedDataset(batched_inputs, batched_targets)
 
-        # DataLoader returns batch_size=1, each "batch" is actually a full precomputed batch
+        # Step 5: Create the DataLoader with the original configuration
         return DataLoader(
             dataset_prebatched,
-            batch_size=1,
-            shuffle=shuffle,
+            batch_size=1,  # Each "batch" is a precomputed batch
+            shuffle=shuffle,  # Shuffle the order of batches each epoch
             num_workers=0,
             collate_fn=fc_collate_fn,
             worker_init_fn=worker_init_fn,

@@ -13,6 +13,8 @@ from codes.utils import nice_print
 
 
 def parse_arguments():
+    """Parse command-line arguments."""
+
     parser = argparse.ArgumentParser(
         description="Run multi-architecture Optuna tuning (subsequent studies)."
     )
@@ -25,7 +27,15 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def run_single_study(config, study_name):
+def run_single_study(config: dict, study_name: str):
+    """
+    Run a single Optuna study.
+
+    Args:
+        config (dict): Configuration dictionary.
+        study_name (str): Name of the study.
+    """
+
     sname, arch = study_name.split("_")
 
     db_url = config.get("storage_url", None)
@@ -93,7 +103,15 @@ def run_single_study(config, study_name):
         )
 
 
-def run_all_studies(config, main_study_name):
+def run_all_studies(config: dict, main_study_name: str):
+    """
+    Run all sub-studies for the given main study.
+
+    Args:
+        config (dict): Configuration dictionary.
+        main_study_name (str): Name of the main study.
+    """
+
     surrogates = config["surrogates"]
     total_sub_studies = len(surrogates)
 
@@ -127,6 +145,8 @@ def run_all_studies(config, main_study_name):
 
 
 if __name__ == "__main__":
+    """Main function to run the Optuna tuning."""
+
     nice_print("Starting Optuna tuning")
     args = parse_arguments()
     config_path = os.path.join("optuna_runs", args.study_name, "optuna_config.yaml")

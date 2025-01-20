@@ -7,13 +7,13 @@ from torch import nn
 # from torch.optim import Adam
 from torch.utils.data import DataLoader
 
+from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
 from codes.surrogates.LatentNeuralODE.latent_neural_ode import Decoder, Encoder
 from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
 from codes.surrogates.LatentPolynomial.latent_poly_config import (
     LatentPolynomialBaseConfig,
 )
-from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
-from codes.utils import time_execution
+from codes.utils import time_execution, worker_init_fn
 
 
 class LatentPoly(AbstractSurrogateModel):
@@ -114,6 +114,7 @@ class LatentPoly(AbstractSurrogateModel):
                 batch_size=batch_size,
                 shuffle=shuffle,
                 collate_fn=lambda x: (x[0], x[1]),
+                worker_init_fn=worker_init_fn,
             )
 
         return dataloader_train, dataloader_test, dataloader_val
@@ -147,6 +148,7 @@ class LatentPoly(AbstractSurrogateModel):
         losses = torch.empty((epochs, len(train_loader)))
         test_losses = torch.empty((epochs))
         MAEs = torch.empty((epochs))
+        criterion = nn.MSELoss()
 
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
@@ -165,8 +167,8 @@ class LatentPoly(AbstractSurrogateModel):
                         self.model.renormalize_loss_weights(x_true, x_pred)
 
             clr = optimizer.param_groups[0]["lr"]
-            print_loss = f"{losses[epoch, -1].item():.2e}"
-            progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
+            # print_loss = f"{losses[epoch, -1].item():.2e}"
+            # progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
 
             with torch.inference_mode():
                 self.model.eval()
@@ -174,9 +176,13 @@ class LatentPoly(AbstractSurrogateModel):
                 preds, targets = self.predict(test_loader)
                 self.model.train()
                 optimizer.train()
-                loss = self.model.total_loss(preds, targets)
+                # loss = self.model.total_loss(preds, targets)
+                loss = criterion(preds, targets)
                 test_losses[epoch] = loss
                 MAEs[epoch] = self.L1(preds, targets).item()
+
+                print_loss = f"{test_losses[epoch].item():.2e}"
+                progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
 
                 if self.optuna_trial is not None:
                     self.optuna_trial.report(loss, epoch)
