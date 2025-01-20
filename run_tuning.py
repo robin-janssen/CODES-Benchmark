@@ -122,13 +122,14 @@ def run_all_studies(config: dict, main_study_name: str):
             arch_name = surr["name"]
             study_name = f"{main_study_name}_{arch_name.lower()}"
             arch_pbar.set_postfix({"study": study_name})
+            trials = surr.get("trials", config["n_trials"])
 
             sub_config = {
                 "batch_size": surr["batch_size"],
                 "dataset": config["dataset"],
                 "devices": config["devices"],
                 "epochs": surr["epochs"],
-                "n_trials": config["n_trials"],
+                "n_trials": trials,
                 "seed": config["seed"],
                 "surrogate": {"name": arch_name},
                 "optuna_params": surr["optuna_params"],
