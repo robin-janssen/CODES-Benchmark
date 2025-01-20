@@ -488,7 +488,7 @@ def plot_initial_conditions_distribution(
     plt.xscale("log")  # Log scale for initial conditions magnitudes
     plt.xlabel("Initial Condition Magnitude")
     fig.suptitle(
-        f"Initial Condition Distribution per Chemical (Dataset: {dataset_name}, {train_data.shape[0]} train samples, {test_data.shape[0]} test samples)"
+        f"Initial Condition Distribution per Chemical (Dataset: {dataset_name}, {train_data.shape[0]} train samples, {test_data.shape[0]} val samples)"
     )
 
     plt.tight_layout(rect=[0, 0, 1, 0.97])
@@ -826,6 +826,260 @@ def plot_all_trajectories_over_time(
         conf,
         dpi=300,
         base_dir="datasets",  # Base directory for saving the plot
+        increase_count=False,
+    )
+
+    plt.close()
+
+
+def debug_numerical_errors_plot(
+    dataset_name: str,
+    train_data: np.ndarray,
+    chemical_names: list[str] | None = None,
+    max_quantities: int = 10,
+    threshold: float = 0.1,
+    max_faulty: int = 10,
+) -> None:
+    """
+    Plot faulty trajectories with gradients exceeding a threshold.
+
+    Args:
+        dataset_name (str): The name of the dataset.
+        train_data (np.ndarray): Dataset array of shape [n_samples, n_timesteps, n_quantities].
+        chemical_names (list, optional): Names for each quantity.
+        max_quantities (int, optional): Maximum number of quantities to plot. Default is 10.
+        threshold (float, optional): Gradient threshold to define faulty trajectories. Default is 0.1.
+        max_faulty (int, optional): Maximum number of faulty trajectories to plot. Default is 10.
+    """
+    # Ensure max_faulty does not exceed 10
+    max_faulty = min(max_faulty, 10)
+
+    n_samples, n_timesteps, n_quantities = train_data.shape
+
+    # Cap the number of quantities to plot
+    num_quantities = min(max_quantities, n_quantities)
+    train_data = train_data[:, :, :num_quantities]
+
+    if chemical_names is not None:
+        chemical_names = chemical_names[:num_quantities]
+    else:
+        chemical_names = [f"Quantity {i+1}" for i in range(num_quantities)]
+
+    # Identify faulty trajectories
+    gradients = np.gradient(train_data, axis=1)
+    faulty_mask = np.any(np.abs(gradients) > threshold, axis=(1, 2))
+    faulty_indices = np.where(faulty_mask)[0]
+
+    if faulty_indices.size == 0:
+        print("No faulty trajectories found.")
+        return
+
+    plot_faulty_initial_conditions_distribution(
+        dataset_name=dataset_name,
+        train_data=train_data,
+        faulty_indices=faulty_indices,
+        chemical_names=chemical_names,
+        max_chemicals=max_quantities,
+        log=True,  # Set to False if data is not in log-space
+    )
+
+    # Limit the number of faulty trajectories to plot
+    faulty_indices = faulty_indices[:max_faulty]
+    time = np.linspace(0, 1, n_timesteps)
+
+    # Plot each faulty trajectory
+    fig, axes = plt.subplots(
+        len(faulty_indices), 1, figsize=(10, 4 * len(faulty_indices))
+    )
+
+    if len(faulty_indices) == 1:
+        axes = [axes]
+
+    for idx, sample_idx in enumerate(faulty_indices):
+        ax = axes[idx]
+        trajectory = train_data[sample_idx]
+        traj_gradients = gradients[sample_idx]
+
+        faulty_quantities = np.any(np.abs(traj_gradients) > threshold, axis=0)
+        faulty_labels = [
+            chemical_names[q]
+            for q, is_faulty in enumerate(faulty_quantities)
+            if is_faulty
+        ]
+
+        for q in range(num_quantities):
+            ax.plot(time, trajectory[:, q], label=chemical_names[q], linewidth=1.5)
+            if faulty_quantities[q]:
+                spike_timesteps = np.where(np.abs(traj_gradients[:, q]) > threshold)[0]
+                ax.scatter(
+                    time[spike_timesteps],
+                    trajectory[spike_timesteps, q],
+                    color="red",
+                    s=20,
+                )
+
+        ax.set_title(
+            f"Sample {sample_idx}, Faulty Quantities: {', '.join(faulty_labels)}"
+        )
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Chemical Abundance")
+        ax.legend(loc="upper right")
+
+    plt.tight_layout()
+    fig.suptitle(
+        f"Faulty Trajectories (Dataset: {dataset_name}, Max: {max_faulty})", fontsize=16
+    )
+
+    # Saving the plot
+    conf = {
+        "training_id": dataset_name.lower(),  # Use dataset_name as the training_id
+        "verbose": True,
+    }
+
+    save_plot(
+        plt,
+        "faulty_trajectories.png",  # Save the plot with this name
+        conf,
+        dpi=300,
+        base_dir="datasets",  # Base directory for saving the plot
+        increase_count=False,
+    )
+
+
+def plot_faulty_initial_conditions_distribution(
+    dataset_name: str,
+    train_data: np.ndarray,
+    faulty_indices: np.ndarray,
+    chemical_names: list[str] | None = None,
+    max_chemicals: int = 10,
+    log: bool = True,
+) -> None:
+    """
+    Plot the distribution of initial conditions (t=0) for each chemical from faulty trajectories.
+
+    Args:
+        dataset_name (str): The name of the dataset (e.g., "osu2008").
+        train_data (np.ndarray): Training dataset array of shape [num_samples, num_timesteps, num_chemicals].
+        faulty_indices (np.ndarray): Indices of faulty trajectories within train_data.
+        chemical_names (list, optional): List of chemical names for labeling the lines.
+        max_chemicals (int, optional): Maximum number of chemicals to plot. Default is 10.
+        log (bool, optional): Whether the data is in log-space and should be exponentiated (i.e., data = 10**data).
+    """
+    # If data is in log space, exponentiate it
+    if log:
+        train_data = 10**train_data
+
+    # Extract initial conditions (t=0) for faulty trajectories
+    faulty_data = train_data[faulty_indices, :, :]
+    faulty_initial_conditions = faulty_data[:, 0, :]  # Extract t=0
+
+    # Cap the number of chemicals to plot at max_chemicals
+    num_chemicals = min(max_chemicals, faulty_initial_conditions.shape[1])
+    faulty_initial_conditions = faulty_initial_conditions[:, :num_chemicals]
+
+    if chemical_names is not None:
+        chemical_names = chemical_names[:num_chemicals]
+    else:
+        chemical_names = [f"Chemical {i+1}" for i in range(num_chemicals)]
+
+    # Split the chemicals into groups of 10 for plotting
+    chemicals_per_plot = 10
+    num_plots = int(np.ceil(num_chemicals / chemicals_per_plot))
+
+    # Initialize list to hold log-transformed non-zero initial conditions
+    log_faulty_conditions = []
+    zero_counts_faulty = 0
+
+    # Transform data to log-space and filter out zeros
+    for i in range(num_chemicals):
+        faulty_chemical_conditions = faulty_initial_conditions[:, i]
+
+        non_zero_faulty_conditions = faulty_chemical_conditions[
+            faulty_chemical_conditions > 0
+        ]
+
+        if log:
+            log_faulty_conditions.append(np.log10(non_zero_faulty_conditions))
+        else:
+            log_faulty_conditions.append(non_zero_faulty_conditions)
+
+        zero_counts_faulty += np.sum(faulty_chemical_conditions == 0)
+
+    # Determine global min and max for histogram bins
+    min_values = [np.min(cond) for cond in log_faulty_conditions if len(cond) > 0]
+    max_values = [np.max(cond) for cond in log_faulty_conditions if len(cond) > 0]
+
+    if not min_values or not max_values:
+        print("No non-zero initial conditions to plot.")
+        return
+
+    global_min = np.min(min_values)
+    global_max = np.max(max_values)
+
+    # Set up the x-axis range to nearest whole numbers in log-space
+    x_min = np.floor(global_min)
+    x_max = np.ceil(global_max)
+
+    # Define the x-axis range for plotting
+    x_vals = np.linspace(x_min, x_max + 0.1, 100)
+
+    # Create subplots with shared x-axis
+    fig, axes = plt.subplots(num_plots, 1, figsize=(10, 4 * num_plots), sharex=True)
+
+    if num_plots == 1:
+        axes = [axes]  # Ensure axes is iterable even if there's only one plot
+
+    # Get custom color palette
+    # Assuming get_custom_palette is defined elsewhere
+    colors = get_custom_palette(chemicals_per_plot)
+
+    for plot_idx in range(num_plots):
+        ax = axes[plot_idx]
+        start_idx = plot_idx * chemicals_per_plot
+        end_idx = min((plot_idx + 1) * chemicals_per_plot, num_chemicals)
+
+        for i in range(start_idx, end_idx):
+            # Compute histogram for faulty dataset
+            faulty_hist, faulty_bin_edges = np.histogram(
+                log_faulty_conditions[i], bins=x_vals, density=True
+            )
+            # Smooth the histogram with a Gaussian filter
+            faulty_smoothed_hist = gaussian_filter1d(faulty_hist, sigma=1)
+
+            # Plot the smoothed histogram for the faulty data
+            ax.plot(
+                10 ** faulty_bin_edges[:-1],  # Convert back to original scale
+                faulty_smoothed_hist,
+                label=chemical_names[i] if chemical_names is not None else None,
+                color=colors[i % chemicals_per_plot],
+            )
+
+        ax.set_yscale("linear")
+        ax.set_ylabel("Density (PDF)")
+        ax.set_xlim(10**x_min, 10**x_max)
+        if chemical_names is not None:
+            ax.legend()
+
+    plt.xscale("log")  # Log scale for initial conditions magnitudes
+    plt.xlabel("Initial Condition Magnitude")
+    fig.suptitle(
+        f"Initial Condition Distribution per Chemical for Faulty Trajectories (Dataset: {dataset_name}, {len(faulty_indices)} faulty samples)"
+    )
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+
+    # Save the plot
+    conf = {
+        "training_id": dataset_name.lower(),  # Use dataset_name as the training_id
+        "verbose": True,
+    }
+
+    save_plot(
+        plt,
+        "Faulty_IC_distribution.png",
+        conf,
+        dpi=300,
+        base_dir="datasets",
         increase_count=False,
     )
 
