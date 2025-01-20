@@ -1,15 +1,15 @@
 # Global settings for the benchmark
-training_id: "osu2008_determinism_5"
+training_id: "osu2008_losstest"
 surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
 batch_size: [4096, 4096, 512, 512]
-epochs: [10, 10, 10, 10]
+epochs: [2000, 2000, 2000, 2000]
 dataset: 
   name: "osu2008"
   log10_transform: True
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
   tolerance: 1e-30
-devices: ["cuda:0"] # ["cuda:0", "cuda:1", "cuda:2", "cuda:3"]
+devices: ["cuda:2", "cuda:3", "cuda:4", "cuda:5"] # ["cuda:4"]
 seed: 42
 verbose: False
 
@@ -32,9 +32,9 @@ uncertainty:
 
 # Evaluations during benchmark
 losses: True
-gradients: True
-timing: True
-compute: True
+gradients: False
+timing: False
+compute: False
 compare: True # Whether to compare the surrogates
 
 
