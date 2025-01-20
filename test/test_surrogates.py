@@ -1,6 +1,7 @@
 import random
 import string
 
+import numpy as np
 import pytest
 import torch
 
@@ -20,10 +21,10 @@ def instance(request):
 
 @pytest.fixture
 def dataloaders(instance):
-    data_train = torch.rand((3, N_TIMESTEPS, N_CHEMICALS), dtype=torch.float64)
-    data_test = torch.rand((3, N_TIMESTEPS, N_CHEMICALS), dtype=torch.float64)
-    data_val = torch.rand((3, N_TIMESTEPS, N_CHEMICALS), dtype=torch.float64)
-    timesteps = torch.rand(N_TIMESTEPS, dtype=torch.float64)
+    data_train = np.random.rand(3, N_TIMESTEPS, N_CHEMICALS)
+    data_test = np.random.rand(3, N_TIMESTEPS, N_CHEMICALS)
+    data_val = np.random.rand(3, N_TIMESTEPS, N_CHEMICALS)
+    timesteps = np.linspace(0, 1, N_TIMESTEPS)
     shuffle = True
     dataloader_train, dataloader_test, dataloader_val = instance.prepare_data(
         data_train, data_test, data_val, timesteps, BATCH_SIZE, shuffle
