@@ -1377,7 +1377,7 @@ model and returns the predictions with the respective targets.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.LatentNeuralODE.prepare_data">
 <span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentNeuralODE.prepare_data" title="Link to this definition">#</a></dt>
-<dd><p>Prepares the data for training by creating a DataLoader object.</p>
+<dd><p>Prepares the data for training by creating DataLoader objects.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1386,14 +1386,19 @@ model and returns the predictions with the respective targets.</p>
 <li><p><strong>dataset_val</strong> (<em>np.ndarray</em>) – The validation dataset.</p></li>
 <li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The array of timesteps.</p></li>
 <li><p><strong>batch_size</strong> (<em>int</em>) – The batch size for the DataLoader.</p></li>
-<li><p><strong>shuffle</strong> (<em>bool</em>) – Whether to shuffle the data.</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em>) – Whether to shuffle the training data.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The DataLoader object containing the prepared data.</p>
+<dd class="field-even"><p><ul class="simple">
+<li><p>DataLoader for training data.</p></li>
+<li><p>DataLoader for test data (None if no test data provided).</p></li>
+<li><p>DataLoader for validation data (None if no validation data provided).</p></li>
+</ul>
+</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>DataLoader</p>
+<dd class="field-odd"><p>tuple[DataLoader, DataLoader | None, DataLoader | None]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1498,21 +1503,28 @@ After 10 epochs, the loss weights are renormalized to scale the individual loss 
 <dl class="py method">
 <dt class="sig sig-object py" id="id6">
 <span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id6" title="Link to this definition">#</a></dt>
-<dd><p>Prepares the data for training by creating a DataLoader object.</p>
+<dd><p>Prepares the data for training by creating DataLoader objects.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dataset</strong> (<em>np.ndarray</em>) – The input dataset.</p></li>
-<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps for the dataset.</p></li>
-<li><p><strong>batch_size</strong> (<em>int</em><em> | </em><em>None</em>) – The batch size for the DataLoader. If None, the entire dataset is loaded as a single batch.</p></li>
-<li><p><strong>shuffle</strong> (<em>bool</em>) – Whether to shuffle the data during training.</p></li>
+<li><p><strong>dataset_train</strong> (<em>np.ndarray</em>) – The training dataset.</p></li>
+<li><p><strong>dataset_test</strong> (<em>np.ndarray</em>) – The test dataset.</p></li>
+<li><p><strong>dataset_val</strong> (<em>np.ndarray</em>) – The validation dataset.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The array of timesteps.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) – The batch size for the DataLoader.</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em>) – Whether to shuffle the training data.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The DataLoader object containing the prepared data.</p>
+<dd class="field-even"><p><ul class="simple">
+<li><p>DataLoader for training data.</p></li>
+<li><p>DataLoader for test data (None if no test data provided).</p></li>
+<li><p>DataLoader for validation data (None if no validation data provided).</p></li>
+</ul>
+</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>DataLoader</p>
+<dd class="field-odd"><p>tuple[DataLoader, DataLoader | None, DataLoader | None]</p>
 </dd>
 </dl>
 </dd></dl>

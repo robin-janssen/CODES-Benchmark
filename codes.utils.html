@@ -357,6 +357,7 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.utils.utils">codes.utils.utils module</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.check_training_status"><code class="docutils literal notranslate"><span class="pre">check_training_status()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.create_model_dir"><code class="docutils literal notranslate"><span class="pre">create_model_dir()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.determine_batch_size"><code class="docutils literal notranslate"><span class="pre">determine_batch_size()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.get_progress_bar"><code class="docutils literal notranslate"><span class="pre">get_progress_bar()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.load_and_save_config"><code class="docutils literal notranslate"><span class="pre">load_and_save_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.load_task_list"><code class="docutils literal notranslate"><span class="pre">load_task_list()</span></code></a></li>
@@ -375,6 +376,7 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.create_dataset"><code class="docutils literal notranslate"><span class="pre">create_dataset()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.create_hdf5_dataset"><code class="docutils literal notranslate"><span class="pre">create_hdf5_dataset()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.create_model_dir"><code class="docutils literal notranslate"><span class="pre">create_model_dir()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.determine_batch_size"><code class="docutils literal notranslate"><span class="pre">determine_batch_size()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.download_data"><code class="docutils literal notranslate"><span class="pre">download_data()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.get_data_subset"><code class="docutils literal notranslate"><span class="pre">get_data_subset()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.get_progress_bar"><code class="docutils literal notranslate"><span class="pre">get_progress_bar()</span></code></a></li>
@@ -585,6 +587,31 @@ bool: Whether to copy the configuration file.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.utils.utils.determine_batch_size">
+<span class="sig-prename descclassname"><span class="pre">codes.utils.utils.</span></span><span class="sig-name descname"><span class="pre">determine_batch_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.utils.utils.determine_batch_size" title="Link to this definition">#</a></dt>
+<dd><p>Determine the appropriate batch size based on the config, surrogate index, mode, and metric.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>surr_idx</strong> (<em>int</em>) – Index of the surrogate model in the config.</p></li>
+<li><p><strong>mode</strong> (<em>str</em>) – The benchmark mode (e.g., “main”, “batch_size”).</p></li>
+<li><p><strong>metric</strong> (<em>int</em>) – Metric used for determining the batch size in “batch_size” mode.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The determined batch size.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the number of batch sizes does not match the number of surrogates.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -862,6 +889,31 @@ Additionally, store metadata about the dataset.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="codes.utils.determine_batch_size">
+<span class="sig-prename descclassname"><span class="pre">codes.utils.</span></span><span class="sig-name descname"><span class="pre">determine_batch_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.utils.determine_batch_size" title="Link to this definition">#</a></dt>
+<dd><p>Determine the appropriate batch size based on the config, surrogate index, mode, and metric.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>surr_idx</strong> (<em>int</em>) – Index of the surrogate model in the config.</p></li>
+<li><p><strong>mode</strong> (<em>str</em>) – The benchmark mode (e.g., “main”, “batch_size”).</p></li>
+<li><p><strong>metric</strong> (<em>int</em>) – Metric used for determining the batch size in “batch_size” mode.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The determined batch size.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the number of batch sizes does not match the number of surrogates.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="codes.utils.download_data">
 <span class="sig-prename descclassname"><span class="pre">codes.utils.</span></span><span class="sig-name descname"><span class="pre">download_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.utils.download_data" title="Link to this definition">#</a></dt>
 <dd><p>Download the specified dataset if it is not present
@@ -1118,6 +1170,7 @@ as an attribute of the function.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.utils.utils">codes.utils.utils module</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.check_training_status"><code class="docutils literal notranslate"><span class="pre">check_training_status()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.create_model_dir"><code class="docutils literal notranslate"><span class="pre">create_model_dir()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.determine_batch_size"><code class="docutils literal notranslate"><span class="pre">determine_batch_size()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.get_progress_bar"><code class="docutils literal notranslate"><span class="pre">get_progress_bar()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.load_and_save_config"><code class="docutils literal notranslate"><span class="pre">load_and_save_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.load_task_list"><code class="docutils literal notranslate"><span class="pre">load_task_list()</span></code></a></li>
@@ -1136,6 +1189,7 @@ as an attribute of the function.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.create_dataset"><code class="docutils literal notranslate"><span class="pre">create_dataset()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.create_hdf5_dataset"><code class="docutils literal notranslate"><span class="pre">create_hdf5_dataset()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.create_model_dir"><code class="docutils literal notranslate"><span class="pre">create_model_dir()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.determine_batch_size"><code class="docutils literal notranslate"><span class="pre">determine_batch_size()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.download_data"><code class="docutils literal notranslate"><span class="pre">download_data()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.get_data_subset"><code class="docutils literal notranslate"><span class="pre">get_data_subset()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.get_progress_bar"><code class="docutils literal notranslate"><span class="pre">get_progress_bar()</span></code></a></li>

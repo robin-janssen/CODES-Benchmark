@@ -14,3 +14,9 @@ codes.train.train\_fcts
       train_and_save_model
       worker
    
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      DummyLock
+   

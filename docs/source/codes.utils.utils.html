@@ -357,34 +357,37 @@
 <tr class="row-even"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.create_model_dir" title="codes.utils.utils.create_model_dir"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_model_dir</span></code></a>([base_dir, subfolder, ...])</p></td>
 <td><p>Create a directory based on a unique identifier inside a specified subfolder of the base directory.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.get_progress_bar" title="codes.utils.utils.get_progress_bar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_progress_bar</span></code></a>(tasks)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.determine_batch_size" title="codes.utils.utils.determine_batch_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">determine_batch_size</span></code></a>(config, surr_idx, mode, ...)</p></td>
+<td><p>Determine the appropriate batch size based on the config, surrogate index, mode, and metric.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.get_progress_bar" title="codes.utils.utils.get_progress_bar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_progress_bar</span></code></a>(tasks)</p></td>
 <td><p>Create a progress bar with a specific description.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.load_and_save_config" title="codes.utils.utils.load_and_save_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_and_save_config</span></code></a>([config_path, save])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.load_and_save_config" title="codes.utils.utils.load_and_save_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_and_save_config</span></code></a>([config_path, save])</p></td>
 <td><p>Load configuration from a YAML file and save a copy to the specified directory.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.load_task_list" title="codes.utils.utils.load_task_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_task_list</span></code></a>(filepath)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.load_task_list" title="codes.utils.utils.load_task_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_task_list</span></code></a>(filepath)</p></td>
 <td><p>Load a list of tasks from a JSON file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.make_description" title="codes.utils.utils.make_description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_description</span></code></a>(mode, device, metric, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.make_description" title="codes.utils.utils.make_description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_description</span></code></a>(mode, device, metric, ...)</p></td>
 <td><p>Create a formatted description for the progress bar that ensures consistent alignment.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.nice_print" title="codes.utils.utils.nice_print"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nice_print</span></code></a>(message[, width])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.nice_print" title="codes.utils.utils.nice_print"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nice_print</span></code></a>(message[, width])</p></td>
 <td><p>Print a message in a nicely formatted way with a fixed width.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.read_yaml_config" title="codes.utils.utils.read_yaml_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_yaml_config</span></code></a>(config_path)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.read_yaml_config" title="codes.utils.utils.read_yaml_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_yaml_config</span></code></a>(config_path)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.save_task_list" title="codes.utils.utils.save_task_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_task_list</span></code></a>(tasks, filepath)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.save_task_list" title="codes.utils.utils.save_task_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_task_list</span></code></a>(tasks, filepath)</p></td>
 <td><p>Save a list of tasks to a JSON file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.set_random_seeds" title="codes.utils.utils.set_random_seeds"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_random_seeds</span></code></a>(seed, device)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.set_random_seeds" title="codes.utils.utils.set_random_seeds"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_random_seeds</span></code></a>(seed, device)</p></td>
 <td><p>Set random seeds for reproducibility.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.time_execution" title="codes.utils.utils.time_execution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">time_execution</span></code></a>(func)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.time_execution" title="codes.utils.utils.time_execution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">time_execution</span></code></a>(func)</p></td>
 <td><p>Decorator to time the execution of a function and store the duration as an attribute of the function.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.worker_init_fn" title="codes.utils.utils.worker_init_fn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">worker_init_fn</span></code></a>(worker_id)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.utils.worker_init_fn" title="codes.utils.utils.worker_init_fn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">worker_init_fn</span></code></a>(worker_id)</p></td>
 <td><p>Initialize the random seed for each worker in PyTorch DataLoader.</p></td>
 </tr>
 </tbody>
