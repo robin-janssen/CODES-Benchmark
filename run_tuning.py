@@ -88,6 +88,8 @@ def run_single_study(config: dict, study_name: str):
                         "LastTrial": f"{duration:.1f}s",
                     }
                 )
+        elif trial_.state == TrialState.PRUNED:
+            trial_pbar.update(1)
 
     with tqdm(
         total=n_trials, desc=f"Tuning {study_name}", position=1, leave=True
