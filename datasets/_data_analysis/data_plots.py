@@ -610,6 +610,7 @@ def plot_all_gradients_over_time(
     max_quantities: int = 10,
     spread: float = 0.01,  # Spread for Gaussian noise
     noise_smoothing: float = 2.0,  # Controls how smooth the noise is along the trajectory
+    quantities_per_plot: int = 6,
 ) -> None:
     """
     Plot the average gradient of each quantity in the train dataset over time,
@@ -622,6 +623,7 @@ def plot_all_gradients_over_time(
         max_quantities (int, optional): Maximum number of quantities to plot. Default is 10.
         spread (float, optional): Spread for adding Gaussian noise to the trajectories. Default is 0.05.
         noise_smoothing (float, optional): Sigma for smoothing the noise along the trajectory. Default is 2.0.
+        quantities_per_plot (int, optional): Number of quantities to plot per subplot. Default is 6.
     """
     # Ensure that no more than 1000 trajectories are plotted
     if train_data.shape[0] > 1000:
@@ -647,8 +649,7 @@ def plot_all_gradients_over_time(
     n_timesteps = train_data.shape[1]
     time = np.arange(n_timesteps)
 
-    # Split the quantities into groups of 10
-    quantities_per_plot = 6
+    # Split the quantities into groups
     num_plots = int(np.ceil(num_quantities / quantities_per_plot))
 
     # Create subplots with shared x-axis
@@ -691,7 +692,7 @@ def plot_all_gradients_over_time(
                     else f"Quantity {i + 1}"
                 ),
                 color=colors[i % quantities_per_plot],
-                linewidth=2,  # Make the average line more visible
+                linewidth=1,  # Make the average line more visible
             )
 
         ax.set_xlabel("Time")
@@ -728,6 +729,7 @@ def plot_all_trajectories_over_time(
     chemical_names: list[str] | None = None,
     max_quantities: int = 10,
     spread: float = 0.01,  # Spread for Gaussian noise
+    quantities_per_plot: int = 6,
 ) -> None:
     """
     Plot the average gradient of each quantity in the train dataset over time,
@@ -739,6 +741,7 @@ def plot_all_trajectories_over_time(
         chemical_names (list, optional): List of chemical names for labeling the lines.
         max_quantities (int, optional): Maximum number of quantities to plot. Default is 10.
         spread (float, optional): Spread for adding Gaussian noise to the trajectories. Default is 0.05.
+        quantities_per_plot (int, optional): Number of quantities to plot per subplot. Default is 6.
     """
     # Ensure that no more than 1000 trajectories are plotted
     if train_data.shape[0] > 1000:
@@ -760,7 +763,6 @@ def plot_all_trajectories_over_time(
     time = np.arange(n_timesteps)
 
     # Split the quantities into groups of quantities_per_plot
-    quantities_per_plot = 6
     num_plots = int(np.ceil(num_quantities / quantities_per_plot))
 
     # Create subplots with shared x-axis
@@ -801,7 +803,7 @@ def plot_all_trajectories_over_time(
                     else f"Quantity {i + 1}"
                 ),
                 color=colors[i % quantities_per_plot],
-                linewidth=2,  # Make the average line more visible
+                linewidth=1,  # Make the average line more visible
             )
 
         ax.set_xlabel("Time")

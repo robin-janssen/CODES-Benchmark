@@ -345,14 +345,14 @@ def parse_args() -> ArgumentParser:
         "-f",
         type=str,
         choices=FUNCS.keys(),
-        default="lotka_volterra",
+        default="reaction",
         help=f"Name of the function to generate data for (default: 'lotka_volterra'). Choices: {list(FUNCS.keys())}.",
     )
     parser.add_argument(
         "--name",
         "-n",
         type=str,
-        default="lotka_volterra_DOP853",
+        default="simple_reaction_2",
         help="Name of the dataset (default: 'lotka_volterra_new').",
     )
     parser.add_argument(
@@ -365,7 +365,7 @@ def parse_args() -> ArgumentParser:
         "--seed",
         "-s",
         type=int,
-        default=None,
+        default=42,
         help="Seed for random number generator (default: None).",
     )
     return parser.parse_args()

@@ -76,7 +76,7 @@ def main(args):
             full_data,
             labels,
             max_quantities=10,
-            threshold=2,
+            threshold=0.8,
             max_faulty=5,
         )
 
@@ -97,18 +97,20 @@ def main(args):
         max_quantities=30,
     )
 
-    plot_all_gradients_over_time(
-        args.dataset,
-        full_data,
-        labels,
-        max_quantities=30,
-    )
-
     plot_all_trajectories_over_time(
         args.dataset,
         full_data,
         labels,
         max_quantities=30,
+        quantities_per_plot=3,
+    )
+
+    plot_all_gradients_over_time(
+        args.dataset,
+        full_data,
+        labels,
+        max_quantities=30,
+        quantities_per_plot=3,
     )
 
 
@@ -116,7 +118,7 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
         "--dataset",
-        default="lotka_volterra",
+        default="simple_reaction_2",
         type=str,
         help="Name of the dataset.",
     )
