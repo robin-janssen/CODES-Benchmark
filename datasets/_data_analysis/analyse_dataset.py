@@ -118,7 +118,7 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
         "--dataset",
-        default="simple_reaction_2",
+        default="simple_reaction",
         type=str,
         help="Name of the dataset.",
     )
