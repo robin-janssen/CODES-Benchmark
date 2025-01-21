@@ -159,7 +159,7 @@ def training_run(
         train_data, test_data, timesteps, "sparse", subset_factor
     )
 
-    set_random_seeds(config["seed"])
+    set_random_seeds(config["seed"], device=device)
     surr_name = config["surrogate"]["name"]
     suggested_params = make_optuna_params(trial, config["optuna_params"])
 

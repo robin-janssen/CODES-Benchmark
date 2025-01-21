@@ -21,7 +21,7 @@ def parse_arguments():
     parser.add_argument(
         "--study_name",
         type=str,
-        default="osu2008lr2",
+        default="lotkavolterra",
         help="Main study identifier. Separate sub-studies will be created for each architecture.",
     )
     return parser.parse_args()
@@ -122,7 +122,7 @@ def run_all_studies(config: dict, main_study_name: str):
             arch_name = surr["name"]
             study_name = f"{main_study_name}_{arch_name.lower()}"
             arch_pbar.set_postfix({"study": study_name})
-            trials = surr.get("trials", config["n_trials"])
+            trials = surr.get("trials", config.get("trials", None))
 
             sub_config = {
                 "batch_size": surr["batch_size"],
