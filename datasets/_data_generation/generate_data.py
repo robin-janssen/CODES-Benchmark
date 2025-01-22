@@ -120,8 +120,8 @@ def generate_trajectory(
         initial_condition,
         t_eval=timesteps,
         method="DOP853",
-        atol=1e-6,
-        rtol=1e-6,
+        atol=1e-8,
+        rtol=1e-8,
     )
     if not sol.success:
         raise RuntimeError(f"ODE solver failed: {sol.message}")
@@ -345,14 +345,14 @@ def parse_args() -> ArgumentParser:
         "-f",
         type=str,
         choices=FUNCS.keys(),
-        default="reaction",
+        default="nonlinear_oscillators",
         help=f"Name of the function to generate data for (default: 'lotka_volterra'). Choices: {list(FUNCS.keys())}.",
     )
     parser.add_argument(
         "--name",
         "-n",
         type=str,
-        default="simple_reaction_2",
+        default="oscillators",
         help="Name of the dataset (default: 'lotka_volterra_new').",
     )
     parser.add_argument(

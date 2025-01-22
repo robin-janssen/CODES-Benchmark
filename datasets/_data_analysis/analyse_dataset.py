@@ -14,11 +14,10 @@ sys.path.insert(1, codes_path)
 print(sys.path)
 
 from codes import check_and_load_data, download_data
-from datasets._data_analysis.data_plots import (  # plot_example_trajectories_poster,
+from datasets._data_analysis.data_plots import (  # plot_example_trajectories_poster,; plot_average_gradients_over_time,
     debug_numerical_errors_plot,
     plot_all_gradients_over_time,
     plot_all_trajectories_over_time,
-    plot_average_gradients_over_time,
     plot_example_trajectories,
     plot_initial_conditions_distribution,
 )
@@ -28,8 +27,9 @@ def main(args):
     """
     Main function to analyse the dataset. It checks the dataset and loads the data.
     """
-    log = True
-    debug = True
+    log = True  # args.log
+    debug = False  # args.debug
+    qpp = 6
     # Load full data
     download_data(args.dataset)
     (
@@ -45,6 +45,7 @@ def main(args):
         verbose=False,
         log=log,
         normalisation_mode="disable",
+        tolerance=1e-20,
     )
 
     # Plot example trajectories
@@ -57,6 +58,7 @@ def main(args):
         labels=labels,
         sample_idx=7,
         log=log,
+        quantities_per_plot=qpp,
     )
 
     # plot_example_trajectories_poster(
@@ -76,8 +78,9 @@ def main(args):
             full_data,
             labels,
             max_quantities=10,
-            threshold=0.8,
+            threshold=1.2,
             max_faulty=5,
+            quantities_per_plot=qpp,
         )
 
     # Plot initial conditions distribution
@@ -88,21 +91,22 @@ def main(args):
         chemical_names=labels,
         max_chemicals=50,
         log=log,
+        quantities_per_plot=qpp,
     )
 
-    plot_average_gradients_over_time(
-        args.dataset,
-        full_data,
-        labels,
-        max_quantities=30,
-    )
+    # plot_average_gradients_over_time(
+    #     args.dataset,
+    #     full_data,
+    #     labels,
+    #     max_quantities=30,
+    # )
 
     plot_all_trajectories_over_time(
         args.dataset,
         full_data,
         labels,
         max_quantities=30,
-        quantities_per_plot=3,
+        quantities_per_plot=qpp,
     )
 
     plot_all_gradients_over_time(
@@ -110,7 +114,7 @@ def main(args):
         full_data,
         labels,
         max_quantities=30,
-        quantities_per_plot=3,
+        quantities_per_plot=qpp,
     )
 
 
@@ -118,9 +122,20 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
         "--dataset",
-        default="simple_reaction",
+        default="osu2008",
         type=str,
         help="Name of the dataset.",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Flag to enable debugging plots.",
+    )
+    parser.add_argument(
+        "--log",
+        action="store_true",
+        help="Flag to enable logging.",
+    )
+    # args = parser.parse_args("--dataset simple_oscillator --debug --log".split())
     args = parser.parse_args()
     main(args)

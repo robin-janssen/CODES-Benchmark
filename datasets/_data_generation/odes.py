@@ -119,6 +119,107 @@ def reaction(t: float, n: np.ndarray) -> np.ndarray:
     return np.array([ds1_dt, ds2_dt, ds3_dt, ds4_dt, ds5_dt])
 
 
+def coupled_nonlinear_oscillators(t, state):
+    """
+    Defines a system of 5 coupled nonlinear harmonic oscillators.
+
+    State Variables:
+        state = [x1, v1, x2, v2, x3, v3, x4, v4, x5, v5]
+
+    Parameters:
+        t : float
+            Current time
+        state : np.ndarray
+            Current state of the system [x1, v1, x2, v2, x3, v3, x4, v4, x5, v5]
+
+    Returns:
+        derivatives : list
+            Derivatives [dx1/dt, dv1/dt, ..., dx5/dt, dv5/dt]
+    """
+    # Unpack the state variables
+    x1, x2, x3, x4, x5, v1, v2, v3, v4, v5 = state
+
+    # Define parameters
+    # Masses
+    m1 = m2 = m3 = m4 = m5 = 1.0
+
+    # Linear spring constants
+    k1 = 2.0
+    k2 = 2.0
+    k3 = 2.0
+    k4 = 2.0
+    k5 = 2.0
+
+    # Nonlinear spring coefficients (cubic terms)
+    alpha1 = 0.5
+    alpha2 = 0.5
+    alpha3 = 0.5
+    alpha4 = 0.5
+    alpha5 = 0.5
+
+    # Damping coefficients
+    c1 = 0.5
+    c2 = 0.5
+    c3 = 0.5
+    c4 = 0.5
+    c5 = 0.5
+
+    # Nonlinear coupling coefficients
+    beta13 = 0.05
+    beta24 = 0.05
+    beta35 = 0.05
+    beta41 = 0.05
+    beta52 = 0.05
+
+    # Compute derivatives
+    # Position derivatives are velocities
+    dx1_dt = v1
+    dx2_dt = v2
+    dx3_dt = v3
+    dx4_dt = v4
+    dx5_dt = v5
+
+    # Velocity derivatives
+    dv1_dt = (
+        -c1 * v1 - k1 * (x1 - x2) - alpha1 * (x1 - x2) ** 3 + beta13 * (x3 - x1) ** 2
+    ) / m1
+
+    dv2_dt = (
+        -c2 * v2
+        - k2 * (x2 - x1)
+        - alpha2 * (x2 - x1) ** 3
+        - k3 * (x2 - x3)
+        - alpha3 * (x2 - x3) ** 3
+        + beta24 * (x4 - x2) ** 2
+    ) / m2
+
+    dv3_dt = (
+        -c3 * v3
+        - k3 * (x3 - x2)
+        - alpha3 * (x3 - x2) ** 3
+        - k4 * (x3 - x4)
+        - alpha4 * (x3 - x4) ** 3
+        + beta35 * (x5 - x3) ** 2
+    ) / m3
+
+    dv4_dt = (
+        -c4 * v4
+        - k4 * (x4 - x3)
+        - alpha4 * (x4 - x3) ** 3
+        - k5 * (x4 - x5)
+        - alpha5 * (x4 - x5) ** 3
+        + beta41 * (x1 - x4) ** 2
+    ) / m4
+
+    dv5_dt = (
+        -c5 * v5 - k5 * (x5 - x4) - alpha5 * (x5 - x4) ** 3 + beta52 * (x2 - x5) ** 2
+    ) / m5
+
+    return np.array(
+        [dx1_dt, dx2_dt, dx3_dt, dx4_dt, dx5_dt, dv1_dt, dv2_dt, dv3_dt, dv4_dt, dv5_dt]
+    )
+
+
 FUNCS: Dict[str, Dict[str, Any]] = {
     "lotka_volterra": {
         "func": lotka_volterra,
@@ -150,6 +251,27 @@ FUNCS: Dict[str, Dict[str, Any]] = {
                 (0.1, 20.0),  # S3
                 (1, 30.0),  # S4
                 (1, 30.0),  # S5
+            ],
+        },
+    },
+    "nonlinear_oscillators": {
+        "func": coupled_nonlinear_oscillators,
+        "tsteps": np.linspace(0, 3, 101),
+        "ndim": 10,
+        "labels": ["x1", "x2", "x3", "x4", "x5", "v1", "v2", "v3", "v4", "v5"],
+        "sampling": {
+            "space": "linear",  # Options: 'linear', 'log'
+            "bounds": [
+                (-1, 1),  # x1
+                (-1, 1),  # x2
+                (-1, 1),  # x3
+                (-1, 1),  # x4
+                (-1, 1),  # x5
+                (-1, 1),  # v1
+                (-1, 1),  # v2
+                (-1, 1),  # v3
+                (-1, 1),  # v4
+                (-1, 1),  # v5
             ],
         },
     },

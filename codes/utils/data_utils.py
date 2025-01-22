@@ -21,7 +21,7 @@ def check_and_load_data(
     verbose: bool = True,
     log: bool = True,
     normalisation_mode: str = "standardise",
-    tolerance: float | None = 1e-30,
+    tolerance: float | None = None,
 ):
     """
     Check the specified dataset and load the data based on the mode (train or test).
