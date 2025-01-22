@@ -27,9 +27,9 @@ def main(args):
     """
     Main function to analyse the dataset. It checks the dataset and loads the data.
     """
-    log = True  # args.log
+    log = False  # args.log
     debug = False  # args.debug
-    qpp = 6
+    qpp = 5
     # Load full data
     download_data(args.dataset)
     (
@@ -45,7 +45,7 @@ def main(args):
         verbose=False,
         log=log,
         normalisation_mode="disable",
-        tolerance=1e-20,
+        tolerance=None,
     )
 
     # Plot example trajectories
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
         "--dataset",
-        default="osu2008",
+        default="coupled_oscillators",
         type=str,
         help="Name of the dataset.",
     )
