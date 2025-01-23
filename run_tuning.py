@@ -18,20 +18,6 @@ from codes.tune import create_objective, load_yaml_config
 from codes.utils import nice_print
 
 
-def parse_arguments():
-    """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(
-        description="Run multi-architecture Optuna tuning (subsequent studies)."
-    )
-    parser.add_argument(
-        "--study_name",
-        type=str,
-        default="lotkavolterra2",
-        help="Main study identifier. Separate sub-studies will be created for each architecture.",
-    )
-    return parser.parse_args()
-
-
 def check_postgres_running(config):
     """
     Check if PostgreSQL server is running.
@@ -324,6 +310,20 @@ def initialize_optuna_database(config, study_folder_name):
         sys.exit(1)
 
     return db_url
+
+
+def parse_arguments():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Run multi-architecture Optuna tuning (subsequent studies)."
+    )
+    parser.add_argument(
+        "--study_name",
+        type=str,
+        default="lotkavolterra2",
+        help="Main study identifier. Separate sub-studies will be created for each architecture.",
+    )
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
