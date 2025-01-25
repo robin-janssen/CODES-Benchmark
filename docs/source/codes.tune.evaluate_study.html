@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>codes.surrogates.surrogate_classes &#8212; CODES  documentation</title>
+    <title>codes.tune.evaluate_study &#8212; CODES  documentation</title>
   
   
   
@@ -43,12 +43,12 @@
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'docs/source/codes.surrogates.surrogate_classes';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'docs/source/codes.tune.evaluate_study';</script>
     <link rel="icon" href="../../_static/favicon-96x96.png"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="codes.train" href="codes.train.html" />
-    <link rel="prev" title="codes.surrogates.AbstractSurrogate.surrogates" href="codes.surrogates.AbstractSurrogate.surrogates.html" />
+    <link rel="next" title="codes.tune.optuna_fcts" href="codes.tune.optuna_fcts.html" />
+    <link rel="prev" title="codes.tune" href="codes.tune.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -183,20 +183,20 @@
 <li class="toctree-l2"><a class="reference internal" href="codes.benchmark.bench_utils.html">codes.benchmark.bench_utils</a></li>
 </ul>
 </details></li>
-<li class="toctree-l1 current active has-children"><a class="reference internal" href="codes.surrogates.html">codes.surrogates</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l1 has-children"><a class="reference internal" href="codes.surrogates.html">codes.surrogates</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="codes.surrogates.AbstractSurrogate.html">codes.surrogates.AbstractSurrogate</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3"><a class="reference internal" href="codes.surrogates.AbstractSurrogate.surrogates.html">codes.surrogates.AbstractSurrogate.surrogates</a></li>
 </ul>
 </details></li>
-<li class="toctree-l2 current active"><a class="current reference internal" href="#">codes.surrogates.surrogate_classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="codes.surrogates.surrogate_classes.html">codes.surrogates.surrogate_classes</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="codes.train.html">codes.train</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="codes.train.train_fcts.html">codes.train.train_fcts</a></li>
 </ul>
 </details></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="codes.tune.html">codes.tune</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="codes.tune.evaluate_study.html">codes.tune.evaluate_study</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="codes.tune.html">codes.tune</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">codes.tune.evaluate_study</a></li>
 <li class="toctree-l2"><a class="reference internal" href="codes.tune.optuna_fcts.html">codes.tune.optuna_fcts</a></li>
 </ul>
 </details></li>
@@ -264,7 +264,7 @@
       
       
       
-      <li><a href="../../_sources/docs/source/codes.surrogates.surrogate_classes.rst" target="_blank"
+      <li><a href="../../_sources/docs/source/codes.tune.evaluate_study.rst" target="_blank"
    class="btn btn-sm btn-download-source-button dropdown-item"
    title="Download source file"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -327,9 +327,7 @@
 <button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass fa-lg"></i>
 </button>
-<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <span class="fa-solid fa-list"></span>
-</button>
+
 </div></div>
       
     </div>
@@ -340,19 +338,11 @@
               
 
 <div id="jb-print-docs-body" class="onlyprint">
-    <h1>codes.surrogates.surrogate_classes</h1>
+    <h1>codes.tune.evaluate_study</h1>
     <!-- Table of contents -->
     <div id="print-main-content">
         <div id="jb-print-toc">
             
-            <div>
-                <h2> Contents </h2>
-            </div>
-            <nav aria-label="Page">
-                <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.surrogate_classes"><code class="docutils literal notranslate"><span class="pre">surrogate_classes</span></code></a></li>
-</ul>
-            </nav>
         </div>
     </div>
 </div>
@@ -362,16 +352,32 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="codes-surrogates-surrogate-classes">
-<h1>codes.surrogates.surrogate_classes<a class="headerlink" href="#codes-surrogates-surrogate-classes" title="Link to this heading">#</a></h1>
-<dl class="py data">
-<dt class="sig sig-object py" id="codes.surrogates.surrogate_classes">
-<span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">surrogate_classes</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[&lt;class</span> <span class="pre">'codes.surrogates.DeepONet.deeponet.MultiONet'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'codes.surrogates.FCNN.fcnn.FullyConnected'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'codes.surrogates.LatentNeuralODE.latent_neural_ode.LatentNeuralODE'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'codes.surrogates.LatentPolynomial.latent_poly.LatentPoly'&gt;]</span></em><a class="headerlink" href="#codes.surrogates.surrogate_classes" title="Link to this definition">#</a></dt>
-<dd><p>Built-in mutable sequence.</p>
-<p>If no argument is given, the constructor creates a new empty list.
-The argument must be an iterable if specified.</p>
-</dd></dl>
-
+  <section id="module-codes.tune.evaluate_study">
+<span id="codes-tune-evaluate-study"></span><h1>codes.tune.evaluate_study<a class="headerlink" href="#module-codes.tune.evaluate_study" title="Link to this heading">#</a></h1>
+<p class="rubric">Functions</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_study.load_model_test_losses" title="codes.tune.evaluate_study.load_model_test_losses"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_model_test_losses</span></code></a>(model_path)</p></td>
+<td><p>Load the test losses from the model checkpoint.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_study.load_study_config" title="codes.tune.evaluate_study.load_study_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_study_config</span></code></a>(study_name)</p></td>
+<td><p>Load the YAML config used by the study (optuna_config.yaml).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_study.main" title="codes.tune.evaluate_study.main"><code class="xref py py-obj docutils literal notranslate"><span class="pre">main</span></code></a>()</p></td>
+<td><p>Main function to evaluate an Optuna study and its top models.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_study.moving_average" title="codes.tune.evaluate_study.moving_average"><code class="xref py py-obj docutils literal notranslate"><span class="pre">moving_average</span></code></a>(data, window_size)</p></td>
+<td><p>Compute the moving average of a 1D array.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_study.parse_arguments" title="codes.tune.evaluate_study.parse_arguments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_arguments</span></code></a>()</p></td>
+<td><p>Parse command-line arguments.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_study.plot_test_losses" title="codes.tune.evaluate_study.plot_test_losses"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_test_losses</span></code></a>(test_losses, labels, study_name)</p></td>
+<td><p>Plot the test losses of the top models.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 </section>
 
 
@@ -386,20 +392,20 @@ The argument must be an iterable if specified.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="codes.surrogates.AbstractSurrogate.surrogates.html"
+       href="codes.tune.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">codes.surrogates.AbstractSurrogate.surrogates</p>
+        <p class="prev-next-title">codes.tune</p>
       </div>
     </a>
     <a class="right-next"
-       href="codes.train.html"
+       href="codes.tune.optuna_fcts.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">codes.train</p>
+        <p class="prev-next-title">codes.tune.optuna_fcts</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -409,22 +415,6 @@ The argument must be an iterable if specified.</p>
             </div>
             
             
-              
-                <dialog id="pst-secondary-sidebar-modal"></dialog>
-                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
-
-
-  <div class="sidebar-secondary-item">
-  <div class="page-toc tocsection onthispage">
-    <i class="fa-solid fa-list"></i> Contents
-  </div>
-  <nav class="bd-toc-nav page-toc">
-    <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.surrogate_classes"><code class="docutils literal notranslate"><span class="pre">surrogate_classes</span></code></a></li>
-</ul>
-  </nav></div>
-
-</div></div>
               
             
           </div>
