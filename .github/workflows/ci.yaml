@@ -24,82 +24,93 @@ jobs:
         python-version: ['3.10']
 
     steps:
-    - name: Check out the repository
-      uses: actions/checkout@v4
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history to support dependency checks
+          ref: ${{ github.head_ref || github.ref }}
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install Poetry
-      run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-        export PATH="$HOME/.local/bin:$PATH"
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - name: Install project with dev dependencies
-      run: |
-        poetry install --with dev
+      - name: Install Poetry Plugin for Export
+        run: |
+          poetry self add poetry-plugin-export
 
-    # Step to detect changes in pyproject.toml or poetry.lock
-    - name: Check for dependency changes
-      id: check-deps
-      run: |
-        if git diff --name-only HEAD~1 | grep -qE 'pyproject.toml|poetry.lock'; then
-          echo "dependencies-changed=true" >> $GITHUB_ENV
-        else
-          echo "dependencies-changed=false" >> $GITHUB_ENV
-        fi
+      - name: Install project with dev dependencies
+        run: |
+          poetry install --with dev
 
-    # Step to generate requirements.txt if dependencies have changed
-    - name: Generate requirements.txt
-      if: env.dependencies-changed == 'true'
-      run: |
-        poetry export -f requirements.txt --output requirements.txt --without-hashes
+      - name: Check for dependency changes
+        id: deps
+        run: |
+          # Determine if the event is a pull request
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "PR detected. Comparing with main branch."
+            # Fetch the main branch
+            git fetch origin main
+            # Compare the PR branch with main
+            CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+          else
+            echo "Push detected. Comparing with previous commit."
+            # For push events, compare with the previous commit
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+          fi
 
-    # Commit and push the updated requirements.txt if dependencies have changed
-    - name: Commit and push updated requirements.txt
-      if: env.dependencies-changed == 'true'
-      run: |
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git add requirements.txt
-        git commit -m "Update requirements.txt [skip ci]"
-        git push
+          echo "Changed files: $CHANGED_FILES"
 
-    # Run Black (auto-reformat) using Poetry
-    - name: Run Black (auto-reformat)
-      if: env.is-merge == 'false' # Skip if it's a merge commit
-      run: |
-        poetry run black .
+          # Check if pyproject.toml or poetry.lock has changed
+          if echo "$CHANGED_FILES" | grep -qE '(^|/)pyproject\.toml$|(^|/)poetry\.lock$'; then
+            echo "dependencies-changed=true" >> $GITHUB_ENV
+          else
+            echo "dependencies-changed=false" >> $GITHUB_ENV
+          fi
 
-    # Run isort (auto-reformat) using Poetry
-    - name: Run isort (auto-reformat)
-      if: env.is-merge == 'false' # Skip if it's a merge commit
-      run: |
-        poetry run isort .
+      - name: Generate requirements.txt
+        if: env.dependencies-changed == 'true'
+        run: |
+          poetry export -f requirements.txt --output requirements.txt --without-hashes
 
-    # Run pytest using Poetry
-    - name: Run pytest and generate coverage report
-      run: |
+      - name: Commit and push updated requirements.txt
+        if: |
+          env.dependencies-changed == 'true' &&
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add requirements.txt
+          git commit -m "Update requirements.txt [skip ci]"
+          git push
+
+      - name: Run Black (auto-reformat)
+        run: |
+          poetry run black .
+
+      - name: Run isort (auto-reformat)
+        run: |
+          poetry run isort .
+
+      - name: Run pytest and generate coverage report
+        run: |
           poetry run pytest --cov-report=term-missing:skip-covered --cov=codes test/ --cov-report=xml:coverage.xml
 
-    # - name: Pytest coverage comment
-    #   if: env.is-merge == 'false' # Skip if it's a merge commit
-    #   uses: MishaKav/pytest-coverage-comment@main
-    #   with:
-    #     pytest-coverage-path: ./pytest-coverage.txt
-
-    - name: Upload results to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}  # Only needed for private repos
-        files: ./coverage.xml  # Path to the coverage XML file, adjust if necessary
-        fail_ci_if_error: true  # Optional, ensures the CI fails if Codecov upload fails
-
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}  
+          files: ./coverage.xml  # Path to the coverage XML file, adjust if necessary
+          fail_ci_if_error: true  # Optional, ensures the CI fails if Codecov upload fails
 
   docs:
-    if: github.ref == 'refs/heads/main' || github.event.pull_request.base.ref == 'main' # Only run on the main branch or PRs targeting main
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main')
     runs-on: ubuntu-latest
 
     strategy:
@@ -107,41 +118,38 @@ jobs:
         python-version: ['3.10']
 
     steps:
-    - name: Check out the repository
-      uses: actions/checkout@v3
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history if necessary
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    # Install Poetry
-    - name: Install Poetry
-      run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-        export PATH="$HOME/.local/bin:$PATH"
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    # Install project dependencies, including dev dependencies
-    - name: Install project with dev dependencies
-      run: |
-        poetry install --with dev
+      - name: Install project with dev dependencies
+        run: |
+          poetry install --with dev
 
-    # Generate Sphinx Documentation
-    - name: Generate API Documentation with Sphinx
-      run: |
-        poetry run sphinx-apidoc -o docs/ codes
+      - name: Generate API Documentation with Sphinx
+        run: |
+          poetry run sphinx-apidoc -o docs/ codes
 
-    # Build HTML using Sphinx
-    - name: Build HTML with Sphinx
-      run: |
-        poetry run sphinx-build -b html docs/ docs/_build
+      - name: Build HTML with Sphinx
+        run: |
+          poetry run sphinx-build -b html docs/ docs/_build
 
-    # Deploy Sphinx API documentation to gh-pages
-    - name: Deploy Sphinx API docs to gh-pages
-      uses: peaceiris/actions-gh-pages@v4
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: docs/_build
-        publish_branch: gh-pages
-        user_name: "GitHub Actions"
-        user_email: "actions@github.com"
+      - name: Deploy Sphinx API docs to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/_build
+          publish_branch: gh-pages
+          user_name: "GitHub Actions"
+          user_email: "actions@github.com"
