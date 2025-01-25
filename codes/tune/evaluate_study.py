@@ -1,4 +1,3 @@
-# evaluate_study.py
 import argparse
 import os
 import sys

@@ -1,5 +1,3 @@
-# run_tuning.py
-
 import argparse
 import os
 import queue
