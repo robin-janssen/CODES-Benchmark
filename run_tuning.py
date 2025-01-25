@@ -31,7 +31,7 @@ def check_postgres_running(config):
     db_config = config.get("postgres_config", {})
     host = db_config.get("host", "localhost")
     port = db_config.get("port", 5432)
-    user = db_config.get("user", "rjanssen")
+    user = db_config.get("user", "optuna_user")
     password = db_config.get("password", "")
 
     try:
@@ -62,14 +62,26 @@ def start_postgres_server(config):
     db_config = config.get("postgres_config", {})
     data_dir = db_config.get("data_dir", os.path.expanduser("~/postgres/data"))
     log_file = db_config.get("log_file", os.path.expanduser("~/postgres/logfile"))
+    database_folder = db_config.get("database_folder", os.path.expanduser("~/postgres"))
+
+    # Path to the pg_ctl binary
+    pg_ctl_path = os.path.join(database_folder, "bin", "pg_ctl")
 
     # Check if data_dir exists
     if not os.path.exists(data_dir):
         raise Exception(f"PostgreSQL data directory '{data_dir}' does not exist.")
 
+    # Check if pg_ctl exists
+    if not os.path.exists(pg_ctl_path):
+        raise Exception(
+            f"pg_ctl not found at '{pg_ctl_path}'. Please check your database_folder configuration."
+        )
+
     try:
         print("Starting PostgreSQL server...")
-        subprocess.run(["pg_ctl", "-D", data_dir, "-l", log_file, "start"], check=True)
+        subprocess.run(
+            [pg_ctl_path, "-D", data_dir, "-l", log_file, "start"], check=True
+        )
         print("PostgreSQL server started successfully.")
     except subprocess.CalledProcessError as e:
         raise Exception(f"Failed to start PostgreSQL server: {e}")
@@ -89,8 +101,8 @@ def initialize_postgres(config, study_folder_name):
     db_config = config.get("postgres_config", {})
     host = db_config.get("host", "localhost")
     port = db_config.get("port", 5432)
-    user = db_config.get("user", "rjanssen")  # Replace with your PostgreSQL username
-    password = db_config.get("password", "")  # Empty if using trust authentication
+    user = db_config.get("user", "optuna_user")
+    password = db_config.get("password", "")
     db_name = db_config.get("db_name", study_folder_name)
 
     try:
@@ -126,9 +138,23 @@ def initialize_postgres(config, study_folder_name):
                     break
                 elif user_choice == "o":
                     print(f"Overwriting database '{db_name}'.")
+                    # Terminate existing connections to the database
+                    cursor.execute(
+                        sql.SQL(
+                            """
+                            SELECT pg_terminate_backend(pg_stat_activity.pid)
+                            FROM pg_stat_activity
+                            WHERE pg_stat_activity.datname = %s
+                              AND pid <> pg_backend_pid();
+                            """
+                        ),
+                        [db_name],
+                    )
+                    # Drop the database
                     cursor.execute(
                         sql.SQL("DROP DATABASE {}").format(sql.Identifier(db_name))
                     )
+                    # Create the database
                     cursor.execute(
                         sql.SQL("CREATE DATABASE {}").format(sql.Identifier(db_name))
                     )
@@ -314,14 +340,12 @@ def initialize_optuna_database(config, study_folder_name):
 
 def parse_arguments():
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(
-        description="Run multi-architecture Optuna tuning (subsequent studies)."
-    )
+    parser = argparse.ArgumentParser(description="Run Optuna tuning studies locally.")
     parser.add_argument(
         "--study_name",
         type=str,
         default="lotkavolterra2",
-        help="Main study identifier. Separate sub-studies will be created for each architecture.",
+        help="Study identifier.",
     )
     return parser.parse_args()
 
