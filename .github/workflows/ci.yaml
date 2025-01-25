@@ -41,6 +41,26 @@ jobs:
       run: |
         poetry install --with dev
 
+    # Temporary git debug step
+    - name: Debug Git Environment
+    run: |
+      echo "Commit History:"
+      git log --oneline --graph --all || echo "No commits available"
+  
+      echo "Fetch Depth:"
+      git rev-list --count HEAD || echo "Cannot determine fetch depth"
+  
+      echo "HEAD~1 Validity:"
+      if git rev-parse HEAD~1 >/dev/null 2>&1; then
+        echo "HEAD~1 exists."
+      else
+        echo "HEAD~1 is not available."
+      fi
+  
+      echo "Changed Files:"
+      git diff --name-only HEAD~1 || echo "Cannot diff HEAD~1"
+      
+
     # Step to detect changes in pyproject.toml or poetry.lock
     - name: Check for dependency changes
       id: check-deps
