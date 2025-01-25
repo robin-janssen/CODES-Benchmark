@@ -10,6 +10,7 @@ Welcome to the CODES API documentation.
    codes.benchmark 
    codes.surrogates
    codes.train
+   codes.tune
    codes.utils
 
 
