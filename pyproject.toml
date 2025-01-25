@@ -24,6 +24,7 @@ torchode = "0.2.0"
 tqdm = "^4.66.4"
 schedulefree = "^1.4"
 optuna = "^4.1.0"
+optuna-dashboard = "^0.17.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
