@@ -41,20 +41,9 @@ jobs:
       run: |
         poetry install --with dev
 
-    # Step to detect if the commit is a merge commit (skip CI on merge commits)
-    - name: Check if commit is a merge commit
-      id: check-merge
-      run: |
-        if git log -1 --pretty=%B | grep -q "Merge pull request"; then
-          echo "is-merge=true" >> $GITHUB_ENV
-        else
-          echo "is-merge=false" >> $GITHUB_ENV
-        fi
-
     # Step to detect changes in pyproject.toml or poetry.lock
     - name: Check for dependency changes
       id: check-deps
-      if: env.is-merge == 'false' # Skip if it's a merge commit
       run: |
         if git diff --name-only HEAD~1 | grep -qE 'pyproject.toml|poetry.lock'; then
           echo "dependencies-changed=true" >> $GITHUB_ENV
@@ -64,13 +53,13 @@ jobs:
 
     # Step to generate requirements.txt if dependencies have changed
     - name: Generate requirements.txt
-      if: env.is-merge == 'false' && env.dependencies-changed == 'true'
+      if: env.dependencies-changed == 'true'
       run: |
         poetry export -f requirements.txt --output requirements.txt --without-hashes
 
     # Commit and push the updated requirements.txt if dependencies have changed
     - name: Commit and push updated requirements.txt
-      if: env.is-merge == 'false' && env.dependencies-changed == 'true'
+      if: env.dependencies-changed == 'true'
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
@@ -102,7 +91,6 @@ jobs:
     #     pytest-coverage-path: ./pytest-coverage.txt
 
     - name: Upload results to Codecov
-      if: env.is-merge == 'false' # Skip if it's a merge commit
       uses: codecov/codecov-action@v4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}  # Only needed for private repos
