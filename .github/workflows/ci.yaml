@@ -39,6 +39,10 @@ jobs:
         curl -sSL https://install.python-poetry.org | python3 -
         export PATH="$HOME/.local/bin:$PATH"
 
+    - name: Install Poetry Plugin for Export
+      run: |
+        poetry self add poetry-plugin-export
+
     - name: Install project with dev dependencies
       run: |
         poetry install --with dev
