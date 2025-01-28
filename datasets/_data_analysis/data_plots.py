@@ -694,11 +694,10 @@ def plot_all_gradients_over_time(
         factor = (train_data.shape[0] // 1000) + 1
         train_data = train_data[::factor]
     # Cap the number of quantities to plot at 50
-    num_quantities = min(max_quantities, 50, train_data.shape[2])
-    train_data = train_data[:, :, :num_quantities]
+    train_data = train_data[:, :, :max_quantities]
 
     chemical_names = (
-        chemical_names[:num_quantities] if chemical_names is not None else None
+        chemical_names[:max_quantities] if chemical_names is not None else None
     )
 
     # Calculate the gradient for each quantity at each timestep for all samples
@@ -714,7 +713,7 @@ def plot_all_gradients_over_time(
     time = np.arange(n_timesteps)
 
     # Split the quantities into groups
-    num_plots = int(np.ceil(num_quantities / quantities_per_plot))
+    num_plots = int(np.ceil(max_quantities / quantities_per_plot))
 
     # Create subplots with shared x-axis
     fig, axes = plt.subplots(num_plots, 1, figsize=(9, 4 * num_plots), sharex=True)
@@ -728,7 +727,7 @@ def plot_all_gradients_over_time(
     for plot_idx in range(num_plots):
         ax = axes[plot_idx]
         start_idx = plot_idx * quantities_per_plot
-        end_idx = min((plot_idx + 1) * quantities_per_plot, num_quantities)
+        end_idx = min((plot_idx + 1) * quantities_per_plot, max_quantities)
 
         for i in range(start_idx, end_idx):
             # Plot all individual trajectories with low opacity and some smooth Gaussian spread
@@ -821,12 +820,10 @@ def plot_all_trajectories_over_time(
     if train_data.shape[0] > 1000:
         factor = (train_data.shape[0] // 1000) + 1
         train_data = train_data[::factor]
-    # Cap the number of quantities to plot at 50
-    num_quantities = min(max_quantities, 50, train_data.shape[2])
-    train_data = train_data[:, :, :num_quantities]
+    train_data = train_data[:, :, :max_quantities]
 
     chemical_names = (
-        chemical_names[:num_quantities] if chemical_names is not None else None
+        chemical_names[:max_quantities] if chemical_names is not None else None
     )
 
     # Average the gradients over all samples (axis 0)
@@ -837,7 +834,7 @@ def plot_all_trajectories_over_time(
     time = np.arange(n_timesteps)
 
     # Split the quantities into groups of quantities_per_plot
-    num_plots = int(np.ceil(num_quantities / quantities_per_plot))
+    num_plots = int(np.ceil(max_quantities / quantities_per_plot))
 
     # Create subplots with shared x-axis
     fig, axes = plt.subplots(num_plots, 1, figsize=(9, 4 * num_plots), sharex=True)
@@ -852,7 +849,7 @@ def plot_all_trajectories_over_time(
     for plot_idx in range(num_plots):
         ax = axes[plot_idx]
         start_idx = plot_idx * quantities_per_plot
-        end_idx = min((plot_idx + 1) * quantities_per_plot, num_quantities)
+        end_idx = min((plot_idx + 1) * quantities_per_plot, max_quantities)
 
         for i in range(start_idx, end_idx):
             # Plot all individual trajectories with low opacity and some Gaussian spread

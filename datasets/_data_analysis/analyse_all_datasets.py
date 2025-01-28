@@ -27,17 +27,29 @@ def main(args):
     """
     Main function to analyse the dataset. It checks the dataset and loads the data.
     """
+    # datasets = [
+    #     "coupled_oscillators",
+    #     "simple_reaction",
+    #     "osu2008",
+    #     "simple_ode",
+    #     "simple_primordial",
+    #     "lotka_volterra",
+    #     "branca_large_kyr",
+    #     "branca_large_myr",
+    #     "branca24",
+    #     "branca_norad",
+    # ]
+    # logs = [False, True, True, True, True, True, True, True, True, True]
+    # qpps = [5, 3, 6, 3, 4, 3, 10, 10, 5, 5]
+    # tols = [None, 1e-20, 1e-20, 1e-20, 1e-20, 1e-20, 1e-20, 1e-20, 1e-20, 1e-20]
+    # debug = True
     datasets = [
-        "simple_oscillators",
-        "simple_reaction",
-        "osu2008",
-        "simple_ode",
-        "simple_primordial",
-        "lotka_volterra",
+        "branca_large_kyr",
+        "branca_large_myr",
     ]
-    logs = [False, True, True, True, True, True]
-    qpps = [5, 3, 6, 3, 4, 3]
-    tols = [None, 1e-20, 1e-20, 1e-20, 1e-20, 1e-20]
+    logs = [True, True]
+    qpps = [15, 15]
+    tols = [1e-30, 1e-30]
     debug = False
     # Load full data
     for dataset, log, qpp, tolerance in zip(datasets, logs, qpps, tols):
@@ -63,7 +75,7 @@ def main(args):
             dataset,
             full_train_data,
             timesteps,
-            num_chemicals=30,
+            num_chemicals=75,
             save=True,
             labels=labels,
             sample_idx=7,
@@ -101,7 +113,7 @@ def main(args):
             full_train_data,
             full_val_data,
             chemical_names=labels,
-            max_chemicals=50,
+            max_chemicals=75,
             log=log,
             quantities_per_plot=qpp,
         )
@@ -113,21 +125,23 @@ def main(args):
         #     max_quantities=30,
         # )
 
-        plot_all_trajectories_over_time(
-            dataset,
-            full_data,
-            labels,
-            max_quantities=30,
-            quantities_per_plot=qpp,
-        )
+        if full_data.shape[2] < 51:
+            plot_all_trajectories_over_time(
+                dataset,
+                full_data,
+                labels,
+                max_quantities=50,
+                quantities_per_plot=qpp,
+            )
 
-        plot_all_gradients_over_time(
-            dataset,
-            full_data,
-            labels,
-            max_quantities=30,
-            quantities_per_plot=qpp,
-        )
+            plot_all_gradients_over_time(
+                dataset,
+                full_data,
+                labels,
+                max_quantities=50,
+                quantities_per_plot=qpp,
+            )
+        else:
 
 
 if __name__ == "__main__":
