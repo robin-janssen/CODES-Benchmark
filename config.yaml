@@ -1,15 +1,15 @@
 # Global settings for the benchmark
-training_id: "osu2008_losstest"
+training_id: "osu2008_new_full"
 surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
-batch_size: [4096, 4096, 512, 512]
-epochs: [2000, 2000, 2000, 2000]
+batch_size: [1024, 1024, 128, 128]
+epochs: [3000, 3000, 10000, 5000]
 dataset: 
-  name: "coupled_oscillators"
-  log10_transform: False
+  name: "osu2008"
+  log10_transform: True
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
   tolerance: 1e-30
-devices: ["cuda:2", "cuda:3", "cuda:4", "cuda:5"] # ["cuda:4"]
+devices: ["cuda:0"]
 seed: 42
 verbose: False
 
@@ -24,17 +24,17 @@ sparse:
   enabled: True
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
-  enabled: True
-  sizes: [64, 512, 1024, 4096]
+  enabled: False
+  sizes: [16, 1024, 8192]
 uncertainty: 
   enabled: True
   ensemble_size: 5  # Number of models for deep ensemble
 
 # Evaluations during benchmark
-losses: True
+losses: False
 gradients: False
 timing: False
 compute: False
-compare: True # Whether to compare the surrogates
+compare: False # Whether to compare the surrogates
 
 

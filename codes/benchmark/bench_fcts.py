@@ -451,7 +451,7 @@ def evaluate_interpolation(
         )
         model.load(training_id, surr_name, model_identifier=model_id)
         preds, targets = model.predict(data_loader=test_loader)
-        mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
+        mean_squared_error = criterion(preds, targets).item()  # / torch.numel(preds)
         interpolation_metrics[f"interval {interval}"] = {"MSE": mean_squared_error}
 
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
@@ -520,7 +520,7 @@ def evaluate_extrapolation(
         )
         model.load(training_id, surr_name, model_identifier=model_id)
         preds, targets = model.predict(data_loader=test_loader)
-        mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
+        mean_squared_error = criterion(preds, targets).item()  # / torch.numel(preds)
         extrapolation_metrics[f"cutoff {cutoff}"] = {"MSE": mean_squared_error}
 
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
@@ -593,7 +593,7 @@ def evaluate_sparse(
         )
         model.load(training_id, surr_name, model_identifier=model_id)
         preds, targets = model.predict(data_loader=test_loader)
-        mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
+        mean_squared_error = criterion(preds, targets).item()  # / torch.numel(preds)
         train_samples = n_train_samples // factor
         sparse_metrics[f"factor {factor}"] = {
             "MSE": mean_squared_error,
@@ -662,7 +662,7 @@ def evaluate_batchsize(
         model_id = f"{surr_name.lower()}_batchsize_{batch_size}"
         model.load(training_id, surr_name, model_identifier=model_id)
         preds, targets = model.predict(data_loader=test_loader)
-        mean_squared_error = criterion(preds, targets).item() / torch.numel(preds)
+        mean_squared_error = criterion(preds, targets).item()  # / torch.numel(preds)
         batch_metrics[f"batch_size {batch_size}"] = {"MSE": mean_squared_error}
 
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()

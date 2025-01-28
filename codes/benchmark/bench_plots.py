@@ -1053,6 +1053,7 @@ def plot_uncertainty_over_time_comparison(
     plt.xlabel("Time")
     plt.xlim(timesteps[0], timesteps[-1])
     plt.ylabel("Uncertainty/Absolute Error")
+    plt.yscale("log")
     plt.title("Comparison of Predictive Uncertainty Over Time")
     plt.legend()
 
@@ -1809,6 +1810,13 @@ def int_ext_sparse(all_metrics: dict, config: dict) -> None:
     axes[2].set_xticks(sparse_metrics_list[0])
     axes[2].get_xaxis().set_major_formatter(plt.ScalarFormatter())
 
+    # Get current y-axis min and max values
+    y_min, y_max = axes[0].get_ylim()
+
+    # Ensure y-axis max does not exceed 1e8
+    if y_max > 1e8:
+        axes[0].set_ylim(y_min, 1e8)
+
     # Set the ylabel on the leftmost subplot
     axes[0].set_ylabel("Mean Absolute Error")
 
@@ -1894,7 +1902,7 @@ def rel_errors_and_uq(
     ax1.set_xlabel("Time")
     ax1.set_xlim(timesteps[0], timesteps[-1])
     # Temp!
-    ax1.set_ylim(3e-4, 1)
+    # ax1.set_ylim(3e-4, 1)
     ax1.set_ylabel("Relative Error")
     ax1.set_yscale("log")
     ax1.set_title("Comparison of Relative Errors Over Time")
@@ -1926,7 +1934,8 @@ def rel_errors_and_uq(
     ax2.set_xlabel("Time")
     ax2.set_xlim(timesteps[0], timesteps[-1])
     # Temp!
-    ax2.set_ylim(0, 0.04)
+    # ax2.set_ylim(0, 0.04)
+    ax2.set_yscale("log")
     ax2.set_ylabel("Uncertainty/Absolute Error")
     ax2.set_title("Comparison of Predictive Uncertainty Over Time")
     ax2.legend(loc="best")
