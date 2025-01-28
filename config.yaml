@@ -1,10 +1,10 @@
 # Global settings for the benchmark
-training_id: "osu2008_new_full"
+training_id: "lotka_volterra_new"
 surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
-batch_size: [1024, 1024, 128, 128]
-epochs: [3000, 3000, 10000, 5000]
+batch_size: [2048, 2048, 256, 256]
+epochs: [5000, 5000, 10000, 5000]
 dataset: 
-  name: "osu2008"
+  name: "lotka_volterra"
   log10_transform: True
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
@@ -25,16 +25,16 @@ sparse:
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
   enabled: False
-  sizes: [16, 1024, 8192]
+  sizes: [64, 512, 1024, 4096]
 uncertainty: 
-  enabled: True
+  enabled: False
   ensemble_size: 5  # Number of models for deep ensemble
 
 # Evaluations during benchmark
-losses: False
-gradients: False
-timing: False
-compute: False
-compare: False # Whether to compare the surrogates
+losses: True
+gradients: True
+timing: True
+compute: True
+compare: True # Whether to compare the surrogates
 
 

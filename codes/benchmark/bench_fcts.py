@@ -457,10 +457,13 @@ def evaluate_interpolation(
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
         mean_absolute_errors = np.mean(np.abs(preds - targets), axis=(0, 2))
         errors[intervals == interval] = mean_absolute_errors
+        mean_absolute_error = np.mean(mean_absolute_errors)
+        interpolation_metrics[f"interval {interval}"]["MAE"] = mean_absolute_error
 
     # Extract metrics and errors for plotting
     model_errors = np.array(
-        [metric["MSE"] for metric in interpolation_metrics.values()]
+        # [metric["MSE"] for metric in interpolation_metrics.values()]
+        [metric["MAE"] for metric in interpolation_metrics.values()]
     )
     interpolation_metrics["model_errors"] = model_errors
     interpolation_metrics["intervals"] = intervals
@@ -526,10 +529,13 @@ def evaluate_extrapolation(
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
         mean_absolute_errors = np.mean(np.abs(preds - targets), axis=(0, 2))
         errors[cutoffs == cutoff] = mean_absolute_errors
+        mean_absolute_error = np.mean(mean_absolute_errors)
+        extrapolation_metrics[f"cutoff {cutoff}"]["MAE"] = mean_absolute_error
 
     # Extract metrics and errors for plotting
     model_errors = np.array(
-        [metric["MSE"] for metric in extrapolation_metrics.values()]
+        # [metric["MSE"] for metric in extrapolation_metrics.values()]
+        [metric["MAE"] for metric in extrapolation_metrics.values()]
     )
     extrapolation_metrics["model_errors"] = model_errors
     extrapolation_metrics["cutoffs"] = cutoffs
@@ -603,9 +609,12 @@ def evaluate_sparse(
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
         mean_absolute_errors = np.mean(np.abs(preds - targets), axis=(0, 2))
         errors[factors == factor] = mean_absolute_errors
+        mean_absolute_error = np.mean(mean_absolute_errors)
+        sparse_metrics[f"factor {factor}"]["MAE"] = mean_absolute_error
 
     # Extract metrics and errors for plotting
-    model_errors = np.array([metric["MSE"] for metric in sparse_metrics.values()])
+    # model_errors = np.array([metric["MSE"] for metric in sparse_metrics.values()])
+    model_errors = np.array([metric["MAE"] for metric in sparse_metrics.values()])
     n_train_samples_array = np.array(
         [metric["n_train_samples"] for metric in sparse_metrics.values()]
     )

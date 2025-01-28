@@ -1813,9 +1813,9 @@ def int_ext_sparse(all_metrics: dict, config: dict) -> None:
     # Get current y-axis min and max values
     y_min, y_max = axes[0].get_ylim()
 
-    # Ensure y-axis max does not exceed 1e8
-    if y_max > 1e8:
-        axes[0].set_ylim(y_min, 1e8)
+    # Ensure y-axis max does not exceed 1000
+    if y_max > 1e3:
+        axes[0].set_ylim(y_min, 1e3)
 
     # Set the ylabel on the leftmost subplot
     axes[0].set_ylabel("Mean Absolute Error")
