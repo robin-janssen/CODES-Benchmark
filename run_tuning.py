@@ -342,7 +342,7 @@ def parse_arguments():
     parser.add_argument(
         "--study_name",
         type=str,
-        default="lotkavolterra2",
+        default="lotkavolterra2lr",
         help="Study identifier.",
     )
     return parser.parse_args()

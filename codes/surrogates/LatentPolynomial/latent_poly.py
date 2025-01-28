@@ -185,9 +185,10 @@ class LatentPoly(AbstractSurrogateModel):
                 progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
 
                 if self.optuna_trial is not None:
-                    self.optuna_trial.report(loss, epoch)
-                    if self.optuna_trial.should_prune():
-                        raise optuna.TrialPruned()
+                    if epoch % self.trial_update_epochs == 0:
+                        self.optuna_trial.report(loss, epoch)
+                        if self.optuna_trial.should_prune():
+                            raise optuna.TrialPruned()
 
         progress_bar.close()
 
@@ -414,9 +415,10 @@ class Polynomial(nn.Module):
         Returns:
             torch.Tensor: The evaluated polynomial.
         """
-        if self.t_matrix is None or self.t_matrix.shape[0] != t.shape[0]:
-            self.t_matrix = self._prepare_t(t)
-        return self.coef(self.t_matrix)
+        # if self.t_matrix is None or self.t_matrix.shape[0] != t.shape[0]:
+        #     self.t_matrix = self._prepare_t(t) # .clone()
+        # return self.coef(self.t_matrix)
+        return self.coef(self._prepare_t(t))
 
     def _prepare_t(self, t):
         """
