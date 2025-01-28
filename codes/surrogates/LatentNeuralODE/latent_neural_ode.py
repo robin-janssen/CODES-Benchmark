@@ -84,7 +84,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         shuffle: bool = True,
     ) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
         """
-        Prepares the data for training by creating a DataLoader object.
+        Prepares the data for training by creating DataLoader objects.
 
         Args:
             dataset_train (np.ndarray): The training dataset.
@@ -92,39 +92,49 @@ class LatentNeuralODE(AbstractSurrogateModel):
             dataset_val (np.ndarray): The validation dataset.
             timesteps (np.ndarray): The array of timesteps.
             batch_size (int): The batch size for the DataLoader.
-            shuffle (bool): Whether to shuffle the data.
+            shuffle (bool): Whether to shuffle the training data.
 
         Returns:
-            DataLoader: The DataLoader object containing the prepared data.
+            tuple[DataLoader, DataLoader | None, DataLoader | None]:
+                - DataLoader for training data.
+                - DataLoader for test data (None if no test data provided).
+                - DataLoader for validation data (None if no validation data provided).
         """
+        # Shuffle training data if required
+        if shuffle:
+            shuffled_indices = np.random.permutation(len(dataset_train))
+            dataset_train = dataset_train[shuffled_indices]
 
+        # Create training DataLoader
         dset_train = ChemDataset(dataset_train, timesteps, device=self.device)
         dataloader_train = DataLoader(
             dset_train,
             batch_size=batch_size,
-            shuffle=shuffle,
+            shuffle=False,  # Shuffle already handled manually above
             worker_init_fn=worker_init_fn,
             collate_fn=lambda x: (x[0], x[1]),
         )
 
+        # Create test DataLoader (no shuffling)
         dataloader_test = None
         if dataset_test is not None:
             dset_test = ChemDataset(dataset_test, timesteps, device=self.device)
             dataloader_test = DataLoader(
                 dset_test,
                 batch_size=batch_size,
-                shuffle=shuffle,
+                shuffle=False,
                 worker_init_fn=worker_init_fn,
                 collate_fn=lambda x: (x[0], x[1]),
             )
 
+        # Create validation DataLoader (no shuffling)
         dataloader_val = None
         if dataset_val is not None:
             dset_val = ChemDataset(dataset_val, timesteps, device=self.device)
             dataloader_val = DataLoader(
                 dset_val,
                 batch_size=batch_size,
-                shuffle=shuffle,
+                shuffle=False,
                 worker_init_fn=worker_init_fn,
                 collate_fn=lambda x: (x[0], x[1]),
             )

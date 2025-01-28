@@ -19,6 +19,7 @@ from .utils import (
     set_random_seeds,
     time_execution,
     worker_init_fn,
+    determine_batch_size,
 )
 
 __all__ = [
@@ -40,4 +41,5 @@ __all__ = [
     "save_task_list",
     "load_task_list",
     "check_training_status",
+    "determine_batch_size",
 ]

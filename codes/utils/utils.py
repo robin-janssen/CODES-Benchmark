@@ -304,3 +304,32 @@ def check_training_status(config: dict) -> tuple[str, bool]:
             copy_config = True
 
     return task_list_filepath, copy_config
+
+
+def determine_batch_size(config, surr_idx, mode, metric):
+    """
+    Determine the appropriate batch size based on the config, surrogate index, mode, and metric.
+
+    Args:
+        config (dict): The configuration dictionary.
+        surr_idx (int): Index of the surrogate model in the config.
+        mode (str): The benchmark mode (e.g., "main", "batch_size").
+        metric (int): Metric used for determining the batch size in "batch_size" mode.
+
+    Returns:
+        int: The determined batch size.
+
+    Raises:
+        ValueError: If the number of batch sizes does not match the number of surrogates.
+    """
+    batch_size_config = config["batch_size"]
+    if isinstance(batch_size_config, list):
+        if len(batch_size_config) != len(config["surrogates"]):
+            raise ValueError(
+                "The number of provided batch sizes must match the number of surrogate models."
+            )
+        batch_size = batch_size_config[surr_idx]
+    else:
+        batch_size = batch_size_config
+
+    return metric if mode == "batch_size" else batch_size

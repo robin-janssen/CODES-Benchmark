@@ -10,6 +10,7 @@ Subpackages
    codes.benchmark
    codes.surrogates
    codes.train
+   codes.tune
    codes.utils
 
 Module contents

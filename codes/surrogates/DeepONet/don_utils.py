@@ -3,12 +3,37 @@ from __future__ import annotations
 import os
 import time
 from datetime import datetime
+
+import torch
 import yaml
 from torch import nn
-import torch
-
+from torch.utils.data import Dataset
 
 # TODO complete type hints
+
+
+class PreBatchedDataset(Dataset):
+    """
+    Dataset for pre-batched data.
+
+    Args:
+        branch_inputs (list[Tensor]): List of precomputed branch input batches.
+        trunk_inputs (list[Tensor]): List of precomputed trunk input batches.
+        targets (list[Tensor]): List of precomputed target batches.
+    """
+
+    def __init__(self, branch_inputs, trunk_inputs, targets):
+        self.branch_inputs = branch_inputs
+        self.trunk_inputs = trunk_inputs
+        self.targets = targets
+
+    def __getitem__(self, index):
+        # Return the precomputed batch at the given index
+        return self.branch_inputs[index], self.trunk_inputs[index], self.targets[index]
+
+    def __len__(self):
+        # Return the number of precomputed batches
+        return len(self.branch_inputs)
 
 
 def read_yaml_config(model_path):
