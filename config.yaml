@@ -4,8 +4,8 @@ surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
 batch_size: [4096, 4096, 512, 512]
 epochs: [2000, 2000, 2000, 2000]
 dataset: 
-  name: "osu2008"
-  log10_transform: True
+  name: "coupled_oscillators"
+  log10_transform: False
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
   tolerance: 1e-30
@@ -15,19 +15,19 @@ verbose: False
 
 # Models to train
 interpolation: 
-  enabled: False
+  enabled: True
   intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
 extrapolation:
-  enabled: False
+  enabled: True
   cutoffs: [50, 60, 70, 80, 90]
 sparse: 
-  enabled: False
+  enabled: True
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
-  enabled: False
-  sizes: [16, 1024, 8192]
+  enabled: True
+  sizes: [64, 512, 1024, 4096]
 uncertainty: 
-  enabled: False
+  enabled: True
   ensemble_size: 5  # Number of models for deep ensemble
 
 # Evaluations during benchmark

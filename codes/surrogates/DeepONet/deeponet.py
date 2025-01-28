@@ -333,9 +333,10 @@ class MultiONet(OperatorNetwork):
                 progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
 
                 if self.optuna_trial is not None:
-                    self.optuna_trial.report(loss, epoch)
-                    if self.optuna_trial.should_prune():
-                        raise optuna.TrialPruned()
+                    if epoch % self.trial_update_epochs == 0:
+                        self.optuna_trial.report(loss, epoch)
+                        if self.optuna_trial.should_prune():
+                            raise optuna.TrialPruned()
 
         progress_bar.close()
 
