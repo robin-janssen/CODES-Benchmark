@@ -37,7 +37,10 @@ def main(args):
     download_data(config["dataset"]["name"])
     task_list_filepath, copy_config = check_training_status(config)
     if copy_config:
-        load_and_save_config(config_path=args.config, save=True)
+        config = load_and_save_config(config_path=args.config, save=True)
+    else:
+        previous_config_path = f"trained/{config['training_id']}/config.yaml"
+        config = load_and_save_config(config_path=previous_config_path, save=False)
     tasks = load_task_list(task_list_filepath)
 
     if not tasks:

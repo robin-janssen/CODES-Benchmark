@@ -5,6 +5,7 @@ from math import isclose
 import h5py
 import numpy as np
 import yaml
+from tqdm import tqdm
 
 
 class DatasetError(Exception):
@@ -74,6 +75,7 @@ def check_and_load_data(
         val_data = np.asarray(f["val"], dtype=np.float32)
 
         if tolerance is not None:
+            tolerance = np.float32(tolerance)
             train_data = np.where(train_data < tolerance, tolerance, train_data)
             test_data = np.where(test_data < tolerance, tolerance, test_data)
             val_data = np.where(val_data < tolerance, tolerance, val_data)
@@ -279,7 +281,14 @@ def create_hdf5_dataset(
         f.attrs["labels"] = labels
 
 
-def get_data_subset(full_train_data, full_test_data, timesteps, mode, metric):
+def get_data_subset(
+    full_train_data: np.ndarray,
+    full_test_data: np.ndarray,
+    timesteps: np.ndarray,
+    mode: str,
+    metric: int,
+    subset_factor: int = 1,
+):
     """
     Get the appropriate data subset based on the mode and metric.
 
@@ -289,31 +298,36 @@ def get_data_subset(full_train_data, full_test_data, timesteps, mode, metric):
         timesteps (np.ndarray): The timesteps.
         mode (str): The benchmark mode (e.g., "accuracy", "interpolation", "extrapolation", "sparse", "UQ").
         metric (int): The specific metric for the mode (e.g., interval, cutoff, factor, batch size).
+        subset_factor (int): The factor to subset the data by. Default is 1 (use full train and test data).
 
     Returns:
         tuple: The training data, test data, and timesteps subset.
     """
+    # First select the appropriate data subset
+    train_data = full_train_data[::subset_factor]
+    test_data = full_test_data[::subset_factor]
+
     if mode == "interpolation":
         interval = metric
-        train_data = full_train_data[:, ::interval]
-        test_data = full_test_data[:, ::interval]
+        train_data = train_data[:, ::interval]
+        test_data = test_data[:, ::interval]
         timesteps = timesteps[::interval]
     elif mode == "extrapolation":
         cutoff = metric
-        train_data = full_train_data[:, :cutoff]
-        test_data = full_test_data[:, :cutoff]
+        train_data = train_data[:, :cutoff]
+        test_data = test_data[:, :cutoff]
         timesteps = timesteps[:cutoff]
     elif mode == "sparse":
         factor = metric
-        train_data = full_train_data[::factor]
-        test_data = full_test_data[::factor]
+        train_data = train_data[::factor]
+        test_data = test_data[::factor]
     elif mode == "batch_size":
         factor = 4
-        train_data = full_train_data[::factor]
-        test_data = full_test_data[::factor]
+        train_data = train_data[::factor]
+        test_data = test_data[::factor]
     else:
-        train_data = full_train_data
-        test_data = full_test_data
+        train_data = train_data
+        test_data = test_data
 
     return train_data, test_data, timesteps
 
@@ -446,9 +460,23 @@ def create_dataset(
     print(f"Dataset '{name}' created at {dataset_dir}")
 
 
+class DownloadProgressBar(tqdm):
+    def update_to(self, b=1, bsize=1, tsize=None):
+        """
+        Update the progress bar.
+        Args:
+            b (int, optional): Number of blocks transferred so far. Default is 1.
+            bsize (int, optional): Size of each block (in tqdm units). Default is 1.
+            tsize (int, optional): Total size (in tqdm units). Default is None.
+        """
+        if tsize is not None:
+            self.total = tsize
+        self.update(b * bsize - self.n)
+
+
 def download_data(dataset_name: str, path: str | None = None):
     """
-    Download the specified dataset if it is not present
+    Download the specified dataset if it is not present, with a progress bar.
     Args:
         dataset_name (str): The name of the dataset.
         path (str, optional): The path to save the dataset. If None, the default data directory is used.
@@ -459,6 +487,7 @@ def download_data(dataset_name: str, path: str | None = None):
         else os.path.abspath(path)
     )
     if os.path.isfile(data_path):
+        print(f"Dataset '{dataset_name}' already exists at {data_path}.")
         return
 
     with open("datasets/data_sources.yaml", "r", encoding="utf-8") as file:
@@ -474,5 +503,8 @@ def download_data(dataset_name: str, path: str | None = None):
     os.makedirs(os.path.dirname(data_path), exist_ok=True)
 
     print(f"Downloading dataset '{dataset_name}'...")
-    urllib.request.urlretrieve(url, data_path)
+    with DownloadProgressBar(
+        unit="B", unit_scale=True, miniters=1, desc=f"Downloading {dataset_name}"
+    ) as t:
+        urllib.request.urlretrieve(url, data_path, reporthook=t.update_to)
     print(f"Dataset '{dataset_name}' downloaded successfully.")

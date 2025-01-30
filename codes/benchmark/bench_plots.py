@@ -616,8 +616,8 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
         n_models = conf["uncertainty"]["ensemble_size"]
         uq_train_losses = [main_train_loss]
         uq_test_losses = [main_test_loss]
-        for i in range(1, n_models):
-            train_loss, test_loss = load_losses(f"{surr_name.lower()}_UQ_{i}")
+        for i in range(n_models - 1):
+            train_loss, test_loss = load_losses(f"{surr_name.lower()}_UQ_{i+1}")
             uq_train_losses.append(train_loss)
             uq_test_losses.append(test_loss)
         plot_losses(
@@ -915,7 +915,7 @@ def plot_MAE_comparison_train_duration(
     save: bool = True,
 ) -> None:
     """
-    Plot the MAE for different surrogate models.
+    Plot the MAE for different surrogate models over the course of training.
 
     Args:
         MAE (tuple): Tuple of accuracy arrays for each surrogate model.
@@ -1926,7 +1926,7 @@ def rel_errors_and_uq(
     ax2.set_xlabel("Time")
     ax2.set_xlim(timesteps[0], timesteps[-1])
     # Temp!
-    ax2.set_ylim(0, 0.04)
+    # ax2.set_ylim(0, 0.04)
     ax2.set_ylabel("Uncertainty/Absolute Error")
     ax2.set_title("Comparison of Predictive Uncertainty Over Time")
     ax2.legend(loc="best")
