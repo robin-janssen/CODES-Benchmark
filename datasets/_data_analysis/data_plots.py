@@ -1,3 +1,4 @@
+import math
 import sys
 
 import matplotlib.pyplot as plt
@@ -6,7 +7,9 @@ from scipy.ndimage import gaussian_filter1d
 
 sys.path.insert(1, "../..")
 
-from codes import get_custom_palette, save_plot
+from tqdm import tqdm
+
+from codes import save_plot
 
 
 def plot_example_trajectories(
@@ -18,90 +21,67 @@ def plot_example_trajectories(
     save: bool = False,
     sample_idx: int = 0,
     log: bool = False,
-    quantities_per_plot: int = 6,  # Added parameter to split quantities into subplots
+    quantities_per_plot: int = 6,
 ) -> None:
-    """
-    Plot example trajectories for the dataset.
-
-    Args:
-        dataset_name (str): The name of the dataset.
-        data (np.ndarray): The data to plot.
-        timesteps (np.ndarray): Timesteps array.
-        num_chemicals (int, optional): Number of chemicals to plot. Default is 10.
-        labels (list, optional): List of labels for the chemicals.
-        save (bool, optional): Whether to save the plot as a file.
-        sample_idx (int, optional): Index of the sample to plot.
-        log (bool, optional): Whether to plot the data in log-space.
-        quantities_per_plot (int, optional): Number of quantities to plot per subplot. Default is 6.
-    """
-    # Cap the number of chemicals at the number of available chemicals
     num_chemicals = min(data.shape[2], num_chemicals)
     data = data[sample_idx, :, :num_chemicals]
+    labels = (
+        labels[:num_chemicals]
+        if labels is not None
+        else [f"Quantity {i+1}" for i in range(num_chemicals)]
+    )
+    num_plots = math.ceil(num_chemicals / quantities_per_plot)
+    nrows, ncols = compute_subplot_layout(num_plots)
 
-    # Define the color palette
-    colors = plt.cm.viridis(np.linspace(0, 0.9, quantities_per_plot))
-
-    # Split the quantities into groups of quantities_per_plot
-    num_plots = int(np.ceil(num_chemicals / quantities_per_plot))
-
-    # Create subplots with shared x-axis
-    fig, axes = plt.subplots(num_plots, 1, figsize=(9, 4 * num_plots), sharex=True)
-
-    if num_plots == 1:
-        axes = [axes]  # Ensure axes is iterable even if there's only one plot
+    fig, axes = plt.subplots(nrows, ncols, figsize=(8 * ncols, 4 * nrows), sharex=True)
+    axes = np.array([axes]) if (nrows == 1 and ncols == 1) else axes.flatten()
+    colors = plt.cm.viridis(np.linspace(0, 0.95, quantities_per_plot))
 
     for plot_idx in range(num_plots):
         ax = axes[plot_idx]
-        start_idx = plot_idx * quantities_per_plot
-        end_idx = min((plot_idx + 1) * quantities_per_plot, num_chemicals)
-
-        for chem_idx in range(start_idx, end_idx):
-            color = colors[chem_idx % quantities_per_plot]
-            gt = data[:, chem_idx]
-
-            # Plot ground truth
+        start = plot_idx * quantities_per_plot
+        end = min((plot_idx + 1) * quantities_per_plot, num_chemicals)
+        for chem_idx in range(start, end):
+            label = (
+                labels[chem_idx] if labels is not None else f"Quantity {chem_idx + 1}"
+            )
             ax.plot(
                 timesteps,
-                gt,
+                data[:, chem_idx],
                 "-",
-                color=color,
-                label=(
-                    f"Quantity {chem_idx + 1}" if labels is None else labels[chem_idx]
-                ),
+                label=label,
+                color=colors[chem_idx % quantities_per_plot],
             )
-
-        # Set labels and title
-        ax.set_xlabel("Time")
+        ax.set_ylabel("log(Abundance)" if log else "Abundance")
         ax.set_xlim(timesteps[0], timesteps[-1])
-        ylabel = "log(Abundance)" if log else "Abundance"
-        ax.set_ylabel(ylabel)
+        ax.legend(
+            loc="center left",
+            bbox_to_anchor=(1.03, 0.5),
+            borderaxespad=0.0,
+            fontsize="small",
+        )
 
-        # Add legend next to the subplot
-        if labels is not None:
-            ax.legend(
-                loc="center left",  # Align the legend to the center of the plot
-                bbox_to_anchor=(1.03, 0.5),  # Place legend to the right of the plot
-                borderaxespad=0.0,  # Remove padding
-            )
+    for ax in axes[num_plots:]:
+        ax.set_visible(False)
 
+    plt.xlabel("Time")
     fig.suptitle(f"Example Trajectories for Dataset: {dataset_name}")
     plt.tight_layout(rect=[0, 0, 1, 0.97])
 
-    # Save the plot if specified
     if save:
         conf = {
-            "training_id": dataset_name.lower(),  # Use dataset_name as the training_id
+            "training_id": dataset_name.lower(),
             "verbose": True,
         }
+
         save_plot(
             plt,
-            "example_trajectories.png",
+            "example_trajectories.jpg",
             conf,
             dpi=200,
             base_dir="datasets",
             increase_count=False,
         )
-
     plt.close()
 
 
@@ -373,545 +353,377 @@ def plot_initial_conditions_distribution(
     dataset_name: str,
     train_data: np.ndarray,
     test_data: np.ndarray,
-    chemical_names: list[str] = None,
-    max_chemicals: int = 10,
-    log: bool = True,
+    chemical_names: list[str] | None = None,
+    max_quantities: int = 10,
+    spread: float = 0.01,
     quantities_per_plot: int = 10,
+    log: bool = True,
 ) -> None:
-    """
-    Plot the distribution of initial conditions (t=0) for each chemical from both train and test datasets.
-
-    Args:
-        dataset_name (str): The name of the dataset (e.g., "osu2008").
-        train_data (np.ndarray): Training dataset array of shape [num_samples, num_timesteps, num_chemicals].
-        test_data (np.ndarray): Testing dataset array of shape [num_samples, num_timesteps, num_chemicals].
-        chemical_names (list, optional): List of chemical names for labeling the lines.
-        max_chemicals (int, optional): Maximum number of chemicals to plot. Default is 10.
-        log (bool, optional): Whether the data is in log-space and should be exponentiated (i.e., data = 10**data).
-        quantities_per_plot (int, optional): Number of quantities to plot per subplot. Default is 10.
-    """
-    # If data is in log space, exponentiate it to get linear-scale data
     if log:
         train_data = 10**train_data
         test_data = 10**test_data
 
-    # Extract initial conditions (t=0) for both train and test datasets
-    train_initial_conditions = train_data[
-        :, 0, :
-    ]  # Shape: [num_samples, num_chemicals]
-    test_initial_conditions = test_data[:, 0, :]  # Shape: [num_samples, num_chemicals]
-
-    # Cap the number of chemicals to plot at max_chemicals (default 10)
-    num_chemicals = min(max_chemicals, train_initial_conditions.shape[1])
-    train_initial_conditions = train_initial_conditions[:, :num_chemicals]
-    test_initial_conditions = test_initial_conditions[:, :num_chemicals]
+    train_initial = train_data[:, 0, :max_quantities]
+    test_initial = test_data[:, 0, :max_quantities]
+    num_chemicals = train_initial.shape[1]
 
     chemical_names = (
         chemical_names[:num_chemicals]
         if chemical_names is not None
         else [f"Chemical {i+1}" for i in range(num_chemicals)]
     )
+    num_plots = math.ceil(num_chemicals / quantities_per_plot)
+    nrows, ncols = compute_subplot_layout(num_plots)
 
-    # Split the chemicals into groups of 10 for plotting
-    num_plots = int(np.ceil(num_chemicals / quantities_per_plot))
-
-    # Initialize lists to hold processed conditions
-    processed_train_conditions = []
-    processed_test_conditions = []
-    zero_counts_train = 0
-    zero_counts_test = 0
+    processed_train = []
+    processed_test = []
+    zero_counts_train = zero_counts_test = 0
 
     for i in range(num_chemicals):
-        train_cond = train_initial_conditions[:, i]
-        test_cond = test_initial_conditions[:, i]
-
+        train_cond = train_initial[:, i]
+        test_cond = test_initial[:, i]
         if log:
-            # For log-scaled histograms, filter out non-positive values and take log10
             non_zero_train = train_cond > 0
             non_zero_test = test_cond > 0
-
-            filtered_train = train_cond[non_zero_train]
-            filtered_test = test_cond[non_zero_test]
-
-            # Take log10 for histogram binning
-            log_train = np.log10(filtered_train)
-            log_test = np.log10(filtered_test)
-
-            processed_train_conditions.append(log_train)
-            processed_test_conditions.append(log_test)
-
-            # Count zeros
+            processed_train.append(np.log10(train_cond[non_zero_train]))
+            processed_test.append(np.log10(test_cond[non_zero_test]))
             zero_counts_train += np.sum(~non_zero_train)
             zero_counts_test += np.sum(~non_zero_test)
         else:
-            # For linear-scaled histograms, include all data
-            processed_train_conditions.append(train_cond)
-            processed_test_conditions.append(test_cond)
+            processed_train.append(train_cond)
+            processed_test.append(test_cond)
 
-            zero_counts_train = 0
-            zero_counts_test = 0
-
-    # Determine global min and max for binning
-    all_train = np.concatenate(
-        [cond for cond in processed_train_conditions if len(cond) > 0]
-    )
-    all_test = np.concatenate(
-        [cond for cond in processed_test_conditions if len(cond) > 0]
-    )
-
+    all_train = np.concatenate([cond for cond in processed_train if len(cond) > 0])
+    all_test = np.concatenate([cond for cond in processed_test if len(cond) > 0])
     if len(all_train) == 0 and len(all_test) == 0:
         raise ValueError("No data available for plotting after filtering.")
 
     global_min = min(np.min(all_train), np.min(all_test))
     global_max = max(np.max(all_train), np.max(all_test))
+    bins = np.linspace(global_min, global_max, 100)
 
-    # Define bin edges based on the scaling
-    num_bins = 100
-    bins = np.linspace(global_min, global_max, num_bins)
-
-    # Create subplots
-    fig, axes = plt.subplots(num_plots, 1, figsize=(10, 4 * num_plots), sharex=True)
-
-    if num_plots == 1:
-        axes = [axes]  # Ensure axes is iterable
-
-    colors = plt.cm.viridis(np.linspace(0, 0.9, quantities_per_plot))
+    fig, axes = plt.subplots(nrows, ncols, figsize=(8 * ncols, 4 * nrows), sharex=True)
+    axes = np.array([axes]) if (nrows == 1 and ncols == 1) else axes.flatten()
+    colors = plt.cm.viridis(np.linspace(0, 0.95, quantities_per_plot))
 
     for plot_idx in range(num_plots):
         ax = axes[plot_idx]
-        start_idx = plot_idx * quantities_per_plot
-        end_idx = min((plot_idx + 1) * quantities_per_plot, num_chemicals)
-
-        for i in range(start_idx, end_idx):
-            # Compute histogram for train dataset
-            train_hist, train_bin_edges = np.histogram(
-                processed_train_conditions[i], bins=bins, density=True
-            )
-            # Smooth the histogram with a Gaussian filter
-            train_smoothed_hist = gaussian_filter1d(train_hist, sigma=1)
-
-            # Compute histogram for test dataset
-            test_hist, test_bin_edges = np.histogram(
-                processed_test_conditions[i], bins=bins, density=True
-            )
-            # Smooth the histogram with a Gaussian filter
-            test_smoothed_hist = gaussian_filter1d(test_hist, sigma=1)
-
-            if log:
-                # Convert bin edges back to linear scale for plotting
-                x_train = 10 ** train_bin_edges[:-1]
-                x_test = 10 ** test_bin_edges[:-1]
-            else:
-                # Use linear bin edges directly
-                x_train = train_bin_edges[:-1]
-                x_test = test_bin_edges[:-1]
-
-            # Plot the smoothed histogram for the training data
+        start = plot_idx * quantities_per_plot
+        end = min((plot_idx + 1) * quantities_per_plot, num_chemicals)
+        for i in range(start, end):
+            train_hist, _ = np.histogram(processed_train[i], bins=bins, density=True)
+            train_smooth = gaussian_filter1d(train_hist, sigma=1)
+            test_hist, _ = np.histogram(processed_test[i], bins=bins, density=True)
+            test_smooth = gaussian_filter1d(test_hist, sigma=1)
+            x = 10 ** bins[:-1] if log else bins[:-1]
             ax.plot(
-                x_train,
-                train_smoothed_hist,
+                x,
+                train_smooth,
                 label=chemical_names[i],
                 color=colors[i % quantities_per_plot],
             )
-
-            # Plot the smoothed histogram for the test data with dashed line
-            ax.plot(
-                x_test,
-                test_smoothed_hist,
-                "--",
-                color=colors[i % quantities_per_plot],
-            )
-
+            ax.plot(x, test_smooth, "--", color=colors[i % quantities_per_plot])
         ax.set_ylabel("Density (PDF)")
-        ax.set_ylim(
-            0, 1.2 * max(np.max(train_smoothed_hist), np.max(test_smoothed_hist))
+        ax.set_ylim(0, 1.2 * max(train_smooth.max(), test_smooth.max()))
+        ax.set_xscale("log" if log else "linear")
+        ax.set_xlim(
+            10**global_min if log else global_min, 10**global_max if log else global_max
         )
-        if log:
-            ax.set_xscale("log")
-            ax.set_xlim(10**global_min, 10**global_max)
-        else:
-            ax.set_xlim(global_min, global_max)
-        if chemical_names is not None:
-            ax.legend(
-                loc="center left",
-                bbox_to_anchor=(
-                    1.03,
-                    0.5,
-                ),
-                borderaxespad=0.0,
-            )
+        ax.legend(
+            loc="center left",
+            bbox_to_anchor=(1.03, 0.5),
+            borderaxespad=0.0,
+            fontsize="small",
+        )
+
+    for ax in axes[num_plots:]:
+        ax.set_visible(False)
 
     plt.xlabel("Initial Condition Value")
     fig.suptitle(
-        f"Initial Condition Distribution per Chemical (Dataset: {dataset_name}, "
-        f"{train_data.shape[0]} train samples, {test_data.shape[0]} test samples)"
+        f"Initial Condition Distribution per Quantity \n (Dataset: {dataset_name}, {train_data.shape[0]} train samples, {test_data.shape[0]} test samples)"
     )
-
     plt.tight_layout(rect=[0, 0, 1, 0.97])
 
     conf = {
-        "training_id": dataset_name.lower(),  # Use dataset_name as the training_id
+        "training_id": dataset_name.lower(),
         "verbose": True,
     }
 
     save_plot(
         plt,
-        "IC_distribution.png",
+        "IC_distribution.jpg",
+        conf,
+        dpi=200,
+        base_dir="datasets",
+        increase_count=False,
+    )
+    plt.close()
+
+
+def compute_subplot_layout(num_plots: int) -> tuple[int, int]:
+    """
+    Compute the (nrows, ncols) layout for `num_plots` subplots such that:
+      - The grid is as close to square as possible.
+      - nrows >= ncols.
+      - Minimal number of leftover grid cells (nrows * ncols - num_plots).
+      - Among layouts with the same minimal leftover, prefer the one with the smallest difference between nrows and ncols.
+
+    Args:
+        num_plots (int): Total number of subplots required.
+
+    Returns:
+        Tuple[int, int]: A tuple containing (nrows, ncols).
+    """
+    if num_plots <= 0:
+        raise ValueError("Number of plots must be a positive integer.")
+
+    if num_plots <= 5:
+        return (num_plots, 1)
+    else:
+        # Start searching from the ceiling of the square root of num_plots
+        sqrt_n = math.sqrt(num_plots)
+        ncols_start = int(math.floor(sqrt_n))
+        ncols_end = int(math.ceil(sqrt_n)) + 1  # +1 to ensure coverage
+
+        best_layout = None
+        min_leftover = float("inf")
+        min_diff = float("inf")
+
+        # Iterate over possible number of columns near the square root
+        for ncols in range(ncols_start, ncols_end + 1):
+            if ncols < 1:
+                continue  # Ensure at least one column
+
+            nrows = math.ceil(num_plots / ncols)
+            if nrows < ncols:
+                continue  # Ensure nrows >= ncols
+
+            leftover = (nrows * ncols) - num_plots
+            diff = nrows - ncols
+
+            # Update best_layout based on minimal leftover and then minimal difference
+            if (leftover < min_leftover) or (
+                leftover == min_leftover and diff < min_diff
+            ):
+                best_layout = (nrows, ncols)
+                min_leftover = leftover
+                min_diff = diff
+
+        # If no layout found in the initial range, expand the search
+        if not best_layout:
+            for ncols in range(1, num_plots + 1):
+                nrows = math.ceil(num_plots / ncols)
+                if nrows < ncols:
+                    continue
+
+                leftover = (nrows * ncols) - num_plots
+                diff = nrows - ncols
+
+                if (leftover < min_leftover) or (
+                    leftover == min_leftover and diff < min_diff
+                ):
+                    best_layout = (nrows, ncols)
+                    min_leftover = leftover
+                    min_diff = diff
+
+        # Final fallback (should not be necessary, but for safety)
+        if not best_layout:
+            best_layout = (num_plots, 1)
+
+        return best_layout
+
+
+def plot_all_trajectories_and_gradients(
+    dataset_name: str,
+    train_data: np.ndarray,
+    chemical_names: list[str] = None,
+    max_quantities: int = 10,
+    opacity: float = 0.01,
+    quantities_per_plot: int = 6,
+    max_trajectories: int = 20,
+    log: bool = False,
+) -> None:
+    """
+    Plot both the trajectories and gradients of each quantity in the train dataset over time,
+    with individual sample trajectories and gradients shown with low opacity and Gaussian spread.
+
+    Args:
+        dataset_name (str): The name of the dataset (e.g., "osu2008").
+        train_data (np.ndarray): Training dataset array of shape [n_samples, n_timesteps, n_quantities].
+        chemical_names (list, optional): List of chemical names for labeling the lines.
+        max_quantities (int, optional): Maximum number of quantities to plot. Default is 10.
+        opacity (float, optional): Opacity of individual trajectories and gradients. Default is 0.01.
+        quantities_per_plot (int, optional): Number of quantities to plot per subplot. Default is 6.
+        max_trajectories (int, optional): Maximum number of trajectories to plot. Default is 200.
+        log (bool, optional): Whether the data is in log-space (only for axis labels). Default is False.
+    """
+    print(f"Plotting trajectories and gradients for dataset: {dataset_name}")
+    # Limit the number of trajectories
+    num_trajectories = train_data.shape[0]
+    if num_trajectories > max_trajectories:
+        factor = (train_data.shape[0] // max_trajectories) + 1
+        train_data = train_data[::factor]
+        print(
+            f"Number of trajectories {num_trajectories} exceeds the limit of {max_trajectories}."
+        )
+        print(f"Slicing data to {train_data.shape[0]} trajectories (factor {factor}).")
+
+    # Restrict to the first `max_quantities` along the last axis
+    max_quantities_to_use = min(max_quantities, train_data.shape[2])
+    train_data = train_data[:, :, :max_quantities_to_use]
+    if chemical_names is not None:
+        chemical_names = chemical_names[:max_quantities_to_use]
+
+    # Compute subplot layout
+    num_plots = math.ceil(max_quantities_to_use / quantities_per_plot)
+    if num_plots > 10:
+        print(f"Creating {num_plots} subplots. This may take a while.")
+    nrows, ncols = compute_subplot_layout(num_plots)
+
+    # Prepare data for trajectories and gradients
+    avg_trajectories = np.mean(train_data, axis=0)  # [n_timesteps, n_quantities]
+    gradients = np.gradient(
+        train_data, axis=1
+    )  # [n_samples, n_timesteps, n_quantities]
+    avg_gradients = np.mean(gradients, axis=0)  # [n_timesteps, n_quantities]
+    n_timesteps = train_data.shape[1]
+    time = np.arange(n_timesteps)
+
+    # Create figures and axes for both plots
+    fig_traj, axes_traj = plt.subplots(
+        nrows, ncols, figsize=(8 * ncols, 4 * nrows), sharex=True
+    )
+    fig_grad, axes_grad = plt.subplots(
+        nrows, ncols, figsize=(8 * ncols, 4 * nrows), sharex=True
+    )
+
+    if nrows == 1 and ncols == 1:
+        axes_traj = np.array([axes_traj])
+        axes_grad = np.array([axes_grad])
+    else:
+        axes_traj = axes_traj.flatten()
+        axes_grad = axes_grad.flatten()
+
+    # Prepare color palette
+    colors = plt.cm.viridis(np.linspace(0, 0.95, quantities_per_plot))
+
+    progress = tqdm(range(num_plots), desc="Plotting", unit="plot")
+
+    for plot_idx in progress:
+        start_idx = plot_idx * quantities_per_plot
+        end_idx = min((plot_idx + 1) * quantities_per_plot, max_quantities_to_use)
+
+        for i in range(start_idx, end_idx):
+            color = colors[i % quantities_per_plot]
+            label_name = (
+                chemical_names[i]
+                if chemical_names is not None and i < len(chemical_names)
+                else f"Quantity {i + 1}"
+            )
+
+            # Trajectories Plot (without noise)
+            for sample_idx in range(train_data.shape[0]):
+                axes_traj[plot_idx].plot(
+                    time,
+                    train_data[sample_idx, :, i],
+                    color=color,
+                    alpha=opacity,
+                    linewidth=1,
+                )
+            axes_traj[plot_idx].plot(
+                time, avg_trajectories[:, i], label=label_name, color=color, linewidth=1
+            )
+
+            # Gradients Plot (without noise)
+            for sample_idx in range(train_data.shape[0]):
+                axes_grad[plot_idx].plot(
+                    time,
+                    gradients[sample_idx, :, i],
+                    color=color,
+                    alpha=opacity,
+                    linewidth=1,
+                )
+            axes_grad[plot_idx].plot(
+                time, avg_gradients[:, i], label=label_name, color=color, linewidth=1
+            )
+
+        # Set labels and legends for Trajectories
+        axes_traj[plot_idx].set_xlabel("Time")
+        axes_traj[plot_idx].set_xlim(time[0], time[-1])
+        ylabel_traj = "log(Abundance)" if log else "Abundance"
+        axes_traj[plot_idx].set_ylabel(ylabel_traj)
+        if chemical_names is not None:
+            axes_traj[plot_idx].legend(
+                loc="center left",
+                bbox_to_anchor=(1.03, 0.5),
+                borderaxespad=0.0,
+                fontsize="small",
+            )
+
+        # Set labels and legends for Gradients
+        axes_grad[plot_idx].set_xlabel("Time")
+        axes_grad[plot_idx].set_xlim(time[0], time[-1])
+        axes_grad[plot_idx].set_ylabel("Gradient")
+        if chemical_names is not None:
+            axes_grad[plot_idx].legend(
+                loc="center left",
+                bbox_to_anchor=(1.03, 0.5),
+                borderaxespad=0.0,
+                fontsize="small",
+            )
+
+    # Hide any unused axes
+    for ax in axes_traj[num_plots:]:
+        ax.set_visible(False)
+    for ax in axes_grad[num_plots:]:
+        ax.set_visible(False)
+
+    # Set titles
+    fig_traj.suptitle(
+        f"Overview of Trajectories per Quantity over Time \n (Dataset: {dataset_name})",
+        fontsize="large",
+    )
+    fig_grad.suptitle(
+        f"Overview of Gradients per Quantity over Time \n (Dataset: {dataset_name})",
+        fontsize="large",
+    )
+
+    # Adjust layout
+    fig_traj.tight_layout(rect=[0, 0, 1, 0.95])
+    fig_grad.tight_layout(rect=[0, 0, 1, 0.95])
+
+    conf = {
+        "training_id": dataset_name.lower(),
+        "verbose": True,
+    }
+
+    print("Saving trajectory plot...")
+
+    # Save both plots
+    save_plot(
+        fig_traj,
+        "all_trajectories.jpg",
         conf,
         dpi=200,
         base_dir="datasets",
         increase_count=False,
     )
 
-    plt.close()
-
-
-def plot_average_gradients_over_time(
-    dataset_name: str,
-    train_data: np.ndarray,
-    chemical_names: list[str] | None = None,
-    max_quantities: int = 10,
-) -> None:
-    """
-    Plot the average gradient of each quantity in the train dataset over time.
-
-    Args:
-        dataset_name (str): The name of the dataset (e.g., "osu2008").
-        train_data (np.ndarray): Training dataset array of shape [n_samples, n_timesteps, n_quantities].
-        chemical_names (list, optional): List of chemical names for labeling the lines.
-        max_quantities (int, optional): Maximum number of quantities to plot. Default is 10.
-    """
-    # Cap the number of quantities to plot at 50
-    num_quantities = min(max_quantities, 50, train_data.shape[2])
-    train_data = train_data[:, :, :num_quantities]
-
-    chemical_names = (
-        chemical_names[:num_quantities] if chemical_names is not None else None
-    )
-
-    # Calculate the gradient for each quantity at each timestep for all samples
-    gradients = np.gradient(train_data, axis=1)  # Calculate gradient along time axis
-
-    # Average the gradients over all samples (axis 0)
-    avg_gradients = np.mean(gradients, axis=0)  # Shape [n_timesteps, n_quantities]
-
-    # Create a time vector assuming timesteps are equally spaced
-    n_timesteps = train_data.shape[1]
-    time = np.arange(n_timesteps)
-
-    # Split the quantities into groups of 10
-    quantities_per_plot = 10
-    num_plots = int(np.ceil(num_quantities / quantities_per_plot))
-
-    # Create subplots with shared x-axis
-    fig, axes = plt.subplots(num_plots, 1, figsize=(10, 4 * num_plots), sharex=True)
-
-    if num_plots == 1:
-        axes = [axes]  # Ensure axes is iterable even if there's only one plot
-
-    # Get custom color palette
-    colors = get_custom_palette(quantities_per_plot)
-
-    # Plot the average gradient for each quantity over time
-    for plot_idx in range(num_plots):
-        ax = axes[plot_idx]
-        start_idx = plot_idx * quantities_per_plot
-        end_idx = min((plot_idx + 1) * quantities_per_plot, num_quantities)
-
-        for i in range(start_idx, end_idx):
-            # Plot the average gradient of the current quantity
-            ax.plot(
-                time,
-                avg_gradients[:, i],
-                label=(
-                    chemical_names[i]
-                    if chemical_names is not None and len(chemical_names) > i
-                    else f"Quantity {i + 1}"
-                ),
-                color=colors[i % quantities_per_plot],
-            )
-
-        ax.set_xlabel("Time")
-        ax.set_xlim(time[0], time[-1])
-        ax.set_ylabel("Average Gradient")
-        if chemical_names is not None:
-            ax.legend(
-                loc="center left",
-                bbox_to_anchor=(
-                    1.03,
-                    0.5,
-                ),
-                borderaxespad=0.0,
-            )
-
-    fig.suptitle(
-        f"Average Gradient of Each Quantity Over Time (Dataset: {dataset_name})"
-    )
-    plt.tight_layout(rect=[0, 0, 1, 0.97])
-
-    # Saving the plot
-    conf = {
-        "training_id": dataset_name.lower(),  # Use dataset_name as the training_id
-        "verbose": True,
-    }
+    print("Saving gradient plot...")
 
     save_plot(
-        plt,
-        "average_gradients.png",  # Save the plot with this name
+        fig_grad,
+        "all_gradients.jpg",
         conf,
         dpi=200,
-        base_dir="datasets",  # Base directory for saving the plot
+        base_dir="datasets",
         increase_count=False,
     )
 
-    plt.close()
-
-
-def plot_all_gradients_over_time(
-    dataset_name: str,
-    train_data: np.ndarray,
-    chemical_names: list[str] | None = None,
-    max_quantities: int = 10,
-    spread: float = 0.01,  # Spread for Gaussian noise
-    noise_smoothing: float = 2.0,  # Controls how smooth the noise is along the trajectory
-    quantities_per_plot: int = 6,
-) -> None:
-    """
-    Plot the average gradient of each quantity in the train dataset over time,
-    with individual sample trajectories shown with low opacity and smooth Gaussian spread.
-
-    Args:
-        dataset_name (str): The name of the dataset (e.g., "osu2008").
-        train_data (np.ndarray): Training dataset array of shape [n_samples, n_timesteps, n_quantities].
-        chemical_names (list, optional): List of chemical names for labeling the lines.
-        max_quantities (int, optional): Maximum number of quantities to plot. Default is 10.
-        spread (float, optional): Spread for adding Gaussian noise to the trajectories. Default is 0.05.
-        noise_smoothing (float, optional): Sigma for smoothing the noise along the trajectory. Default is 2.0.
-        quantities_per_plot (int, optional): Number of quantities to plot per subplot. Default is 6.
-    """
-    # Ensure that no more than 1000 trajectories are plotted
-    if train_data.shape[0] > 1000:
-        factor = (train_data.shape[0] // 1000) + 1
-        train_data = train_data[::factor]
-    # Cap the number of quantities to plot at 50
-    train_data = train_data[:, :, :max_quantities]
-
-    chemical_names = (
-        chemical_names[:max_quantities] if chemical_names is not None else None
-    )
-
-    # Calculate the gradient for each quantity at each timestep for all samples
-    gradients = np.gradient(
-        train_data, axis=1
-    )  # Shape [n_samples, n_timesteps, n_quantities]
-
-    # Average the gradients over all samples (axis 0)
-    avg_gradients = np.mean(gradients, axis=0)  # Shape [n_timesteps, n_quantities]
-
-    # Create a time vector assuming timesteps are equally spaced
-    n_timesteps = train_data.shape[1]
-    time = np.arange(n_timesteps)
-
-    # Split the quantities into groups
-    num_plots = int(np.ceil(max_quantities / quantities_per_plot))
-
-    # Create subplots with shared x-axis
-    fig, axes = plt.subplots(num_plots, 1, figsize=(9, 4 * num_plots), sharex=True)
-
-    if num_plots == 1:
-        axes = [axes]  # Ensure axes is iterable even if there's only one plot
-
-    # Get custom color palette
-    colors = plt.cm.viridis(np.linspace(0, 0.9, quantities_per_plot))
-
-    for plot_idx in range(num_plots):
-        ax = axes[plot_idx]
-        start_idx = plot_idx * quantities_per_plot
-        end_idx = min((plot_idx + 1) * quantities_per_plot, max_quantities)
-
-        for i in range(start_idx, end_idx):
-            # Plot all individual trajectories with low opacity and some smooth Gaussian spread
-            for sample_idx in range(train_data.shape[0]):
-                # Generate smooth Gaussian noise across the trajectory
-                noise = np.random.normal(0, spread, n_timesteps)
-                smooth_noise = gaussian_filter1d(noise, sigma=noise_smoothing)
-
-                # Add smooth noise to the gradient and plot
-                noisy_gradients = gradients[sample_idx, :, i] + smooth_noise
-                ax.plot(
-                    time,
-                    noisy_gradients,
-                    color=colors[i % quantities_per_plot],
-                    alpha=0.01,  # Very low opacity for each individual trajectory
-                )
-
-            # Plot the average gradient of the current quantity
-            ax.plot(
-                time,
-                avg_gradients[:, i],
-                label=(
-                    chemical_names[i]
-                    if chemical_names is not None and len(chemical_names) > i
-                    else f"Quantity {i + 1}"
-                ),
-                color=colors[i % quantities_per_plot],
-                linewidth=1,  # Make the average line more visible
-            )
-
-        ax.set_xlabel("Time")
-        ax.set_xlim(time[0], time[-1])
-        ax.set_ylabel("Gradient")
-        if chemical_names is not None:
-            ax.legend(
-                loc="center left",
-                bbox_to_anchor=(
-                    1.03,
-                    0.5,
-                ),
-                borderaxespad=0.0,
-            )
-
-    fig.suptitle(
-        f"Overview over Gradients for each Quantity over Time (Dataset: {dataset_name})"
-    )
-    plt.tight_layout(rect=[0, 0, 1, 0.97])
-
-    # Saving the plot
-    conf = {
-        "training_id": dataset_name.lower(),  # Use dataset_name as the training_id
-        "verbose": True,
-    }
-
-    save_plot(
-        plt,
-        "all_gradients.png",  # Save the plot with this name
-        conf,
-        dpi=200,
-        base_dir="datasets",  # Base directory for saving the plot
-        increase_count=False,
-    )
-
-    plt.close()
-
-
-def plot_all_trajectories_over_time(
-    dataset_name: str,
-    train_data: np.ndarray,
-    chemical_names: list[str] | None = None,
-    max_quantities: int = 10,
-    spread: float = 0.01,  # Spread for Gaussian noise
-    quantities_per_plot: int = 6,
-    log: bool = False,
-) -> None:
-    """
-    Plot the average gradient of each quantity in the train dataset over time,
-    with individual sample trajectories shown with low opacity and some Gaussian spread.
-
-    Args:
-        dataset_name (str): The name of the dataset (e.g., "osu2008").
-        train_data (np.ndarray): Training dataset array of shape [n_samples, n_timesteps, n_quantities].
-        chemical_names (list, optional): List of chemical names for labeling the lines.
-        max_quantities (int, optional): Maximum number of quantities to plot. Default is 10.
-        spread (float, optional): Spread for adding Gaussian noise to the trajectories. Default is 0.05.
-        quantities_per_plot (int, optional): Number of quantities to plot per subplot. Default is 6.
-        log (bool, optional): Whether the data is in log-space (only for axis labels). Default is False.
-    """
-    # Ensure that no more than 1000 trajectories are plotted
-    if train_data.shape[0] > 1000:
-        factor = (train_data.shape[0] // 1000) + 1
-        train_data = train_data[::factor]
-    train_data = train_data[:, :, :max_quantities]
-
-    chemical_names = (
-        chemical_names[:max_quantities] if chemical_names is not None else None
-    )
-
-    # Average the gradients over all samples (axis 0)
-    avg_trajectories = np.mean(train_data, axis=0)  # Shape [n_timesteps, n_quantities]
-
-    # Create a time vector assuming timesteps are equally spaced
-    n_timesteps = train_data.shape[1]
-    time = np.arange(n_timesteps)
-
-    # Split the quantities into groups of quantities_per_plot
-    num_plots = int(np.ceil(max_quantities / quantities_per_plot))
-
-    # Create subplots with shared x-axis
-    fig, axes = plt.subplots(num_plots, 1, figsize=(9, 4 * num_plots), sharex=True)
-
-    if num_plots == 1:
-        axes = [axes]  # Ensure axes is iterable even if there's only one plot
-
-    # Get custom color palette
-    # colors = get_custom_palette(quantities_per_plot)
-    colors = plt.cm.viridis(np.linspace(0, 0.9, quantities_per_plot))
-
-    for plot_idx in range(num_plots):
-        ax = axes[plot_idx]
-        start_idx = plot_idx * quantities_per_plot
-        end_idx = min((plot_idx + 1) * quantities_per_plot, max_quantities)
-
-        for i in range(start_idx, end_idx):
-            # Plot all individual trajectories with low opacity and some Gaussian spread
-            for sample_idx in range(train_data.shape[0]):
-                noisy_gradients = train_data[sample_idx, :, i] + np.random.normal(
-                    0, spread, n_timesteps
-                )
-                ax.plot(
-                    time,
-                    noisy_gradients,
-                    color=colors[i % quantities_per_plot],
-                    alpha=0.01,  # Very low opacity for each individual trajectory
-                )
-
-            # Plot the average gradient of the current quantity
-            ax.plot(
-                time,
-                avg_trajectories[:, i],
-                label=(
-                    chemical_names[i]
-                    if chemical_names is not None and len(chemical_names) > i
-                    else f"Quantity {i + 1}"
-                ),
-                color=colors[i % quantities_per_plot],
-                linewidth=1,  # Make the average line more visible
-            )
-
-        ax.set_xlabel("Time")
-        ax.set_xlim(time[0], time[-1])
-        ylabel = "log(Abundance)" if log else "Abundance"
-        ax.set_ylabel(ylabel)
-        if chemical_names is not None:
-            ax.legend(
-                loc="center left",
-                bbox_to_anchor=(
-                    1.03,
-                    0.5,
-                ),
-                borderaxespad=0.0,  # Remove padding
-            )
-
-    fig.suptitle(
-        f"Overview over Trajectories for each Quantity over Time (Dataset: {dataset_name})"
-    )
-    plt.tight_layout(rect=[0, 0, 1, 0.97])
-
-    # Saving the plot
-    conf = {
-        "training_id": dataset_name.lower(),  # Use dataset_name as the training_id
-        "verbose": True,
-    }
-
-    save_plot(
-        plt,
-        "all_trajectories.png",  # Save the plot with this name
-        conf,
-        dpi=200,
-        base_dir="datasets",  # Base directory for saving the plot
-        increase_count=False,
-    )
-
-    plt.close()
+    # Close figures
+    plt.close(fig_traj)
+    plt.close(fig_grad)
 
 
 def debug_numerical_errors_plot(
@@ -1117,7 +929,7 @@ def plot_faulty_initial_conditions_distribution(
 
     # Get custom color palette
     # Assuming get_custom_palette is defined elsewhere
-    colors = plt.cm.viridis(np.linspace(0, 0.9, quantities_per_plot))
+    colors = plt.cm.viridis(np.linspace(0, 0.95, quantities_per_plot))
 
     for plot_idx in range(num_plots):
         ax = axes[plot_idx]
@@ -1156,7 +968,7 @@ def plot_faulty_initial_conditions_distribution(
     plt.xscale("log")  # Log scale for initial conditions magnitudes
     plt.xlabel("Initial Condition Magnitude")
     fig.suptitle(
-        f"Initial Condition Distribution per Chemical for Faulty Trajectories (Dataset: {dataset_name}, {len(faulty_indices)} faulty samples)"
+        f"Initial Condition Distribution per Chemical for Faulty Trajectories \n (Dataset: {dataset_name}, {len(faulty_indices)} faulty samples)"
     )
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
