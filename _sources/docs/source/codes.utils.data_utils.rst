@@ -15,6 +15,12 @@ codes.utils.data\_utils
       get_data_subset
       normalize_data
    
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      DownloadProgressBar
+   
    .. rubric:: Exceptions
 
    .. autosummary::

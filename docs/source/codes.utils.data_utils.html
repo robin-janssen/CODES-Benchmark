@@ -367,13 +367,22 @@
 <td><p>Create an HDF5 file for a dataset with train and test data, and optionally timesteps.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.data_utils.download_data" title="codes.utils.data_utils.download_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_data</span></code></a>(dataset_name[, path])</p></td>
-<td><p>Download the specified dataset if it is not present :type dataset_name: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span> :param dataset_name: The name of the dataset.</p></td>
+<td><p>Download the specified dataset if it is not present, with a progress bar.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.data_utils.get_data_subset" title="codes.utils.data_utils.get_data_subset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_data_subset</span></code></a>(full_train_data, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.data_utils.get_data_subset" title="codes.utils.data_utils.get_data_subset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_data_subset</span></code></a>(full_train_data, ...[, ...])</p></td>
 <td><p>Get the appropriate data subset based on the mode and metric.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.data_utils.normalize_data" title="codes.utils.data_utils.normalize_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize_data</span></code></a>(train_data[, test_data, ...])</p></td>
 <td><p>Normalize the data based on the training data statistics.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Classes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.utils.html#codes.utils.data_utils.DownloadProgressBar" title="codes.utils.data_utils.DownloadProgressBar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DownloadProgressBar</span></code></a>(*_, **__)</p></td>
+<td><p></p></td>
 </tr>
 </tbody>
 </table>
