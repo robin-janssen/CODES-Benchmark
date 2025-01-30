@@ -6,13 +6,13 @@ import torch
 import torch.nn as nn
 from schedulefree import AdamWScheduleFree
 from torch.profiler import ProfilerActivity, profile, record_function
-from torch.utils.data import DataLoader, Dataset, TensorDataset
+from torch.utils.data import DataLoader, TensorDataset
 
 from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
 from codes.utils import time_execution, worker_init_fn
 
 from .deeponet_config import MultiONetBaseConfig
-from .don_utils import mass_conservation_loss
+from .don_utils import PreBatchedDataset, mass_conservation_loss
 
 
 class BranchNet(nn.Module):
@@ -139,30 +139,6 @@ class OperatorNetwork(AbstractSurrogateModel):
 
 
 OperatorNetworkType = TypeVar("OperatorNetworkType", bound=OperatorNetwork)
-
-
-class PreBatchedDataset(Dataset):
-    """
-    Dataset for pre-batched data.
-
-    Args:
-        branch_inputs (list[Tensor]): List of precomputed branch input batches.
-        trunk_inputs (list[Tensor]): List of precomputed trunk input batches.
-        targets (list[Tensor]): List of precomputed target batches.
-    """
-
-    def __init__(self, branch_inputs, trunk_inputs, targets):
-        self.branch_inputs = branch_inputs
-        self.trunk_inputs = trunk_inputs
-        self.targets = targets
-
-    def __getitem__(self, index):
-        # Return the precomputed batch at the given index
-        return self.branch_inputs[index], self.trunk_inputs[index], self.targets[index]
-
-    def __len__(self):
-        # Return the number of precomputed batches
-        return len(self.branch_inputs)
 
 
 class MultiONet(OperatorNetwork):
@@ -357,9 +333,10 @@ class MultiONet(OperatorNetwork):
                 progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
 
                 if self.optuna_trial is not None:
-                    self.optuna_trial.report(loss, epoch)
-                    if self.optuna_trial.should_prune():
-                        raise optuna.TrialPruned()
+                    if epoch % self.trial_update_epochs == 0:
+                        self.optuna_trial.report(loss, epoch)
+                        if self.optuna_trial.should_prune():
+                            raise optuna.TrialPruned()
 
         progress_bar.close()
 
@@ -586,7 +563,7 @@ class MultiONet(OperatorNetwork):
         return DataLoader(
             dataset,
             batch_size=1,  # Each "batch" is now a precomputed batch
-            shuffle=shuffle,  # The DataLoader will shuffle the order of the precomputed batches
+            shuffle=False,  # Shuffling is handled by the precomputed batches
             num_workers=0,
             collate_fn=custom_collate_fn,
             worker_init_fn=worker_init_fn,

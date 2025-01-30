@@ -113,6 +113,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         self.config = config if config is not None else {}
         self.train_duration = None
         self.optuna_trial = None
+        self.trial_update_epochs = 1
         self.n_epochs = 0
 
     @classmethod

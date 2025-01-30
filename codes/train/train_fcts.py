@@ -1,4 +1,5 @@
 import os
+import threading
 from queue import Queue
 from threading import Thread
 
@@ -7,6 +8,7 @@ from tqdm import tqdm
 from codes.benchmark.bench_utils import get_model_config, get_surrogate
 from codes.utils import (
     check_and_load_data,
+    determine_batch_size,
     get_data_subset,
     get_progress_bar,
     load_and_save_config,
@@ -15,6 +17,20 @@ from codes.utils import (
     save_task_list,
     set_random_seeds,
 )
+
+
+class DummyLock:
+    def acquire(self):
+        pass
+
+    def release(self):
+        pass
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
 
 
 def train_and_save_model(
@@ -26,10 +42,13 @@ def train_and_save_model(
     epochs: int | None = None,
     device: str = "cpu",
     position: int = 1,
+    threadlock: threading.Lock = DummyLock(),
 ):
     """
     Train and save a model for a specific benchmark mode. The parameters are determined
     by the task(s) which is created from the config file.
+    Threadlock is used to make the training deterministic. In the single-threaded case,
+    uses a dummy lock instead.
 
     Args:
         surr_name (str): The name of the surrogate model.
@@ -40,6 +59,7 @@ def train_and_save_model(
         epochs (int, optional): The number of epochs for the training. Defaults to None.
         device (str, optional): The device for the training. Defaults to "cpu".
         position (int, optional): The position of the model in the task list. Defaults to 1.
+        threadlock (threading.Lock, optional): A lock to prevent threading issues with PyTorch. Defaults to None.
     """
     config_path = f"trained/{training_id}/config.yaml"
     config = load_and_save_config(config_path, save=False)
@@ -60,37 +80,31 @@ def train_and_save_model(
         full_train_data, full_test_data, timesteps, mode, metric
     )
 
-    n_timesteps = train_data.shape[1]
-    n_chemicals = train_data.shape[2]
+    _, n_timesteps, n_chemicals = train_data.shape
 
     # Get the surrogate class
     surrogate_class = get_surrogate(surr_name)
     model_config = get_model_config(surr_name, config)
-    model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
+
+    # Apply threadlock to avoid issues with PyTorch
+    with threadlock:
+        set_random_seeds(seed, device)
+        model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
     model.normalisation = data_params
     surr_idx = config["surrogates"].index(surr_name)
 
-    # Determine the batch size
-    if isinstance(config["batch_size"], list):
-        if len(config["batch_size"]) != len(config["surrogates"]):
-            raise ValueError(
-                "The number of provided batch sizes must match the number of surrogate models."
-            )
-        else:
-            batch_size = config["batch_size"][surr_idx]
-    else:
-        batch_size = config["batch_size"]
-    batch_size = metric if mode == "batch_size" else batch_size
-    # epochs = epochs if epochs is not None else config["epochs"]
+    batch_size = determine_batch_size(config, surr_idx, mode, metric)
 
-    train_loader, test_loader, _ = model.prepare_data(
-        dataset_train=train_data,
-        dataset_test=test_data,
-        dataset_val=None,
-        timesteps=timesteps,
-        batch_size=batch_size,
-        shuffle=True,
-    )
+    with threadlock:
+        set_random_seeds(seed, device)
+        train_loader, test_loader, _ = model.prepare_data(
+            dataset_train=train_data,
+            dataset_test=test_data,
+            dataset_val=None,
+            timesteps=timesteps,
+            batch_size=batch_size,
+            shuffle=True,
+        )
 
     description = make_description(mode, device, str(metric), surr_name)
 
@@ -172,6 +186,7 @@ def worker(
     overall_progress_bar: tqdm,
     task_list_filepath: str,
     errors_encountered: list[bool],
+    threadlock: threading.Lock,
 ):
     """
     Worker function to process tasks from the task queue on the given device.
@@ -184,35 +199,26 @@ def worker(
         task_list_filepath (str): The filepath to the JSON task list.
         errors_encountered (list[bool]): A shared mutable flag array indicating if an error has occurred
                                          (True if at least one task failed).
+        threadlock (threading.Lock): A lock to prevent threading issues with PyTorch.
     """
     while not task_queue.empty():
         try:
             task = task_queue.get_nowait()  # Remove the task from the in-memory queue
-            # Set the seed for the training
-            seed = task[4]
-            set_random_seeds(seed, device)
-            train_and_save_model(*task, device=device, position=device_idx + 1)
+            train_and_save_model(
+                *task, device=device, position=device_idx + 1, threadlock=threadlock
+            )
 
             # Mark that we have successfully processed this task
             task_queue.task_done()
             overall_progress_bar.update(1)
-
-            # Only remove *this* successful task from the JSON
             current_list = load_task_list(task_list_filepath)
-
-            # Convert the task tuple to a list if you are storing tasks as lists in JSON
-            # (Because json.dump(...) typically stores lists, not tuples.)
-            # Example: if 'task' is a tuple, do this:
             task_as_list = list(task)
 
-            # Now remove the just-finished task from the JSON list
             try:
                 current_list.remove(task_as_list)
             except ValueError:
-                # In case it's already gone or doesn't match exactly
                 pass
 
-            # Re-save the updated list
             save_task_list(current_list, task_list_filepath)
 
         except Exception as e:
@@ -223,8 +229,6 @@ def worker(
 
             # Flag that at least one task has failed
             errors_encountered[0] = True
-            # Crucially, we do *not* remove the task from JSON here
-            # so that it remains for a future run.
 
 
 def parallel_training(tasks, device_list, task_list_filepath: str):
@@ -236,6 +240,7 @@ def parallel_training(tasks, device_list, task_list_filepath: str):
     overall_progress_bar = get_progress_bar(tasks)
 
     threads = []
+    threadlock = threading.Lock()
     for i, device in enumerate(device_list):
         thread = Thread(
             target=worker,
@@ -246,6 +251,7 @@ def parallel_training(tasks, device_list, task_list_filepath: str):
                 overall_progress_bar,
                 task_list_filepath,
                 errors_encountered,
+                threadlock,
             ),
         )
         thread.start()
@@ -282,8 +288,6 @@ def sequential_training(tasks, device_list, task_list_filepath: str):
 
     for task in tasks:
         try:
-            seed = task[4]
-            set_random_seeds(seed, device)
             train_and_save_model(*task, device=device)
             overall_progress_bar.update(1)
 

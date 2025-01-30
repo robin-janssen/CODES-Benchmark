@@ -7,42 +7,43 @@ from torch import nn
 class MultiONetConfig:
     """Model config for MultiONet for the osu2008 dataset"""
 
-    branch_hidden_layers: int = 6
-    trunk_hidden_layers: int = 9
-    hidden_size: int = 313
-    output_factor: int = 72
-    learning_rate: float = 0.0003
-    activation: nn.Module = nn.ReLU()
+    branch_hidden_layers: int = 8
+    trunk_hidden_layers: int = 3
+    hidden_size: int = 267
+    output_factor: int = 48
+    learning_rate: float = 2.8e-05  # 0.0001
+    activation: nn.Module = nn.LeakyReLU()
 
 
 @dataclass
 class LatentNeuralODEConfig:
     """Model config for LatentNeuralODE for the osu2008 dataset"""
 
-    latent_features: int = 5
-    layers_factor: int = 61
-    learning_rate: float = 0.002
-    ode_activation: nn.Module = nn.Tanh()
-    ode_tanh_reg: bool = True
-    coder_activation: nn.Module = nn.Tanh()
+    latent_features: int = 8
+    layers_factor: int = 83
+    learning_rate: float = 0.0023
+    ode_hidden: int = 4
+    ode_layer_width: int = 116
+    ode_tanh_reg: bool = False
+    activation: nn.Module = nn.GELU()
 
 
 @dataclass
 class FullyConnectedConfig:
     """Model config for FullyConnected for the osu2008 dataset"""
 
-    hidden_size: int = 320
-    num_hidden_layers: int = 1  # Can this really be 1?
-    learning_rate: float = 2e-3
-    activation: nn.Module = nn.LeakyReLU()
+    hidden_size: int = 222
+    num_hidden_layers: int = 2
+    learning_rate: float = 1.2e-05  # 0.0001
+    activation: nn.Module = nn.Tanh()
 
 
 @dataclass
 class LatentPolyConfig:
     """Model config for LatentPoly for the osu2008 dataset"""
 
-    latent_features: int = 6
+    latent_features: int = 2
     degree: int = 1
-    learning_rate: float = 2e-4
-    layers_factor: int = 78
-    coder_activation: nn.Module = nn.LeakyReLU()
+    learning_rate: float = 0.00025  # 0.001
+    layers_factor: int = 61
+    activation: nn.Module = nn.Tanh()

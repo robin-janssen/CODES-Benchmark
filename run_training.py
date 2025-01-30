@@ -1,5 +1,8 @@
+import os
 from argparse import ArgumentParser
 from datetime import timedelta
+
+os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 
 import torch
 from tqdm import tqdm
