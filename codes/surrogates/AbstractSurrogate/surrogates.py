@@ -115,6 +115,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         self.optuna_trial = None
         self.trial_update_epochs = 1
         self.n_epochs = 0
+        self.using_ray = False
 
     @classmethod
     def register(cls, surrogate: type["AbstractSurrogateModel"]):
@@ -382,14 +383,26 @@ class AbstractSurrogateModel(ABC, nn.Module):
         """
         Helper function to set up a progress bar for training.
 
-        Args:
-            epochs (int): The number of epochs.
-            position (int): The position of the progress bar.
-            description (str): The description of the progress bar.
-
         Returns:
-            tqdm: The progress bar.
+            tqdm or DummyProgressBar: The progress bar.
         """
+
+        class DummyProgressBar:
+            def __init__(self, epochs):
+                self.epochs = epochs
+
+            def __iter__(self):
+                return iter(range(self.epochs))
+
+            def set_postfix(self, *args, **kwargs):
+                pass  # No-op
+
+            def close(self):
+                pass  # No-op
+
+        if getattr(self, "using_ray", False):
+            return DummyProgressBar(epochs)
+
         bar_format = "{l_bar}{bar}| {n_fmt:>5}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt} {postfix}]"
         progress_bar = tqdm(
             range(epochs),

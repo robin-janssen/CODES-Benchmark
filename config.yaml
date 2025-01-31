@@ -12,6 +12,7 @@ dataset:
 devices: ["cuda:2", "cuda:3", "cuda:4", "cuda:5"] # ["cuda:4"]
 seed: 42
 verbose: False
+use_ray: True
 
 # Models to train
 interpolation: 

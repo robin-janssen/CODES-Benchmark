@@ -91,6 +91,7 @@ def train_and_save_model(
         model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
     model.normalisation = data_params
     surr_idx = config["surrogates"].index(surr_name)
+    model.using_ray = config["use_ray"]
 
     batch_size = determine_batch_size(config, surr_idx, mode, metric)
 
@@ -231,6 +232,7 @@ def worker(
 
 
 def parallel_training(tasks, device_list, task_list_filepath: str):
+    tqdm.write(f"Training models in parallel on devices: {device_list}\n")
     task_queue = Queue()
     for task in tasks:
         task_queue.put(task)

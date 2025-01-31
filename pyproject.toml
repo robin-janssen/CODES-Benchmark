@@ -27,6 +27,7 @@ optuna = "^4.1.0"
 sqlalchemy = "^2.0.37"
 psycopg2-binary = "^2.9.10"
 optuna-dashboard = "^0.17.0"
+ray = {extras = ["default"], version = "^2.41.0"}
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
