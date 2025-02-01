@@ -1,4 +1,5 @@
 import dataclasses
+import logging
 import os
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -379,29 +380,45 @@ class AbstractSurrogateModel(ABC, nn.Module):
         self.eval()
 
     def setup_progress_bar(self, epochs: int, position: int, description: str):
-        """
-        Helper function to set up a progress bar for training.
+        if getattr(self, "using_mpi", False):
 
-        Args:
-            epochs (int): The number of epochs.
-            position (int): The position of the progress bar.
-            description (str): The description of the progress bar.
+            class DummyProgressBar:
+                def __init__(self, total, description):
+                    self.total = total
+                    self.current = 0
+                    self.description = description
+                    self.next_log = 10
 
-        Returns:
-            tqdm: The progress bar.
-        """
-        bar_format = "{l_bar}{bar}| {n_fmt:>5}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt} {postfix}]"
-        progress_bar = tqdm(
-            range(epochs),
-            desc=description,
-            position=position,
-            leave=False,
-            bar_format=bar_format,
-        )
-        progress_bar.set_postfix(
-            {"loss": f"{0:.2e}", "lr": f"{self.config.learning_rate:.1e}"}
-        )
-        return progress_bar
+                def update(self, n=1):
+                    self.current += n
+                    progress = (self.current / self.total) * 100
+                    while progress >= self.next_log:
+                        logging.info(
+                            f"{self.description}: {int(self.next_log)}% completed."
+                        )
+                        self.next_log += 10
+
+                def set_postfix(self, **kwargs):
+                    pass
+
+                def close(self):
+                    if self.current >= self.total:
+                        logging.info(f"{self.description}: 100% completed.")
+
+            return DummyProgressBar(epochs, description)
+        else:
+            bar_format = "{l_bar}{bar}| {n_fmt:>5}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt} {postfix}]"
+            progress_bar = tqdm(
+                range(epochs),
+                desc=description,
+                position=position,
+                leave=False,
+                bar_format=bar_format,
+            )
+            progress_bar.set_postfix(
+                {"loss": f"{0:.2e}", "lr": f"{self.config.learning_rate:.1e}"}
+            )
+            return progress_bar
 
     def denormalize(self, data: Tensor) -> Tensor:
         """

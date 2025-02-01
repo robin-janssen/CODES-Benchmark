@@ -1,8 +1,8 @@
 # Global settings for the benchmark
-training_id: "osu2008_losstest"
+training_id: "mpitest"
 surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
 batch_size: [4096, 4096, 512, 512]
-epochs: [2000, 2000, 2000, 2000]
+epochs: [100, 100, 100, 100]
 dataset: 
   name: "coupled_oscillators"
   log10_transform: False
@@ -12,6 +12,7 @@ dataset:
 devices: ["cuda:2", "cuda:3", "cuda:4", "cuda:5"] # ["cuda:4"]
 seed: 42
 verbose: False
+use_mpi: True
 
 # Models to train
 interpolation: 

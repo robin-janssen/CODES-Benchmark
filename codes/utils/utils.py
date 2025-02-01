@@ -1,5 +1,6 @@
 import functools
 import json
+import logging
 import os
 import random
 import shutil
@@ -333,3 +334,11 @@ def determine_batch_size(config, surr_idx, mode, metric):
         batch_size = batch_size_config
 
     return metric if mode == "batch_size" else batch_size
+
+
+def setup_logging():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s: %(message)s",
+        handlers=[logging.StreamHandler()],
+    )

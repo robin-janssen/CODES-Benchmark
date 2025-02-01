@@ -2,6 +2,7 @@ import os
 import threading
 from queue import Queue
 from threading import Thread
+from typing import Optional
 
 from tqdm import tqdm
 
@@ -42,29 +43,15 @@ def train_and_save_model(
     epochs: int | None = None,
     device: str = "cpu",
     position: int = 1,
-    threadlock: threading.Lock = DummyLock(),
+    threadlock: Optional[threading.Lock] = None,
+    worker_id: Optional[int] = None,
 ):
-    """
-    Train and save a model for a specific benchmark mode. The parameters are determined
-    by the task(s) which is created from the config file.
-    Threadlock is used to make the training deterministic. In the single-threaded case,
-    uses a dummy lock instead.
+    if threadlock is None:
+        threadlock = DummyLock()
 
-    Args:
-        surr_name (str): The name of the surrogate model.
-        mode (str): The benchmark mode (e.g. "main", "interpolation", "extrapolation").
-        metric (int): The metric for the benchmark mode.
-        training_id (str): The training ID for the current training session.
-        seed (int, optional): The random seed for the training. Defaults to None.
-        epochs (int, optional): The number of epochs for the training. Defaults to None.
-        device (str, optional): The device for the training. Defaults to "cpu".
-        position (int, optional): The position of the model in the task list. Defaults to 1.
-        threadlock (threading.Lock, optional): A lock to prevent threading issues with PyTorch. Defaults to None.
-    """
     config_path = f"trained/{training_id}/config.yaml"
     config = load_and_save_config(config_path, save=False)
 
-    # Load full data
     full_train_data, full_test_data, _, timesteps, _, data_params, _ = (
         check_and_load_data(
             config["dataset"]["name"],
@@ -74,18 +61,15 @@ def train_and_save_model(
         )
     )
 
-    # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(
         full_train_data, full_test_data, timesteps, mode, metric
     )
 
     _, n_timesteps, n_chemicals = train_data.shape
 
-    # Get the surrogate class
     surrogate_class = get_surrogate(surr_name)
     model_config = get_model_config(surr_name, config)
 
-    # Apply threadlock to avoid issues with PyTorch
     with threadlock:
         set_random_seeds(seed, device)
         model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
@@ -105,20 +89,27 @@ def train_and_save_model(
             shuffle=True,
         )
 
-    description = make_description(mode, device, str(metric), surr_name)
+    # If a worker_id is provided, use it for display; otherwise, fall back on device and position.
+    if worker_id is not None:
+        display_device = f"worker {worker_id}"
+        pos = worker_id
+    else:
+        display_device = device
+        pos = position
 
-    # Train the model
+    description = make_description(mode, display_device, str(metric), surr_name)
+
     model.fit(
         train_loader=train_loader,
         test_loader=test_loader,
         epochs=epochs,
-        position=position,
+        position=pos,
         description=description,
     )
 
-    # Save the model (making the name lowercase and removing any underscores)
-    model_name = f"{surr_name.lower()}_{mode}_{str(metric)}".strip("_")
-    model_name = model_name.replace("__", "_")
+    model_name = f"{surr_name.lower()}_{mode}_{str(metric)}".strip("_").replace(
+        "__", "_"
+    )
     base_dir = os.path.join(os.getcwd(), "trained")
     model.save(
         model_name=model_name,
