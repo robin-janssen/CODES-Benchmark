@@ -1,2 +1,0 @@
-2025-01-22 16:22:04.292 CET [2218712] FATAL:  lock file "postmaster.pid" already exists
-2025-01-22 16:22:04.292 CET [2218712] HINT:  Is another postmaster (PID 2212703) running in data directory "/export/home/rjanssen/postgres/data"?

@@ -9,6 +9,7 @@ from .data_utils import (
 from .utils import (
     check_training_status,
     create_model_dir,
+    determine_batch_size,
     get_progress_bar,
     load_and_save_config,
     load_task_list,
@@ -17,9 +18,9 @@ from .utils import (
     read_yaml_config,
     save_task_list,
     set_random_seeds,
+    setup_logging,
     time_execution,
     worker_init_fn,
-    determine_batch_size,
 )
 
 __all__ = [
@@ -42,4 +43,5 @@ __all__ = [
     "load_task_list",
     "check_training_status",
     "determine_batch_size",
+    "setup_logging",
 ]
