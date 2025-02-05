@@ -1,8 +1,8 @@
 # Global settings for the benchmark
-training_id: "mpitest"
-surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
-batch_size: [4096, 4096, 512, 512]
-epochs: [100, 100, 100, 100]
+training_id: "branca_large_myr_1" 
+surrogates: ["MultiONet", "FullyConnected"]
+batch_size: [4096, 4096]
+epochs: [5000, 5000]
 dataset: 
   name: "branca_large_myr"
   log10_transform: False
