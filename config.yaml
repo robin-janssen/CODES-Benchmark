@@ -8,8 +8,8 @@ dataset:
   log10_transform: False
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
-  tolerance: 1e-30
-  subset_factor: 100
+  tolerance: 1.0e-30
+  subset_factor: 1
 devices: ["cuda:2", "cuda:3", "cuda:4", "cuda:5"] # ["cuda:4"]
 seed: 42
 verbose: False

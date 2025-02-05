@@ -56,6 +56,7 @@ def worker_mpi(rank):
     comm = MPI.COMM_WORLD
     # device_count = torch.cuda.device_count()
     local_rank = int(os.environ.get("SLURM_LOCALID", 0))
+    print(f"Worker {rank} on device {local_rank}")
     # local_rank = (rank - 1) % device_count
     device = f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu"
     if torch.cuda.is_available():
