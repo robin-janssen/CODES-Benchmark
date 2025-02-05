@@ -55,6 +55,8 @@ def worker_mpi(rank):
 
     comm = MPI.COMM_WORLD
     # device_count = torch.cuda.device_count()
+    visible = os.environ.get("CUDA_VISIBLE_DEVICES", None)
+    print(f"Worker {rank} sees CUDA_VISIBLE_DEVICES: {visible}")
     local_rank = int(os.environ.get("SLURM_LOCALID", 0))
     print(f"Worker {rank} on device {local_rank}")
     # local_rank = (rank - 1) % device_count
