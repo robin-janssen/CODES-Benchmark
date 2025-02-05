@@ -72,7 +72,7 @@ def main():
     setup_logging()
     parser = argparse.ArgumentParser(description="Run Optuna tuning studies locally.")
     parser.add_argument(
-        "--study_name", type=str, default="lotkavolterra2lr", help="Study identifier."
+        "--study_name", type=str, default="test", help="Study identifier."
     )
     args = parser.parse_args()
 

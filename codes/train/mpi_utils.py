@@ -1,3 +1,5 @@
+import os
+
 import torch
 from mpi4py import MPI
 from tqdm import tqdm
@@ -52,8 +54,9 @@ def worker_mpi(rank):
     from mpi4py import MPI
 
     comm = MPI.COMM_WORLD
-    device_count = torch.cuda.device_count()
-    local_rank = (rank - 1) % device_count
+    # device_count = torch.cuda.device_count()
+    local_rank = int(os.environ.get("SLURM_LOCALID", 0))
+    # local_rank = (rank - 1) % device_count
     device = f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu"
     if torch.cuda.is_available():
         torch.cuda.set_device(local_rank)
