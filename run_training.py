@@ -20,7 +20,11 @@ from codes.utils import (
 
 
 def is_mpi_mode():
-    return "OMPI_COMM_WORLD_SIZE" in os.environ or "PMI_SIZE" in os.environ
+    return (
+        "OMPI_COMM_WORLD_SIZE" in os.environ
+        or "PMI_SIZE" in os.environ
+        or "SLURM_NTASKS" in os.environ
+    )
 
 
 def run_mpi_training(config, args):
@@ -40,7 +44,7 @@ def run_mpi_training(config, args):
         tasks = load_task_list(task_list_filepath)
         if not tasks:
             tasks = []
-            nice_print("Starting training")
+            nice_print("Starting MPI training")
             for s in config["surrogates"]:
                 tasks += create_task_list_for_surrogate(config, s)
             save_task_list(tasks, task_list_filepath)

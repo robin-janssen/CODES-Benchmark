@@ -64,6 +64,10 @@ def train_and_save_model(
     train_data, test_data, timesteps = get_data_subset(
         full_train_data, full_test_data, timesteps, mode, metric
     )
+    subset_factor = config["dataset"].get("subset_factor", 1)
+    train_data, test_data, timesteps = get_data_subset(
+        train_data, test_data, timesteps, "sparse", subset_factor
+    )
 
     _, n_timesteps, n_chemicals = train_data.shape
 

@@ -4,11 +4,12 @@ surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
 batch_size: [4096, 4096, 512, 512]
 epochs: [100, 100, 100, 100]
 dataset: 
-  name: "coupled_oscillators"
+  name: "branca_large_myr"
   log10_transform: False
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
   tolerance: 1e-30
+  subset_factor: 100
 devices: ["cuda:2", "cuda:3", "cuda:4", "cuda:5"] # ["cuda:4"]
 seed: 42
 verbose: False
