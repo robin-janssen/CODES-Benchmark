@@ -58,6 +58,7 @@ def train_and_save_model(
             verbose=False,
             log=config["dataset"]["log10_transform"],
             normalisation_mode=config["dataset"]["normalise"],
+            tolerance=config["dataset"]["tolerance"],
         )
     )
 

@@ -74,6 +74,14 @@ def check_and_load_data(
         val_data = np.asarray(f["val"], dtype=np.float32)
 
         if tolerance is not None:
+            # Ensure tolerance is a positive float
+            try:
+                tolerance = float(tolerance)
+                if tolerance <= 0:
+                    raise ValueError("Tolerance must be a positive float.")
+            except ValueError:
+                raise ValueError("Tolerance must be a positive float.")
+
             train_data = np.where(train_data < tolerance, tolerance, train_data)
             test_data = np.where(test_data < tolerance, tolerance, test_data)
             val_data = np.where(val_data < tolerance, tolerance, val_data)
