@@ -45,6 +45,7 @@ def train_and_save_model(
     position: int = 1,
     threadlock: Optional[threading.Lock] = None,
     worker_id: Optional[int] = None,
+    using_mpi: bool = False,
 ):
     if threadlock is None:
         threadlock = DummyLock()
@@ -79,6 +80,7 @@ def train_and_save_model(
         set_random_seeds(seed, device)
         model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
     model.normalisation = data_params
+    model.using_mpi = using_mpi
     surr_idx = config["surrogates"].index(surr_name)
 
     batch_size = determine_batch_size(config, surr_idx, mode, metric)

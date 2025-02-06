@@ -9,7 +9,7 @@ class MultiONetConfig:
 
     branch_hidden_layers: int = 5
     trunk_hidden_layers: int = 10
-    hidden_size: int = 1000
+    hidden_size: int = 512
     output_factor: int = 50
     learning_rate: float = 0.0001  # 0.0001
     activation: nn.Module = nn.LeakyReLU()

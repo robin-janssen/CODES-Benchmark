@@ -388,6 +388,19 @@ class AbstractSurrogateModel(ABC, nn.Module):
                     self.current = 0
                     self.description = description
                     self.next_log = 10
+                    self.iter_counter = 0
+
+                def __iter__(self):
+                    self.iter_counter = 0
+                    return self
+
+                def __next__(self):
+                    if self.iter_counter >= self.total:
+                        raise StopIteration
+                    value = self.iter_counter
+                    self.iter_counter += 1
+                    self.update(1)
+                    return value
 
                 def update(self, n=1):
                     self.current += n
@@ -398,14 +411,17 @@ class AbstractSurrogateModel(ABC, nn.Module):
                         )
                         self.next_log += 10
 
-                def set_postfix(self, **kwargs):
+                def set_postfix(self, ordered_dict=None, refresh=True, **kwargs):
+                    # This dummy implementation doesn't actually update any display,
+                    # but it accepts the same parameters as tqdm.set_postfix.
                     pass
 
                 def close(self):
                     if self.current >= self.total:
                         logging.info(f"{self.description}: 100% completed.")
 
-            return DummyProgressBar(epochs, description)
+            progress_bar = DummyProgressBar(epochs, description)
+
         else:
             bar_format = "{l_bar}{bar}| {n_fmt:>5}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt} {postfix}]"
             progress_bar = tqdm(
@@ -418,7 +434,8 @@ class AbstractSurrogateModel(ABC, nn.Module):
             progress_bar.set_postfix(
                 {"loss": f"{0:.2e}", "lr": f"{self.config.learning_rate:.1e}"}
             )
-            return progress_bar
+
+        return progress_bar
 
     def denormalize(self, data: Tensor) -> Tensor:
         """

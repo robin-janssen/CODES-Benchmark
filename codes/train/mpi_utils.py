@@ -81,6 +81,7 @@ def worker_mpi(rank):
                 position=rank,
                 threadlock=None,
                 worker_id=rank,
+                using_mpi=True,
             )
             comm.send(task_id, dest=0, tag=TASK_DONE)
         except Exception as e:

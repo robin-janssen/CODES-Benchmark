@@ -78,6 +78,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
             verbose=False,
             log=conf["dataset"]["log10_transform"],
             normalisation_mode=conf["dataset"]["normalise"],
+            tolerance=conf["dataset"]["tolerance"],
         )
     )
     model_config = get_model_config(surr_name, conf)
