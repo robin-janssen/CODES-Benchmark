@@ -27,10 +27,10 @@ def main():
     Main function to analyse the dataset. It checks the dataset and loads the data.
     """
     datasets = [
+        "simple_ode",
         "coupled_oscillators",
         "simple_reaction",
         "osu2008",
-        "simple_ode",
         "simple_primordial",
         "lotka_volterra",
         "branca_large_kyr",

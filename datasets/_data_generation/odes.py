@@ -3,14 +3,12 @@ from typing import Any, Dict
 import numpy as np
 
 
-def lotka_volterra(t: float, n: np.ndarray) -> np.ndarray:
+def lotka_volterra(n: np.ndarray) -> np.ndarray:
     """
     Defines the Lotka-Volterra predator-prey model with three predators and three prey.
 
     Parameters
     ----------
-    t : float
-        Current time.
     n : np.ndarray
         Current populations [p1, p2, p3, q1, q2, q3].
 
@@ -33,14 +31,12 @@ def lotka_volterra(t: float, n: np.ndarray) -> np.ndarray:
     return derivatives
 
 
-def reaction_backup(t: float, n: np.ndarray) -> np.ndarray:
+def reaction_backup(n: np.ndarray) -> np.ndarray:
     """
     Defines a simple chemical reaction system.
 
     Parameters
     ----------
-    t : float
-        Current time.
     n : np.ndarray
         Current concentrations [s1, s2, s3, s4, s5].
 
@@ -116,6 +112,51 @@ def reaction(t: float, n: np.ndarray) -> np.ndarray:
     ds5_dt = rate3 - rate4
 
     # Return derivatives
+    return np.array([ds1_dt, ds2_dt, ds3_dt, ds4_dt, ds5_dt])
+
+
+import numpy as np
+
+
+def simple_ode(t: float, n: np.ndarray) -> np.ndarray:
+    """
+    Defines a numerically stable, non-conservative ODE system with interesting but controlled dynamics.
+
+    Parameters
+    ----------
+    n : np.ndarray
+        Current state [s1, s2, s3, s4, s5].
+
+    Returns
+    -------
+    np.ndarray
+        Derivatives [ds1/dt, ds2/dt, ds3/dt, ds4/dt, ds5/dt].
+    """
+    s1, s2, s3, s4, s5 = n
+
+    # Rate constants
+    k1, k2, k3, k4 = 0.7, 0.3, 0.4, 0.2
+    k5, k6 = 0.25, 0.15  # Decay terms
+    influx = 0.1  # Constant mass influx
+
+    # Interaction terms (simplified)
+    rate1 = k1 * s1 * (1 - s1)  # Logistic-like self-regulation
+    rate2 = k2 * s2 * s3  # Simple interaction between s2 and s3
+    rate3 = k3 * s4 * (1 - 0.1 * s4)  # Mild quadratic feedback for saturation
+    rate4 = k4 * s5 * s2  # Interaction between s5 and s2
+    rate5 = k3 * s4
+
+    # Loss terms
+    decay1 = k5 * s1
+    decay2 = k6 * s3
+
+    # System equations (mass is not conserved)
+    ds1_dt = influx + rate1 - decay1  # s1 has an external source and self-regulation
+    ds2_dt = rate2 - 0.5 * s2  # s2 grows via interaction with s3 and has linear damping
+    ds3_dt = -rate2 + rate5 - decay2  # s3 is consumed by s2 but replenished by s4
+    ds4_dt = rate3 - 0.1 * s4  # Simple growth and decay for stability
+    ds5_dt = rate4 - 0.2 * s5  # Simple linear decay
+
     return np.array([ds1_dt, ds2_dt, ds3_dt, ds4_dt, ds5_dt])
 
 
@@ -272,6 +313,22 @@ FUNCS: Dict[str, Dict[str, Any]] = {
                 (-1, 1),  # v3
                 (-1, 1),  # v4
                 (-1, 1),  # v5
+            ],
+        },
+    },
+    "simple_ode": {
+        "func": simple_ode,
+        "tsteps": np.linspace(0, 10, 101),
+        "ndim": 5,
+        "labels": ["S1", "S2", "S3", "S4", "S5"],
+        "sampling": {
+            "space": "log",  # Options: 'linear', 'log'
+            "bounds": [
+                (0.1, 10.0),  # S1
+                (0.1, 10.0),  # S2
+                (0.1, 10.0),  # S3
+                (0.1, 10.0),  # S4
+                (0.1, 10.0),  # S5
             ],
         },
     },
