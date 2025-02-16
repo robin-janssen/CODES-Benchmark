@@ -175,6 +175,7 @@ def training_run(
     model_config = get_model_config(surr_name, config)
     model_config.update(suggested_params)
     model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
+    model.normalisation = data_params
     model.optuna_trial = trial
     model.trial_update_epochs = 10
 
