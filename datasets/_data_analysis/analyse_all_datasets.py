@@ -19,6 +19,7 @@ from datasets._data_analysis.data_plots import (  # plot_example_trajectories_po
     plot_example_trajectories,
     plot_initial_conditions_distribution,
 )
+from datasets._data_analysis.dataset_dict import dataset_dict
 
 
 def main():
@@ -26,10 +27,10 @@ def main():
     Main function to analyse the dataset. It checks the dataset and loads the data.
     """
     datasets = [
+        "simple_ode",
         "coupled_oscillators",
         "simple_reaction",
         "osu2008",
-        "simple_ode",
         "simple_primordial",
         "lotka_volterra",
         "branca_large_kyr",
@@ -37,12 +38,12 @@ def main():
         "branca24",
         "branca_norad",
     ]
-    logs = [False, True, True, True, True, True, True, True, True, True]
-    qpps = [5, 3, 6, 3, 4, 3, 10, 10, 5, 5]
-    tols = [None, 1e-30, 1e-30, 1e-30, 1e-30, 1e-30, 1e-30, 1e-30, 1e-30, 1e-30]
     debug = False
     # Load full data
-    for dataset, log, qpp, tolerance in zip(datasets, logs, qpps, tols):
+    for dataset in datasets:
+        log = dataset_dict[dataset]["log"]
+        qpp = dataset_dict[dataset]["qpp"]
+        tolerance = dataset_dict[dataset]["tol"]
         download_data(dataset)
         (
             full_train_data,

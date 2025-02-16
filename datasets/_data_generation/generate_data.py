@@ -345,14 +345,14 @@ def parse_args() -> ArgumentParser:
         "-f",
         type=str,
         choices=FUNCS.keys(),
-        default="nonlinear_oscillators",
+        default="simple_ode",
         help=f"Name of the function to generate data for (default: 'lotka_volterra'). Choices: {list(FUNCS.keys())}.",
     )
     parser.add_argument(
         "--name",
         "-n",
         type=str,
-        default="oscillators",
+        default="simple_ode",
         help="Name of the dataset (default: 'lotka_volterra_new').",
     )
     parser.add_argument(
