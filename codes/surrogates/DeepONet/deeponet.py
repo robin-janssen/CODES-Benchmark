@@ -411,7 +411,6 @@ class MultiONet(OperatorNetwork):
         self.train()
         optimizer.train()
         total_loss = 0
-        # dataset_size = len(data_loader.dataset)
 
         for batch in data_loader:
             branch_input, trunk_input, targets = batch

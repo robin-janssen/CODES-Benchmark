@@ -742,7 +742,7 @@ def evaluate_UQ(
 
     # Calculate average uncertainty
     preds_mean = np.mean(all_predictions, axis=0)
-    preds_std = np.std(all_predictions, axis=0)
+    preds_std = np.std(all_predictions, axis=0, ddof=1)
     average_uncertainty = np.mean(preds_std)
 
     # Correlate uncertainty with errors

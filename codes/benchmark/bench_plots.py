@@ -316,6 +316,7 @@ def plot_average_errors_over_time(
     plt.xlabel("Time")
     plt.xlim(timesteps[0], timesteps[-1])
     plt.ylabel("Mean Absolute Error")
+    plt.yscale("log")
     title = f"Mean Absolute Errors over Time ({mode.capitalize()}, {surr_name})"
     filename = f"{mode}_errors_over_time.png"
 
@@ -402,7 +403,7 @@ def plot_example_predictions_with_uncertainty(
                 )
 
         # Set the y-axis label for each subplot
-        ax.set_ylabel("log(Chemical Abundance)")
+        ax.set_ylabel("Abundance")
 
         # Create a legend directly next to the plot using the stored line objects
         if labels is not None:
@@ -413,7 +414,7 @@ def plot_example_predictions_with_uncertainty(
                 loc="center left",
                 bbox_to_anchor=(1, 0.5),  # Position legend to the right of the plot
                 bbox_transform=ax.transAxes,  # Place it relative to the axes
-                title="Chemical Labels",
+                title="Labels",
             )
 
         # Set the x limit exactly from the lowest to the highest timestep
@@ -445,6 +446,7 @@ def plot_example_predictions_with_uncertainty(
     )
 
     plt.tight_layout(rect=[0.05, 0.03, 0.95, 0.92])
+    plt.yscale("log")
 
     if save and conf:
         save_plot(plt, "uncertainty_deepensemble_preds.png", conf, surr_name, dpi=300)
@@ -540,14 +542,23 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
 
     # Main model losses
     main_train_loss, main_test_loss = load_losses(f"{surr_name.lower()}_main")
-    plot_losses(
-        (main_train_loss, main_test_loss),
-        ("Train Loss", "Test Loss"),
+    # plot_losses(
+    #     (main_train_loss, main_test_loss),
+    #     ("Train Loss", "Test Loss"),
+    #     title="Main Model Losses",
+    #     save=True,
+    #     conf=conf,
+    #     surr_name=surr_name,
+    #     mode="main",
+    # )
+    plot_losses_dual_axis(
+        main_train_loss,
+        main_test_loss,
+        labels=("Train Loss", "Test Loss"),
         title="Main Model Losses",
         save=True,
         conf=conf,
         surr_name=surr_name,
-        mode="main",
     )
 
     # Interpolation losses
@@ -562,7 +573,7 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
             interp_train_losses.append(train_loss)
             interp_test_losses.append(test_loss)
         plot_losses(
-            tuple(interp_train_losses),
+            tuple(interp_test_losses),
             tuple(f"Interval {interval}" for interval in [1] + intervals),
             title="Interpolation Losses",
             save=True,
@@ -583,7 +594,7 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
             extra_train_losses.append(train_loss)
             extra_test_losses.append(test_loss)
         plot_losses(
-            tuple(extra_train_losses),
+            tuple(extra_test_losses),
             tuple(f"Cutoff {cutoff}" for cutoff in cutoffs + [len(timesteps)]),
             title="Extrapolation Losses",
             save=True,
@@ -602,7 +613,7 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
             sparse_train_losses.append(train_loss)
             sparse_test_losses.append(test_loss)
         plot_losses(
-            tuple(sparse_train_losses),
+            tuple(sparse_test_losses),
             tuple(f"Factor {factor}" for factor in [1] + factors),
             title="Sparse Losses",
             save=True,
@@ -621,7 +632,7 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
             uq_train_losses.append(train_loss)
             uq_test_losses.append(test_loss)
         plot_losses(
-            tuple(uq_train_losses),
+            tuple(uq_test_losses),
             tuple(f"Model {i}" for i in range(n_models)),
             title="UQ Losses",
             save=True,
@@ -642,7 +653,7 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
             batch_train_losses.append(train_loss)
             batch_test_losses.append(test_loss)
         plot_losses(
-            tuple(batch_train_losses),
+            tuple(batch_test_losses),
             tuple(f"Batch Size {batch_size}" for batch_size in batch_sizes),
             title="Batch Size Losses",
             save=True,
@@ -780,6 +791,7 @@ def plot_losses(
     conf: Optional[dict] = None,
     surr_name: Optional[str] = None,
     mode: str = "main",
+    percentage: float = 2.0,
 ) -> None:
     """
     Plot the loss trajectories for the training of multiple models.
@@ -791,7 +803,15 @@ def plot_losses(
     :param conf: The configuration dictionary.
     :param surr_name: The name of the surrogate model.
     :param mode: The mode of the training.
+    :param percentage: Percentage of initial values to exclude from min-max calculation.
     """
+
+    # Determine start index based on percentage
+    start_idx = int(len(loss_histories[0]) * (percentage / 100))
+
+    # Determine min and max range after start_idx
+    min_val = min(loss[start_idx:].min() for loss in loss_histories if loss is not None)
+    max_val = max(loss[start_idx:].max() for loss in loss_histories if loss is not None)
 
     # Colormap
     colors = plt.cm.magma(np.linspace(0.15, 0.85, len(loss_histories)))
@@ -803,10 +823,12 @@ def plot_losses(
         if loss is not None:
             plt.plot(loss, label=label, color=colors[labels.index(label)])
             loss_plotted = True
+
     plt.xlabel("Epoch")
     plt.xlim(0, len(loss_histories[0]))
     plt.ylabel("Loss")
     plt.yscale("log")
+    plt.ylim(min_val, max_val)
     plt.title(title)
     plt.legend()
 
@@ -823,6 +845,61 @@ def plot_losses(
         save_plot(plt, "losses_" + mode.lower() + ".png", conf, surr_name)
 
     plt.close()
+
+
+def plot_losses_dual_axis(
+    train_loss: np.array,
+    test_loss: np.array,
+    labels: tuple[str, str] = ("Train Loss", "Test Loss"),
+    title: str = "Losses",
+    save: bool = False,
+    conf: Optional[dict] = None,
+    surr_name: Optional[str] = None,
+) -> None:
+    """
+    Plot the training and test loss trajectories with dual y-axes.
+
+    :param train_loss: Training loss history array.
+    :param test_loss: Test loss history array.
+    :param labels: Labels for the losses (train and test).
+    :param title: Title of the plot.
+    :param save: Whether to save the plot as an image file.
+    :param conf: The configuration dictionary.
+    :param surr_name: The name of the surrogate model.
+    """
+
+    # Colormap
+    colors = plt.cm.magma(np.linspace(0.15, 0.85, 2))
+
+    # Create the figure and axis
+    fig, ax1 = plt.subplots(figsize=(12, 6))
+    ax2 = ax1.twinx()
+
+    # Plot train loss
+    ax1.plot(train_loss, label=labels[0], color=colors[0])
+    ax1.set_xlabel("Epoch")
+    ax1.set_xlim(0, len(train_loss))
+    ax1.set_ylabel(labels[0], color=colors[0])
+    ax1.set_yscale("log")
+
+    # Plot test loss
+    ax2.plot(test_loss, label=labels[1], color=colors[1])
+    ax2.set_ylabel(labels[1], color=colors[1])
+    ax2.set_yscale("log")
+
+    plt.title(title)
+
+    # Legend
+    lines_1, labels_1 = ax1.get_legend_handles_labels()
+    lines_2, labels_2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc="upper right")
+
+    # Save plot
+    if save and conf and surr_name:
+        save_plot(fig, "main_losses.png", conf, surr_name)
+
+    plt.show()
+    plt.close(fig)
 
 
 def plot_loss_comparison(
