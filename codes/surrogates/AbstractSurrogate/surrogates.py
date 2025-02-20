@@ -113,7 +113,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         self.config = config if config is not None else {}
         self.train_duration = None
         self.optuna_trial = None
-        self.trial_update_epochs = 1
+        self.update_epochs = 10
         self.n_epochs = 0
 
     @classmethod
@@ -398,9 +398,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             leave=False,
             bar_format=bar_format,
         )
-        progress_bar.set_postfix(
-            {"loss": f"{0:.2e}", "lr": f"{self.config.learning_rate:.1e}"}
-        )
+        progress_bar.set_postfix({"train_loss": f"{0:.2e}", "test_loss": f"{0:.2e}"})
         return progress_bar
 
     def denormalize(self, data: Tensor) -> Tensor:

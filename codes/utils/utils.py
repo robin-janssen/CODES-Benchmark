@@ -13,8 +13,11 @@ from tqdm import tqdm
 
 
 def read_yaml_config(config_path):
-    with open(config_path, "r") as file:
+    with open(config_path, "r", encoding="utf-8") as file:
         config = yaml.safe_load(file)
+
+    # Parse for "None" strings
+    config = parse_for_none(config)
     return config
 
 
@@ -74,9 +77,8 @@ def load_and_save_config(config_path: str = "config.yaml", save: bool = True) ->
     Returns:
         dict: The loaded configuration dictionary.
     """
-    # Load configuration from YAML
-    with open(config_path, "r", encoding="utf-8") as file:
-        config = yaml.safe_load(file)
+    # Load the configuration
+    config = read_yaml_config(config_path)
 
     if save:
         # Get training ID from the config
@@ -91,6 +93,25 @@ def load_and_save_config(config_path: str = "config.yaml", save: bool = True) ->
         shutil.copyfile(config_path, config_save_path)
 
     return config
+
+
+def parse_for_none(dictionary: dict) -> dict:
+    """
+    Parse a dictionary and replace all strings "None" with None.
+    If value is a dictionary, recursively parse the dictionary.
+
+    Args:
+        dictionary (dict): The dictionary to parse.
+
+    Returns:
+        dictionary (dict): The parsed dictionary.
+    """
+    for key, value in dictionary.items():
+        if isinstance(value, dict):
+            dictionary[key] = parse_for_none(value)
+        elif value == "None":
+            dictionary[key] = None
+    return dictionary
 
 
 def set_random_seeds(seed: int, device: str) -> None:

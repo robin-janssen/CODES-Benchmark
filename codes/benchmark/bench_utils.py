@@ -10,6 +10,7 @@ import torch
 import yaml
 
 from codes.surrogates import SurrogateModel, surrogate_classes
+from codes.utils import read_yaml_config
 
 
 def check_surrogate(surrogate: str, conf: dict) -> None:
@@ -73,8 +74,7 @@ def check_benchmark(conf: dict) -> None:
             f"Training configuration file not found in directory {trained_dir}."
         )
 
-    with open(yaml_file, "r", encoding="utf-8") as file:
-        training_conf = yaml.safe_load(file)
+    training_conf = read_yaml_config(yaml_file)
 
     # 1. Check Surrogates
     training_surrogates = set(training_conf.get("surrogates", []))
@@ -220,21 +220,6 @@ def get_required_models_list(surrogate: str, conf: dict) -> list:
         )
 
     return required_models
-
-
-def read_yaml_config(config_path: str) -> dict:
-    """
-    Read the YAML configuration file.
-
-    Args:
-        config_path (str): Path to the YAML configuration file.
-
-    Returns:
-        dict: The configuration dictionary.
-    """
-    with open(config_path, "r", encoding="uft-8") as file:
-        conf = yaml.safe_load(file)
-    return conf
 
 
 def load_model(

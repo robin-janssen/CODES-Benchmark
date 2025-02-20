@@ -300,43 +300,49 @@ class MultiONet(OperatorNetwork):
         Returns:
             None. The training loss, test loss, and MAE are stored in the model.
         """
-        # self.n_timesteps = len(timesteps)
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
 
-        # criterion = self.setup_criterion()
         criterion = nn.MSELoss()
-        # optimizer = self.setup_optimizer_and_scheduler(epochs)
         optimizer = self.setup_optimizer_and_scheduler()
 
-        train_losses, test_losses, MAEs = [np.zeros(epochs) for _ in range(3)]
-
+        loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
+        train_losses, test_losses, MAEs = [np.zeros(loss_length) for _ in range(3)]
         progress_bar = self.setup_progress_bar(epochs, position, description)
+        self.train()
+        optimizer.train()
 
         for epoch in progress_bar:
-            train_losses[epoch] = self.epoch(train_loader, criterion, optimizer)
+            self.epoch(train_loader, criterion, optimizer)
 
-            clr = optimizer.param_groups[0]["lr"]
-            # print_loss = f"{train_losses[epoch].item():.2e}"
-            # progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
-            # scheduler.step()
-
-            if test_loader is not None:
+            if epoch % self.update_epochs == 0:
+                index = epoch // self.update_epochs
+                # Set model and optimizer to evaluation mode
                 self.eval()
                 optimizer.eval()
+
+                # Calculate losses and MAE
+                preds, targets = self.predict(train_loader)
+                train_losses[index] = criterion(preds, targets).item()
                 preds, targets = self.predict(test_loader)
-                loss = criterion(preds, targets).item()
-                # loss /= len(test_loader.dataset) * self.N
-                test_losses[epoch] = loss
-                MAEs[epoch] = self.L1(preds, targets).item()
+                test_losses[index] = criterion(preds, targets).item()
+                MAEs[index] = self.L1(preds, targets).item()
 
-                print_loss = f"{test_losses[epoch].item():.2e}"
-                progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
+                # Update progress bar postfix
+                postfix = {
+                    "train_loss": train_losses[index],
+                    "test_loss": test_losses[index],
+                }
+                progress_bar.set_postfix(postfix)
 
+                # Report the loss to Optuna and check for pruning
                 if self.optuna_trial is not None:
-                    if epoch % self.trial_update_epochs == 0:
-                        self.optuna_trial.report(loss, epoch)
-                        if self.optuna_trial.should_prune():
-                            raise optuna.TrialPruned()
+                    self.optuna_trial.report(test_losses[index], epoch)
+                    if self.optuna_trial.should_prune():
+                        raise optuna.TrialPruned()
+
+                # Set model and optimizer back to training mode
+                self.train()
+                optimizer.train()
 
         progress_bar.close()
 
@@ -408,10 +414,6 @@ class MultiONet(OperatorNetwork):
         Returns:
             float: The total loss for the training step.
         """
-        self.train()
-        optimizer.train()
-        total_loss = 0
-
         for batch in data_loader:
             branch_input, trunk_input, targets = batch
             branch_input, trunk_input, targets = (
@@ -424,10 +426,6 @@ class MultiONet(OperatorNetwork):
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
-            total_loss += loss.item()
-
-        # total_loss /= dataset_size * self.N
-        return total_loss
 
     def create_dataloader_n(
         self,
@@ -662,7 +660,7 @@ class MultiONet(OperatorNetwork):
                     MAEs[epoch] = self.L1(preds, targets).item()
 
                     if self.optuna_trial is not None:
-                        self.optuna_trial.report(loss, epoch)
+                        self.optuna_trial.report(loss, step=epoch)
                         if self.optuna_trial.should_prune():
                             raise optuna.TrialPruned()
 

@@ -153,61 +153,66 @@ class LatentPoly(AbstractSurrogateModel):
             position (int): The position of the progress bar.
             description (str): The description for the progress bar.
         """
-        # optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
         optimizer = AdamWScheduleFree(
             self.model.parameters(), lr=self.config.learning_rate
         )
-        optimizer.train()
 
-        losses = torch.empty((epochs, len(train_loader)))
-        test_losses = torch.empty((epochs))
-        MAEs = torch.empty((epochs))
+        loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
+        train_losses, test_losses, MAEs = [np.zeros(loss_length) for _ in range(3)]
         criterion = nn.MSELoss()
 
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
-        for epoch in progress_bar:
+        self.model.train()
+        optimizer.train()
 
+        for epoch in progress_bar:
             for i, (x_true, timesteps) in enumerate(train_loader):
                 optimizer.zero_grad()
                 x_pred = self.model.forward(x_true, timesteps)
                 loss = self.model.total_loss(x_true, x_pred)
                 loss.backward()
                 optimizer.step()
-                losses[epoch, i] = loss.item()
 
                 if epoch == 10 and i == 0:
                     with torch.no_grad():
                         self.model.renormalize_loss_weights(x_true, x_pred)
 
-            clr = optimizer.param_groups[0]["lr"]
-            # print_loss = f"{losses[epoch, -1].item():.2e}"
-            # progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
+            if epoch % self.update_epochs == 0:
+                index = epoch // self.update_epochs
+                with torch.inference_mode():
+                    # Set model and optimizer to evaluation mode
+                    self.model.eval()
+                    optimizer.eval()
 
-            with torch.inference_mode():
-                self.model.eval()
-                optimizer.eval()
-                preds, targets = self.predict(test_loader)
-                self.model.train()
-                optimizer.train()
-                # loss = self.model.total_loss(preds, targets)
-                loss = criterion(preds, targets)
-                test_losses[epoch] = loss
-                MAEs[epoch] = self.L1(preds, targets).item()
+                    # Calculate losses and MAE
+                    preds, targets = self.predict(train_loader)
+                    train_losses[index] = criterion(preds, targets).item()
+                    preds, targets = self.predict(test_loader)
+                    test_losses[index] = criterion(preds, targets).item()
+                    MAEs[index] = self.L1(preds, targets).item()
 
-                print_loss = f"{test_losses[epoch].item():.2e}"
-                progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
+                    # Update progress bar postfix
+                    postfix = {
+                        "train_loss": train_losses[index],
+                        "test_loss": test_losses[index],
+                    }
+                    progress_bar.set_postfix(postfix)
 
-                if self.optuna_trial is not None:
-                    if epoch % self.trial_update_epochs == 0:
-                        self.optuna_trial.report(loss, epoch)
+                    # Report loss to Optuna and prune if necessary
+                    if self.optuna_trial is not None:
+                        self.optuna_trial.report(test_losses[index], step=epoch)
                         if self.optuna_trial.should_prune():
                             raise optuna.TrialPruned()
+
+                    # Set model and optimizer back to training mode
+                    self.model.train()
+                    optimizer.train()
 
         progress_bar.close()
 
         self.n_epochs = epoch
-        self.train_loss = torch.mean(losses, dim=1)
+        self.train_loss = train_losses
         self.test_loss = test_losses
         self.MAE = MAEs
 
