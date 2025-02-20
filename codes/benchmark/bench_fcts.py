@@ -25,6 +25,7 @@ from .bench_plots import (
     plot_generalization_error_comparison,
     plot_generalization_errors,
     plot_loss_comparison,
+    plot_loss_comparison_equal,
     plot_MAE_comparison_train_duration,
     plot_relative_errors,
     plot_relative_errors_over_time,
@@ -867,6 +868,9 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
 
     # Plot the comparison of main model losses
     plot_loss_comparison(tuple(train_losses), tuple(test_losses), tuple(labels), config)
+    plot_loss_comparison_equal(
+        tuple(train_losses), tuple(test_losses), tuple(labels), config
+    )
 
 
 def compare_MAE(metrics: dict, config: dict) -> None:

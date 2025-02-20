@@ -538,28 +538,32 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
 
     def load_losses(model_identifier: str):
         model.load(training_id, surr_name, model_identifier=model_identifier)
-        return model.train_loss, model.test_loss
+        train_loss = model.train_loss
+        test_loss = model.test_loss
+        epochs = model.n_epochs
+        return train_loss, test_loss, epochs
 
     # Main model losses
-    main_train_loss, main_test_loss = load_losses(f"{surr_name.lower()}_main")
-    # plot_losses(
-    #     (main_train_loss, main_test_loss),
-    #     ("Train Loss", "Test Loss"),
-    #     title="Main Model Losses",
-    #     save=True,
-    #     conf=conf,
-    #     surr_name=surr_name,
-    #     mode="main",
-    # )
-    plot_losses_dual_axis(
-        main_train_loss,
-        main_test_loss,
-        labels=("Train Loss", "Test Loss"),
+    main_train_loss, main_test_loss, epochs = load_losses(f"{surr_name.lower()}_main")
+    plot_losses(
+        (main_train_loss, main_test_loss),
+        epochs,
+        ("Train Loss", "Test Loss"),
         title="Main Model Losses",
         save=True,
         conf=conf,
         surr_name=surr_name,
+        mode="main",
     )
+    # plot_losses_dual_axis(
+    #     main_train_loss,
+    #     main_test_loss,
+    #     labels=("Train Loss", "Test Loss"),
+    #     title="Main Model Losses",
+    #     save=True,
+    #     conf=conf,
+    #     surr_name=surr_name,
+    # )
 
     # Interpolation losses
     if conf["interpolation"]["enabled"]:
@@ -567,13 +571,14 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
         interp_train_losses = [main_train_loss]
         interp_test_losses = [main_test_loss]
         for interval in intervals:
-            train_loss, test_loss = load_losses(
+            train_loss, test_loss, epochs = load_losses(
                 f"{surr_name.lower()}_interpolation_{interval}"
             )
             interp_train_losses.append(train_loss)
             interp_test_losses.append(test_loss)
         plot_losses(
             tuple(interp_test_losses),
+            epochs,
             tuple(f"Interval {interval}" for interval in [1] + intervals),
             title="Interpolation Losses",
             save=True,
@@ -588,13 +593,14 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
         extra_train_losses = [main_train_loss]
         extra_test_losses = [main_test_loss]
         for cutoff in cutoffs:
-            train_loss, test_loss = load_losses(
+            train_loss, test_loss, epochs = load_losses(
                 f"{surr_name.lower()}_extrapolation_{cutoff}"
             )
             extra_train_losses.append(train_loss)
             extra_test_losses.append(test_loss)
         plot_losses(
             tuple(extra_test_losses),
+            epochs,
             tuple(f"Cutoff {cutoff}" for cutoff in cutoffs + [len(timesteps)]),
             title="Extrapolation Losses",
             save=True,
@@ -609,11 +615,14 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
         sparse_train_losses = [main_train_loss]
         sparse_test_losses = [main_test_loss]
         for factor in factors:
-            train_loss, test_loss = load_losses(f"{surr_name.lower()}_sparse_{factor}")
+            train_loss, test_loss, epochs = load_losses(
+                f"{surr_name.lower()}_sparse_{factor}"
+            )
             sparse_train_losses.append(train_loss)
             sparse_test_losses.append(test_loss)
         plot_losses(
             tuple(sparse_test_losses),
+            epochs,
             tuple(f"Factor {factor}" for factor in [1] + factors),
             title="Sparse Losses",
             save=True,
@@ -628,11 +637,12 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
         uq_train_losses = [main_train_loss]
         uq_test_losses = [main_test_loss]
         for i in range(n_models - 1):
-            train_loss, test_loss = load_losses(f"{surr_name.lower()}_UQ_{i+1}")
+            train_loss, test_loss, epochs = load_losses(f"{surr_name.lower()}_UQ_{i+1}")
             uq_train_losses.append(train_loss)
             uq_test_losses.append(test_loss)
         plot_losses(
             tuple(uq_test_losses),
+            epochs,
             tuple(f"Model {i}" for i in range(n_models)),
             title="UQ Losses",
             save=True,
@@ -647,13 +657,14 @@ def plot_surr_losses(model, surr_name: str, conf: dict, timesteps: np.ndarray) -
         batch_train_losses = []
         batch_test_losses = []
         for batch_size in batch_sizes:
-            train_loss, test_loss = load_losses(
+            train_loss, test_loss, epochs = load_losses(
                 f"{surr_name.lower()}_batchsize_{batch_size}"
             )
             batch_train_losses.append(train_loss)
             batch_test_losses.append(test_loss)
         plot_losses(
             tuple(batch_test_losses),
+            epochs,
             tuple(f"Batch Size {batch_size}" for batch_size in batch_sizes),
             title="Batch Size Losses",
             save=True,
@@ -785,6 +796,7 @@ def plot_error_distribution_per_chemical(
 
 def plot_losses(
     loss_histories: tuple[np.array, ...],
+    epochs: int,
     labels: tuple[str, ...],
     title: str = "Losses",
     save: bool = False,
@@ -797,6 +809,7 @@ def plot_losses(
     Plot the loss trajectories for the training of multiple models.
 
     :param loss_histories: List of loss history arrays.
+    :param epochs: Number of epochs.
     :param labels: List of labels for each loss history.
     :param title: Title of the plot.
     :param save: Whether to save the plot as an image file.
@@ -816,12 +829,14 @@ def plot_losses(
     # Colormap
     colors = plt.cm.magma(np.linspace(0.15, 0.85, len(loss_histories)))
 
+    epochs = np.linspace(0, epochs, num=len(loss_histories[0]), endpoint=False)
+
     # Create the figure
     plt.figure(figsize=(12, 6))
     loss_plotted = False
     for loss, label in zip(loss_histories, labels):
         if loss is not None:
-            plt.plot(loss, label=label, color=colors[labels.index(label)])
+            plt.plot(loss, epochs, label=label, color=colors[labels.index(label)])
             loss_plotted = True
 
     plt.xlabel("Epoch")
@@ -931,18 +946,106 @@ def plot_loss_comparison(
         # plt.plot(train_loss, label=f"{label} Train Loss", color=colors[i])
         plt.plot(test_loss, label=f"{label} Test Loss", linestyle="--", color=colors[i])
 
-    max_epochs = max(len(loss) for loss in train_losses)
+    # Compute y-axis limits by excluding the first 2% of the data in each trajectory.
+    all_losses = test_losses  # train_losses + test_losses
+    min_vals = []
+    max_vals = []
+    for loss in all_losses:
+        if loss is not None:
+            start_idx = int(len(loss) * 0.02)
+            # Ensure there's at least one value to compute min/max
+            if start_idx >= len(loss):
+                start_idx = 0
+            min_vals.append(loss[start_idx:].min())
+            max_vals.append(loss[start_idx:].max())
 
-    plt.xlabel("Epoch")
-    plt.xlim(0, max_epochs)
+    if min_vals and max_vals:
+        min_val = min(min_vals)
+        max_val = max(max_vals)
+    else:
+        min_val, max_val = None, None
+
+    plt.xlabel("normalised training duration")
+    plt.xlim(0, 1)
     plt.ylabel("Loss")
     plt.yscale("log")
+    if min_val is not None and max_val is not None:
+        plt.ylim(min_val, max_val)
     plt.title("Comparison of Training and Test Losses")
     plt.legend()
     plt.grid(True)
 
+
+def plot_loss_comparison_equal(
+    train_losses: tuple[np.ndarray, ...],
+    test_losses: tuple[np.ndarray, ...],
+    labels: tuple[str, ...],
+    config: dict,
+    save: bool = True,
+) -> None:
+    """
+    Plot the test loss trajectories for different surrogate models on a single plot,
+    after log-transforming and normalizing each trajectory. This makes it easier
+    to see convergence behavior even when the losses span several orders of magnitude.
+    Numeric y-axis labels are removed.
+
+    Each loss trajectory is processed as follows:
+    1. Log-transform the loss values.
+    2. Normalize the log-transformed values to the range [0, 1].
+    3. Plot the normalized trajectory on a normalized x-axis.
+
+    Args:
+        train_losses (tuple): Tuple of training loss arrays for each surrogate model.
+        test_losses (tuple): Tuple of test loss arrays for each surrogate model.
+        labels (tuple): Tuple of labels for each surrogate model.
+        config (dict): Configuration dictionary.
+        save (bool): Whether to save the plot.
+
+    Returns:
+        None
+    """
+    plt.figure(figsize=(12, 6))
+    colors = plt.cm.viridis(np.linspace(0, 0.9, len(test_losses)))
+
+    for i, (train_loss, test_loss, label) in enumerate(
+        zip(train_losses, test_losses, labels)
+    ):
+        # Create a normalized x-axis for the current loss trajectory.
+        x_axis = np.linspace(0, 1, len(test_loss))
+
+        # Log-transform the test loss. Ensure no zero or negative values.
+        # If zeros exist, add a small constant to avoid -inf.
+        safe_test_loss = np.where(test_loss <= 0, 1e-12, test_loss)
+        log_loss = np.log(safe_test_loss)
+
+        # Normalize the log-transformed loss to span the full y-axis (0 to 1)
+        # Use a small offset to move plots away from the x-axis
+        loss_min = log_loss.min()
+        loss_max = log_loss[0]
+        if loss_max - loss_min > 0:
+            norm_loss = (log_loss - loss_min + 0.05) / (loss_max - loss_min)
+        else:
+            norm_loss = np.zeros_like(log_loss)
+
+        plt.plot(
+            x_axis,
+            norm_loss,
+            label=label,
+            linestyle="--",
+            color=colors[i],
+        )
+
+    plt.xlabel("Normalized Training Duration")
+    plt.xlim(0, 1)
+    plt.ylabel("Normalized Log Loss")
+    plt.ylim(0, 1)
+    # plt.yticks([])  # Remove numeric y-axis labels
+    plt.title("Comparison of Normalized Test Loss Trajectories (Log-transformed)")
+    plt.legend()
+    plt.grid(True)
+
     if save and config:
-        save_plot(plt, "losses_main_model.png", config)
+        save_plot(plt, "losses_main_model_equal.png", config)
 
     plt.close()
 
