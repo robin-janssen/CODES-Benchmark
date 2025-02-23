@@ -44,6 +44,6 @@ class LatentPolyConfig:
 
     latent_features: int = 9
     degree: int = 1
-    learning_rate: float = 0.0035  # 0.001
+    learning_rate: float = 0.001
     layers_factor: int = 96
     activation: nn.Module = nn.Tanh()
