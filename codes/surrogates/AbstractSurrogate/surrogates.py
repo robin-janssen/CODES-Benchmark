@@ -300,7 +300,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             self.fit.duration if hasattr(self.fit, "duration") else None
         )
         hyperparameters["train_duration"] = self.train_duration
-        hyperparameters["n_epochs"] = self.n_epochs + 1
+        hyperparameters["n_epochs"] = self.n_epochs
         hyperparameters["normalisation"] = self.normalisation
         hyperparameters["device"] = self.device
         if "cuda" in self.device:
@@ -398,7 +398,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             leave=False,
             bar_format=bar_format,
         )
-        progress_bar.set_postfix({"train_loss": f"{0:.2e}", "test_loss": f"{0:.2e}"})
+         
         return progress_bar
 
     def denormalize(self, data: Tensor) -> Tensor:

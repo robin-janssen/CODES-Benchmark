@@ -194,8 +194,8 @@ class LatentPoly(AbstractSurrogateModel):
 
                     # Update progress bar postfix
                     postfix = {
-                        "train_loss": train_losses[index],
-                        "test_loss": test_losses[index],
+                        "train_loss": f"{train_losses[index]:.2e}",
+                        "test_loss": f"{test_losses[index]:.2e}",
                     }
                     progress_bar.set_postfix(postfix)
 
@@ -211,7 +211,7 @@ class LatentPoly(AbstractSurrogateModel):
 
         progress_bar.close()
 
-        self.n_epochs = epoch
+        self.n_epochs = epoch + 1
         self.train_loss = train_losses
         self.test_loss = test_losses
         self.MAE = MAEs
