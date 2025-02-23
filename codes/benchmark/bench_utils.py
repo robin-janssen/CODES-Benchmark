@@ -258,67 +258,83 @@ def count_trainable_parameters(model: torch.nn.Module) -> int:
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def measure_memory_footprint(
-    model: torch.nn.Module,
-    inputs: tuple,
-) -> dict:
+def measure_memory_footprint(model: torch.nn.Module, inputs: tuple) -> dict:
     """
-    Measure the memory footprint of the model during the forward and backward pass.
+    Measure the memory footprint of a model during forward and backward passes using
+    peak memory tracking and explicit synchronization.
 
     Args:
         model (torch.nn.Module): The PyTorch model.
         inputs (tuple): The input data for the model.
-        conf (dict): The configuration dictionary.
-        surr_name (str): The name of the surrogate model.
 
     Returns:
-        dict: A dictionary containing memory footprint measurements.
+        dict: A dictionary containing measured memory usages for:
+            - model_memory: Additional memory used when moving the model to GPU.
+            - forward_memory: Peak additional memory during the forward pass with gradients.
+            - backward_memory: Peak additional memory during the backward pass.
+            - forward_memory_nograd: Peak additional memory during the forward pass without gradients.
+        model: The model (possibly moved back to the original device).
     """
-    # def get_memory_usage():
-    #     process = psutil.Process(os.getpid())
-    #     return process.memory_info().rss
+    # Determine the target device
+    device = model.device if hasattr(model, "device") else torch.device("cuda:0")
 
-    def get_memory_usage(model):
-        return torch.cuda.memory_allocated(model.device)
-
+    # Move the model to CPU first (simulate baseline)
     model.to("cpu")
 
-    before_load = get_memory_usage(model)
+    # --- Model loading measurement ---
+    torch.cuda.synchronize(device)
+    torch.cuda.reset_peak_memory_stats(device)
+    before_load = torch.cuda.memory_allocated(device)
 
-    model.to(model.device)
+    model.to(device)
+    torch.cuda.synchronize(device)
+    peak_after_load = torch.cuda.max_memory_allocated(device)
+    model_memory = peak_after_load - before_load
 
-    # Measure memory usage before the forward pass
-    after_load = get_memory_usage(model)
+    # Prepare inputs: move them to the target device
+    if isinstance(inputs, (list, tuple)):
+        inputs = tuple(i.to(device) for i in inputs)
+    else:
+        inputs = inputs.to(device)
 
-    inputs = (
-        tuple(i.to(model.device) for i in inputs)
-        if isinstance(inputs, list) or isinstance(inputs, tuple)
-        else inputs.to(model.device)
-    )
-    before_forward = get_memory_usage(model)
+    # --- Forward pass with gradients ---
+    torch.cuda.synchronize(device)
+    torch.cuda.reset_peak_memory_stats(device)
+    before_forward = torch.cuda.memory_allocated(device)
+
     preds, targets = model(inputs=inputs)
-    after_forward = get_memory_usage(model)
+    torch.cuda.synchronize(device)
+    forward_peak = torch.cuda.max_memory_allocated(device)
+    forward_memory = forward_peak - before_forward
 
-    # Measure memory usage before the backward pass
-    loss = (preds - targets).sum()  # Example loss function
-    before_backward = get_memory_usage(model)
+    # --- Backward pass ---
+    loss = (preds - targets).sum()  # Example loss computation
+    torch.cuda.synchronize(device)
+    torch.cuda.reset_peak_memory_stats(device)
+    before_backward = torch.cuda.memory_allocated(device)
+
     loss.backward()
-    after_backward = get_memory_usage(model)
+    torch.cuda.synchronize(device)
+    backward_peak = torch.cuda.max_memory_allocated(device)
+    backward_memory = backward_peak - before_backward
 
-    del preds, targets, loss
-
-    # Measure pure forward pass memory usage
+    # --- Forward pass without gradients ---
     model.zero_grad()
-    before_forward_nograd = get_memory_usage(model)
+    torch.cuda.synchronize(device)
+    torch.cuda.reset_peak_memory_stats(device)
+    before_forward_nograd = torch.cuda.memory_allocated(device)
+
     with torch.no_grad():
         preds, targets = model(inputs=inputs)
-    after_forward_nograd = get_memory_usage(model)
+    torch.cuda.synchronize(device)
+    forward_nograd_peak = torch.cuda.max_memory_allocated(device)
+    forward_memory_nograd = forward_nograd_peak - before_forward_nograd
 
     memory_usage = {
-        "model_memory": after_load - before_load,
-        "forward_memory": after_forward - before_forward,
-        "backward_memory": after_backward - before_backward,
-        "forward_memory_nograd": after_forward_nograd - before_forward_nograd,
+        "model_memory": model_memory,
+        "forward_memory": forward_memory,
+        "backward_memory": backward_memory,
+        "forward_memory_nograd": forward_memory_nograd,
     }
 
     return memory_usage, model
