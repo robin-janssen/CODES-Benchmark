@@ -13,6 +13,7 @@ from codes.utils import check_and_load_data
 from .bench_plots import (
     inference_time_bar_plot,
     int_ext_sparse,
+    plot_all_generalization_errors,
     plot_average_errors_over_time,
     plot_average_uncertainty_over_time,
     plot_comparative_dynamic_correlation_heatmaps,
@@ -26,7 +27,7 @@ from .bench_plots import (
     plot_generalization_errors,
     plot_loss_comparison,
     plot_loss_comparison_equal,
-    plot_MAE_comparison_train_duration,
+    plot_loss_comparison_train_duration,
     plot_relative_errors,
     plot_relative_errors_over_time,
     plot_surr_losses,
@@ -108,7 +109,9 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
 
     # Accuracy benchmark
     print("Running accuracy benchmark...")
-    metrics["accuracy"] = evaluate_accuracy(model, surr_name, val_loader, conf, labels)
+    metrics["accuracy"] = evaluate_accuracy(
+        model, surr_name, timesteps, val_loader, conf, labels
+    )
 
     # Gradients benchmark
     if conf["gradients"]:
@@ -174,6 +177,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
 def evaluate_accuracy(
     model,
     surr_name: str,
+    timesteps: np.ndarray,
     test_loader: DataLoader,
     conf: dict,
     labels: list | None = None,
@@ -184,6 +188,7 @@ def evaluate_accuracy(
     Args:
         model: Instance of the surrogate model class.
         surr_name (str): The name of the surrogate model.
+        timesteps (np.ndarray): The timesteps array.
         test_loader (DataLoader): The DataLoader object containing the test data.
         conf (dict): The configuration dictionary.
         labels (list, optional): The labels for the chemical species.
@@ -216,6 +221,7 @@ def evaluate_accuracy(
         surr_name,
         conf,
         relative_errors,
+        timesteps,
         title=f"Relative Errors over Time for {surr_name}",
         save=True,
     )
@@ -660,27 +666,46 @@ def evaluate_batchsize(
         dict: A dictionary containing batch size training metrics.
     """
     training_id = conf["training_id"]
-    batch_sizes = conf["batch_scaling"]["sizes"]
+    batch_sizes = conf["batch_scaling"]["sizes"].copy()
     batch_metrics = {}
-    errors = np.zeros((len(batch_sizes), len(timesteps)))
+
+    # Identify the batch size of the main model
+    model_idx = conf["surrogates"].index(surr_name)
+    main_batch_size = conf["batch_size"][model_idx]
+
+    # Add main batch size to the list of batch sizes
+    if main_batch_size not in batch_sizes:
+        batch_sizes.append(main_batch_size)
+        batch_sizes = sorted(batch_sizes)
+        errors = np.zeros((len(batch_sizes) + 1, len(timesteps)))
+    else:
+        errors = np.zeros((len(batch_sizes), len(timesteps)))
 
     # Criterion for prediction loss
     criterion = torch.nn.MSELoss()
 
     # Evaluate models for each batch size
     for i, batch_size in enumerate(batch_sizes):
-        model_id = f"{surr_name.lower()}_batchsize_{batch_size}"
-        model.load(training_id, surr_name, model_identifier=model_id)
+        if batch_size == main_batch_size:
+            model_id = f"{surr_name.lower()}_main"
+            model.load(training_id, surr_name, model_identifier=model_id)
+        else:
+            model_id = f"{surr_name.lower()}_batchsize_{batch_size}"
+            model.load(training_id, surr_name, model_identifier=model_id)
         preds, targets = model.predict(data_loader=test_loader)
         mean_squared_error = criterion(preds, targets).item()  # / torch.numel(preds)
         batch_metrics[f"batch_size {batch_size}"] = {"MSE": mean_squared_error}
 
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
-        mean_relative_errors = np.mean(np.abs((preds - targets) / targets), axis=(0, 2))
-        errors[i] = mean_relative_errors
+        # mean_relative_errors = np.mean(np.abs((preds - targets) / targets), axis=(0, 2))
+        # errors[i] = mean_relative_errors
+        mean_absolute_errors = np.mean(np.abs(preds - targets), axis=(0, 2))
+        errors[i] = mean_absolute_errors
+        mean_absolute_error = np.mean(mean_absolute_errors)
+        batch_metrics[f"batch_size {batch_size}"]["MAE"] = mean_absolute_error
 
     # Extract metrics and errors for plotting
-    model_errors = np.array([metric["MSE"] for metric in batch_metrics.values()])
+    model_errors = np.array([metric["MAE"] for metric in batch_metrics.values()])
     batch_sizes_array = np.array(batch_sizes)
     batch_metrics["model_errors"] = model_errors
     batch_metrics["batch_sizes"] = batch_sizes_array
@@ -789,7 +814,6 @@ def compare_models(metrics: dict, config: dict):
 
     # Compare relative errors
     compare_relative_errors(metrics, config)
-    compare_MAE(metrics, config)
     if config["losses"]:
         compare_main_losses(metrics, config)
 
@@ -817,7 +841,8 @@ def compare_models(metrics: dict, config: dict):
         and config["extrapolation"]["enabled"]
         and config["sparse"]["enabled"]
     ):
-        int_ext_sparse(metrics, config)
+        # int_ext_sparse(metrics, config)
+        plot_all_generalization_errors(metrics, config)
 
     # Compare batch size training errors
     if config["batch_scaling"]["enabled"]:
@@ -844,6 +869,7 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
     """
     train_losses = []
     test_losses = []
+    train_durations = []
     labels = []
     device = config["devices"]
     device = device[0] if isinstance(device, list) else device
@@ -865,46 +891,46 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
         train_losses.append(main_train_loss)
         test_losses.append(main_test_loss)
         labels.append(surr_name)
+        train_durations.append(model.train_duration)
 
     # Plot the comparison of main model losses
     plot_loss_comparison(tuple(train_losses), tuple(test_losses), tuple(labels), config)
     plot_loss_comparison_equal(
         tuple(train_losses), tuple(test_losses), tuple(labels), config
     )
-
-
-def compare_MAE(metrics: dict, config: dict) -> None:
-    """
-    Compare the MAE of different surrogate models over the course of training.
-
-    Args:
-        metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
-        config (dict): Configuration dictionary.
-
-    Returns:
-        None
-    """
-    MAE = []
-    labels = []
-    train_durations = []
-    device = config["devices"]
-    device = device[0] if isinstance(device, list) else device
-
-    for surr_name, _ in metrics.items():
-        training_id = config["training_id"]
-        surrogate_class = get_surrogate(surr_name)
-        n_timesteps = metrics[surr_name]["timesteps"].shape[0]
-        n_chemicals = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
-        model_config = get_model_config(surr_name, config)
-        model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
-        model_identifier = f"{surr_name.lower()}_main"
-        model.load(training_id, surr_name, model_identifier=model_identifier)
-        MAE.append(model.MAE)
-        labels.append(surr_name)
-        train_durations.append(model.train_duration)
-
     # plot_MAE_comparison(MAE, labels, config)
-    plot_MAE_comparison_train_duration(MAE, labels, train_durations, config)
+    plot_loss_comparison_train_duration(test_losses, labels, train_durations, config)
+
+
+# def compare_MAE(metrics: dict, config: dict) -> None:
+#     """
+#     Compare the MAE of different surrogate models over the course of training.
+
+#     Args:
+#         metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
+#         config (dict): Configuration dictionary.
+
+#     Returns:
+#         None
+#     """
+#     MAE = []
+#     labels = []
+#     train_durations = []
+#     device = config["devices"]
+#     device = device[0] if isinstance(device, list) else device
+
+#     for surr_name, _ in metrics.items():
+#         training_id = config["training_id"]
+#         surrogate_class = get_surrogate(surr_name)
+#         n_timesteps = metrics[surr_name]["timesteps"].shape[0]
+#         n_chemicals = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
+#         model_config = get_model_config(surr_name, config)
+#         model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
+#         model_identifier = f"{surr_name.lower()}_main"
+#         model.load(training_id, surr_name, model_identifier=model_identifier)
+#         MAE.append(model.MAE)
+#         labels.append(surr_name)
+#         train_durations.append(model.train_duration)
 
 
 def compare_relative_errors(metrics: dict[str, dict], config: dict) -> None:
@@ -1258,11 +1284,16 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
             f'{metrics["compute"]["num_trainable_parameters"]}'
             for metrics in all_metrics.values()
         ]
-        # memory_row = ["Memory Footprint (MB)"] + [
-        #     f'{(metrics["compute"]["memory_footprint"]["forward_memory_nograd"]/1e6):.2f}'
-        #     for metrics in all_metrics.values()
-        # ]
-        rows.extend([num_params_row])
+        megabytes = 1024**2
+        model_mem_row = ["Model Memory (MB)"] + [
+            f'{(metrics["compute"]["memory_footprint"]["model_memory"]/megabytes):.2f}'
+            for metrics in all_metrics.values()
+        ]
+        forward_mem_row = ["Forward Pass Memory (MB)"] + [
+            f'{(metrics["compute"]["memory_footprint"]["forward_memory_nograd"]/megabytes):.2f}'
+            for metrics in all_metrics.values()
+        ]
+        rows.extend([num_params_row, model_mem_row, forward_mem_row])
 
     # UQ metrics (if enabled)
     if config.get("uncertainty", False).get("enabled", False):

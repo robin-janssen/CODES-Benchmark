@@ -87,6 +87,7 @@ def plot_relative_errors_over_time(
     surr_name: str,
     conf: dict,
     relative_errors: np.ndarray,
+    timesteps: np.ndarray,
     title: str,
     save: bool = False,
 ) -> None:
@@ -98,6 +99,7 @@ def plot_relative_errors_over_time(
         surr_name (str): The name of the surrogate model.
         conf (dict): The configuration dictionary.
         relative_errors (np.ndarray): The relative errors of the model.
+        timesteps (np.ndarray): Array of timesteps.
         title (str): The title of the plot.
         save (bool): Whether to save the plot.
     """
@@ -113,12 +115,10 @@ def plot_relative_errors_over_time(
     p99_upper = np.percentile(relative_errors, 99.5, axis=(0, 2))
     p99_lower = np.percentile(relative_errors, 0.5, axis=(0, 2))
 
-    timesteps = np.arange(relative_errors.shape[1])
-
-    plt.figure(figsize=(10, 6))
-    mean_label = f"Mean Error (Mean: {mean*100:.2f} %)"
+    plt.figure(figsize=(9, 6))
+    mean_label = f"Mean Error\n(Mean: {mean*100:.2f} %)"
     plt.plot(timesteps, mean_errors, label=mean_label, color="blue")
-    median_label = f"Median Error (Median: {median*100:.2f} %)"
+    median_label = f"Median Error\n(Median: {median*100:.2f} %)"
     plt.plot(timesteps, median_errors, label=median_label, color="red")
 
     # Shading areas
@@ -148,11 +148,11 @@ def plot_relative_errors_over_time(
     )
 
     plt.yscale("log")
-    plt.xlabel("Timestep")
+    plt.xlabel("Time")
     plt.ylabel("Relative Error")
     plt.xlim(timesteps[0], timesteps[-1])
     plt.title(title)
-    plt.legend()
+    plt.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
 
     if save and conf:
         save_plot(plt, "accuracy_rel_errors_time.png", conf, surr_name)
@@ -243,7 +243,7 @@ def plot_generalization_errors(
     plt.xlabel(xlabel)
     if mode == "sparse" or mode == "batchsize":
         plt.xscale("log")
-    plt.ylabel("Mean Squared Error")
+    plt.ylabel("Mean Absolute Error")
     plt.yscale("log")
     plt.grid(True, which="major", linestyle="--", linewidth=0.5)
     plt.title(title)
@@ -402,6 +402,10 @@ def plot_example_predictions_with_uncertainty(
                     alpha=0.5 / sigma_multiplier,
                 )
 
+            # Set the y-axis to log scale if specified in the configuration
+            if conf["dataset"]["log10_transform"]:
+                ax.set_yscale("log")
+
         # Set the y-axis label for each subplot
         ax.set_ylabel("Abundance")
 
@@ -430,10 +434,11 @@ def plot_example_predictions_with_uncertainty(
             [0], [0], color="black", linestyle="-", label="Prediction (Ensemble Mean)"
         ),
     ]
+    y_pos = 0.95 - (0.05 / num_plots)  # Adjust to position the legend below the title
     fig.legend(
         handles=handles,
         loc="upper center",
-        bbox_to_anchor=(0.5, 0.93),  # Adjust to position the legend below the title
+        bbox_to_anchor=(0.5, y_pos),  # Adjust to position the legend below the title
         ncol=2,
         fontsize="small",
     )
@@ -446,7 +451,6 @@ def plot_example_predictions_with_uncertainty(
     )
 
     plt.tight_layout(rect=[0.05, 0.03, 0.95, 0.92])
-    plt.yscale("log")
 
     if save and conf:
         save_plot(plt, "uncertainty_deepensemble_preds.png", conf, surr_name, dpi=300)
@@ -696,7 +700,6 @@ def plot_error_distribution_per_chemical(
     # Reshape errors to combine samples and timesteps
     total_chemicals = errors.shape[2]
     errors = errors.reshape(-1, total_chemicals)
-    # n_errors = len(errors.reshape(-1))
 
     # Cap the number of chemicals to plot at 50
     num_chemicals = min(num_chemicals, 50)
@@ -733,13 +736,17 @@ def plot_error_distribution_per_chemical(
     x_min = np.floor(global_min)
     x_max = np.ceil(global_max)
 
-    # Create subplots with shared x-axis
-    fig, axes = plt.subplots(num_plots, 1, figsize=(10, 4 * num_plots), sharex=True)
+    # Create subplots with shared x-axis and a figure size closer to the comparative plot
+    fig, axes = plt.subplots(
+        num_plots,
+        1,
+        figsize=(10, 4 * num_plots) if num_plots > 1 else (10, 4),
+        sharex=True,
+    )
 
     if num_plots == 1:
         axes = [axes]  # Ensure axes is iterable even if there's only one plot
 
-    # colors = plt.cm.magma(np.linspace(0, 0.9, chemicals_per_plot))
     colors = get_custom_palette(chemicals_per_plot)
 
     # Define the x-axis range for plotting
@@ -772,18 +779,16 @@ def plot_error_distribution_per_chemical(
         ax.set_yscale("linear")
         ax.set_ylabel("Density (PDF)")
         if chemical_names is not None:
-            ax.legend()
+            # Move legend outside of plot area on the right, centered vertically
+            ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
 
     plt.xscale("log")  # Log scale for error magnitudes
     plt.xlim(10**x_min, 10**x_max)  # Set x-axis range based on log-space calculations
     plt.xlabel("Relative Error")
-    # Temp!
-    fig.suptitle(f"Relative Error Distribution per Chemical ({surr_name})")
-    # fig.suptitle(
-    #     f"Error Distribution per Chemical (Test Samples: {n_errors}, Excluded zeros: {zero_counts})"
-    # )
-
-    plt.tight_layout(rect=[0, 0, 1, 0.97])
+    if num_plots > 1:
+        fig.suptitle(f"Relative Error Distribution per Quantity ({surr_name})")
+    else:
+        plt.title(f"Relative Error Distribution per Quantity ({surr_name})")
 
     if save and conf:
         save_plot(plt, "accuracy_error_per_quantity.png", conf, surr_name)
@@ -822,25 +827,47 @@ def plot_losses(
     # Determine start index based on percentage
     start_idx = int(len(loss_histories[0]) * (percentage / 100))
 
-    # Determine min and max range after start_idx
-    min_val = min(loss[start_idx:].min() for loss in loss_histories if loss is not None)
-    max_val = max(loss[start_idx:].max() for loss in loss_histories if loss is not None)
+    # Handle NaN or inf values
+    for loss in loss_histories:
+        if loss is not None:
+            if np.isinf(loss).any():
+                loss[np.isinf(loss)] = 0.0
+            if np.isnan(loss).any():
+                loss[np.isnan(loss)]
+            if np.isinf(loss).any() or np.isnan(loss).any():
+                print(
+                    "Warning: Loss array contains NaN or inf values. Replacing with 0."
+                )
+
+    # Determine min and max range where the losses are non-zero
+    min_val = min(
+        loss[start_idx:][loss[start_idx:] > 0].min()
+        for loss in loss_histories
+        if loss is not None
+    )
+    max_val = max(
+        loss[start_idx:][loss[start_idx:] > 0].max()
+        for loss in loss_histories
+        if loss is not None
+    )
 
     # Colormap
     colors = plt.cm.magma(np.linspace(0.15, 0.85, len(loss_histories)))
 
-    epochs = np.linspace(0, epochs, num=len(loss_histories[0]), endpoint=False)
+    num_epochs = epochs + 1
+
+    epochs = np.linspace(0, epochs + 1, num=len(loss_histories[0]), endpoint=False)
 
     # Create the figure
     plt.figure(figsize=(12, 6))
     loss_plotted = False
     for loss, label in zip(loss_histories, labels):
         if loss is not None:
-            plt.plot(loss, epochs, label=label, color=colors[labels.index(label)])
+            plt.plot(epochs, loss, label=label, color=colors[labels.index(label)])
             loss_plotted = True
 
     plt.xlabel("Epoch")
-    plt.xlim(0, len(loss_histories[0]))
+    plt.xlim(0, num_epochs)
     plt.ylabel("Loss")
     plt.yscale("log")
     plt.ylim(min_val, max_val)
@@ -939,41 +966,46 @@ def plot_loss_comparison(
     """
     plt.figure(figsize=(12, 6))
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(train_losses)))
+    max_epochs, min_val, max_val = 0, np.inf, 0
 
     for i, (train_loss, test_loss, label) in enumerate(
         zip(train_losses, test_losses, labels)
     ):
         # plt.plot(train_loss, label=f"{label} Train Loss", color=colors[i])
-        plt.plot(test_loss, label=f"{label} Test Loss", linestyle="--", color=colors[i])
+        epochs = np.linspace(0, len(train_loss) * 10, num=len(train_loss))
+        plt.plot(epochs, train_loss, label=f"{label} Train Loss", color=colors[i])
+        plt.plot(
+            epochs,
+            test_loss,
+            label=f"{label} Test Loss",
+            linestyle="--",
+            color=colors[i],
+        )
+        num_epochs = int(np.max(epochs))
+        max_epochs = max(max_epochs, num_epochs)
 
-    # Compute y-axis limits by excluding the first 2% of the data in each trajectory.
-    all_losses = test_losses  # train_losses + test_losses
-    min_vals = []
-    max_vals = []
-    for loss in all_losses:
-        if loss is not None:
-            start_idx = int(len(loss) * 0.02)
-            # Ensure there's at least one value to compute min/max
-            if start_idx >= len(loss):
-                start_idx = 0
-            min_vals.append(loss[start_idx:].min())
-            max_vals.append(loss[start_idx:].max())
+        # To determine the y range, exclude the first 2% of the values
+        start_idx = int(len(test_loss) * 0.02)
+        min_val = min(
+            min_val, np.min(test_loss[start_idx:]), np.min(train_loss[start_idx:])
+        )
+        max_val = max(
+            max_val, np.max(test_loss[start_idx:]), np.max(train_loss[start_idx:])
+        )
 
-    if min_vals and max_vals:
-        min_val = min(min_vals)
-        max_val = max(max_vals)
-    else:
-        min_val, max_val = None, None
-
-    plt.xlabel("normalised training duration")
-    plt.xlim(0, 1)
-    plt.ylabel("Loss")
+    plt.xlabel("Epoch")
+    plt.xlim(0, max_epochs)
+    plt.ylabel("MSE")
     plt.yscale("log")
-    if min_val is not None and max_val is not None:
-        plt.ylim(min_val, max_val)
+    plt.ylim(min_val, max_val)
     plt.title("Comparison of Training and Test Losses")
     plt.legend()
     plt.grid(True)
+
+    if save and config:
+        save_plot(plt, "losses_main_model.png", config)
+
+    plt.close()
 
 
 def plot_loss_comparison_equal(
@@ -1037,7 +1069,7 @@ def plot_loss_comparison_equal(
 
     plt.xlabel("Normalized Training Duration")
     plt.xlim(0, 1)
-    plt.ylabel("Normalized Log Loss")
+    plt.ylabel("Normalized Log MSE")
     plt.ylim(0, 1)
     # plt.yticks([])  # Remove numeric y-axis labels
     plt.title("Comparison of Normalized Test Loss Trajectories (Log-transformed)")
@@ -1087,41 +1119,48 @@ def plot_MAE_comparison(
     plt.close()
 
 
-def plot_MAE_comparison_train_duration(
-    MAEs: tuple[np.ndarray, ...],
+def plot_loss_comparison_train_duration(
+    test_losses: tuple[np.ndarray, ...],
     labels: tuple[str, ...],
     train_durations: tuple[float, ...],
     config: dict,
     save: bool = True,
 ) -> None:
     """
-    Plot the MAE for different surrogate models over the course of training.
+    Plot the test loss trajectories for different surrogate models over training duration.
 
     Args:
-        MAE (tuple): Tuple of accuracy arrays for each surrogate model.
+        test_losses (tuple): Tuple of test loss arrays for each surrogate model.
         labels (tuple): Tuple of labels for each surrogate model.
         config (dict): Configuration dictionary.
         save (bool): Whether to save the plot.
     """
     plt.figure(figsize=(12, 6))
-    colors = plt.cm.viridis(np.linspace(0, 0.9, len(MAEs)))
+    colors = plt.cm.viridis(np.linspace(0, 0.9, len(test_losses)))
+    min_val, max_val = np.inf, 0
 
-    for i, (accuracy, label, train_duration) in enumerate(
-        zip(MAEs, labels, train_durations)
+    for i, (test_loss, label, train_duration) in enumerate(
+        zip(test_losses, labels, train_durations)
     ):
-        epoch_times = np.linspace(0, train_duration, len(accuracy))
-        plt.plot(epoch_times, accuracy, label=label, color=colors[i])
+        epoch_times = np.linspace(0, train_duration, len(test_loss))
+        plt.plot(epoch_times, test_loss, label=label, color=colors[i])
+
+        # To determine the y range, exclude the first 2% of the values
+        start_idx = int(len(test_loss) * 0.02)
+        min_val = min(min_val, np.min(test_loss[start_idx:]))
+        max_val = max(max_val, np.max(test_loss[start_idx:]))
 
     plt.xlabel("Time (s)")
     plt.xlim(0, max(train_durations))
-    plt.ylabel("MAE")
+    plt.ylabel("MSE")
     plt.yscale("log")
-    plt.title("Comparison of Model Mean Absolute Error over Training Duration")
+    plt.ylim(min_val, max_val)
+    plt.title("Comparison of Model Test Losses Over Training Duration")
     plt.legend()
     plt.grid(True)
 
     if save and config:
-        save_plot(plt, "losses_MAE_main_model.png", config)
+        save_plot(plt, "losses_main_model_duration.png", config)
 
     plt.close()
 
@@ -1137,8 +1176,8 @@ def plot_relative_errors(
     Plot the relative errors over time for different surrogate models.
 
     Args:
-        mean_errors (dict): dictionary containing the mean relative errors for each surrogate model.
-        median_errors (dict): dictionary containing the median relative errors for each surrogate model.
+        mean_errors (dict): Dictionary containing the mean relative errors for each surrogate model.
+        median_errors (dict): Dictionary containing the median relative errors for each surrogate model.
         timesteps (np.ndarray): Array of timesteps.
         config (dict): Configuration dictionary.
         save (bool): Whether to save the plot.
@@ -1146,13 +1185,13 @@ def plot_relative_errors(
     Returns:
         None
     """
-    plt.figure(figsize=(12, 6))
+    plt.figure(figsize=(9, 6))
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(mean_errors)))
     linestyles = ["-", "--"]
 
     for i, surrogate in enumerate(mean_errors.keys()):
         mean = np.mean(mean_errors[surrogate])
-        mean_label = f"{surrogate} Mean = {mean*100:.2f} %"
+        mean_label = f"{surrogate}\nMean = {mean*100:.2f} %"
         plt.plot(
             timesteps,
             mean_errors[surrogate],
@@ -1161,7 +1200,7 @@ def plot_relative_errors(
             linestyle=linestyles[0],
         )
         median = np.mean(median_errors[surrogate])
-        median_label = f"{surrogate} Median = {median*100:.2f} %"
+        median_label = f"{surrogate}\nMedian = {median*100:.2f} %"
         plt.plot(
             timesteps,
             median_errors[surrogate],
@@ -1175,8 +1214,7 @@ def plot_relative_errors(
     plt.ylabel("Relative Error")
     plt.yscale("log")
     plt.title("Comparison of Relative Errors Over Time")
-    plt.legend()
-    # plt.grid(True)
+    plt.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
 
     if save and config:
         save_plot(plt, "accuracy_rel_errors_time_models.png", config)
@@ -1192,7 +1230,7 @@ def plot_uncertainty_over_time_comparison(
     save: bool = True,
 ) -> None:
     """
-    Plot the uncertainty over time for different surrogate models.
+    Plot the uncertainty and true MAE over time for different surrogate models.
 
     Args:
         uncertainties (dict): Dictionary containing the uncertainties for each surrogate model.
@@ -1204,12 +1242,12 @@ def plot_uncertainty_over_time_comparison(
     Returns:
         None
     """
-
-    plt.figure(figsize=(12, 6))
+    plt.figure(figsize=(9, 6))
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(uncertainties)))
+
     for i, surrogate in enumerate(uncertainties.keys()):
         avg_uncertainty = np.mean(uncertainties[surrogate])
-        uq_label = f"{surrogate} uncertainty (mean: {avg_uncertainty:.2e})"
+        uq_label = f"{surrogate} UQ 1σ\nmean: {avg_uncertainty:.2e}"
         plt.plot(
             timesteps,
             uncertainties[surrogate],
@@ -1221,7 +1259,7 @@ def plot_uncertainty_over_time_comparison(
         abs_errors = absolute_errors[surrogate]
         abs_errors_time = np.mean(abs_errors, axis=(0, 2))
         abs_error_avg = np.mean(abs_errors_time)
-        err_label = f"{surrogate} abs. error (mean: {abs_error_avg:.2e})"
+        err_label = f"{surrogate} MAE\nmean: {abs_error_avg:.2e}"
         plt.plot(
             timesteps,
             abs_errors_time,
@@ -1232,10 +1270,10 @@ def plot_uncertainty_over_time_comparison(
 
     plt.xlabel("Time")
     plt.xlim(timesteps[0], timesteps[-1])
-    plt.ylabel("Uncertainty/Absolute Error")
+    plt.ylabel("Uncertainty / MAE")
     plt.yscale("log")
-    plt.title("Comparison of Predictive Uncertainty Over Time")
-    plt.legend()
+    plt.title("Comparison of Predictive Uncertainty and True MAE over Time")
+    plt.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
 
     if save and config:
         save_plot(plt, "uncertainty_over_time.png", config)
@@ -1365,8 +1403,94 @@ def plot_error_correlation_heatmap(
     preds_std: np.ndarray,
     errors: np.ndarray,
     average_correlation: float,
+    save: bool = True,
+    cutoff_mass: float = 0.98,
+) -> None:
+    """
+    Plot the correlation between predictive uncertainty and prediction errors using a heatmap.
+
+    Instead of using a fixed threshold factor, this function determines axis limits based on a
+    cutoff_mass: the axis_max is chosen such that the histogram contains cutoff_mass (e.g. 95%)
+    of the total data mass, with the top (1 - cutoff_mass) fraction cut off. The plot is symmetric
+    (max_x = max_y) so that the diagonal retains its meaning.
+
+    Args:
+        surr_name (str): The name of the surrogate model.
+        conf (dict): The configuration dictionary.
+        preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
+        errors (np.ndarray): Prediction errors.
+        average_correlation (float): The average correlation between gradients and prediction errors.
+        save (bool, optional): Whether to save the plot as a file.
+        cutoff_mass (float, optional): Fraction of total mass to include (e.g. 0.95). Default is 0.95.
+
+    Returns:
+        max_value (float): The maximum count from the initial histogram.
+        axis_max (float): The computed upper axis limit such that cutoff_mass of the data is included.
+    """
+    plt.figure(figsize=(10, 6))
+
+    # Create an initial histogram (without range restrictions) to obtain the maximum count.
+    heatmap_init, _, _ = np.histogram2d(preds_std.flatten(), errors.flatten(), bins=100)
+
+    # Combine all data from both arrays and determine the common axis limits.
+    # Use the minimum of the data as axis_min and the cutoff_mass percentile as axis_max.
+    all_data = np.concatenate([preds_std.flatten(), errors.flatten()])
+    axis_min = np.min(all_data)
+    axis_max = np.percentile(all_data, cutoff_mass * 100)
+
+    # Re-bin the data using a square range [axis_min, axis_max] for both dimensions.
+    heatmap, _, _ = np.histogram2d(
+        preds_std.flatten(),
+        errors.flatten(),
+        bins=100,
+        range=[[axis_min, axis_max], [axis_min, axis_max]],
+    )
+
+    max_value = heatmap.max()
+
+    # For log-scale plotting, set cells with 0 counts to 1.
+    heatmap[heatmap == 0] = 1
+
+    plt.imshow(
+        np.log10(heatmap.T),  # Log scale for visualization.
+        origin="lower",
+        aspect="auto",
+        extent=[axis_min, axis_max, axis_min, axis_max],
+        cmap="inferno",
+    )
+    plt.colorbar(label=r"$\log_{10}$(Counts)")
+    plt.xlabel("Predictive Uncertainty")
+    plt.ylabel("Prediction Error")
+    title = (
+        f"Correlation between Predictive Uncertainty and Prediction Errors (Heatmap)\n"
+        f"Average Correlation: {average_correlation:.2f}"
+    )
+    plt.title(title)
+
+    # Add the diagonal line.
+    plt.plot(
+        [axis_min, axis_max],
+        [axis_min, axis_max],
+        color="white",
+        linestyle="--",
+        linewidth=1,
+    )
+
+    if save and conf:
+        save_plot(plt, "uncertainty_errors_correlation.png", conf, surr_name)
+
+    plt.close()
+    return max_value, axis_max
+
+
+def plot_error_correlation_heatmap_old(
+    surr_name: str,
+    conf: dict,
+    preds_std: np.ndarray,
+    errors: np.ndarray,
+    average_correlation: float,
     save: bool = False,
-    threshold_factor: float = 1e-2,
+    threshold_factor: float = 1e-4,
 ) -> None:
     """
     Plot the correlation between predictive uncertainty and prediction errors using a heatmap.
@@ -1448,6 +1572,94 @@ def plot_error_correlation_heatmap(
 
 
 def plot_dynamic_correlation_heatmap(
+    surr_name: str,
+    conf: dict,
+    preds_std: np.ndarray,
+    errors: np.ndarray,
+    average_correlation: float,
+    save: bool = False,
+    cutoff_mass: float = 0.95,
+) -> None:
+    """
+    Plot the correlation between predictive uncertainty and prediction errors using a heatmap.
+
+    This version uses a cutoff_mass approach. We choose the x_max and y_max such that the
+    marginal distributions each include sqrt(cutoff_mass) of the total mass. For example,
+    for cutoff_mass=0.95, we set:
+        x_max = percentile(preds_std, 100*np.sqrt(0.95))
+        y_max = percentile(errors, 100*np.sqrt(0.95))
+    Normalized gradients are assumed to start at 0.
+
+    Args:
+        surr_name (str): The name of the surrogate model.
+        conf (dict): The configuration dictionary.
+        preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
+        errors (np.ndarray): Prediction errors.
+        average_correlation (float): The average correlation between gradients and prediction errors.
+        save (bool, optional): Whether to save the plot as a file.
+        cutoff_mass (float, optional): Fraction of total mass to include in the heatmap (e.g. 0.95).
+
+    Returns:
+        max_value (float): The maximum count in the updated histogram.
+        x_max (float): The computed upper limit for the x-axis.
+        y_max (float): The computed upper limit for the y-axis.
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    plt.figure(figsize=(10, 6))
+
+    # Compute the marginal cutoff: we assume separability so that each marginal
+    # should include sqrt(cutoff_mass) fraction of the total counts.
+    marginal_cutoff = np.sqrt(cutoff_mass)
+
+    # Set x_min and compute x_max from preds_std.
+    x_min = 0  # normalized gradients typically start from 0
+    x_max = np.percentile(preds_std.flatten(), 100 * marginal_cutoff)
+
+    # For errors, we use the minimum value and compute y_max from errors.
+    y_min = np.min(errors.flatten())
+    y_max = np.percentile(errors.flatten(), 100 * marginal_cutoff)
+
+    # Re-bin the data using the new axis limits.
+    heatmap, xedges, yedges = np.histogram2d(
+        preds_std.flatten(),
+        errors.flatten(),
+        bins=100,
+        range=[[x_min, x_max], [y_min, y_max]],
+    )
+
+    # Now compute max_value on the updated histogram.
+    max_value = heatmap.max()
+
+    # For log-scale plotting, set zero counts to 1.
+    heatmap[heatmap == 0] = 1
+
+    plt.imshow(
+        np.log10(heatmap.T),  # log scale for visualization
+        origin="lower",
+        aspect="auto",
+        extent=[x_min, x_max, y_min, y_max],
+        cmap="inferno",
+    )
+    plt.colorbar(label=r"$\log_{10}$(Counts)")
+    plt.xlabel("Absolute Gradient (Normalized)")
+    plt.ylabel("Absolute Prediction Error")
+    title = (
+        f"Correlation between Gradients and Prediction Errors (Heatmap)\n"
+        f"Average Correlation: {average_correlation:.2f}"
+    )
+    plt.title(title)
+
+    if save and conf:
+        save_plot(plt, "gradient_error_heatmap.png", conf, surr_name)
+
+    plt.close()
+
+    return max_value, x_max, y_max
+
+
+def plot_dynamic_correlation_heatmap_old(
     surr_name: str,
     conf: dict,
     preds_std: np.ndarray,
@@ -1576,7 +1788,7 @@ def plot_error_distribution_comparative(
     x_max = np.ceil(global_max)
 
     # Set up the plot
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(10, 4))
     colors = plt.cm.viridis(np.linspace(0, 0.9, num_models))
 
     # Define the x-axis range for plotting
@@ -1602,28 +1814,26 @@ def plot_error_distribution_comparative(
             x=mean_errors[i],
             color=colors[i],
             linestyle="--",
-            label=f"{model_name} mean = {mean_errors[i]:.2e}",
+            label=f"Mean = {mean_errors[i]:.2e}",
         )
 
+        # Plot the median error as a vertical line
         plt.axvline(
             x=median_errors[i],
             color=colors[i],
             linestyle="-.",
-            label=f"{model_name} median = {median_errors[i]:.2e}",
+            label=f"Median = {median_errors[i]:.2e}",
         )
 
     plt.xscale("log")  # Log scale for error magnitudes
     plt.xlim(10**x_min, 10**x_max)  # Set x-axis range based on log-space calculations
     plt.xlabel("Magnitude of Error")
     plt.ylabel("Density (PDF)")
-    # num_test_samples = len(errors[model_names[0]].flatten()) * num_models
-    # Temp!
-    # plt.title(
-    #     f"Error Distribution per Model (Test Samples: {num_test_samples}, Excluded zeros: {zero_counts})"
-    # )
-    plt.title("Comparison of Surrogate Relative Error Distributions")
 
-    plt.legend()
+    plt.title("Comparison of Surrogate Relative Errors")
+
+    # Move the legend outside the plot area on the right, centered vertically
+    plt.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
 
     if save and conf:
         save_plot(plt, "accuracy_error_distributions.png", conf)
@@ -1668,7 +1878,7 @@ def plot_comparative_error_correlation_heatmaps(
 
     # Create subplots, one row per model
     fig, axes = plt.subplots(
-        num_models, 1, figsize=(8, 6 * num_models), sharex=True, sharey=True
+        num_models, 1, figsize=(9, 6 * num_models), sharex=True, sharey=True
     )
 
     # Adjust layout for shared colorbar
@@ -1768,7 +1978,7 @@ def plot_comparative_dynamic_correlation_heatmaps(
 
     # Create subplots, one row per model
     fig, axes = plt.subplots(
-        num_models, 1, figsize=(8, 6 * num_models), sharex=False, sharey=False
+        num_models, 1, figsize=(9, 6 * num_models), sharex=False, sharey=False
     )
 
     # Adjust layout for shared colorbar
@@ -2015,6 +2225,154 @@ def int_ext_sparse(all_metrics: dict, config: dict) -> None:
     plt.close()
 
 
+def plot_all_generalization_errors(all_metrics: dict, config: dict) -> None:
+    """
+    Function to make one comparative plot of the interpolation, extrapolation, sparse, and batch size errors.
+    Only the modalities present in all_metrics will be plotted.
+
+    Args:
+        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
+
+    Returns:
+        None
+    """
+    surrogates = list(all_metrics.keys())
+
+    # Prepare modality data: create dictionaries mapping surrogate -> (metrics, errors)
+    interp_data = {}
+    extrap_data = {}
+    sparse_data = {}
+    batch_data = {}
+
+    for surrogate in surrogates:
+        if "interpolation" in all_metrics[surrogate]:
+            interp_data[surrogate] = (
+                all_metrics[surrogate]["interpolation"]["intervals"],
+                all_metrics[surrogate]["interpolation"]["model_errors"],
+            )
+        if "extrapolation" in all_metrics[surrogate]:
+            extrap_data[surrogate] = (
+                all_metrics[surrogate]["extrapolation"]["cutoffs"],
+                all_metrics[surrogate]["extrapolation"]["model_errors"],
+            )
+        if "sparse" in all_metrics[surrogate]:
+            sparse_data[surrogate] = (
+                all_metrics[surrogate]["sparse"]["n_train_samples"],
+                all_metrics[surrogate]["sparse"]["model_errors"],
+            )
+        if "batch_size" in all_metrics[surrogate]:
+            batch_data[surrogate] = (
+                all_metrics[surrogate]["batch_size"]["batch_sizes"],
+                all_metrics[surrogate]["batch_size"]["model_errors"],
+            )
+
+    # Determine which modalities are available
+    available_modalities = []
+    if interp_data:
+        available_modalities.append("interpolation")
+    if extrap_data:
+        available_modalities.append("extrapolation")
+    if sparse_data:
+        available_modalities.append("sparse")
+    if batch_data:
+        available_modalities.append("batch_size")
+
+    # Define properties for each modality
+    modality_props = {
+        "interpolation": {
+            "xlabel": "Interpolation Intervals",
+            "title": "Interpolation",
+            "xscale": None,
+        },
+        "extrapolation": {
+            "xlabel": "Extrapolation Cutoffs",
+            "title": "Extrapolation",
+            "xscale": None,
+        },
+        "sparse": {
+            "xlabel": "Number of Training Samples (log scale)",
+            "title": "Sparse Training",
+            "xscale": "log",
+        },
+        "batch_size": {
+            "xlabel": "Batch Sizes",
+            "title": "Batch Size",
+            "xscale": "log",
+        },
+    }
+
+    # Create a consistent color mapping for all surrogates
+    cmap = plt.cm.viridis(np.linspace(0, 0.9, len(surrogates)))
+    color_map = {s: cmap[i] for i, s in enumerate(surrogates)}
+
+    # Create figure and subplots: width scales with number of modalities
+    num_modalities = len(available_modalities)
+    fig, axes = plt.subplots(
+        1, num_modalities, figsize=(5 * num_modalities, 6), sharey=True
+    )
+
+    # If there's only one subplot, wrap axes in a list for uniform processing
+    if num_modalities == 1:
+        axes = [axes]
+
+    # Helper: given a modality key, get the corresponding data dictionary.
+    def get_modality_data(modality):
+        if modality == "interpolation":
+            return interp_data
+        elif modality == "extrapolation":
+            return extrap_data
+        elif modality == "sparse":
+            return sparse_data
+        elif modality == "batch_size":
+            return batch_data
+        else:
+            return {}
+
+    # Loop over modalities and plot each in its corresponding axis.
+    for ax, modality in zip(axes, available_modalities):
+        mod_data = get_modality_data(modality)
+        for surrogate, (x_data, y_data) in mod_data.items():
+            # Scatter and line plot for each surrogate in this modality
+            ax.scatter(x_data, y_data, label=surrogate, color=color_map[surrogate])
+            ax.plot(
+                x_data, y_data, color=color_map[surrogate], alpha=0.5, linestyle="-"
+            )
+        ax.set_xlabel(modality_props[modality]["xlabel"])
+        ax.set_title(modality_props[modality]["title"])
+        if modality_props[modality]["xscale"]:
+            ax.set_xscale(modality_props[modality]["xscale"])
+        ax.set_yscale("log")
+        ax.grid(True, which="major", linestyle="--", linewidth=0.5, axis="y")
+        # For the sparse modality, if available, set x-ticks to the first surrogate's data for consistency.
+        if (modality == "sparse" or modality == "batch_size") and mod_data:
+            # Get all unique modality values from all surrogates
+            all_values = np.unique(
+                np.concatenate([x_data for x_data, _ in mod_data.values()])
+            )
+            ax.set_xticks(all_values)
+            ax.get_xaxis().set_major_formatter(plt.ScalarFormatter())
+
+    # Get current y-axis limits from the first subplot and ensure the upper limit does not exceed 1e3.
+    y_min, y_max = axes[0].get_ylim()
+    if y_max > 1e3:
+        axes[0].set_ylim(y_min, 1e3)
+
+    # Set ylabel on the leftmost subplot
+    axes[0].set_ylabel("Mean Absolute Error")
+
+    # Add legend to the first subplot only
+    handles, labels = axes[0].get_legend_handles_labels()
+    axes[0].legend(handles, labels, loc="upper left", fontsize="small")
+
+    # Set overall title and adjust layout
+    fig.suptitle("Model Errors for Different Modalities", fontsize=16)
+    plt.tight_layout(rect=[0, 0.03, 1, 0.98])
+
+    save_plot(fig, "generalization_error_comparison.png", config)
+    plt.close()
+
+
 def rel_errors_and_uq(
     metrics: dict[str, dict], config: dict, save: bool = True
 ) -> None:
@@ -2117,6 +2475,7 @@ def rel_errors_and_uq(
     # ax2.set_ylim(0, 0.04)
     ax2.set_ylabel("Uncertainty/Absolute Error")
     ax2.set_title("Comparison of Predictive Uncertainty Over Time")
+    ax2.set_yscale("log")
     ax2.legend(loc="best")
 
     # Adjust layout
