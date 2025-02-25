@@ -52,5 +52,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config", default="config.yaml", type=str, help="Path to the config file."
     )
+    parser.add_argument(
+        "--device",
+        default="None",
+        type=str,
+        help="Device to run the benchmark on. Can be 'cpu', 'cuda', or 'None'.",
+    )
     args = parser.parse_args()
     main(args)

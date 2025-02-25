@@ -398,7 +398,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             leave=False,
             bar_format=bar_format,
         )
-         
+
         return progress_bar
 
     def denormalize(self, data: Tensor) -> Tensor:

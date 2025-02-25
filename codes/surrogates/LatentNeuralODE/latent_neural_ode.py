@@ -6,14 +6,15 @@ import torch
 import torchode as to
 from schedulefree import AdamWScheduleFree
 from torch.profiler import ProfilerActivity, profile, record_function
+
 # from torch.optim import Adam
 # from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 
-from codes.surrogates.AbstractSurrogate.surrogates import \
-    AbstractSurrogateModel
-from codes.surrogates.LatentNeuralODE.latent_neural_ode_config import \
-    LatentNeuralODEBaseConfig
+from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
+from codes.surrogates.LatentNeuralODE.latent_neural_ode_config import (
+    LatentNeuralODEBaseConfig,
+)
 from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
 from codes.utils import time_execution, worker_init_fn
 
@@ -213,7 +214,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
                     # Update progress bar postfix
                     postfix = {
                         "train_loss": f"{train_losses[index]:.2e}",
-                        "test_loss": f"{test_losses[index]:.2e}"
+                        "test_loss": f"{test_losses[index]:.2e}",
                     }
                     progress_bar.set_postfix(postfix)
 

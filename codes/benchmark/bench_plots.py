@@ -1578,7 +1578,7 @@ def plot_dynamic_correlation_heatmap(
     errors: np.ndarray,
     average_correlation: float,
     save: bool = False,
-    cutoff_mass: float = 0.95,
+    cutoff_mass: float = 0.98,
 ) -> None:
     """
     Plot the correlation between predictive uncertainty and prediction errors using a heatmap.
