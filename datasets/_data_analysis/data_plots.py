@@ -538,11 +538,13 @@ def plot_all_trajectories_and_gradients(
     dataset_name: str,
     train_data: np.ndarray,
     chemical_names: list[str] = None,
+    timesteps: np.ndarray = None,
     max_quantities: int = 10,
     opacity: float = 0.01,
     quantities_per_plot: int = 6,
     max_trajectories: int = 20,
     log: bool = False,
+    log_time: bool = False,
 ) -> None:
     """
     Plot both the trajectories and gradients of each quantity in the train dataset over time,
@@ -552,11 +554,13 @@ def plot_all_trajectories_and_gradients(
         dataset_name (str): The name of the dataset (e.g., "osu2008").
         train_data (np.ndarray): Training dataset array of shape [n_samples, n_timesteps, n_quantities].
         chemical_names (list, optional): List of chemical names for labeling the lines.
+        timesteps (np.ndarray, optional): Array of timesteps for the x-axis.
         max_quantities (int, optional): Maximum number of quantities to plot. Default is 10.
         opacity (float, optional): Opacity of individual trajectories and gradients. Default is 0.01.
         quantities_per_plot (int, optional): Number of quantities to plot per subplot. Default is 6.
         max_trajectories (int, optional): Maximum number of trajectories to plot. Default is 200.
         log (bool, optional): Whether the data is in log-space (only for axis labels). Default is False.
+        log_time (bool, optional): Whether the time axis is in log-space. Default is False.
     """
     print(f"Plotting trajectories and gradients for dataset: {dataset_name}")
     # Limit the number of trajectories
@@ -588,7 +592,7 @@ def plot_all_trajectories_and_gradients(
     )  # [n_samples, n_timesteps, n_quantities]
     avg_gradients = np.mean(gradients, axis=0)  # [n_timesteps, n_quantities]
     n_timesteps = train_data.shape[1]
-    time = np.arange(n_timesteps)
+    time = np.arange(n_timesteps) if timesteps is None else timesteps
 
     # Create figures and axes for both plots
     fig_traj, axes_traj = plt.subplots(
@@ -651,7 +655,9 @@ def plot_all_trajectories_and_gradients(
         # Set labels and legends for Trajectories
         axes_traj[plot_idx].set_xlabel("Time")
         axes_traj[plot_idx].set_xlim(time[0], time[-1])
-        ylabel_traj = "log(Abundance)" if log else "Abundance"
+        if log_time:
+            axes_traj[plot_idx].set_xscale("log")
+        ylabel_traj = "log(Quantity)" if log else "Quantity"
         axes_traj[plot_idx].set_ylabel(ylabel_traj)
         if chemical_names is not None:
             axes_traj[plot_idx].legend(
@@ -663,6 +669,8 @@ def plot_all_trajectories_and_gradients(
 
         # Set labels and legends for Gradients
         axes_grad[plot_idx].set_xlabel("Time")
+        if log_time:
+            axes_grad[plot_idx].set_xscale("log")
         axes_grad[plot_idx].set_xlim(time[0], time[-1])
         axes_grad[plot_idx].set_ylabel("Gradient")
         if chemical_names is not None:
@@ -819,7 +827,7 @@ def debug_numerical_errors_plot(
             f"Sample {sample_idx}, Faulty Quantities: {', '.join(faulty_labels)}"
         )
         ax.set_xlabel("Time")
-        ax.set_ylabel("Chemical Abundance")
+        ax.set_ylabel("Quantity")
         ax.legend(loc="upper right")
 
     plt.tight_layout()

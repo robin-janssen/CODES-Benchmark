@@ -496,7 +496,7 @@ def download_data(dataset_name: str, path: str | None = None):
         else os.path.abspath(path)
     )
     if os.path.isfile(data_path):
-        print(f"Dataset '{dataset_name}' already exists at {data_path}.")
+        print(f"Dataset '{dataset_name}' already downloaded at {data_path}.")
         return
 
     with open("datasets/data_sources.yaml", "r", encoding="utf-8") as file:
