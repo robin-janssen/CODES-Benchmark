@@ -14,6 +14,8 @@ dataset_dict = {
         "qpp": 6,
         "tol": 1e-30,
     },
+    "osutest": {"log": True, "qpp": 10, "tol": 1e-30},
+    "osutest2": {"log": True, "qpp": 10, "tol": 1e-30, "log_time": True},
     "simple_ode": {
         "log": True,
         "qpp": 3,

@@ -27,6 +27,8 @@ def main():
     Main function to analyse the dataset. It checks the dataset and loads the data.
     """
     datasets = [
+        "osutest2",
+        "osutest",
         "simple_ode",
         "coupled_oscillators",
         "simple_reaction",
@@ -74,6 +76,9 @@ def main():
             max_quantities=num_chems,
             quantities_per_plot=qpp,
             max_trajectories=1000,
+            timesteps=timesteps,
+            log=log,
+            log_time=dataset_dict[dataset].get("log_time", False),
         )
 
         plot_example_trajectories(

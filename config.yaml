@@ -1,15 +1,15 @@
 # Global settings for the benchmark
-training_id: "lotka_volterra_final"
+training_id: "osu2008_final"
 surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
 batch_size: [4096, 4096, 256, 256]
-epochs: [15000, 20000, 24000, 8000]
+epochs: [7000, 20000, 20000, 15000]
 dataset: 
-  name: "lotka_volterra"
+  name: "osu2008"
   log10_transform: True
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
   tolerance: 1e-30
-devices: ["cuda:0", "cuda:1", "cuda:2", "cuda:3", "cuda:4", "cuda:5", "cuda:6", "cuda:7", "cuda:8", "cuda:9"]
+devices: ["cuda:5", "cuda:6", "cuda:7", "cuda:8", "cuda:9"]
 seed: 42
 verbose: False
 
@@ -36,5 +36,3 @@ gradients: True
 timing: True
 compute: True
 compare: True # Whether to compare the surrogates
-
-
