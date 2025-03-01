@@ -5,7 +5,7 @@ from torch import nn
 
 @dataclass
 class MultiONetConfig:
-    """Model config for MultiONet for the osu2008 dataset"""
+    """Model config for MultiONet for the simple_reaction dataset"""
 
     branch_hidden_layers: int = 6
     trunk_hidden_layers: int = 2
@@ -17,7 +17,7 @@ class MultiONetConfig:
 
 @dataclass
 class LatentNeuralODEConfig:
-    """Model config for LatentNeuralODE for the osu2008 dataset"""
+    """Model config for LatentNeuralODE for the simple_reaction dataset"""
 
     latent_features: int = 10
     layers_factor: int = 200
@@ -30,7 +30,7 @@ class LatentNeuralODEConfig:
 
 @dataclass
 class FullyConnectedConfig:
-    """Model config for FullyConnected for the osu2008 dataset"""
+    """Model config for FullyConnected for the simple_reaction dataset"""
 
     hidden_size: int = 392
     num_hidden_layers: int = 3
@@ -40,7 +40,7 @@ class FullyConnectedConfig:
 
 @dataclass
 class LatentPolyConfig:
-    """Model config for LatentPoly for the osu2008 dataset"""
+    """Model config for LatentPoly for the simple_reaction dataset"""
 
     latent_features: int = 10
     degree: int = 1
