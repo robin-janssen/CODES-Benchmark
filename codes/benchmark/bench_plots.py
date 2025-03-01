@@ -1426,6 +1426,207 @@ def plot_uncertainty_over_time_comparison(
     plt.close()
 
 
+def plot_uncertainty_confidence(
+    weighted_diffs: dict[str, np.ndarray],
+    conf: dict,
+    save: bool = True,
+    percentile: float = 2,
+    summary_stat: str = "mean",  # currently only "mean" is implemented
+) -> dict[str, float]:
+    """
+    Plot a comparative grouped bar chart of catastrophic confidence measures and return a metric
+    quantifying the net skew of over- versus underconfidence.
+
+    For each surrogate model, the target-weighted difference is computed as:
+        weighted_diff = (predicted uncertainty - |prediction - target|) / target.
+    Negative values indicate overconfidence (i.e. the model's uncertainty is too low relative to its error),
+    while positive values indicate underconfidence.
+
+    Catastrophic events are defined as those samples in the lowest `percentile` (e.g. 2nd percentile)
+    for overconfidence and in the highest `percentile` (i.e. 100 - percentile) for underconfidence.
+
+    For each surrogate, this function computes the mean and standard deviation of the weighted
+    differences in both tails, then plots them as grouped bars (overconfidence bars on the left,
+    underconfidence bars on the right) with standard error bars (thin, with capsize=3). The bar heights
+    are expressed in percentages.
+
+    The text labels for the bars are placed on the opposite side of the x-axis: for negative (overconfident)
+    values the annotation is shown a few pixels above the x-axis, and for positive (underconfident) values
+    it is shown a few pixels below the x-axis.
+
+    The plot title includes the metric (mean ± std) and the number of samples (per tail).
+
+    Additionally, if the range between the smallest and largest bar is more than two orders of magnitude,
+    the y-axis is set to a symmetric log scale.
+
+    Args:
+        weighted_diffs (dict[str, np.ndarray]): Dictionary of weighted_diff arrays for each surrogate model.
+        conf (dict): The configuration dictionary.
+        save (bool, optional): Whether to save the plot.
+        percentile (float, optional): Percentile threshold for defining catastrophic events (default is 2).
+        summary_stat (str, optional): Currently only "mean" is implemented.
+
+    Returns:
+        dict[str, float]: A dictionary mapping surrogate names to the net difference (over_summary + under_summary).
+    """
+    surrogate_names = list(weighted_diffs.keys())
+    num_surrogates = len(surrogate_names)
+
+    # Prepare lists to store summary statistics and their standard deviations.
+    overconf_summary = []
+    underconf_summary = []
+    overconf_std = []
+    underconf_std = []
+    net_diff = {}  # Will store net difference for each surrogate
+
+    # We'll assume all surrogates have the same number of predictions.
+    # Use the first surrogate to compute the number of samples in each tail.
+    first_surrogate = surrogate_names[0]
+    total_samples = weighted_diffs[first_surrogate].size
+    samples_per_tail = int(percentile / 100 * total_samples)
+
+    for surrogate in surrogate_names:
+        wd = weighted_diffs[surrogate].flatten()
+
+        # Overconfidence: samples with weighted_diff below the lower threshold.
+        lower_threshold = np.percentile(wd, percentile)
+        over_mask = wd <= lower_threshold
+        wd_over = wd[over_mask]
+        print(
+            "Low tail: min=",
+            wd_over.min(),
+            "max=",
+            wd_over.max(),
+            "mean=",
+            wd_over.mean(),
+            "std=",
+            wd_over.std(),
+        )
+
+        # Underconfidence: samples with weighted_diff above the upper threshold.
+        upper_threshold = np.percentile(wd, 100 - percentile)
+        under_mask = wd >= upper_threshold
+        wd_under = wd[under_mask]
+        print(
+            "High tail: min=",
+            wd_under.min(),
+            "max=",
+            wd_under.max(),
+            "mean=",
+            wd_under.mean(),
+            "std=",
+            wd_under.std(),
+        )
+
+        # Compute summary statistic and standard deviation; using mean.
+        over_mean = np.mean(wd_over) if wd_over.size > 0 else np.nan
+        under_mean = np.mean(wd_under) if wd_under.size > 0 else np.nan
+        over_std_val = np.std(wd_over) if wd_over.size > 0 else np.nan
+        under_std_val = np.std(wd_under) if wd_under.size > 0 else np.nan
+
+        # Express in percentage.
+        over_pct = 100 * over_mean
+        under_pct = 100 * under_mean
+        over_std_pct = 100 * over_std_val
+        under_std_pct = 100 * under_std_val
+
+        overconf_summary.append(over_pct)
+        underconf_summary.append(under_pct)
+        overconf_std.append(over_std_pct)
+        underconf_std.append(under_std_pct)
+
+        # Net difference: simply add the two.
+        net_diff[surrogate] = over_pct + under_pct
+
+    # Create grouped bar chart.
+    x = np.arange(num_surrogates)
+    width = 0.35  # width of each bar
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Bars for overconfidence (expected to be negative), with error bars.
+    bars_over = ax.bar(
+        x - width / 2,
+        overconf_summary,
+        width,
+        color="salmon",
+        yerr=overconf_std,
+        capsize=3,
+        error_kw=dict(lw=0.5),
+        label=f"Overconfidence (≤ {percentile}th perc.)",
+    )
+    # Bars for underconfidence (expected to be positive), with error bars.
+    bars_under = ax.bar(
+        x + width / 2,
+        underconf_summary,
+        width,
+        color="lightblue",
+        yerr=underconf_std,
+        capsize=3,
+        error_kw=dict(lw=0.5),
+        label=f"Underconfidence (≥ {100 - percentile}th perc.)",
+    )
+
+    ax.set_ylabel(
+        "Relative Difference Summary (%)\n((PU - |Error|) / Target)", fontsize=12
+    )
+    title_str = (
+        f"Over- and Underconfidence Summary (Metric: Mean ± Std Dev)\n"
+        f"Samples per tail: {samples_per_tail}"
+    )
+    ax.set_title(title_str, fontsize=14)
+    ax.set_xticks(x)
+    ax.set_xticklabels(surrogate_names)
+    ax.axhline(0, color="gray", linestyle="--", linewidth=1)
+    ax.legend()
+
+    # Use a fixed offset (in points) from the x-axis.
+    # We'll use ax.get_xaxis_transform() so that y=0 corresponds to the x-axis.
+    for bar in bars_over:
+        x_center = bar.get_x() + bar.get_width() / 2
+        # For overconfidence bars (negative), place label 3 points above x-axis.
+        ax.annotate(
+            f"{bar.get_height():.1f}%",
+            xy=(x_center, 0),
+            xytext=(0, 3),
+            textcoords="offset points",
+            ha="center",
+            va="bottom",
+            fontsize=10,
+            transform=ax.get_xaxis_transform(),
+        )
+    for bar in bars_under:
+        x_center = bar.get_x() + bar.get_width() / 2
+        # For underconfidence bars (positive), place label 3 points below x-axis.
+        ax.annotate(
+            f"{bar.get_height():.1f}%",
+            xy=(x_center, 0),
+            xytext=(0, -3),
+            textcoords="offset points",
+            ha="center",
+            va="top",
+            fontsize=10,
+            transform=ax.get_xaxis_transform(),
+        )
+
+    # Check if the overall range of summary values spans more than two orders of magnitude.
+    all_values = [abs(v) for v in overconf_summary + underconf_summary if v != 0]
+    if all_values:
+        ratio = max(all_values) / min(all_values)
+        if ratio > 100:  # more than two orders of magnitude
+            ax.set_yscale("symlog", linthresh=1)
+
+    plt.tight_layout()
+
+    if save and conf:
+        fname = "uncertainty_confidence.png"
+        save_plot(plt, fname, conf)
+
+    plt.close()
+
+    return net_diff
+
+
 def inference_time_bar_plot(
     surrogates: list[str],
     means: list[float],

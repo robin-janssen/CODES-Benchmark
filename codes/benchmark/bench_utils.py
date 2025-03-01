@@ -426,6 +426,10 @@ def clean_metrics(metrics: dict, conf: dict) -> dict:
         write_metrics["UQ"].pop("pred_uncertainty", None)
         write_metrics["UQ"].pop("max_counts", None)
         write_metrics["UQ"].pop("axis_max", None)
+        write_metrics["UQ"].pop("absolute_errors", None)
+        write_metrics["UQ"].pop("relative_errors", None)
+        write_metrics["UQ"].pop("weighted_diff", None)
+        write_metrics["UQ"].pop("targets", None)
 
     return write_metrics
 

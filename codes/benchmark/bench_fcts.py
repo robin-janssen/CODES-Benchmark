@@ -30,6 +30,7 @@ from .bench_plots import (  # plot_generalization_errors,; rel_errors_and_uq,
     plot_relative_errors,
     plot_relative_errors_over_time,
     plot_surr_losses,
+    plot_uncertainty_confidence,
     plot_uncertainty_over_time_comparison,
 )
 from .bench_utils import (
@@ -799,7 +800,7 @@ def evaluate_UQ(
     """
     training_id = conf["training_id"]
     n_models = conf["uncertainty"]["ensemble_size"]
-    UQ_metrics = []
+    UQ_metrics = {}
 
     # Obtain predictions for each model
     all_predictions = []
@@ -826,7 +827,12 @@ def evaluate_UQ(
     preds_std_time = np.mean(preds_std, axis=(0, 2))
     rel_errors = np.abs(errors / targets)
 
-    # Plots
+    # Compute a target-weighted, signed difference between predicted uncertainty and error.
+    # Negative values indicate overconfidence (PU is too low compared to error),
+    # positive values indicate underconfidence.
+    weighted_diff = (preds_std - errors) / targets
+
+    # Plots (existing UQ plots)
     plot_example_predictions_with_uncertainty(
         surr_name,
         conf,
@@ -845,15 +851,17 @@ def evaluate_UQ(
         surr_name, conf, preds_std, errors, avg_correlation, save=True
     )
 
-    # Store metrics
+    # Store metrics. Note that we now add 'weighted_diff' and also store the targets.
     UQ_metrics = {
         "average_uncertainty": average_uncertainty,
         "correlation_metrics": avg_correlation,
         "pred_uncertainty": preds_std,
         "absolute_errors": errors,
         "relative_errors": rel_errors,
+        "weighted_diff": weighted_diff,  # <== New key with signed differences
         "max_counts": max_counts,
         "axis_max": axis_max,
+        "targets": targets,  # Needed for normalization in further analysis
     }
 
     return UQ_metrics
@@ -1205,7 +1213,7 @@ def compare_UQ(all_metrics: dict, config: dict) -> None:
     Compare the uncertainty quantification (UQ) metrics of different surrogate models.
 
     Args:
-        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
+        all_metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:
@@ -1218,6 +1226,8 @@ def compare_UQ(all_metrics: dict, config: dict) -> None:
     axis_max = {}
     max_counts = {}
     corrs = {}
+    weighted_diff = {}  # To store the target-weighted differences
+
     for surrogate, surrogate_metrics in all_metrics.items():
         timesteps = surrogate_metrics["timesteps"]
         pred_unc[surrogate] = surrogate_metrics["UQ"]["pred_uncertainty"]
@@ -1227,7 +1237,9 @@ def compare_UQ(all_metrics: dict, config: dict) -> None:
         axis_max[surrogate] = surrogate_metrics["UQ"]["axis_max"]
         max_counts[surrogate] = surrogate_metrics["UQ"]["max_counts"]
         corrs[surrogate] = surrogate_metrics["UQ"]["correlation_metrics"]
+        weighted_diff[surrogate] = surrogate_metrics["UQ"]["weighted_diff"]
 
+    # Existing plots
     plot_uncertainty_over_time_comparison(pred_unc_time, abs_errors, timesteps, config)
 
     plot_comparative_error_correlation_heatmaps(
@@ -1235,6 +1247,14 @@ def compare_UQ(all_metrics: dict, config: dict) -> None:
     )
     plot_error_distribution_comparative(abs_errors, config, mode="uq_abs", save=True)
     plot_error_distribution_comparative(rel_errors, config, mode="uq_rel", save=True)
+
+    # New plot for catastrophic over-/underconfidence.
+    confidence_scores = plot_uncertainty_confidence(
+        weighted_diff, config, save=True, percentile=1
+    )
+
+    for surrogate, score in confidence_scores.items():
+        all_metrics[surrogate]["UQ"]["confidence_scores"] = score
 
 
 def tabular_comparison(all_metrics: dict, config: dict) -> None:
@@ -1358,11 +1378,17 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
         uq_corr_values = [
             metrics["UQ"]["correlation_metrics"] for metrics in all_metrics.values()
         ]
+        uq_confidence_scores = [
+            metrics["UQ"]["confidence_scores"] for metrics in all_metrics.values()
+        ]
         avg_unc_row = ["Avg. Uncertainty"] + [
             f"{value:.2e}" for value in avg_uncertainties
         ]
         uq_corr_row = ["UQ Corr."] + [f"{value:.4f}" for value in uq_corr_values]
-        rows.extend([avg_unc_row, uq_corr_row])
+        uq_conf_row = ["UQ Confidence"] + [
+            f"{value:.2f} %" for value in uq_confidence_scores
+        ]
+        rows.extend([avg_unc_row, uq_corr_row, uq_conf_row])
 
     # Print the table using tabulate
     table = tabulate(rows, headers, tablefmt="simple_grid")
