@@ -10,9 +10,8 @@ from torch.utils.data import DataLoader
 
 from codes.utils import check_and_load_data
 
-from .bench_plots import (
-    inference_time_bar_plot,
-    int_ext_sparse,
+from .bench_plots import inference_time_bar_plot  # int_ext_sparse,
+from .bench_plots import (  # plot_generalization_errors,; rel_errors_and_uq,
     plot_all_generalization_errors,
     plot_average_errors_over_time,
     plot_average_uncertainty_over_time,
@@ -22,9 +21,9 @@ from .bench_plots import (
     plot_error_correlation_heatmap,
     plot_error_distribution_comparative,
     plot_error_distribution_per_chemical,
+    plot_example_mode_predictions,
     plot_example_predictions_with_uncertainty,
     plot_generalization_error_comparison,
-    plot_generalization_errors,
     plot_loss_comparison,
     plot_loss_comparison_equal,
     plot_loss_comparison_train_duration,
@@ -32,7 +31,6 @@ from .bench_plots import (
     plot_relative_errors_over_time,
     plot_surr_losses,
     plot_uncertainty_over_time_comparison,
-    rel_errors_and_uq,
 )
 from .bench_utils import (
     count_trainable_parameters,
@@ -137,14 +135,14 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     if conf["interpolation"]["enabled"]:
         print("Running interpolation benchmark...")
         metrics["interpolation"] = evaluate_interpolation(
-            model, surr_name, val_loader, timesteps, conf
+            model, surr_name, val_loader, timesteps, conf, labels
         )
 
     # Extrapolation benchmark
     if conf["extrapolation"]["enabled"]:
         print("Running extrapolation benchmark...")
         metrics["extrapolation"] = evaluate_extrapolation(
-            model, surr_name, val_loader, timesteps, conf
+            model, surr_name, val_loader, timesteps, conf, labels
         )
 
     # Sparse data benchmark
@@ -422,7 +420,12 @@ def evaluate_compute(
 
 
 def evaluate_interpolation(
-    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: dict
+    model,
+    surr_name: str,
+    test_loader: DataLoader,
+    timesteps: np.ndarray,
+    conf: dict,
+    labels: list[str] | None = None,
 ) -> dict[str, Any]:
     """
     Evaluate the interpolation performance of the surrogate model.
@@ -433,6 +436,7 @@ def evaluate_interpolation(
         test_loader (DataLoader): The DataLoader object containing the test data.
         timesteps (np.ndarray): The timesteps array.
         conf (dict): The configuration dictionary.
+        labels (list, optional): The labels for the chemical species.
 
     Returns:
         dict: A dictionary containing interpolation metrics.
@@ -467,6 +471,13 @@ def evaluate_interpolation(
         mean_absolute_error = np.mean(mean_absolute_errors)
         interpolation_metrics[f"interval {interval}"]["MAE"] = mean_absolute_error
 
+        if interval == intervals[-1]:
+            # Store predictions for plotting
+            preds_last = preds
+            # Choose representative sample index
+            sample_MAE = np.mean(np.abs(preds - targets), axis=(1, 2))
+            sample_idx = np.argmin(np.abs(sample_MAE - np.median(sample_MAE)))
+
     # Extract metrics and errors for plotting
     model_errors = np.array(
         # [metric["MSE"] for metric in interpolation_metrics.values()]
@@ -476,9 +487,9 @@ def evaluate_interpolation(
     interpolation_metrics["intervals"] = intervals
 
     # Plot interpolation errors
-    plot_generalization_errors(
-        surr_name, conf, intervals, model_errors, mode="interpolation", save=True
-    )
+    # plot_generalization_errors(
+    #     surr_name, conf, intervals, model_errors, mode="interpolation", save=True
+    # )
     plot_average_errors_over_time(
         surr_name,
         conf,
@@ -488,12 +499,29 @@ def evaluate_interpolation(
         mode="interpolation",
         save=True,
     )
+    plot_example_mode_predictions(
+        surr_name,
+        conf,
+        preds_last,
+        targets,
+        timesteps,
+        metric=intervals[-1],
+        labels=labels,
+        mode="interpolation",
+        example_idx=sample_idx,
+        save=True,
+    )
 
     return interpolation_metrics
 
 
 def evaluate_extrapolation(
-    model, surr_name: str, test_loader: DataLoader, timesteps: np.ndarray, conf: dict
+    model,
+    surr_name: str,
+    test_loader: DataLoader,
+    timesteps: np.ndarray,
+    conf: dict,
+    labels: list[str] | None = None,
 ) -> dict[str, Any]:
     """
     Evaluate the extrapolation performance of the surrogate model.
@@ -504,6 +532,7 @@ def evaluate_extrapolation(
         test_loader (DataLoader): The DataLoader object containing the test data.
         timesteps (np.ndarray): The timesteps array.
         conf (dict): The configuration dictionary.
+        labels (list, optional): The labels for the chemical species.
 
     Returns:
         dict: A dictionary containing extrapolation metrics.
@@ -539,6 +568,13 @@ def evaluate_extrapolation(
         mean_absolute_error = np.mean(mean_absolute_errors)
         extrapolation_metrics[f"cutoff {cutoff}"]["MAE"] = mean_absolute_error
 
+        if cutoff == cutoffs[0]:
+            # Store predictions for plotting
+            preds_first = preds
+            # Choose representative sample index
+            sample_MAE = np.mean(np.abs(preds - targets), axis=(1, 2))
+            sample_idx = np.argmin(np.abs(sample_MAE - np.median(sample_MAE)))
+
     # Extract metrics and errors for plotting
     model_errors = np.array(
         # [metric["MSE"] for metric in extrapolation_metrics.values()]
@@ -548,9 +584,9 @@ def evaluate_extrapolation(
     extrapolation_metrics["cutoffs"] = cutoffs
 
     # Plot extrapolation errors
-    plot_generalization_errors(
-        surr_name, conf, cutoffs, model_errors, mode="extrapolation", save=True
-    )
+    # plot_generalization_errors(
+    #     surr_name, conf, cutoffs, model_errors, mode="extrapolation", save=True
+    # )
     plot_average_errors_over_time(
         surr_name,
         conf,
@@ -558,6 +594,18 @@ def evaluate_extrapolation(
         cutoffs,
         timesteps,
         mode="extrapolation",
+        save=True,
+    )
+    plot_example_mode_predictions(
+        surr_name,
+        conf,
+        preds_first,
+        targets,
+        timesteps,
+        metric=cutoffs[0],
+        labels=labels,
+        mode="extrapolation",
+        example_idx=sample_idx,
         save=True,
     )
 
@@ -629,9 +677,9 @@ def evaluate_sparse(
     sparse_metrics["n_train_samples"] = n_train_samples_array
 
     # Plot sparse training errors
-    plot_generalization_errors(
-        surr_name, conf, n_train_samples_array, model_errors, mode="sparse", save=True
-    )
+    # plot_generalization_errors(
+    #     surr_name, conf, n_train_samples_array, model_errors, mode="sparse", save=True
+    # )
     plot_average_errors_over_time(
         surr_name,
         conf,
@@ -711,9 +759,9 @@ def evaluate_batchsize(
     batch_metrics["batch_sizes"] = batch_sizes_array
 
     # Plot batch size training errors
-    plot_generalization_errors(
-        surr_name, conf, batch_sizes_array, model_errors, mode="batchsize", save=True
-    )
+    # plot_generalization_errors(
+    #     surr_name, conf, batch_sizes_array, model_errors, mode="batchsize", save=True
+    # )
     plot_average_errors_over_time(
         surr_name,
         conf,
@@ -776,6 +824,7 @@ def evaluate_UQ(
     errors_time = np.mean(errors, axis=(0, 2))
     avg_correlation, _ = pearsonr(errors.flatten(), preds_std.flatten())
     preds_std_time = np.mean(preds_std, axis=(0, 2))
+    rel_errors = np.abs(errors / targets)
 
     # Plots
     plot_example_predictions_with_uncertainty(
@@ -801,6 +850,8 @@ def evaluate_UQ(
         "average_uncertainty": average_uncertainty,
         "correlation_metrics": avg_correlation,
         "pred_uncertainty": preds_std,
+        "absolute_errors": errors,
+        "relative_errors": rel_errors,
         "max_counts": max_counts,
         "axis_max": axis_max,
     }
@@ -851,7 +902,7 @@ def compare_models(metrics: dict, config: dict):
     # Compare UQ metrics
     if config["uncertainty"]["enabled"]:
         compare_UQ(metrics, config)
-        rel_errors_and_uq(metrics, config)
+        # rel_errors_and_uq(metrics, config)
 
     tabular_comparison(metrics, config)
 
@@ -1163,14 +1214,16 @@ def compare_UQ(all_metrics: dict, config: dict) -> None:
     pred_unc = {}
     pred_unc_time = {}
     abs_errors = {}
+    rel_errors = {}
     axis_max = {}
     max_counts = {}
     corrs = {}
     for surrogate, surrogate_metrics in all_metrics.items():
         timesteps = surrogate_metrics["timesteps"]
-        abs_errors[surrogate] = surrogate_metrics["accuracy"]["absolute_errors"]
         pred_unc[surrogate] = surrogate_metrics["UQ"]["pred_uncertainty"]
         pred_unc_time[surrogate] = np.mean(pred_unc[surrogate], axis=(0, 2))
+        abs_errors[surrogate] = surrogate_metrics["UQ"]["absolute_errors"]
+        rel_errors[surrogate] = surrogate_metrics["UQ"]["relative_errors"]
         axis_max[surrogate] = surrogate_metrics["UQ"]["axis_max"]
         max_counts[surrogate] = surrogate_metrics["UQ"]["max_counts"]
         corrs[surrogate] = surrogate_metrics["UQ"]["correlation_metrics"]
@@ -1180,6 +1233,8 @@ def compare_UQ(all_metrics: dict, config: dict) -> None:
     plot_comparative_error_correlation_heatmaps(
         pred_unc, abs_errors, corrs, axis_max, max_counts, config
     )
+    plot_error_distribution_comparative(abs_errors, config, mode="uq_abs", save=True)
+    plot_error_distribution_comparative(rel_errors, config, mode="uq_rel", save=True)
 
 
 def tabular_comparison(all_metrics: dict, config: dict) -> None:

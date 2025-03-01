@@ -5,7 +5,7 @@ from torch import nn
 
 @dataclass
 class MultiONetConfig:
-    """Model config for MultiONet for the osu2008 dataset"""
+    """Model config for MultiONet for the lotka_volterra dataset"""
 
     branch_hidden_layers: int = 8
     trunk_hidden_layers: int = 3
@@ -17,7 +17,7 @@ class MultiONetConfig:
 
 @dataclass
 class LatentNeuralODEConfig:
-    """Model config for LatentNeuralODE for the osu2008 dataset"""
+    """Model config for LatentNeuralODE for the lotka_volterra dataset"""
 
     latent_features: int = 8
     layers_factor: int = 83
@@ -30,7 +30,7 @@ class LatentNeuralODEConfig:
 
 @dataclass
 class FullyConnectedConfig:
-    """Model config for FullyConnected for the osu2008 dataset"""
+    """Model config for FullyConnected for the lotka_volterra dataset"""
 
     hidden_size: int = 222
     num_hidden_layers: int = 2
@@ -40,7 +40,7 @@ class FullyConnectedConfig:
 
 @dataclass
 class LatentPolyConfig:
-    """Model config for LatentPoly for the osu2008 dataset"""
+    """Model config for LatentPoly for the lotka_volterra dataset"""
 
     latent_features: int = 2
     degree: int = 1

@@ -329,6 +329,151 @@ def plot_average_errors_over_time(
     plt.close()
 
 
+def plot_example_mode_predictions(
+    surr_name: str,
+    conf: dict,
+    preds: np.ndarray,
+    targets: np.ndarray,
+    timesteps: np.ndarray,
+    metric: int,
+    mode: str = "interpolation",  # Either "interpolation" or "extrapolation"
+    example_idx: int = 0,
+    num_chemicals: int = 100,
+    labels: list[str] | None = None,
+    save: bool = False,
+) -> None:
+    """
+    Plot example predictions from a single model alongside targets, and highlight
+    either the training timesteps (interpolation mode) or the cutoff point (extrapolation mode).
+
+    Args:
+        surr_name (str): The name of the surrogate model.
+        conf (dict): The configuration dictionary.
+        preds (np.ndarray): Predictions from the single model.
+        targets (np.ndarray): True targets.
+        timesteps (np.ndarray): Array of timesteps.
+        metric (int): In interpolation mode, indicates the training interval (e.g., 10 means every tenth timestep was used).
+                      In extrapolation mode, indicates the index of the cutoff timestep.
+        mode (str, optional): "interpolation" or "extrapolation". Default is "interpolation".
+        example_idx (int, optional): Index of the example to plot. Default is 0.
+        num_chemicals (int, optional): Number of chemicals to plot. Default is 100.
+        labels (list, optional): List of labels for the chemicals.
+        save (bool, optional): Whether to save the plot as a file.
+    """
+    # Cap the number of chemicals at the maximum available
+    num_chemicals = min(preds.shape[2], num_chemicals)
+
+    # Determine the number of plots (10 chemicals per subplot)
+    chemicals_per_plot = 10
+    num_plots = int(np.ceil(num_chemicals / chemicals_per_plot))
+
+    # Define the color palette for plotting chemicals
+    colors = plt.cm.viridis(np.linspace(0, 1, chemicals_per_plot))
+
+    # Create the overall figure and subplots
+    fig = plt.figure(figsize=(12, 6 * num_plots))
+    gs = GridSpec(num_plots, 1, figure=fig)
+
+    for plot_idx in range(num_plots):
+        ax = fig.add_subplot(gs[plot_idx])
+
+        start_idx = plot_idx * chemicals_per_plot
+        end_idx = min((plot_idx + 1) * chemicals_per_plot, num_chemicals)
+        legend_lines = []  # To store ground truth line objects for the legend
+
+        for chem_idx in range(start_idx, end_idx):
+            color = colors[chem_idx % chemicals_per_plot]
+            gt = targets[example_idx, :, chem_idx]
+            pred = preds[example_idx, :, chem_idx]
+
+            # Plot ground truth (dashed line) and prediction (solid line)
+            (gt_line,) = ax.plot(timesteps, gt, "--", color=color)
+            ax.plot(timesteps, pred, "-", color=color)
+            legend_lines.append(gt_line)
+
+        # Depending on mode, highlight either the training timesteps or the cutoff point
+        if mode == "interpolation":
+            # Compute timesteps used for training (e.g., every metric-th timestep)
+            used_timesteps = timesteps[::metric]
+            for t in used_timesteps:
+                ax.axvline(
+                    x=t, color="gray", linestyle="dashed", linewidth=0.8, alpha=0.7
+                )
+        elif mode == "extrapolation":
+            # Compute the cutoff timestep (using metric as index)
+            if metric < len(timesteps):
+                cutoff = timesteps[metric]
+                ax.axvline(
+                    x=cutoff, color="red", linestyle="solid", linewidth=1.0, alpha=0.9
+                )
+            else:
+                raise ValueError(
+                    "The metric value exceeds the length of timesteps for extrapolation mode."
+                )
+
+        # Set y-axis to log scale if specified in configuration
+        if conf.get("dataset", {}).get("log10_transform", False):
+            ax.set_yscale("log")
+
+        # Label the y-axis
+        ax.set_ylabel("Abundance")
+
+        # Add chemical labels if provided
+        if labels is not None:
+            legend_labels = labels[start_idx:end_idx]
+            ax.legend(
+                legend_lines,
+                legend_labels,
+                loc="center left",
+                bbox_to_anchor=(1, 0.5),
+                bbox_transform=ax.transAxes,
+                title="Labels",
+            )
+
+        # Set the x-axis limits based on the timesteps array
+        ax.set_xlim(timesteps.min(), timesteps.max())
+
+    # Add a single x-axis label to the bottom of the figure
+    fig.text(0.5, 0.04, "Time", ha="center", va="center", fontsize=12)
+
+    # Create a general legend for the line styles
+    handles = [
+        plt.Line2D([0], [0], color="black", linestyle="--", label="Ground Truth"),
+        plt.Line2D([0], [0], color="black", linestyle="-", label="Prediction"),
+    ]
+    y_pos = 0.95 - (0.05 / num_plots)
+    fig.legend(
+        handles=handles,
+        loc="upper center",
+        bbox_to_anchor=(0.5, y_pos),
+        ncol=2,
+        fontsize="small",
+    )
+
+    # Set the overall title with details depending on the mode
+    if mode == "interpolation":
+        extra_info = f"Trained with every {metric}-th Timestep"
+    elif mode == "extrapolation":
+        extra_info = f"Cutoff at Timestep Index: {metric} (T = {timesteps[metric]:.2f})"
+    else:
+        extra_info = ""
+
+    plt.suptitle(
+        f"{surr_name}: Example Predictions vs Ground Truth \n"
+        f"Sample Index: {example_idx}, {extra_info}",
+        y=0.97,
+    )
+
+    plt.tight_layout(rect=[0.05, 0.03, 0.95, 0.92])
+
+    # Save the plot if requested
+    if save and conf:
+        filename = f"{mode}_example_predictions.png"
+        save_plot(plt, filename, conf, surr_name, dpi=300)
+
+    plt.close()
+
+
 def plot_example_predictions_with_uncertainty(
     surr_name: str,
     conf: dict,
@@ -1748,6 +1893,7 @@ def plot_error_distribution_comparative(
     errors: dict[str, np.ndarray],
     conf: dict,
     save: bool = True,
+    mode: str = "main",
 ) -> None:
     """
     Plot the comparative distribution of errors for each surrogate model as a smoothed histogram plot.
@@ -1756,6 +1902,7 @@ def plot_error_distribution_comparative(
         conf (dict): The configuration dictionary.
         errors (dict): Dictionary containing numpy arrays of shape [num_samples, num_timesteps, num_chemicals] for each model.
         save (bool, optional): Whether to save the plot as a file.
+        mode (str, optional): The mode of the plot. Default is "main".
     """
     # Number of models
     model_names = list(errors.keys())
@@ -1809,34 +1956,45 @@ def plot_error_distribution_comparative(
             color=colors[i],
         )
 
-        # Plot the average error as a vertical line
-        plt.axvline(
-            x=mean_errors[i],
-            color=colors[i],
-            linestyle="--",
-            label=f"Mean = {mean_errors[i]:.2e}",
-        )
+        if mode == "main":
 
-        # Plot the median error as a vertical line
-        plt.axvline(
-            x=median_errors[i],
-            color=colors[i],
-            linestyle="-.",
-            label=f"Median = {median_errors[i]:.2e}",
-        )
+            # Plot the average error as a vertical line
+            plt.axvline(
+                x=mean_errors[i],
+                color=colors[i],
+                linestyle="--",
+                label=f"Mean = {mean_errors[i]:.2e}",
+            )
+
+            # Plot the median error as a vertical line
+            plt.axvline(
+                x=median_errors[i],
+                color=colors[i],
+                linestyle="-.",
+                label=f"Median = {median_errors[i]:.2e}",
+            )
 
     plt.xscale("log")  # Log scale for error magnitudes
     plt.xlim(10**x_min, 10**x_max)  # Set x-axis range based on log-space calculations
+    plt.ylabel("Smoothed Histogram Count")
     plt.xlabel("Magnitude of Error")
-    plt.ylabel("Density (PDF)")
-
-    plt.title("Comparison of Surrogate Relative Errors")
-
     # Move the legend outside the plot area on the right, centered vertically
     plt.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
 
+    if mode == "main":
+        title = "Distribution of Surrogate Relative Errors"
+        fname = "accuracy_error_distributions.png"
+    elif mode == "uq_abs":
+        title = "Difference between Predictive Uncertainty and True MAE"
+        fname = "uncertainty_distribution.png"
+    elif mode == "uq_rel":
+        title = "Difference between Relative Predictive Uncertainty and True MRE"
+        fname = "uncertainty_distribution_rel.png"
+
+    plt.title(title)
+
     if save and conf:
-        save_plot(plt, "accuracy_error_distributions.png", conf)
+        save_plot(plt, fname, conf)
 
     plt.close()
 

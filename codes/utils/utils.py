@@ -296,6 +296,11 @@ def check_training_status(config: dict) -> tuple[str, bool]:
                                 f"Value of '{sub_key}' in '{key}' is different from saved configuration:\n"
                                 f"    Previous: {saved_config[key][sub_key]}, current: {sub_value}"
                             )
+                elif key == "devices":
+                    print(
+                        "Note: Devices differ from saved configuration: \n",
+                        f"    Previous: {saved_config[key]}, current: {value}",
+                    )
                 else:
                     errors.append(
                         f"Value of '{key}' is different from saved configuration:\n"
