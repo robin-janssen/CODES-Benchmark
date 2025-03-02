@@ -44,6 +44,8 @@ from .bench_utils import (
     write_metrics_to_yaml,
 )
 
+TITLE = False
+
 
 def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]:
     """
@@ -104,7 +106,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     # Plot training losses
     if conf["losses"]:
         print("Loss plots...")
-        plot_surr_losses(model, surr_name, conf, timesteps)
+        plot_surr_losses(model, surr_name, conf, timesteps, show_title=TITLE)
 
     # Accuracy benchmark
     print("Running accuracy benchmark...")
@@ -223,6 +225,7 @@ def evaluate_accuracy(
         timesteps,
         title=f"Relative Errors over Time for {surr_name}",
         save=True,
+        show_title=TITLE,
     )
 
     plot_error_distribution_per_chemical(
@@ -232,6 +235,7 @@ def evaluate_accuracy(
         chemical_names=labels,
         num_chemicals=num_chemicals,
         save=True,
+        show_title=TITLE,
     )
 
     # Store metrics
@@ -303,9 +307,15 @@ def evaluate_dynamic_accuracy(
     avg_correlation, _ = pearsonr(avg_gradient, avg_error)
 
     # Plot correlation for averaged species
-    # plot_dynamic_correlation(surr_name, conf, avg_gradient, avg_error, save=True)
+    # plot_dynamic_correlation(surr_name, conf, avg_gradient, avg_error, save=True, show_title=TITLE)
     max_count, max_grad, max_err = plot_dynamic_correlation_heatmap(
-        surr_name, conf, gradients, prediction_errors, avg_correlation, save=True
+        surr_name,
+        conf,
+        gradients,
+        prediction_errors,
+        avg_correlation,
+        save=True,
+        show_title=TITLE,
     )
 
     # Ensure species names are provided
@@ -489,7 +499,7 @@ def evaluate_interpolation(
 
     # Plot interpolation errors
     # plot_generalization_errors(
-    #     surr_name, conf, intervals, model_errors, mode="interpolation", save=True
+    #     surr_name, conf, intervals, model_errors, mode="interpolation", save=True, show_title=TITLE
     # )
     plot_average_errors_over_time(
         surr_name,
@@ -499,6 +509,7 @@ def evaluate_interpolation(
         timesteps,
         mode="interpolation",
         save=True,
+        show_title=TITLE,
     )
     plot_example_mode_predictions(
         surr_name,
@@ -511,6 +522,7 @@ def evaluate_interpolation(
         mode="interpolation",
         example_idx=sample_idx,
         save=True,
+        show_title=TITLE,
     )
 
     return interpolation_metrics
@@ -596,6 +608,7 @@ def evaluate_extrapolation(
         timesteps,
         mode="extrapolation",
         save=True,
+        show_title=TITLE,
     )
     plot_example_mode_predictions(
         surr_name,
@@ -608,6 +621,7 @@ def evaluate_extrapolation(
         mode="extrapolation",
         example_idx=sample_idx,
         save=True,
+        show_title=TITLE,
     )
 
     return extrapolation_metrics
@@ -679,7 +693,7 @@ def evaluate_sparse(
 
     # Plot sparse training errors
     # plot_generalization_errors(
-    #     surr_name, conf, n_train_samples_array, model_errors, mode="sparse", save=True
+    #     surr_name, conf, n_train_samples_array, model_errors, mode="sparse", save=True, show_title=TITLE
     # )
     plot_average_errors_over_time(
         surr_name,
@@ -689,6 +703,7 @@ def evaluate_sparse(
         timesteps,
         mode="sparse",
         save=True,
+        show_title=TITLE,
     )
 
     return sparse_metrics
@@ -761,7 +776,7 @@ def evaluate_batchsize(
 
     # Plot batch size training errors
     # plot_generalization_errors(
-    #     surr_name, conf, batch_sizes_array, model_errors, mode="batchsize", save=True
+    #     surr_name, conf, batch_sizes_array, model_errors, mode="batchsize", save=True, show_title=TITLE
     # )
     plot_average_errors_over_time(
         surr_name,
@@ -771,6 +786,7 @@ def evaluate_batchsize(
         timesteps,
         mode="batchsize",
         save=True,
+        show_title=TITLE,
     )
 
     return batch_metrics
@@ -842,18 +858,33 @@ def evaluate_UQ(
         timesteps,
         save=True,
         labels=labels,
+        show_title=TITLE,
     )
     plot_average_uncertainty_over_time(
-        surr_name, conf, errors_time, preds_std_time, timesteps, save=True
+        surr_name,
+        conf,
+        errors_time,
+        preds_std_time,
+        timesteps,
+        save=True,
+        show_title=TITLE,
     )
     # plot_uncertainty_vs_errors(surr_name, conf, preds_std, errors, save=True)
     max_counts, axis_max = plot_error_correlation_heatmap(
-        surr_name, conf, preds_std, errors, avg_correlation, save=True
+        surr_name,
+        conf,
+        preds_std,
+        errors,
+        avg_correlation,
+        save=True,
+        show_title=TITLE,
     )
 
     # Store metrics. Note that we now add 'weighted_diff' and also store the targets.
     UQ_metrics = {
         "average_uncertainty": average_uncertainty,
+        "MAE": np.mean(errors),
+        "MRE": np.mean(rel_errors),
         "correlation_metrics": avg_correlation,
         "pred_uncertainty": preds_std,
         "absolute_errors": errors,
@@ -901,7 +932,7 @@ def compare_models(metrics: dict, config: dict):
         and config["sparse"]["enabled"]
     ):
         # int_ext_sparse(metrics, config)
-        plot_all_generalization_errors(metrics, config)
+        plot_all_generalization_errors(metrics, config, show_title=TITLE)
 
     # Compare batch size training errors
     if config["batch_scaling"]["enabled"]:
@@ -953,12 +984,16 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
         train_durations.append(model.train_duration)
 
     # Plot the comparison of main model losses
-    plot_loss_comparison(tuple(train_losses), tuple(test_losses), tuple(labels), config)
+    plot_loss_comparison(
+        tuple(train_losses), tuple(test_losses), tuple(labels), config, show_title=TITLE
+    )
     plot_loss_comparison_equal(
-        tuple(train_losses), tuple(test_losses), tuple(labels), config
+        tuple(train_losses), tuple(test_losses), tuple(labels), config, show_title=TITLE
     )
     # plot_MAE_comparison(MAE, labels, config)
-    plot_loss_comparison_train_duration(test_losses, labels, train_durations, config)
+    plot_loss_comparison_train_duration(
+        test_losses, labels, train_durations, config, show_title=TITLE
+    )
 
 
 # def compare_MAE(metrics: dict, config: dict) -> None:
@@ -1018,9 +1053,11 @@ def compare_relative_errors(metrics: dict[str, dict], config: dict) -> None:
             median_errors[surrogate] = median_error_model
             timesteps = surrogate_metrics["timesteps"]
 
-    plot_relative_errors(mean_errors, median_errors, timesteps, config)
+    plot_relative_errors(
+        mean_errors, median_errors, timesteps, config, show_title=TITLE
+    )
 
-    plot_error_distribution_comparative(errors, config)
+    plot_error_distribution_comparative(errors, config, show_title=TITLE)
 
 
 def compare_inference_time(
@@ -1082,7 +1119,14 @@ def compare_dynamic_accuracy(metrics: dict, config: dict) -> None:
         corrs[surrogate] = surrogate_metrics["gradients"]["avg_correlation"]
 
     plot_comparative_dynamic_correlation_heatmaps(
-        gradients, abs_errors, corrs, max_grads, max_errors, max_counts, config
+        gradients,
+        abs_errors,
+        corrs,
+        max_grads,
+        max_errors,
+        max_counts,
+        config,
+        show_title=TITLE,
     )
 
 
@@ -1113,6 +1157,7 @@ def compare_interpolation(all_metrics: dict, config: dict) -> None:
         "Interpolation Interval",
         "interpolation_errors.png",
         config,
+        show_title=TITLE,
     )
 
 
@@ -1143,6 +1188,7 @@ def compare_extrapolation(all_metrics: dict, config: dict) -> None:
         "Extrapolation Cutoff",
         "extrapolation_errors.png",
         config,
+        show_title=TITLE,
     )
 
 
@@ -1174,6 +1220,7 @@ def compare_sparse(all_metrics: dict, config: dict) -> None:
         "sparse_errors.png",
         config,
         xlog=True,
+        show_title=TITLE,
     )
 
 
@@ -1205,6 +1252,7 @@ def compare_batchsize(all_metrics: dict, config: dict) -> None:
         "batch_size_errors.png",
         config,
         xlog=True,
+        show_title=TITLE,
     )
 
 
@@ -1240,17 +1288,23 @@ def compare_UQ(all_metrics: dict, config: dict) -> None:
         weighted_diff[surrogate] = surrogate_metrics["UQ"]["weighted_diff"]
 
     # Existing plots
-    plot_uncertainty_over_time_comparison(pred_unc_time, abs_errors, timesteps, config)
+    plot_uncertainty_over_time_comparison(
+        pred_unc_time, abs_errors, timesteps, config, show_title=TITLE
+    )
 
     plot_comparative_error_correlation_heatmaps(
-        pred_unc, abs_errors, corrs, axis_max, max_counts, config
+        pred_unc, abs_errors, corrs, axis_max, max_counts, config, show_title=TITLE
     )
-    plot_error_distribution_comparative(abs_errors, config, mode="uq_abs", save=True)
-    plot_error_distribution_comparative(rel_errors, config, mode="uq_rel", save=True)
+    plot_error_distribution_comparative(
+        abs_errors, config, mode="uq_abs", save=True, show_title=TITLE
+    )
+    plot_error_distribution_comparative(
+        rel_errors, config, mode="uq_rel", save=True, show_title=TITLE
+    )
 
     # New plot for catastrophic over-/underconfidence.
     confidence_scores = plot_uncertainty_confidence(
-        weighted_diff, config, save=True, percentile=1
+        weighted_diff, config, save=True, percentile=1, show_title=TITLE
     )
 
     for surrogate, score in confidence_scores.items():
@@ -1348,25 +1402,38 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
         avg_corr_values = [
             metrics["gradients"]["avg_correlation"] for metrics in all_metrics.values()
         ]
-        avg_corr_row = ["Gradient Corr."] + [
-            f"{value:.4f}" for value in avg_corr_values
-        ]
+        avg_corr_row = ["Gradient PCC"] + [f"{value:.4f}" for value in avg_corr_values]
         rows.append(avg_corr_row)
 
     # Compute metrics (if enabled)
     if config.get("compute", False):
-        num_params_row = ["# Trainable Params"] + [
-            f'{metrics["compute"]["num_trainable_parameters"]}'
+        megabytes = 1024**2
+        num_params = [
+            metrics["compute"]["num_trainable_parameters"]
             for metrics in all_metrics.values()
         ]
-        megabytes = 1024**2
-        model_mem_row = ["Model Memory (MB)"] + [
-            f'{(metrics["compute"]["memory_footprint"]["model_memory"]/megabytes):.2f}'
+        model_mem = [
+            metrics["compute"]["memory_footprint"]["model_memory"] / megabytes
             for metrics in all_metrics.values()
+        ]
+        forward_mem = [
+            metrics["compute"]["memory_footprint"]["forward_memory_nograd"] / megabytes
+            for metrics in all_metrics.values()
+        ]
+        best_params_index = np.argmin(num_params)
+        best_mem_index = np.argmin(model_mem)
+        best_forward_mem_index = np.argmin(forward_mem)
+        num_params_row = ["# Trainable Params"] + [
+            f"{value}" if i != best_params_index else f"* {value} *"
+            for i, value in enumerate(num_params)
+        ]
+        model_mem_row = ["Model Memory (MB)"] + [
+            (f"{value:.2f} MB" if i != best_mem_index else f"* {value:.2f} MB *")
+            for i, value in enumerate(model_mem)
         ]
         forward_mem_row = ["Forward Pass Memory (MB)"] + [
-            f'{(metrics["compute"]["memory_footprint"]["forward_memory_nograd"]/megabytes):.2f}'
-            for metrics in all_metrics.values()
+            f"{value:.2f} MB" if i != best_forward_mem_index else f"* {value:.2f} MB *"
+            for i, value in enumerate(forward_mem)
         ]
         rows.extend([num_params_row, model_mem_row, forward_mem_row])
 
@@ -1375,20 +1442,44 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
         avg_uncertainties = [
             metrics["UQ"]["average_uncertainty"] for metrics in all_metrics.values()
         ]
+        uq_mae_values = [metrics["UQ"]["MAE"] for metrics in all_metrics.values()]
+        uq_mre_values = [metrics["UQ"]["MRE"] for metrics in all_metrics.values()]
         uq_corr_values = [
             metrics["UQ"]["correlation_metrics"] for metrics in all_metrics.values()
         ]
         uq_confidence_scores = [
             metrics["UQ"]["confidence_scores"] for metrics in all_metrics.values()
         ]
+
+        best_mae_index = np.argmin(uq_mae_values)
+        best_mre_index = np.argmin(uq_mre_values)
+        best_conf_index = np.argmin(np.abs(uq_confidence_scores))
+
         avg_unc_row = ["Avg. Uncertainty"] + [
             f"{value:.2e}" for value in avg_uncertainties
         ]
-        uq_corr_row = ["UQ Corr."] + [f"{value:.4f}" for value in uq_corr_values]
-        uq_conf_row = ["UQ Confidence"] + [
-            f"{value:.2f} %" for value in uq_confidence_scores
+        uq_mae_row = ["DE MAE"] + [
+            (
+                f"{metrics['UQ']['MAE']:.2e}"
+                if i != best_mae_index
+                else f"* {metrics['UQ']['MAE']:.2e} *"
+            )
+            for i, metrics in enumerate(all_metrics.values())
         ]
-        rows.extend([avg_unc_row, uq_corr_row, uq_conf_row])
+        uq_mre_row = ["DE MRE"] + [
+            (
+                f"{metrics['UQ']['MRE'] * 100:.2f} %"
+                if i != best_mre_index
+                else f"* {metrics['UQ']['MRE'] * 100:.2f} % *"
+            )
+            for i, metrics in enumerate(all_metrics.values())
+        ]
+        uq_corr_row = ["UQ PCC"] + [f"{value:.4f}" for value in uq_corr_values]
+        uq_conf_row = ["UQ Confidence"] + [
+            f"{value:.2f} %" if i != best_conf_index else f"* {value:.2f} % *"
+            for i, value in enumerate(uq_confidence_scores)
+        ]
+        rows.extend([avg_unc_row, uq_mae_row, uq_mre_row, uq_corr_row, uq_conf_row])
 
     # Print the table using tabulate
     table = tabulate(rows, headers, tablefmt="simple_grid")

@@ -22,6 +22,7 @@ def plot_example_trajectories(
     sample_idx: int = 0,
     log: bool = False,
     quantities_per_plot: int = 6,
+    show_title: bool = True,
 ) -> None:
     num_chemicals = min(data.shape[2], num_chemicals)
     data = data[sample_idx, :, :num_chemicals]
@@ -65,7 +66,8 @@ def plot_example_trajectories(
         ax.set_visible(False)
 
     plt.xlabel("Time")
-    fig.suptitle(f"Example Trajectories for Dataset: {dataset_name}")
+    if show_title:
+        fig.suptitle(f"Example Trajectories for Dataset: {dataset_name}")
     plt.tight_layout(rect=[0, 0, 1, 0.97])
 
     if save:
@@ -358,6 +360,7 @@ def plot_initial_conditions_distribution(
     spread: float = 0.01,
     quantities_per_plot: int = 10,
     log: bool = True,
+    show_title: bool = True,
 ) -> None:
     if log:
         train_data = 10**train_data
@@ -440,9 +443,10 @@ def plot_initial_conditions_distribution(
         ax.set_visible(False)
 
     plt.xlabel("Initial Condition Value")
-    fig.suptitle(
-        f"Initial Condition Distribution per Quantity \n (Dataset: {dataset_name}, {train_data.shape[0]} train samples, {test_data.shape[0]} test samples)"
-    )
+    if show_title:
+        fig.suptitle(
+            f"Initial Condition Distribution per Quantity \n (Dataset: {dataset_name}, {train_data.shape[0]} train samples, {test_data.shape[0]} test samples)"
+        )
     plt.tight_layout(rect=[0, 0, 1, 0.97])
 
     conf = {
@@ -545,6 +549,7 @@ def plot_all_trajectories_and_gradients(
     max_trajectories: int = 20,
     log: bool = False,
     log_time: bool = False,
+    show_title: bool = True,
 ) -> None:
     """
     Plot both the trajectories and gradients of each quantity in the train dataset over time,
@@ -596,10 +601,10 @@ def plot_all_trajectories_and_gradients(
 
     # Create figures and axes for both plots
     fig_traj, axes_traj = plt.subplots(
-        nrows, ncols, figsize=(8 * ncols, 4 * nrows), sharex=True
+        nrows, ncols, figsize=(7 * ncols, 3 * nrows), sharex=True
     )
     fig_grad, axes_grad = plt.subplots(
-        nrows, ncols, figsize=(8 * ncols, 4 * nrows), sharex=True
+        nrows, ncols, figsize=(7 * ncols, 3 * nrows), sharex=True
     )
 
     if nrows == 1 and ncols == 1:
@@ -613,6 +618,8 @@ def plot_all_trajectories_and_gradients(
     colors = plt.cm.viridis(np.linspace(0, 0.95, quantities_per_plot))
 
     progress = tqdm(range(num_plots), desc="Plotting", unit="plot")
+
+    # Set formatter for y axis ticks
 
     for plot_idx in progress:
         start_idx = plot_idx * quantities_per_plot
@@ -653,7 +660,8 @@ def plot_all_trajectories_and_gradients(
             )
 
         # Set labels and legends for Trajectories
-        axes_traj[plot_idx].set_xlabel("Time")
+        if plot_idx == num_plots - 1:
+            axes_traj[plot_idx].set_xlabel("Time")
         axes_traj[plot_idx].set_xlim(time[0], time[-1])
         if log_time:
             axes_traj[plot_idx].set_xscale("log")
@@ -668,7 +676,8 @@ def plot_all_trajectories_and_gradients(
             )
 
         # Set labels and legends for Gradients
-        axes_grad[plot_idx].set_xlabel("Time")
+        if plot_idx == num_plots - 1:
+            axes_grad[plot_idx].set_xlabel("Time")
         if log_time:
             axes_grad[plot_idx].set_xscale("log")
         axes_grad[plot_idx].set_xlim(time[0], time[-1])
@@ -687,15 +696,20 @@ def plot_all_trajectories_and_gradients(
     for ax in axes_grad[num_plots:]:
         ax.set_visible(False)
 
+    # Align y-axis labels
+    fig_traj.align_ylabels(axes_traj)
+    fig_grad.align_ylabels(axes_grad)
+
     # Set titles
-    fig_traj.suptitle(
-        f"Overview of Trajectories per Quantity over Time \n (Dataset: {dataset_name})",
-        fontsize="large",
-    )
-    fig_grad.suptitle(
-        f"Overview of Gradients per Quantity over Time \n (Dataset: {dataset_name})",
-        fontsize="large",
-    )
+    if show_title:
+        fig_traj.suptitle(
+            f"Overview of Trajectories per Quantity over Time \n (Dataset: {dataset_name})",
+            fontsize="large",
+        )
+        fig_grad.suptitle(
+            f"Overview of Gradients per Quantity over Time \n (Dataset: {dataset_name})",
+            fontsize="large",
+        )
 
     # Adjust layout
     fig_traj.tight_layout(rect=[0, 0, 1, 0.95])
@@ -713,7 +727,7 @@ def plot_all_trajectories_and_gradients(
         fig_traj,
         "all_trajectories.jpg",
         conf,
-        dpi=200,
+        dpi=300,
         base_dir="datasets",
         increase_count=False,
     )
@@ -724,7 +738,7 @@ def plot_all_trajectories_and_gradients(
         fig_grad,
         "all_gradients.jpg",
         conf,
-        dpi=200,
+        dpi=300,
         base_dir="datasets",
         increase_count=False,
     )
@@ -742,6 +756,7 @@ def debug_numerical_errors_plot(
     threshold: float = 0.1,
     max_faulty: int = 10,
     quantities_per_plot: int = 10,
+    show_title: bool = True,
 ) -> None:
     """
     Plot faulty trajectories with gradients exceeding a threshold.
@@ -831,9 +846,11 @@ def debug_numerical_errors_plot(
         ax.legend(loc="upper right")
 
     plt.tight_layout()
-    fig.suptitle(
-        f"Faulty Trajectories (Dataset: {dataset_name}, Max: {max_faulty})", fontsize=16
-    )
+    if show_title:
+        fig.suptitle(
+            f"Faulty Trajectories (Dataset: {dataset_name}, Max: {max_faulty})",
+            fontsize=16,
+        )
 
     # Saving the plot
     conf = {
@@ -859,6 +876,7 @@ def plot_faulty_initial_conditions_distribution(
     max_chemicals: int = 10,
     log: bool = True,
     quantities_per_plot: int = 10,
+    show_title: bool = True,
 ) -> None:
     """
     Plot the distribution of initial conditions (t=0) for each chemical from faulty trajectories.
@@ -975,9 +993,10 @@ def plot_faulty_initial_conditions_distribution(
 
     plt.xscale("log")  # Log scale for initial conditions magnitudes
     plt.xlabel("Initial Condition Magnitude")
-    fig.suptitle(
-        f"Initial Condition Distribution per Chemical for Faulty Trajectories \n (Dataset: {dataset_name}, {len(faulty_indices)} faulty samples)"
-    )
+    if show_title:
+        fig.suptitle(
+            f"Initial Condition Distribution per Chemical for Faulty Trajectories \n (Dataset: {dataset_name}, {len(faulty_indices)} faulty samples)"
+        )
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
 

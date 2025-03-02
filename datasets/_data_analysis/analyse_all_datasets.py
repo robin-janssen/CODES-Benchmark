@@ -28,19 +28,20 @@ def main():
     """
     datasets = [
         "osutest2",
-        "osutest",
-        "simple_ode",
         "coupled_oscillators",
-        "simple_reaction",
-        "osu2008",
-        "simple_primordial",
         "lotka_volterra",
-        "branca_large_kyr",
-        "branca_large_myr",
-        "branca24",
-        "branca_norad",
+        "simple_ode",
+        "simple_reaction",
+        # "osutest",
+        # "osu2008",
+        # "simple_primordial",
+        # "branca_large_kyr",
+        # "branca_large_myr",
+        # "branca24",
+        # "branca_norad",
     ]
     debug = False
+    TITLE = True
     # Load full data
     for dataset in datasets:
         log = dataset_dict[dataset]["log"]
@@ -79,6 +80,7 @@ def main():
             timesteps=timesteps,
             log=log,
             log_time=dataset_dict[dataset].get("log_time", False),
+            show_title=TITLE,
         )
 
         plot_example_trajectories(
@@ -91,6 +93,7 @@ def main():
             sample_idx=7,
             log=log,
             quantities_per_plot=qpp,
+            show_title=TITLE,
         )
 
         # Plot initial conditions distribution
@@ -102,6 +105,7 @@ def main():
             max_quantities=453,
             log=log,
             quantities_per_plot=qpp,
+            show_title=TITLE,
         )
 
         if debug:
