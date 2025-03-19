@@ -85,10 +85,10 @@ def test_fit(instance, dataloaders):
 
     assert instance.train_loss.shape == torch.Size(
         [1]
-    ), f"train_loss has wrong shape: {instance.train_loss.shape} != [1]"
+    ), f"train loss has wrong shape: {instance.train_loss.shape} != [1]"
     assert instance.test_loss.shape == torch.Size(
         [1]
-    ), f"test_loss has wrong shape: {instance.test_loss.shape} != [1]"
+    ), f"test loss has wrong shape: {instance.test_loss.shape} != [1]"
     assert instance.MAE.shape == torch.Size(
         [1]
     ), f"MAE has wrong shape: {instance.MAE.shape} != [1]"
