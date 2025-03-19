@@ -165,36 +165,47 @@ class FullyConnected(AbstractSurrogateModel):
         criterion = nn.MSELoss()
         optimizer = self.setup_optimizer_and_scheduler()
 
-        train_losses, test_losses, MAEs = [np.zeros(epochs) for _ in range(3)]
+        loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
+        train_losses, test_losses, MAEs = [np.zeros(loss_length) for _ in range(3)]
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
+        self.train()
+        optimizer.train()
+
         for epoch in progress_bar:
-            train_losses[epoch] = self.epoch(train_loader, criterion, optimizer)
+            self.epoch(train_loader, criterion, optimizer)
 
-            clr = optimizer.param_groups[0]["lr"]
-            # print_loss = f"{train_losses[epoch].item():.2e}"
-            # progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
-
-            if test_loader is not None:
+            if epoch % self.update_epochs == 0:
+                index = epoch // self.update_epochs
+                # Set model and optimizer to eval mode for evaluation
                 self.eval()
                 optimizer.eval()
+
+                # Calculate losses and MAE
+                preds, targets = self.predict(train_loader)
+                train_losses[index] = criterion(preds, targets).item()
                 preds, targets = self.predict(test_loader)
-                loss = criterion(preds, targets).item()
-                # loss /= len(test_loader.dataset) * self.N
-                test_losses[epoch] = loss
-                MAEs[epoch] = self.L1(preds, targets).item()
+                test_losses[index] = criterion(preds, targets).item()
+                MAEs[index] = self.L1(preds, targets).item()
 
-                print_loss = f"{test_losses[epoch].item():.2e}"
-                progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
+                # Update progress bar postfix
+                postfix = {
+                    "train_loss": f"{train_losses[index]:.2e}",
+                    "test_loss": f"{test_losses[index]:.2e}"
+                }
+                progress_bar.set_postfix(postfix)
 
+                # Report the test loss to Optuna
                 if self.optuna_trial is not None:
-                    if epoch % self.trial_update_epochs == 0:
-                        self.optuna_trial.report(loss, epoch)
-                        if self.optuna_trial.should_prune():
-                            raise optuna.TrialPruned()
+                    self.optuna_trial.report(test_losses[index], step=epoch)
+                    if self.optuna_trial.should_prune():
+                        raise optuna.TrialPruned()
+
+                self.train()
+                optimizer.train()
 
         progress_bar.close()
-        self.n_epochs = epoch
+        self.n_epochs = epoch + 1
         self.train_loss = train_losses
         self.test_loss = test_losses
         self.MAE = MAEs
@@ -215,9 +226,6 @@ class FullyConnected(AbstractSurrogateModel):
         criterion: nn.Module,
         optimizer: torch.optim.Optimizer,
     ) -> float:
-        self.train()
-        optimizer.train()
-        total_loss = 0
         # dataset_size = len(data_loader.dataset)
 
         for batch in data_loader:
@@ -229,10 +237,6 @@ class FullyConnected(AbstractSurrogateModel):
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
-            total_loss += loss.item()
-
-        # total_loss /= dataset_size * self.N
-        return total_loss
 
     def create_dataloader(
         self,

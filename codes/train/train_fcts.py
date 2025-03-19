@@ -169,7 +169,7 @@ def create_task_list_for_surrogate(config, surr_name: str) -> list:
     if config["uncertainty"]["enabled"]:
         n_models = config["uncertainty"]["ensemble_size"]
         for i in range(n_models - 1):
-            tasks.append((surr_name, "UQ", i + 2, id, seed + i, epochs))
+            tasks.append((surr_name, "UQ", i + 1, id, seed + i, epochs))
 
     if config["batch_scaling"]["enabled"]:
         mode = "batchsize"

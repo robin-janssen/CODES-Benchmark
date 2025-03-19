@@ -13,7 +13,7 @@ from psycopg2 import sql
 from tqdm import tqdm
 
 from codes.tune import create_objective, load_yaml_config
-from codes.utils import nice_print
+from codes.utils import download_data, nice_print
 
 
 def check_postgres_running(config):
@@ -222,32 +222,36 @@ def run_single_study(config: dict, study_name: str, db_url: str):
     objective_fn = create_objective(config, study_name, device_queue)
     n_trials = config["n_trials"]
     trial_durations = []
+    n_jobs = len(config["devices"])
 
     def trial_complete_callback(study_, trial_):
-        if trial_.state == TrialState.COMPLETE:
-            trial_pbar.update(1)
-            if trial_.datetime_start:
-                duration = time.time() - trial_.datetime_start.timestamp()
-                trial_durations.append(duration)
-                avg_duration = sum(trial_durations) / len(trial_durations)
-                remaining = n_trials - len(trial_durations)
-                eta_seconds = avg_duration * remaining
-                trial_pbar.set_postfix(
-                    {
-                        "ETA": f"{eta_seconds/60:.1f}m",
-                        "LastTrial": f"{duration:.1f}s",
-                    }
-                )
-        elif trial_.state == TrialState.PRUNED:
+        # Update progress bar for any finished trial (complete or pruned)
+        if trial_.state in (TrialState.COMPLETE, TrialState.PRUNED):
             trial_pbar.update(1)
 
+        # For a complete trial, record its duration and update ETA info
+        if trial_.state == TrialState.COMPLETE and trial_.datetime_start:
+            duration = time.time() - trial_.datetime_start.timestamp()
+            trial_durations.append(duration)
+            avg_duration = sum(trial_durations) / len(trial_durations)
+            remaining_trials = n_trials - len(trial_durations)
+            eta_seconds = (avg_duration * remaining_trials) / n_jobs
+            postfix = f"ETA: {eta_seconds/60:.1f}m, Avg: {avg_duration:.1f}s, Last: {duration:.1f}s"
+            trial_pbar.set_postfix_str(postfix)
+
+    download_data(config["dataset"]["name"])
+
     with tqdm(
-        total=n_trials, desc=f"Tuning {study_name}", position=1, leave=True
+        total=n_trials,
+        desc=f"Tuning {study_name}",
+        position=1,
+        leave=True,
+        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [Elapsed: {elapsed}{postfix}]",
     ) as trial_pbar:
         study.optimize(
             objective_fn,
             n_trials=n_trials,
-            n_jobs=len(config["devices"]),
+            n_jobs=n_jobs,
             callbacks=[
                 MaxTrialsCallback(n_trials, states=[TrialState.COMPLETE]),
                 trial_complete_callback,
@@ -342,7 +346,7 @@ def parse_arguments():
     parser.add_argument(
         "--study_name",
         type=str,
-        default="lotkavolterra2lr",
+        default="simpleodetest",
         help="Study identifier.",
     )
     return parser.parse_args()

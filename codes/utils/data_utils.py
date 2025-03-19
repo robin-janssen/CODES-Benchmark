@@ -342,22 +342,25 @@ def create_dataset(
     labels: list[str] | None = None,
 ):
     """
-    Creates a new dataset in the data directory.
+    Creates a new dataset in the data directory with train, test and validation data.
+
+    If only train_data is provided, it will be split into train, test and validation sets.
+    If split is not provided in this case, a default split of (0.7, 0.1, 0.2) is used.
 
     Args:
         name (str): The name of the dataset.
-        train_data (np.ndarray | torch.Tensor): The training data.
-        test_data (np.ndarray | torch.Tensor, optional): The test data.
-        val_data (np.ndarray | torch.Tensor, optional): The validation data.
-        split tuple(float, float, float), optional): If test_data and val_data are not provided,
-            train_data can be split into training, test and validation data.
-        timesteps (np.ndarray | torch.Tensor, optional): The timesteps array.
+        train_data (np.ndarray): The training data.
+        test_data (np.ndarray, optional): The test data.
+        val_data (np.ndarray, optional): The validation data.
+        split (tuple(float, float, float), optional): If test_data and val_data are not provided,
+            train_data will be split into training, test and validation data according to these ratios.
+        timesteps (np.ndarray, optional): The timesteps array.
         labels (list[str], optional): The labels for the chemicals.
 
     Raises:
         FileExistsError: If the dataset already exists.
-        TypeError: If the train_data is not a numpy array or torch tensor.
-        ValueError: If the train_data, test_data, and val_data do not have the correct shape.
+        TypeError: If the train_data (or test_data/val_data when provided) is not a numpy array.
+        ValueError: If the provided data do not have the correct shape or if only one of test_data/val_data is provided.
     """
     base_dir = "datasets"
     dataset_dir = os.path.join(base_dir, name)
@@ -365,79 +368,77 @@ def create_dataset(
     if os.path.exists(dataset_dir):
         raise FileExistsError(f"Dataset '{name}' already exists.")
 
+    # Verify train_data is a numpy array and has the correct dimensions.
     if not isinstance(train_data, np.ndarray):
         raise TypeError("train_data must be a numpy array.")
-
-    if not train_data.ndim == 3:
+    if train_data.ndim != 3:
         raise ValueError(
             "train_data must have shape (n_samples, n_timesteps, n_chemicals)."
         )
 
-    if test_data is not None:
+    # Check consistency if test_data or val_data are provided.
+    if (test_data is None) ^ (val_data is None):
+        raise ValueError(
+            "Either provide only train_data or provide all of train_data, test_data and val_data."
+        )
+
+    # If test_data and val_data are provided, perform type and shape checks.
+    if test_data is not None and val_data is not None:
         if not isinstance(test_data, np.ndarray):
             raise TypeError("test_data must be a numpy array.")
-        if val_data is None:
-            raise ValueError("test_data cannot be provided without val_data.")
-        if (
-            not train_data.shape[2] == test_data.shape[2]
-            or not train_data.shape[1] == test_data.shape[1]
-        ):
+        if not isinstance(val_data, np.ndarray):
+            raise TypeError("val_data must be a numpy array.")
+        if train_data.shape[1:] != test_data.shape[1:]:
             raise ValueError(
                 "train_data and test_data must have the same number of timesteps and chemicals."
             )
-        np.random.shuffle(test_data)
-
-    if val_data is not None:
-        if not isinstance(val_data, np.ndarray):
-            raise TypeError("val_data must be a numpy array.")
-        if test_data is None:
-            raise ValueError("val_data cannot be provided without test_data.")
-        if (
-            not train_data.shape[2] == val_data.shape[2]
-            or not train_data.shape[1] == val_data.shape[1]
-        ):
+        if train_data.shape[1:] != val_data.shape[1:]:
             raise ValueError(
                 "train_data and val_data must have the same number of timesteps and chemicals."
             )
+        np.random.shuffle(test_data)
         np.random.shuffle(val_data)
+    else:
+        # Only train_data is provided. Use split to partition the data.
+        if split is None:
+            split = (0.7, 0.1, 0.2)  # default split
+        else:
+            if not isinstance(split, (tuple, list)):
+                raise TypeError("split must be a tuple or list of floats.")
+            if len(split) != 3:
+                raise ValueError(
+                    "split must contain three values: train, test, and validation split."
+                )
+            if not all(isinstance(value, float) for value in split):
+                raise TypeError("split values must be floats.")
+            if not all(0 <= value <= 1 for value in split):
+                raise ValueError("split values must be between 0 and 1.")
+            if not isclose(sum(split), 1, abs_tol=1e-5):
+                raise ValueError("split values must sum to 1.")
 
+    # Validate timesteps.
     if timesteps is None:
         print("Timesteps not provided and will not be saved.")
     else:
-        # Ensure timesteps have the correct shape
         if timesteps.ndim != 1 or timesteps.shape[0] != train_data.shape[1]:
             raise ValueError(
                 "Timesteps must be a 1D array with length equal to the number of timesteps in the data."
             )
 
-    if split is not None:
-        if not isinstance(split, (tuple, list)):
-            raise TypeError("split must be a tuple or list of floats.")
-        if len(split) != 3:
-            raise ValueError(
-                "split must contain three values: train, test, and validation split."
-            )
-        if not all(isinstance(value, float) for value in split):
-            raise TypeError("split values must be floats.")
-        if not all(0 <= value <= 1 for value in split):
-            raise ValueError("split values must be between 0 and 1.")
-        if not isclose(split[0] + split[1] + split[2], 1, abs_tol=1e-5):
-            raise ValueError("split values must sum to 1.")
-
+    # Shuffle the training data.
     np.random.shuffle(train_data)
 
-    if not (test_data is None and val_data is None) and split is not None:
-        print(
-            "Warning: split values will be ignored since test_data and val_data are provided."
-        )
-    if split is not None:
+    # If only train_data is provided, perform the splitting.
+    if test_data is None and val_data is None:
         full_data = train_data
-        n_samples = train_data.shape[0]
+        n_samples = full_data.shape[0]
         n_train = int(n_samples * split[0])
         n_test = int(n_samples * split[1])
+
         train_data = full_data[:n_train]
         test_data = full_data[n_train : n_train + n_test]
         val_data = full_data[n_train + n_test :]
+
         if any(
             dim == 0
             for shape in (train_data.shape, test_data.shape, val_data.shape)
@@ -446,13 +447,21 @@ def create_dataset(
             raise ValueError(
                 "Split data contains zero samples. One of the splits is too small."
             )
+    else:
+        # When test_data and val_data are provided, ignore the split value.
+        if split is not None:
+            print(
+                "Warning: split values will be ignored since test_data and val_data are provided."
+            )
 
+    # Validate labels.
     if labels is not None:
         if not isinstance(labels, list):
             raise TypeError("labels must be a list of strings.")
-        if not len(labels) == train_data.shape[2]:
+        if len(labels) != train_data.shape[2]:
             raise ValueError("The number of labels must match the number of chemicals.")
 
+    # Create the HDF5 dataset.
     create_hdf5_dataset(
         train_data, test_data, val_data, name, timesteps=timesteps, labels=labels
     )
@@ -487,7 +496,7 @@ def download_data(dataset_name: str, path: str | None = None):
         else os.path.abspath(path)
     )
     if os.path.isfile(data_path):
-        print(f"Dataset '{dataset_name}' already exists at {data_path}.")
+        print(f"Dataset '{dataset_name}' already downloaded at {data_path}.")
         return
 
     with open("datasets/data_sources.yaml", "r", encoding="utf-8") as file:
