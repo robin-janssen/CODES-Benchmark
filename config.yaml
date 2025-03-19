@@ -1,38 +1,41 @@
 # Global settings for the benchmark
-training_id: "osu2008_final"
-surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"]
+training_id: "simple_reaction_final"
+surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE", ]
 batch_size: [4096, 4096, 256, 256]
-epochs: [7000, 20000, 20000, 15000]
+epochs: [12000, 10000, 10000, 7000]
 dataset: 
-  name: "osu2008"
+  name: "simple_reaction"
   log10_transform: True
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
   tolerance: 1e-30
-devices: ["cuda:5", "cuda:6", "cuda:7", "cuda:8", "cuda:9"]
+  subset_factor: 1
+devices: ["cuda:2", "cuda:3", "cuda:4", "cuda:5", "cuda:6", "cuda:7", "cuda:8", "cuda:9"]
 seed: 42
 verbose: False
 
 # Models to train
 interpolation: 
-  enabled: True
+  enabled: False
   intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
 extrapolation:
-  enabled: True
+  enabled: False
   cutoffs: [50, 60, 70, 80, 90]
 sparse: 
-  enabled: True
+  enabled: False
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
-  enabled: True
+  enabled: False
   sizes: [64, 512, 1024, 4096]
 uncertainty: 
-  enabled: True
+  enabled: False
   ensemble_size: 5  # Number of models for deep ensemble
 
 # Evaluations during benchmark
-losses: True
-gradients: True
-timing: True
-compute: True
-compare: True # Whether to compare the surrogates
+losses: False
+gradients: False
+timing: False
+compute: False
+compare: False # Whether to compare the surrogates
+
+

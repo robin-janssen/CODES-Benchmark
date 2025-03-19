@@ -71,6 +71,7 @@ from .bench_utils import (
     make_comparison_csv,
     measure_memory_footprint,
     read_yaml_config,
+    save_table_csv,
     write_metrics_to_yaml,
 )
 
@@ -143,5 +144,6 @@ __all__ = [
     "flatten_dict",
     "convert_dict_to_scientific_notation",
     "make_comparison_csv",
+    "save_table_csv",
     "get_model_config",
 ]
