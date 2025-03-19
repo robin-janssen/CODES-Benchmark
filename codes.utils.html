@@ -372,6 +372,7 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.load_task_list"><code class="docutils literal notranslate"><span class="pre">load_task_list()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.make_description"><code class="docutils literal notranslate"><span class="pre">make_description()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.nice_print"><code class="docutils literal notranslate"><span class="pre">nice_print()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.parse_for_none"><code class="docutils literal notranslate"><span class="pre">parse_for_none()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.read_yaml_config"><code class="docutils literal notranslate"><span class="pre">read_yaml_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.save_task_list"><code class="docutils literal notranslate"><span class="pre">save_task_list()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.set_random_seeds"><code class="docutils literal notranslate"><span class="pre">set_random_seeds()</span></code></a></li>
@@ -477,25 +478,27 @@ Values below this will be set to the tolerance value. Pass None to disable.</p><
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.utils.data_utils.create_dataset">
 <span class="sig-prename descclassname"><span class="pre">codes.utils.data_utils.</span></span><span class="sig-name descname"><span class="pre">create_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.utils.data_utils.create_dataset" title="Link to this definition">#</a></dt>
-<dd><p>Creates a new dataset in the data directory.</p>
+<dd><p>Creates a new dataset in the data directory with train, test and validation data.</p>
+<p>If only train_data is provided, it will be split into train, test and validation sets.
+If split is not provided in this case, a default split of (0.7, 0.1, 0.2) is used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – The name of the dataset.</p></li>
-<li><p><strong>train_data</strong> (<em>np.ndarray</em><em> | </em><em>torch.Tensor</em>) – The training data.</p></li>
-<li><p><strong>test_data</strong> (<em>np.ndarray</em><em> | </em><em>torch.Tensor</em><em>, </em><em>optional</em>) – The test data.</p></li>
-<li><p><strong>val_data</strong> (<em>np.ndarray</em><em> | </em><em>torch.Tensor</em><em>, </em><em>optional</em>) – The validation data.</p></li>
-<li><p><strong>tuple</strong> (<em>split</em>) – If test_data and val_data are not provided,
-train_data can be split into training, test and validation data.</p></li>
-<li><p><strong>timesteps</strong> (<em>np.ndarray</em><em> | </em><em>torch.Tensor</em><em>, </em><em>optional</em>) – The timesteps array.</p></li>
+<li><p><strong>train_data</strong> (<em>np.ndarray</em>) – The training data.</p></li>
+<li><p><strong>test_data</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – The test data.</p></li>
+<li><p><strong>val_data</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – The validation data.</p></li>
+<li><p><strong>split</strong> (<em>tuple</em><em>(</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – If test_data and val_data are not provided,
+train_data will be split into training, test and validation data according to these ratios.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – The timesteps array.</p></li>
 <li><p><strong>labels</strong> (<em>list</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The labels for the chemicals.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>FileExistsError</strong> – If the dataset already exists.</p></li>
-<li><p><strong>TypeError</strong> – If the train_data is not a numpy array or torch tensor.</p></li>
-<li><p><strong>ValueError</strong> – If the train_data, test_data, and val_data do not have the correct shape.</p></li>
+<li><p><strong>TypeError</strong> – If the train_data (or test_data/val_data when provided) is not a numpy array.</p></li>
+<li><p><strong>ValueError</strong> – If the provided data do not have the correct shape or if only one of test_data/val_data is provided.</p></li>
 </ul>
 </dd>
 </dl>
@@ -741,6 +744,24 @@ bool: Whether to copy the configuration file.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="codes.utils.utils.parse_for_none">
+<span class="sig-prename descclassname"><span class="pre">codes.utils.utils.</span></span><span class="sig-name descname"><span class="pre">parse_for_none</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.utils.utils.parse_for_none" title="Link to this definition">#</a></dt>
+<dd><p>Parse a dictionary and replace all strings “None” with None.
+If value is a dictionary, recursively parse the dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dictionary</strong> (<em>dict</em>) – The dictionary to parse.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The parsed dictionary.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dictionary (dict)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="codes.utils.utils.read_yaml_config">
 <span class="sig-prename descclassname"><span class="pre">codes.utils.utils.</span></span><span class="sig-name descname"><span class="pre">read_yaml_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.utils.utils.read_yaml_config" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
@@ -854,25 +875,27 @@ bool: Whether to copy the configuration file.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.utils.create_dataset">
 <span class="sig-prename descclassname"><span class="pre">codes.utils.</span></span><span class="sig-name descname"><span class="pre">create_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.utils.create_dataset" title="Link to this definition">#</a></dt>
-<dd><p>Creates a new dataset in the data directory.</p>
+<dd><p>Creates a new dataset in the data directory with train, test and validation data.</p>
+<p>If only train_data is provided, it will be split into train, test and validation sets.
+If split is not provided in this case, a default split of (0.7, 0.1, 0.2) is used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – The name of the dataset.</p></li>
-<li><p><strong>train_data</strong> (<em>np.ndarray</em><em> | </em><em>torch.Tensor</em>) – The training data.</p></li>
-<li><p><strong>test_data</strong> (<em>np.ndarray</em><em> | </em><em>torch.Tensor</em><em>, </em><em>optional</em>) – The test data.</p></li>
-<li><p><strong>val_data</strong> (<em>np.ndarray</em><em> | </em><em>torch.Tensor</em><em>, </em><em>optional</em>) – The validation data.</p></li>
-<li><p><strong>tuple</strong> (<em>split</em>) – If test_data and val_data are not provided,
-train_data can be split into training, test and validation data.</p></li>
-<li><p><strong>timesteps</strong> (<em>np.ndarray</em><em> | </em><em>torch.Tensor</em><em>, </em><em>optional</em>) – The timesteps array.</p></li>
+<li><p><strong>train_data</strong> (<em>np.ndarray</em>) – The training data.</p></li>
+<li><p><strong>test_data</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – The test data.</p></li>
+<li><p><strong>val_data</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – The validation data.</p></li>
+<li><p><strong>split</strong> (<em>tuple</em><em>(</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – If test_data and val_data are not provided,
+train_data will be split into training, test and validation data according to these ratios.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – The timesteps array.</p></li>
 <li><p><strong>labels</strong> (<em>list</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The labels for the chemicals.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>FileExistsError</strong> – If the dataset already exists.</p></li>
-<li><p><strong>TypeError</strong> – If the train_data is not a numpy array or torch tensor.</p></li>
-<li><p><strong>ValueError</strong> – If the train_data, test_data, and val_data do not have the correct shape.</p></li>
+<li><p><strong>TypeError</strong> – If the train_data (or test_data/val_data when provided) is not a numpy array.</p></li>
+<li><p><strong>ValueError</strong> – If the provided data do not have the correct shape or if only one of test_data/val_data is provided.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1212,6 +1235,7 @@ as an attribute of the function.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.load_task_list"><code class="docutils literal notranslate"><span class="pre">load_task_list()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.make_description"><code class="docutils literal notranslate"><span class="pre">make_description()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.nice_print"><code class="docutils literal notranslate"><span class="pre">nice_print()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.parse_for_none"><code class="docutils literal notranslate"><span class="pre">parse_for_none()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.read_yaml_config"><code class="docutils literal notranslate"><span class="pre">read_yaml_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.save_task_list"><code class="docutils literal notranslate"><span class="pre">save_task_list()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.set_random_seeds"><code class="docutils literal notranslate"><span class="pre">set_random_seeds()</span></code></a></li>

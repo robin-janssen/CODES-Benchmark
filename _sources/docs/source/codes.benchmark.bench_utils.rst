@@ -24,6 +24,6 @@ codes.benchmark.bench\_utils
       load_model
       make_comparison_csv
       measure_memory_footprint
-      read_yaml_config
+      save_table_csv
       write_metrics_to_yaml
    

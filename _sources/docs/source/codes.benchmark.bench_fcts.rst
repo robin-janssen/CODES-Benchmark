@@ -8,7 +8,6 @@ codes.benchmark.bench\_fcts
 
    .. autosummary::
    
-      compare_MAE
       compare_UQ
       compare_batchsize
       compare_dynamic_accuracy
