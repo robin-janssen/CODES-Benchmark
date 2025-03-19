@@ -41,10 +41,11 @@ from .bench_utils import (
     get_surrogate,
     make_comparison_csv,
     measure_memory_footprint,
+    save_table_csv,
     write_metrics_to_yaml,
 )
 
-TITLE = False
+TITLE = True
 
 
 def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]:
@@ -1089,7 +1090,7 @@ def compare_inference_time(
     means = list(mean_inference_times.values())
     stds = list(std_inference_times.values())
 
-    inference_time_bar_plot(surrogates, means, stds, config, save)
+    inference_time_bar_plot(surrogates, means, stds, config, save, show_title=TITLE)
 
 
 def compare_dynamic_accuracy(metrics: dict, config: dict) -> None:
@@ -1314,9 +1315,11 @@ def compare_UQ(all_metrics: dict, config: dict) -> None:
 def tabular_comparison(all_metrics: dict, config: dict) -> None:
     """
     Compare the metrics of different surrogate models in a tabular format.
+    Prints a table to the CLI, saves the table into a text file, and saves a CSV file with all metrics.
+    Also saves a CSV file with only the metrics that appear in the CLI table.
 
     Args:
-        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
+        all_metrics (dict): Dictionary containing the benchmark metrics for each surrogate model.
         config (dict): Configuration dictionary.
 
     Returns:
@@ -1347,7 +1350,7 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
         for metrics in all_metrics.values()
     ]
 
-    # Find the best (minimum) MSE and MRE values
+    # Find the best (minimum) MSE, MAE, MRE and training time values
     best_mse_index = np.argmin(mse_values)
     best_mae_index = np.argmin(mae_values)
     best_mre_index = np.argmin(mre_values)
@@ -1365,7 +1368,8 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
         f"{value * 100:.2f} %" if i != best_mre_index else f"* {value * 100:.2f} % *"
         for i, value in enumerate(mre_values)
     ]
-    epochs_row = ["Epochs"] + [value for i, value in enumerate(epochs)]
+    epochs_row = ["Epochs"] + [value for value in epochs]
+    # Assume format_seconds is defined elsewhere
     train_strings = [f"{format_seconds(time)}" for time in train_times]
     tt_row = ["Train Time (hh:mm:ss)"] + [
         f"{time}" if i != best_time_index else f"* {time} *"
@@ -1384,9 +1388,7 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
             for metrics in all_metrics.values()
         ]
 
-        # Find the best (minimum) inference time
         best_time_index = np.argmin(mean_times)
-
         timing_row = ["Inference Times"] + [
             (
                 f"{format_time(mean, std)}"
@@ -1486,11 +1488,14 @@ def tabular_comparison(all_metrics: dict, config: dict) -> None:
     print(table)
     print()
 
-    # Save the table to a file if an output file path is provided
+    # Save the table to a file (text format)
     txt_path = f"results/{config['training_id']}/metrics_table.txt"
     with open(txt_path, "w") as f:
         with redirect_stdout(f):
             print(table)
 
-    # Make a csv file that contains all metrics for each model
+    # Save the full metrics CSV using the existing function
     make_comparison_csv(metrics=all_metrics, config=config)
+
+    # --- New part: save the CLI table as a CSV file ---
+    save_table_csv(headers, rows, config)

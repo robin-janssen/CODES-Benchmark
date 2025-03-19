@@ -57,7 +57,7 @@ def plot_example_trajectories(
         ax.set_xlim(timesteps[0], timesteps[-1])
         ax.legend(
             loc="center left",
-            bbox_to_anchor=(1.03, 0.5),
+            bbox_to_anchor=(1, 0.5),
             borderaxespad=0.0,
             fontsize="small",
         )
@@ -434,7 +434,7 @@ def plot_initial_conditions_distribution(
         )
         ax.legend(
             loc="center left",
-            bbox_to_anchor=(1.03, 0.5),
+            bbox_to_anchor=(1, 0.5),
             borderaxespad=0.0,
             fontsize="small",
         )
@@ -670,7 +670,7 @@ def plot_all_trajectories_and_gradients(
         if chemical_names is not None:
             axes_traj[plot_idx].legend(
                 loc="center left",
-                bbox_to_anchor=(1.03, 0.5),
+                bbox_to_anchor=(1.02, 0.5),
                 borderaxespad=0.0,
                 fontsize="small",
             )
@@ -685,7 +685,7 @@ def plot_all_trajectories_and_gradients(
         if chemical_names is not None:
             axes_grad[plot_idx].legend(
                 loc="center left",
-                bbox_to_anchor=(1.03, 0.5),
+                bbox_to_anchor=(1.02, 0.5),
                 borderaxespad=0.0,
                 fontsize="small",
             )
@@ -985,7 +985,7 @@ def plot_faulty_initial_conditions_distribution(
             ax.legend(
                 loc="center left",
                 bbox_to_anchor=(
-                    1.03,
+                    1,
                     0.5,
                 ),
                 borderaxespad=0.0,

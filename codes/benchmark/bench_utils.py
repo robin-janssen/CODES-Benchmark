@@ -597,7 +597,7 @@ def make_comparison_csv(metrics: dict, config: dict) -> None:
     all_keys = sorted(all_keys)
 
     # Prepare the CSV file path
-    csv_file_path = f"results/{config['training_id']}/metrics.csv"
+    csv_file_path = f"results/{config['training_id']}/all_metrics.csv"
     os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
     # Write to the CSV file
@@ -620,6 +620,33 @@ def make_comparison_csv(metrics: dict, config: dict) -> None:
 
     if config["verbose"]:
         print(f"Comparison CSV file saved at {csv_file_path}")
+
+
+def save_table_csv(headers: list, rows: list, config: dict) -> None:
+    """
+    Save the CLI table (headers and rows) to a CSV file.
+    This version strips out any formatting (like asterisks) from the table cells.
+
+    Args:
+        headers (list): The list of header names.
+        rows (list): The list of rows, where each row is a list of string values.
+        config (dict): Configuration dictionary that contains 'training_id'.
+
+    Returns:
+        None
+    """
+    # Convert each cell to a string and remove asterisks
+    cleaned_rows = [
+        [str(cell).replace("*", "").strip() for cell in row]
+        for row in rows
+    ]
+    
+    csv_path = f"results/{config['training_id']}/metrics_table.csv"
+    with open(csv_path, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(headers)
+        writer.writerows(cleaned_rows)
+    print(f"CLI table metrics saved to {csv_path}")
 
 
 def get_model_config(surr_name: str, config: dict) -> dict:

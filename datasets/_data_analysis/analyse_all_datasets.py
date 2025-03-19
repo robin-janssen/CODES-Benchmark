@@ -27,11 +27,11 @@ def main():
     Main function to analyse the dataset. It checks the dataset and loads the data.
     """
     datasets = [
+        "simple_reaction",
         "osutest2",
         "coupled_oscillators",
         "lotka_volterra",
         "simple_ode",
-        "simple_reaction",
         # "osutest",
         # "osu2008",
         # "simple_primordial",
@@ -40,7 +40,7 @@ def main():
         # "branca24",
         # "branca_norad",
     ]
-    debug = False
+    debug = True
     TITLE = True
     # Load full data
     for dataset in datasets:
@@ -85,12 +85,12 @@ def main():
 
         plot_example_trajectories(
             dataset,
-            full_train_data,
+            full_data,
             timesteps,
             num_chemicals=num_chems,
             save=True,
             labels=labels,
-            sample_idx=7,
+            sample_idx=863,
             log=log,
             quantities_per_plot=qpp,
             show_title=TITLE,

@@ -20,6 +20,7 @@ def save_plot(
     dpi: int = 300,
     base_dir: str = "plots",  # Base directory for saving plots
     increase_count: bool = False,  # Whether to increase the count for existing filenames
+    format: str = "pdf",  # Format for saving the plot
 ) -> None:
     """
     Save the plot to a file, creating necessary directories if they don't exist.
@@ -32,7 +33,7 @@ def save_plot(
         dpi (int): The resolution of the saved plot.
         base_dir (str, optional): The base directory where plots will be saved. Default is "plots".
         increase_count (bool, optional): Whether to increment the filename count if a file already exists. Default is True.
-
+        format (str, optional): The format for saving the plot. Default is "png". Can be "png", "pdf", "svg", etc.
 
     Raises:
         ValueError: If the configuration dictionary does not contain the required keys.
@@ -44,6 +45,8 @@ def save_plot(
     plot_dir = os.path.join(base_dir, training_id, surr_name)
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
+
+    filename = f"{filename.split('.')[0]}.{format}"
 
     # Call save_plot_counter with increase_count option
     filepath = save_plot_counter(filename, plot_dir, increase_count=increase_count)
@@ -118,10 +121,10 @@ def plot_relative_errors_over_time(
     p99_upper = np.percentile(relative_errors, 99.5, axis=(0, 2))
     p99_lower = np.percentile(relative_errors, 0.5, axis=(0, 2))
 
-    plt.figure(figsize=(7, 4))
-    mean_label = f"Mean Error\n(Mean: {mean*100:.2f} %)"
+    plt.figure(figsize=(6, 4))
+    mean_label = f"Mean Error\nMean={mean*100:.2f}%"
     plt.plot(timesteps, mean_errors, label=mean_label, color="blue")
-    median_label = f"Median Error\n(Median: {median*100:.2f} %)"
+    median_label = f"Median Error\nMedian={median*100:.2f}%"
     plt.plot(timesteps, median_errors, label=median_label, color="red")
 
     # Shading areas
@@ -156,10 +159,10 @@ def plot_relative_errors_over_time(
     plt.xlim(timesteps[0], timesteps[-1])
     if show_title:
         plt.title(title)
-    plt.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
     if save and conf:
-        save_plot(plt, "accuracy_rel_errors_time.png", conf, surr_name)
+        save_plot(plt, "accuracy_rel_errors_time.pdf", conf, surr_name)
 
     plt.close()
 
@@ -247,7 +250,7 @@ def plot_generalization_errors(
             "Invalid mode. Choose from 'interpolation', 'extrapolation', 'sparse', 'batchsize'."
         )
 
-    plt.figure(figsize=(8, 4))
+    plt.figure(figsize=(6, 4))
     plt.scatter(metrics, model_errors, label=surr_name, color="#3A1A5A")
     plt.xlabel(xlabel)
     if mode == "sparse" or mode == "batchsize":
@@ -288,7 +291,7 @@ def plot_average_errors_over_time(
         save (bool, optional): Whether to save the plot as a file.
         show_title (bool): Whether to show the title on the plot.
     """
-    plt.figure(figsize=(8, 4))
+    plt.figure(figsize=(6, 4))
 
     labels = {
         "interpolation": "interval",
@@ -382,11 +385,12 @@ def plot_example_mode_predictions(
     chemicals_per_plot = 10
     num_plots = int(np.ceil(num_chemicals / chemicals_per_plot))
 
+    num_quantities = preds.shape[2]
     # Define the color palette for plotting chemicals
-    colors = plt.cm.viridis(np.linspace(0, 1, chemicals_per_plot))
+    colors = plt.cm.viridis(np.linspace(0, 1, num_quantities))
 
     # Create the overall figure and subplots
-    fig = plt.figure(figsize=(8, 4 * num_plots))
+    fig = plt.figure(figsize=(6, 4 * num_plots))
     gs = GridSpec(num_plots, 1, figure=fig)
 
     for plot_idx in range(num_plots):
@@ -442,7 +446,6 @@ def plot_example_mode_predictions(
                 loc="center left",
                 bbox_to_anchor=(1, 0.5),
                 bbox_transform=ax.transAxes,
-                title="Labels",
             )
 
         # Set the x-axis limits based on the timesteps array
@@ -456,7 +459,7 @@ def plot_example_mode_predictions(
         plt.Line2D([0], [0], color="black", linestyle="--", label="Ground Truth"),
         plt.Line2D([0], [0], color="black", linestyle="-", label="Prediction"),
     ]
-    y_pos = 0.95 - (0.05 / num_plots)
+    y_pos = 0.95 - (0.06 / num_plots)
     fig.legend(
         handles=handles,
         loc="upper center",
@@ -468,18 +471,18 @@ def plot_example_mode_predictions(
 
     # Set the overall title with details depending on the mode
     if mode == "interpolation":
-        extra_info = f"Trained with every {metric}-th Timestep"
+        title = f"DeepEnsemble: Example Predictions (Interpolation, {surr_name})\n"
+        extra_info = f"Sample Index: {example_idx}, Training Interval: {metric}"
     elif mode == "extrapolation":
-        extra_info = f"Cutoff at Timestep Index: {metric} (T = {timesteps[metric]:.2f})"
+        title = f"DeepEnsemble: Example Predictions (Extrapolation, {surr_name})\n"
+        extra_info = f"Sample Index: {example_idx}, Cutoff Timestep: {metric}"
     else:
-        extra_info = ""
+        raise ValueError(
+            "Invalid mode. Choose from 'interpolation' or 'extrapolation'."
+        )
 
     if show_title:
-        plt.suptitle(
-            f"{surr_name}: Example Predictions vs Ground Truth \n"
-            f"Sample Index: {example_idx}, {extra_info}",
-            y=0.97,
-        )
+        plt.suptitle(title + extra_info, y=0.97)
 
     plt.tight_layout(rect=[0.05, 0.03, 0.95, 0.92])
 
@@ -582,7 +585,6 @@ def plot_example_predictions_with_uncertainty(
                 loc="center left",
                 bbox_to_anchor=(1, 0.5),  # Position legend to the right of the plot
                 bbox_transform=ax.transAxes,  # Place it relative to the axes
-                title="Labels",
             )
 
         # Set the x limit exactly from the lowest to the highest timestep
@@ -598,7 +600,7 @@ def plot_example_predictions_with_uncertainty(
             [0], [0], color="black", linestyle="-", label="Prediction (Ensemble Mean)"
         ),
     ]
-    y_pos = 0.95 - (0.05 / num_plots)  # Adjust to position the legend below the title
+    y_pos = 0.95 - (0.08 / num_plots)  # Adjust to position the legend below the title
     fig.legend(
         handles=handles,
         loc="upper center",
@@ -963,10 +965,10 @@ def plot_error_distribution_per_chemical(
             )
 
         ax.set_yscale("linear")
-        ax.set_ylabel("Density (PDF)")
+        ax.set_ylabel("Smoothed Histogram Count")
         if chemical_names is not None:
             # Move legend outside of plot area on the right, centered vertically
-            ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
+            ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
     fig.align_ylabels()
 
@@ -1050,7 +1052,7 @@ def plot_losses(
     epochs = np.linspace(0, epochs + 1, num=len(loss_histories[0]), endpoint=False)
 
     # Create the figure
-    plt.figure(figsize=(8, 4))
+    plt.figure(figsize=(6, 4))
     loss_plotted = False
     for loss, label in zip(loss_histories, labels):
         if loss is not None:
@@ -1161,7 +1163,7 @@ def plot_loss_comparison(
     Returns:
         None
     """
-    plt.figure(figsize=(8, 4))
+    plt.figure(figsize=(6, 4))
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(train_losses)))
     max_epochs, min_val, max_val = 0, np.inf, 0
 
@@ -1170,11 +1172,11 @@ def plot_loss_comparison(
     ):
         # plt.plot(train_loss, label=f"{label} Train Loss", color=colors[i])
         epochs = np.linspace(0, len(train_loss) * 10, num=len(train_loss))
-        plt.plot(epochs, train_loss, label=f"{label} Train Loss", color=colors[i])
+        plt.plot(epochs, train_loss, label=f"{label}", color=colors[i])
         plt.plot(
             epochs,
             test_loss,
-            label=f"{label} Test Loss",
+            # label=f"{label} Test Loss",
             linestyle="--",
             color=colors[i],
         )
@@ -1189,6 +1191,10 @@ def plot_loss_comparison(
         max_val = max(
             max_val, np.max(test_loss[start_idx:]), np.max(train_loss[start_idx:])
         )
+
+    # Add additional legend entries for the train and test losses
+    plt.plot([], linestyle="-", color="black", label="Train Loss")
+    plt.plot([], linestyle="--", color="black", label="Test Loss")
 
     plt.xlabel("Epoch")
     plt.xlim(0, max_epochs)
@@ -1236,7 +1242,7 @@ def plot_loss_comparison_equal(
     Returns:
         None
     """
-    plt.figure(figsize=(8, 4))
+    plt.figure(figsize=(6, 4))
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(test_losses)))
 
     for i, (train_loss, test_loss, label) in enumerate(
@@ -1341,7 +1347,7 @@ def plot_loss_comparison_train_duration(
         save (bool): Whether to save the plot.#
         show_title (bool): Whether to show the title on the plot.
     """
-    plt.figure(figsize=(8, 4))
+    plt.figure(figsize=(6, 4))
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(test_losses)))
     min_val, max_val = np.inf, 0
 
@@ -1394,13 +1400,13 @@ def plot_relative_errors(
     Returns:
         None
     """
-    plt.figure(figsize=(7, 4))
+    plt.figure(figsize=(6, 4))
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(mean_errors)))
     linestyles = ["-", "--"]
 
     for i, surrogate in enumerate(mean_errors.keys()):
         mean = np.mean(mean_errors[surrogate])
-        mean_label = f"{surrogate}\nMean = {mean*100:.2f} %"
+        mean_label = f"{surrogate}\nMean = {mean*100:.2f}%"
         plt.plot(
             timesteps,
             mean_errors[surrogate],
@@ -1409,7 +1415,7 @@ def plot_relative_errors(
             linestyle=linestyles[0],
         )
         median = np.mean(median_errors[surrogate])
-        median_label = f"{surrogate}\nMedian = {median*100:.2f} %"
+        median_label = f"{surrogate}\nMedian = {median*100:.2f}%"
         plt.plot(
             timesteps,
             median_errors[surrogate],
@@ -1424,7 +1430,7 @@ def plot_relative_errors(
     plt.yscale("log")
     if show_title:
         plt.title("Comparison of Relative Errors Over Time")
-    plt.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
     if save and config:
         save_plot(plt, "accuracy_rel_errors_time_models.png", config)
@@ -1486,7 +1492,7 @@ def plot_uncertainty_over_time_comparison(
     plt.yscale("log")
     if show_title:
         plt.title("Comparison of Predictive Uncertainty and True MAE over Time")
-    plt.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
     if save and config:
         save_plot(plt, "uncertainty_over_time.png", config)
@@ -1612,7 +1618,7 @@ def plot_uncertainty_confidence(
     x = np.arange(num_surrogates)
     width = 0.35  # width of each bar
 
-    fig, ax = plt.subplots(figsize=(8, 4))
+    fig, ax = plt.subplots(figsize=(7, 4))
 
     # Bars for overconfidence (expected to be negative), with error bars.
     bars_over = ax.bar(
@@ -1663,7 +1669,7 @@ def plot_uncertainty_confidence(
             textcoords="offset points",
             ha="center",
             va="bottom",
-            fontsize=10,
+            fontsize=9,
             transform=ax.get_xaxis_transform(),
         )
     for bar in bars_under:
@@ -1676,7 +1682,7 @@ def plot_uncertainty_confidence(
             textcoords="offset points",
             ha="center",
             va="top",
-            fontsize=10,
+            fontsize=9,
             transform=ax.get_xaxis_transform(),
         )
 
@@ -1721,7 +1727,7 @@ def inference_time_bar_plot(
         None
     """
     # Create the bar plot
-    fig, ax = plt.subplots(figsize=(8, 4))
+    fig, ax = plt.subplots(figsize=(7, 4))
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(surrogates)))
     ax.bar(
         surrogates, means, yerr=stds, capsize=5, alpha=0.7, color=colors, ecolor="black"
@@ -1743,7 +1749,7 @@ def inference_time_bar_plot(
             formatted_time,
             ha="center",
             va="bottom",
-            fontsize=10,
+            fontsize=8,
         )
 
     ax.set_xlabel("Surrogate Model")
@@ -1789,7 +1795,7 @@ def plot_generalization_error_comparison(
     """
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(surrogates)))
 
-    plt.figure(figsize=(8, 4))
+    plt.figure(figsize=(6, 4))
     for i, surrogate in enumerate(surrogates):
         plt.scatter(
             metrics_list[i], model_errors_list[i], label=surrogate, color=colors[i]
@@ -2274,18 +2280,18 @@ def plot_error_distribution_comparative(
         fname = "accuracy_error_distributions.png"
         xlabel = "Magnitude of Relative Error"
     elif mode == "uq_abs":
-        title = "Difference between Predictive Uncertainty and True MAE"
+        title = "Difference between Predictive Uncertainty and True Error"
         fname = "uncertainty_distribution.png"
-        xlabel = "Absolute Difference between Predictive Uncertainty and True MAE"
+        xlabel = "Absolute Difference between Uncertainty Estimate and True Error"
     elif mode == "uq_rel":
         title = "Difference between Relative Predictive Uncertainty and True MRE"
         fname = "uncertainty_distribution_rel.png"
-        xlabel = "Relative Difference between Predictive Uncertainty and True MRE"
+        xlabel = "Relative Difference between Uncertainty Estimate and True Error"
 
     plt.xlabel(xlabel)
     plt.ylabel("Smoothed Histogram Count")
     # Move the legend outside the plot area on the right, centered vertically
-    plt.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
     if show_title:
         plt.title(title)
@@ -2898,7 +2904,7 @@ def rel_errors_and_uq(
 
     for i, surrogate in enumerate(mean_errors.keys()):
         mean = np.mean(mean_errors[surrogate])
-        mean_label = f"{surrogate} Mean = {mean*100:.2f} %"
+        mean_label = f"{surrogate} Mean={mean*100:.2f} %"
         ax1.plot(
             timesteps,
             mean_errors[surrogate],
@@ -2907,7 +2913,7 @@ def rel_errors_and_uq(
             linestyle=linestyles[0],
         )
         median = np.mean(median_errors[surrogate])
-        median_label = f"{surrogate} Median = {median*100:.2f} %"
+        median_label = f"{surrogate} Median={median*100:.2f} %"
         ax1.plot(
             timesteps,
             median_errors[surrogate],
