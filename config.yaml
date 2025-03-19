@@ -32,7 +32,7 @@ uncertainty:
   ensemble_size: 5  # Number of models for deep ensemble
 
 # Evaluations during benchmark
-losses: False
+losses: True
 gradients: False
 timing: False
 compute: False
