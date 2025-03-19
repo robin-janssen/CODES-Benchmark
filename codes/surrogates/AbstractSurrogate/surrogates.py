@@ -198,10 +198,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         """
         pass
 
-    def predict(
-        self,
-        data_loader: DataLoader,
-    ) -> tuple[Tensor, Tensor]:
+    def predict(self, data_loader: DataLoader) -> tuple[Tensor, Tensor]:
         """
         Evaluate the model on the given dataloader.
 
@@ -212,7 +209,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
         Returns:
             tuple[Tensor, Tensor]: The predictions and targets.
         """
-
         # infer output size
         with torch.inference_mode():
             dummy_inputs = next(iter(data_loader))
@@ -231,16 +227,27 @@ class AbstractSurrogateModel(ABC, nn.Module):
         processed_samples = 0
 
         with torch.inference_mode():
-            for i, inputs in enumerate(data_loader):
+            for inputs in data_loader:
                 preds, targs = self.forward(inputs)
-                batch_size = preds.shape[0]
-                predictions[i * batch_size : (i + 1) * batch_size, ...] = preds
-                targets[i * batch_size : (i + 1) * batch_size, ...] = targs
-                processed_samples += batch_size
+                current_batch_size = preds.shape[0]  # get actual batch size
+                predictions[
+                    processed_samples : processed_samples + current_batch_size, ...
+                ] = preds
+                targets[
+                    processed_samples : processed_samples + current_batch_size, ...
+                ] = targs
+                processed_samples += current_batch_size
 
         # Slice the buffers to include only the processed samples
         predictions = predictions[:processed_samples, ...]
         targets = targets[:processed_samples, ...]
+
+        targets_numpy = (
+            targets.cpu()
+            .detach()
+            .numpy()
+            .reshape(-1, self.n_timesteps, self.n_chemicals)
+        )
 
         predictions = self.denormalize(predictions)
         targets = self.denormalize(targets)
