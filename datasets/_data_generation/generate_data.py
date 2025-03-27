@@ -286,15 +286,17 @@ def main():
         seed=args.seed,
     )
 
-    # Save datasets
+    # Optional: If you have fixed parameters for each sample, generate them here.
+
+    # Save datasets using the new unified "data" argument (as a tuple)
     try:
         create_dataset(
             name=args.name,
-            train_data=data_train,
-            test_data=data_test,
-            val_data=data_val,
+            data=(data_train, data_test, data_val),
             timesteps=timesteps,
             labels=labels,
+            # Uncomment the following line to include parameters:
+            # params=(params_train, params_test, params_val)
         )
         logging.info(f"Dataset '{args.name}' created successfully.")
     except FileExistsError:

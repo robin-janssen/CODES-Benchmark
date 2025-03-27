@@ -154,6 +154,22 @@ def training_run(
         normalisation_mode=config["dataset"]["normalise"],
     )
 
+    # Load full data and parameters
+    (
+        (train_data, test_data, val_data),
+        _,
+        timesteps,
+        _,
+        _,
+        _,
+    ) = check_and_load_data(
+        config["dataset"]["name"],
+        verbose=False,
+        log=config["dataset"]["log10_transform"],
+        normalisation_mode=config["dataset"]["normalise"],
+        tolerance=config["dataset"]["tolerance"],
+    )
+
     subset_factor = config["dataset"].get("subset_factor", 1)
     train_data, test_data, timesteps = get_data_subset(
         train_data, test_data, timesteps, "sparse", subset_factor

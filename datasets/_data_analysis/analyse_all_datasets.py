@@ -27,6 +27,7 @@ def main():
     Main function to analyse the dataset. It checks the dataset and loads the data.
     """
     datasets = [
+        "primordial_mod",
         "simple_ode",
         "coupled_oscillators",
         "simple_reaction",
@@ -38,7 +39,7 @@ def main():
         "branca24",
         "branca_norad",
     ]
-    debug = False
+    debug = True
     # Load full data
     for dataset in datasets:
         log = dataset_dict[dataset]["log"]
@@ -46,9 +47,8 @@ def main():
         tolerance = dataset_dict[dataset]["tol"]
         download_data(dataset)
         (
-            full_train_data,
-            full_test_data,
-            full_val_data,
+            (full_train_data, full_test_data, full_val_data),
+            _,
             timesteps,
             _,
             _,
@@ -105,7 +105,7 @@ def main():
                 full_data,
                 labels,
                 max_quantities=10,
-                threshold=1.2,
+                threshold=2,
                 max_faulty=5,
                 quantities_per_plot=qpp,
             )

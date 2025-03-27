@@ -45,48 +45,55 @@ def train_and_save_model(
     threadlock: threading.Lock = DummyLock(),
 ):
     """
-    Train and save a model for a specific benchmark mode. The parameters are determined
-    by the task(s) which is created from the config file.
-    Threadlock is used to make the training deterministic. In the single-threaded case,
-    uses a dummy lock instead.
+    Train and save a model for a specific benchmark mode.
 
     Args:
         surr_name (str): The name of the surrogate model.
-        mode (str): The benchmark mode (e.g. "main", "interpolation", "extrapolation").
+        mode (str): The benchmark mode.
         metric (int): The metric for the benchmark mode.
         training_id (str): The training ID for the current training session.
-        seed (int, optional): The random seed for the training. Defaults to None.
-        epochs (int, optional): The number of epochs for the training. Defaults to None.
-        device (str, optional): The device for the training. Defaults to "cpu".
-        position (int, optional): The position of the model in the task list. Defaults to 1.
-        threadlock (threading.Lock, optional): A lock to prevent threading issues with PyTorch. Defaults to None.
+        seed (int, optional): Random seed for training.
+        epochs (int, optional): Number of training epochs.
+        device (str, optional): Device to run training on.
+        position (int, optional): Model position in the task list.
+        threadlock (threading.Lock, optional): Lock for deterministic threading.
     """
     config_path = f"trained/{training_id}/config.yaml"
     config = load_and_save_config(config_path, save=False)
 
-    # Load full data
-    full_train_data, full_test_data, _, timesteps, _, data_params, _ = (
-        check_and_load_data(
-            config["dataset"]["name"],
-            verbose=False,
-            log=config["dataset"]["log10_transform"],
-            normalisation_mode=config["dataset"]["normalise"],
-            tolerance=config["dataset"]["tolerance"],
-        )
+    # Load full data and parameters
+    (
+        (full_train_data, full_test_data, full_val_data),
+        (full_train_params, full_test_params, full_val_params),
+        timesteps,
+        _,
+        data_params,
+        _,
+    ) = check_and_load_data(
+        config["dataset"]["name"],
+        verbose=False,
+        log=config["dataset"]["log10_transform"],
+        normalisation_mode=config["dataset"]["normalise"],
+        tolerance=config["dataset"]["tolerance"],
     )
 
     # Get the appropriate data subset
     train_data, test_data, timesteps = get_data_subset(
         full_train_data, full_test_data, timesteps, mode, metric
     )
+    # Slice parameter subsets if they exist.
+    if full_train_params is not None and full_test_params is not None:
+        train_params, test_params, _ = get_data_subset(
+            full_train_params, full_test_params, timesteps, mode, metric
+        )
+    else:
+        train_params = test_params = None
 
     _, n_timesteps, n_chemicals = train_data.shape
 
-    # Get the surrogate class
     surrogate_class = get_surrogate(surr_name)
     model_config = get_model_config(surr_name, config)
 
-    # Apply threadlock to avoid issues with PyTorch
     with threadlock:
         set_random_seeds(seed, device)
         model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
@@ -97,6 +104,7 @@ def train_and_save_model(
 
     with threadlock:
         set_random_seeds(seed, device)
+        # Pass the parameter subsets (if any) to prepare_data.
         train_loader, test_loader, _ = model.prepare_data(
             dataset_train=train_data,
             dataset_test=test_data,
@@ -104,11 +112,12 @@ def train_and_save_model(
             timesteps=timesteps,
             batch_size=batch_size,
             shuffle=True,
+            dataset_train_params=train_params,
+            dataset_test_params=test_params,
         )
 
     description = make_description(mode, device, str(metric), surr_name)
 
-    # Train the model
     model.fit(
         train_loader=train_loader,
         test_loader=test_loader,
@@ -117,7 +126,6 @@ def train_and_save_model(
         description=description,
     )
 
-    # Save the model (making the name lowercase and removing any underscores)
     model_name = f"{surr_name.lower()}_{mode}_{str(metric)}".strip("_")
     model_name = model_name.replace("__", "_")
     base_dir = os.path.join(os.getcwd(), "trained")
