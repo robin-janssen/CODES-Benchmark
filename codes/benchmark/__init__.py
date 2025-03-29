@@ -70,6 +70,7 @@ from .bench_utils import (
     convert_dict_to_scientific_notation,
     make_comparison_csv,
     get_model_config,
+    measure_inference_time,
 )
 
 __all__ = [
@@ -140,4 +141,5 @@ __all__ = [
     "convert_dict_to_scientific_notation",
     "make_comparison_csv",
     "get_model_config",
+    "measure_inference_time",
 ]

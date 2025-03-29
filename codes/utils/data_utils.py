@@ -474,12 +474,13 @@ class DownloadProgressBar(tqdm):
         self.update(b * bsize - self.n)
 
 
-def download_data(dataset_name: str, path: str | None = None):
+def download_data(dataset_name: str, path: str | None = None, verbose: bool = True):
     """
     Download the specified dataset if it is not present, with a progress bar.
     Args:
         dataset_name (str): The name of the dataset.
         path (str, optional): The path to save the dataset. If None, the default data directory is used.
+        verbose (bool): Whether to print information about the download progress.
     """
     data_path = (
         os.path.abspath(f"datasets/{dataset_name.lower()}/data.hdf5")
@@ -487,7 +488,8 @@ def download_data(dataset_name: str, path: str | None = None):
         else os.path.abspath(path)
     )
     if os.path.isfile(data_path):
-        print(f"Dataset '{dataset_name}' already exists at {data_path}.")
+        if verbose:
+            print(f"Dataset '{dataset_name}' already exists at {data_path}.")
         return
 
     with open("datasets/data_sources.yaml", "r", encoding="utf-8") as file:

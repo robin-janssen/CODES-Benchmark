@@ -8,8 +8,11 @@ from dataclasses import asdict
 import numpy as np
 import torch
 import yaml
+from torch.utils.data import DataLoader
 
 from codes.surrogates import SurrogateModel, surrogate_classes
+
+import time
 
 
 def check_surrogate(surrogate: str, conf: dict) -> None:
@@ -667,3 +670,32 @@ def get_model_config(surr_name: str, config: dict) -> dict:
         model_config = {}
 
     return model_config
+
+
+def measure_inference_time(
+    model,
+    test_loader: DataLoader,
+    n_runs: int = 5,
+) -> list[float]:
+    """
+    Measure total inference time over a DataLoader across multiple runs.
+
+    Args:
+        model: Model instance with a `.forward()` method.
+        test_loader (DataLoader): Loader with test data.
+        n_runs (int): Number of repeated runs for averaging.
+
+    Returns:
+        list[float]: List of total inference times per run (in seconds).
+    """
+    inference_times = []
+    for _ in range(n_runs):
+        total_time = 0
+        with torch.inference_mode():
+            for inputs in test_loader:
+                start_time = time.perf_counter()
+                _, _ = model.forward(inputs)
+                end_time = time.perf_counter()
+                total_time += end_time - start_time
+        inference_times.append(total_time)
+    return inference_times

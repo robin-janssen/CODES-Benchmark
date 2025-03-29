@@ -286,6 +286,7 @@ class MultiONet(OperatorNetwork):
         epochs: int,
         position: int = 0,
         description: str = "Training DeepONet",
+        multi_objective: bool = False,
     ) -> None:
         """
         Train the MultiONet model.
@@ -296,6 +297,8 @@ class MultiONet(OperatorNetwork):
             epochs (int, optional): The number of epochs to train the model.
             position (int): The position of the progress bar.
             description (str): The description for the progress bar.
+            multi_objective (bool): Whether multi-objective optimization is used. 
+                                    If True, trial.report is not used (not supported by Optuna).
 
         Returns:
             None. The training loss, test loss, and MAE are stored in the model.
@@ -332,7 +335,8 @@ class MultiONet(OperatorNetwork):
                 print_loss = f"{test_losses[epoch].item():.2e}"
                 progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
 
-                if self.optuna_trial is not None:
+                if self.optuna_trial is not None and not multi_objective:
+                    # Report the loss to Optuna
                     if epoch % self.trial_update_epochs == 0:
                         self.optuna_trial.report(loss, epoch)
                         if self.optuna_trial.should_prune():

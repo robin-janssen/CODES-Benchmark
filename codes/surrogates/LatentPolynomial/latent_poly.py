@@ -141,6 +141,7 @@ class LatentPoly(AbstractSurrogateModel):
         epochs: int,
         position: int = 0,
         description: str = "Training LatentPoly",
+        multi_objective: bool = False,
     ) -> None:
         """
         Fits the model to the training data. Sets the train_loss and test_loss attributes.
@@ -152,6 +153,8 @@ class LatentPoly(AbstractSurrogateModel):
             epochs (int | None): The number of epochs to train the model. If None, uses the value from the config.
             position (int): The position of the progress bar.
             description (str): The description for the progress bar.
+            multi_objective (bool): Whether multi-objective optimization is used.
+                                    If True, trial.report is not used (not supported by Optuna).
         """
         # optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
         optimizer = AdamWScheduleFree(
@@ -198,7 +201,7 @@ class LatentPoly(AbstractSurrogateModel):
                 print_loss = f"{test_losses[epoch].item():.2e}"
                 progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
 
-                if self.optuna_trial is not None:
+                if self.optuna_trial is not None and not multi_objective:
                     if epoch % self.trial_update_epochs == 0:
                         self.optuna_trial.report(loss, epoch)
                         if self.optuna_trial.should_prune():
