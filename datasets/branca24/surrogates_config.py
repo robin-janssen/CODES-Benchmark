@@ -24,7 +24,7 @@ class LatentNeuralODEConfig:
     learning_rate: float = 0.003
     ode_activation: nn.Module = nn.Tanh()
     ode_tanh_reg: bool = True
-    coder_activation: nn.Module = nn.Tanh()
+    activation: nn.Module = nn.Tanh()
 
 
 @dataclass
@@ -45,4 +45,4 @@ class LatentPolyConfig:
     degree: int = 1
     learning_rate: float = 5e-4
     layers_factor: int = 50
-    coder_activation: nn.Module = nn.GELU()
+    activation: nn.Module = nn.GELU()

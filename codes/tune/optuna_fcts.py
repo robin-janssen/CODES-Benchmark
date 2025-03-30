@@ -14,7 +14,7 @@ from codes.benchmark.bench_utils import (
     measure_inference_time,
 )
 from codes.utils import check_and_load_data, make_description, set_random_seeds
-from codes.utils.data_utils import download_data, get_data_subset
+from codes.utils.data_utils import get_data_subset
 
 
 def load_yaml_config(config_path: str) -> dict:
@@ -182,6 +182,7 @@ def training_run(
     model_config = get_model_config(surr_name, config)
     model_config.update(suggested_params)
     model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
+    model.normalisation = data_params
     model.optuna_trial = trial
     model.trial_update_epochs = 10
 

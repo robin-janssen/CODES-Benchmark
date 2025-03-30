@@ -29,7 +29,7 @@ def main(args):
     model and train the models sequentially or in parallel depending on the number of
     devices.
 
-    Args:sc
+    Args:
         args (Namespace): The command line arguments.
     """
     torch.use_deterministic_algorithms(True)

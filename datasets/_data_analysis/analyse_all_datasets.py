@@ -27,18 +27,21 @@ def main():
     Main function to analyse the dataset. It checks the dataset and loads the data.
     """
     datasets = [
-        "simple_ode",
-        "coupled_oscillators",
         "simple_reaction",
-        "osu2008",
-        "simple_primordial",
+        "osutest2",
+        "coupled_oscillators",
         "lotka_volterra",
-        "branca_large_kyr",
-        "branca_large_myr",
-        "branca24",
-        "branca_norad",
+        "simple_ode",
+        # "osutest",
+        # "osu2008",
+        # "simple_primordial",
+        # "branca_large_kyr",
+        # "branca_large_myr",
+        # "branca24",
+        # "branca_norad",
     ]
-    debug = False
+    debug = True
+    TITLE = True
     # Load full data
     for dataset in datasets:
         log = dataset_dict[dataset]["log"]
@@ -74,18 +77,23 @@ def main():
             max_quantities=num_chems,
             quantities_per_plot=qpp,
             max_trajectories=1000,
+            timesteps=timesteps,
+            log=log,
+            log_time=dataset_dict[dataset].get("log_time", False),
+            show_title=TITLE,
         )
 
         plot_example_trajectories(
             dataset,
-            full_train_data,
+            full_data,
             timesteps,
             num_chemicals=num_chems,
             save=True,
             labels=labels,
-            sample_idx=7,
+            sample_idx=863,
             log=log,
             quantities_per_plot=qpp,
+            show_title=TITLE,
         )
 
         # Plot initial conditions distribution
@@ -97,6 +105,7 @@ def main():
             max_quantities=453,
             log=log,
             quantities_per_plot=qpp,
+            show_title=TITLE,
         )
 
         if debug:
