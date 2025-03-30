@@ -561,7 +561,8 @@ Required for Optuna to suggest activation functions.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.optuna_fcts.training_run">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.optuna_fcts.</span></span><span class="sig-name descname"><span class="pre">training_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.optuna_fcts.training_run" title="Link to this definition">#</a></dt>
-<dd><p>Run the training for a single Optuna trial and return the loss.</p>
+<dd><p>Run the training for a single Optuna trial and return the loss.
+In multi-objective mode, also returns the mean inference time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -572,7 +573,8 @@ Required for Optuna to suggest activation functions.</p>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Loss value.</p>
+<dd class="field-even"><p>Loss value in single objective mode.
+tuple[float, float]: (loss, mean_inference_time) in multi objective mode.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
@@ -732,7 +734,8 @@ Required for Optuna to suggest activation functions.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.training_run">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">training_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.training_run" title="Link to this definition">#</a></dt>
-<dd><p>Run the training for a single Optuna trial and return the loss.</p>
+<dd><p>Run the training for a single Optuna trial and return the loss.
+In multi-objective mode, also returns the mean inference time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -743,7 +746,8 @@ Required for Optuna to suggest activation functions.</p>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Loss value.</p>
+<dd class="field-even"><p>Loss value in single objective mode.
+tuple[float, float]: (loss, mean_inference_time) in multi objective mode.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>

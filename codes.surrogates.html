@@ -1181,20 +1181,25 @@ the output of which is of a lower dimension than the input.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.FullyConnected.fit">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Training</span> <span class="pre">FullyConnected'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.FullyConnected.fit" title="Link to this definition">#</a></dt>
-<dd><p>Perform the training of the model. Sets the train_loss and test_loss attributes.</p>
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Training</span> <span class="pre">FullyConnected'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_objective</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.FullyConnected.fit" title="Link to this definition">#</a></dt>
+<dd><p>Train the FullyConnected model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>train_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the training data.</p></li>
-<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the testing data.</p></li>
-<li><p><strong>epochs</strong> (<em>int</em>) – The number of epochs to train the model for.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
+<li><p><strong>epochs</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of epochs to train the model.</p></li>
 <li><p><strong>position</strong> (<em>int</em>) – The position of the progress bar.</p></li>
-<li><p><strong>description</strong> (<em>str</em>) – The description of the progress bar.</p></li>
+<li><p><strong>description</strong> (<em>str</em>) – The description for the progress bar.</p></li>
+<li><p><strong>multi_objective</strong> (<em>bool</em>) – Whether multi-objective optimization is used.
+If True, trial.report is not used (not supported by Optuna).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None. The training loss, test loss, and MAE are stored in the model.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1314,7 +1319,7 @@ the training data. Sets the train_loss and test_loss attributes.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Training</span> <span class="pre">LatentNeuralODE'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id2" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Training</span> <span class="pre">LatentNeuralODE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_objective</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id2" title="Link to this definition">#</a></dt>
 <dd><p>Fits the model to the training data. Sets the train_loss and test_loss attributes.
 After 10 epochs, the loss weights are renormalized to scale the individual loss terms.</p>
 <dl class="field-list simple">
@@ -1325,6 +1330,8 @@ After 10 epochs, the loss weights are renormalized to scale the individual loss 
 <li><p><strong>epochs</strong> (<em>int</em><em> | </em><em>None</em>) – The number of epochs to train the model. If None, uses the value from the config.</p></li>
 <li><p><strong>position</strong> (<em>int</em>) – The position of the progress bar.</p></li>
 <li><p><strong>description</strong> (<em>str</em>) – The description for the progress bar.</p></li>
+<li><p><strong>multi_objective</strong> (<em>bool</em>) – Whether multi-objective optimization is used.
+If True, trial.report is not used (not supported by Optuna).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -1469,7 +1476,7 @@ Includes an Encoder, Decoder and learnable Polynomial.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Training</span> <span class="pre">LatentPoly'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id4" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Training</span> <span class="pre">LatentPoly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_objective</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id4" title="Link to this definition">#</a></dt>
 <dd><p>Fits the model to the training data. Sets the train_loss and test_loss attributes.
 After 10 epochs, the loss weights are renormalized to scale the individual loss terms.</p>
 <dl class="field-list simple">
@@ -1480,6 +1487,8 @@ After 10 epochs, the loss weights are renormalized to scale the individual loss 
 <li><p><strong>epochs</strong> (<em>int</em><em> | </em><em>None</em>) – The number of epochs to train the model. If None, uses the value from the config.</p></li>
 <li><p><strong>position</strong> (<em>int</em>) – The position of the progress bar.</p></li>
 <li><p><strong>description</strong> (<em>str</em>) – The description for the progress bar.</p></li>
+<li><p><strong>multi_objective</strong> (<em>bool</em>) – Whether multi-objective optimization is used.
+If True, trial.report is not used (not supported by Optuna).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -1936,7 +1945,7 @@ splitting the outputs of branch and trunk networks and calculating the scalar pr
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.MultiONet.fit">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Training</span> <span class="pre">DeepONet'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.MultiONet.fit" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Training</span> <span class="pre">DeepONet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_objective</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.MultiONet.fit" title="Link to this definition">#</a></dt>
 <dd><p>Train the MultiONet model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1946,6 +1955,8 @@ splitting the outputs of branch and trunk networks and calculating the scalar pr
 <li><p><strong>epochs</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of epochs to train the model.</p></li>
 <li><p><strong>position</strong> (<em>int</em>) – The position of the progress bar.</p></li>
 <li><p><strong>description</strong> (<em>str</em>) – The description for the progress bar.</p></li>
+<li><p><strong>multi_objective</strong> (<em>bool</em>) – Whether multi-objective optimization is used.
+If True, trial.report is not used (not supported by Optuna).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
