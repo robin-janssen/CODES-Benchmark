@@ -35,8 +35,8 @@ def dataloaders(instance):
 def test_init(instance):
     assert instance.device == DEVICE, f"device is wrong: {instance.device} != {DEVICE}"
     assert (
-        instance.n_chemicals == N_CHEMICALS
-    ), f"n_chemicals is wrong: {instance.n_chemicals} != {N_CHEMICALS}"
+        instance.n_quantities == N_CHEMICALS
+    ), f"n_quantities is wrong: {instance.n_quantities} != {N_CHEMICALS}"
     assert (
         instance.n_timesteps == N_TIMESTEPS
     ), f"n_timesteps is wrong: {instance.n_timesteps} != {N_TIMESTEPS}"

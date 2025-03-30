@@ -16,7 +16,7 @@ def plot_example_trajectories(
     dataset_name: str,
     data: np.ndarray,
     timesteps: np.ndarray,
-    num_chemicals: int = 10,
+    num_quantities: int = 10,
     labels: list[str] | None = None,
     save: bool = False,
     sample_idx: int = 0,
@@ -24,14 +24,14 @@ def plot_example_trajectories(
     quantities_per_plot: int = 6,
     show_title: bool = True,
 ) -> None:
-    num_chemicals = min(data.shape[2], num_chemicals)
-    data = data[sample_idx, :, :num_chemicals]
+    num_quantities = min(data.shape[2], num_quantities)
+    data = data[sample_idx, :, :num_quantities]
     labels = (
-        labels[:num_chemicals]
+        labels[:num_quantities]
         if labels is not None
-        else [f"Quantity {i+1}" for i in range(num_chemicals)]
+        else [f"Quantity {i+1}" for i in range(num_quantities)]
     )
-    num_plots = math.ceil(num_chemicals / quantities_per_plot)
+    num_plots = math.ceil(num_quantities / quantities_per_plot)
     nrows, ncols = compute_subplot_layout(num_plots)
 
     fig, axes = plt.subplots(nrows, ncols, figsize=(8 * ncols, 4 * nrows), sharex=True)
@@ -41,7 +41,7 @@ def plot_example_trajectories(
     for plot_idx in range(num_plots):
         ax = axes[plot_idx]
         start = plot_idx * quantities_per_plot
-        end = min((plot_idx + 1) * quantities_per_plot, num_chemicals)
+        end = min((plot_idx + 1) * quantities_per_plot, num_quantities)
         for chem_idx in range(start, end):
             label = (
                 labels[chem_idx] if labels is not None else f"Quantity {chem_idx + 1}"
@@ -96,7 +96,7 @@ def plot_example_trajectories_paper(
     labels: list[str] | None = None,
 ) -> None:
     """
-    Plot example trajectories for the dataset with two subplots, one showing 15 chemicals and another showing the remaining.
+    Plot example trajectories for the dataset with two subplots, one showing 15 quantities and another showing the remaining.
 
     Args:
         dataset_name (str): The name of the dataset.
@@ -104,45 +104,45 @@ def plot_example_trajectories_paper(
         timesteps (np.ndarray): Timesteps array.
         save (bool, optional): Whether to save the plot as a file.
         sample_idx (int, optional): Index of the sample to plot.
-        labels (list, optional): List of labels for the chemicals.
+        labels (list, optional): List of labels for the quantities.
     """
     # Ensure we are plotting the correct sample
     data = data[sample_idx]
 
-    # Define the number of chemicals per subplot
-    total_chemicals = data.shape[1]
-    num_chemicals_subplots = [
-        total_chemicals // 2,
-        total_chemicals - total_chemicals // 2,
+    # Define the number of quantities per subplot
+    total_quantities = data.shape[1]
+    num_quantities_subplots = [
+        total_quantities // 2,
+        total_quantities - total_quantities // 2,
     ]
 
-    # Ensure the labels list matches the number of chemicals
+    # Ensure the labels list matches the number of quantities
     if labels is not None:
         assert (
-            len(labels) == total_chemicals
-        ), "Labels must match the number of chemicals."
+            len(labels) == total_quantities
+        ), "Labels must match the number of quantities."
 
     # Create subplots
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4), sharey=True)
 
     # Define color palettes
     colors1 = plt.cm.viridis(
-        np.linspace(0, 0.95, num_chemicals_subplots[0])
-    )  # First 15 chemicals
+        np.linspace(0, 0.95, num_quantities_subplots[0])
+    )  # First 15 quantities
     colors2 = plt.cm.viridis(
-        np.linspace(0, 0.95, num_chemicals_subplots[1])
-    )  # Remaining 14 chemicals
+        np.linspace(0, 0.95, num_quantities_subplots[1])
+    )  # Remaining 14 quantities
 
-    # Plot first set of chemicals on ax1
-    for chem_idx in range(num_chemicals_subplots[0]):
+    # Plot first set of quantities on ax1
+    for chem_idx in range(num_quantities_subplots[0]):
         color = colors1[chem_idx]
         gt = data[:, chem_idx]
         label = labels[chem_idx] if labels is not None else f"Chemical {chem_idx + 1}"
         ax1.plot(timesteps, gt, "-", color=color, label=label)
 
-    # Plot second set of chemicals on ax2
-    for chem_idx in range(num_chemicals_subplots[0], total_chemicals):
-        color = colors2[chem_idx - num_chemicals_subplots[0]]
+    # Plot second set of quantities on ax2
+    for chem_idx in range(num_quantities_subplots[0], total_quantities):
+        color = colors2[chem_idx - num_quantities_subplots[0]]
         gt = data[:, chem_idx]
         label = labels[chem_idx] if labels is not None else f"Chemical {chem_idx + 1}"
         ax2.plot(timesteps, gt, "-", color=color, label=label)
@@ -223,7 +223,7 @@ def plot_example_trajectories_poster(
     labels: list[str] | None = None,
 ) -> None:
     """
-    Plot example trajectories for the dataset with two subplots, one showing 15 chemicals and another showing the remaining.
+    Plot example trajectories for the dataset with two subplots, one showing 15 quantities and another showing the remaining.
 
     Args:
         dataset_name (str): The name of the dataset.
@@ -231,23 +231,23 @@ def plot_example_trajectories_poster(
         timesteps (np.ndarray): Timesteps array.
         save (bool, optional): Whether to save the plot as a file.
         sample_idx (int, optional): Index of the sample to plot.
-        labels (list, optional): List of labels for the chemicals.
+        labels (list, optional): List of labels for the quantities.
     """
     # Ensure we are plotting the correct sample
     data = data[sample_idx]
 
-    # Define the number of chemicals per subplot
-    total_chemicals = data.shape[1]
-    num_chemicals_subplots = [
-        total_chemicals // 2,
-        total_chemicals - total_chemicals // 2,
+    # Define the number of quantities per subplot
+    total_quantities = data.shape[1]
+    num_quantities_subplots = [
+        total_quantities // 2,
+        total_quantities - total_quantities // 2,
     ]
 
-    # Ensure the labels list matches the number of chemicals
+    # Ensure the labels list matches the number of quantities
     if labels is not None:
         assert (
-            len(labels) == total_chemicals
-        ), "Labels must match the number of chemicals."
+            len(labels) == total_quantities
+        ), "Labels must match the number of quantities."
 
     # Create subplots
     fig, (ax1, ax2) = plt.subplots(
@@ -256,22 +256,22 @@ def plot_example_trajectories_poster(
 
     # Define color palettes
     colors1 = plt.cm.viridis(
-        np.linspace(0, 0.95, num_chemicals_subplots[0])
-    )  # First 15 chemicals
+        np.linspace(0, 0.95, num_quantities_subplots[0])
+    )  # First 15 quantities
     colors2 = plt.cm.viridis(
-        np.linspace(0, 0.95, num_chemicals_subplots[1])
-    )  # Remaining 14 chemicals
+        np.linspace(0, 0.95, num_quantities_subplots[1])
+    )  # Remaining 14 quantities
 
-    # Plot first set of chemicals on ax1
-    for chem_idx in range(num_chemicals_subplots[0]):
+    # Plot first set of quantities on ax1
+    for chem_idx in range(num_quantities_subplots[0]):
         color = colors1[chem_idx]
         gt = data[:, chem_idx]
         label = labels[chem_idx] if labels is not None else f"Chemical {chem_idx + 1}"
         ax1.plot(timesteps, gt, "-", color=color, label=label)
 
-    # Plot second set of chemicals on ax2
-    for chem_idx in range(num_chemicals_subplots[0], total_chemicals):
-        color = colors2[chem_idx - num_chemicals_subplots[0]]
+    # Plot second set of quantities on ax2
+    for chem_idx in range(num_quantities_subplots[0], total_quantities):
+        color = colors2[chem_idx - num_quantities_subplots[0]]
         gt = data[:, chem_idx]
         label = labels[chem_idx] if labels is not None else f"Chemical {chem_idx + 1}"
         ax2.plot(timesteps, gt, "-", color=color, label=label)
@@ -355,7 +355,7 @@ def plot_initial_conditions_distribution(
     dataset_name: str,
     train_data: np.ndarray,
     test_data: np.ndarray,
-    chemical_names: list[str] | None = None,
+    quantity_names: list[str] | None = None,
     max_quantities: int = 10,
     spread: float = 0.01,
     quantities_per_plot: int = 10,
@@ -368,21 +368,21 @@ def plot_initial_conditions_distribution(
 
     train_initial = train_data[:, 0, :max_quantities]
     test_initial = test_data[:, 0, :max_quantities]
-    num_chemicals = train_initial.shape[1]
+    num_quantities = train_initial.shape[1]
 
-    chemical_names = (
-        chemical_names[:num_chemicals]
-        if chemical_names is not None
-        else [f"Chemical {i+1}" for i in range(num_chemicals)]
+    quantity_names = (
+        quantity_names[:num_quantities]
+        if quantity_names is not None
+        else [f"Chemical {i+1}" for i in range(num_quantities)]
     )
-    num_plots = math.ceil(num_chemicals / quantities_per_plot)
+    num_plots = math.ceil(num_quantities / quantities_per_plot)
     nrows, ncols = compute_subplot_layout(num_plots)
 
     processed_train = []
     processed_test = []
     zero_counts_train = zero_counts_test = 0
 
-    for i in range(num_chemicals):
+    for i in range(num_quantities):
         train_cond = train_initial[:, i]
         test_cond = test_initial[:, i]
         if log:
@@ -412,7 +412,7 @@ def plot_initial_conditions_distribution(
     for plot_idx in range(num_plots):
         ax = axes[plot_idx]
         start = plot_idx * quantities_per_plot
-        end = min((plot_idx + 1) * quantities_per_plot, num_chemicals)
+        end = min((plot_idx + 1) * quantities_per_plot, num_quantities)
         for i in range(start, end):
             train_hist, _ = np.histogram(processed_train[i], bins=bins, density=True)
             train_smooth = gaussian_filter1d(train_hist, sigma=1)
@@ -422,7 +422,7 @@ def plot_initial_conditions_distribution(
             ax.plot(
                 x,
                 train_smooth,
-                label=chemical_names[i],
+                label=quantity_names[i],
                 color=colors[i % quantities_per_plot],
             )
             ax.plot(x, test_smooth, "--", color=colors[i % quantities_per_plot])
@@ -541,7 +541,7 @@ def compute_subplot_layout(num_plots: int) -> tuple[int, int]:
 def plot_all_trajectories_and_gradients(
     dataset_name: str,
     train_data: np.ndarray,
-    chemical_names: list[str] = None,
+    quantity_names: list[str] = None,
     timesteps: np.ndarray = None,
     max_quantities: int = 10,
     opacity: float = 0.01,
@@ -558,7 +558,7 @@ def plot_all_trajectories_and_gradients(
     Args:
         dataset_name (str): The name of the dataset (e.g., "osu2008").
         train_data (np.ndarray): Training dataset array of shape [n_samples, n_timesteps, n_quantities].
-        chemical_names (list, optional): List of chemical names for labeling the lines.
+        quantity_names (list, optional): List of quantity names for labeling the lines.
         timesteps (np.ndarray, optional): Array of timesteps for the x-axis.
         max_quantities (int, optional): Maximum number of quantities to plot. Default is 10.
         opacity (float, optional): Opacity of individual trajectories and gradients. Default is 0.01.
@@ -581,8 +581,8 @@ def plot_all_trajectories_and_gradients(
     # Restrict to the first `max_quantities` along the last axis
     max_quantities_to_use = min(max_quantities, train_data.shape[2])
     train_data = train_data[:, :, :max_quantities_to_use]
-    if chemical_names is not None:
-        chemical_names = chemical_names[:max_quantities_to_use]
+    if quantity_names is not None:
+        quantity_names = quantity_names[:max_quantities_to_use]
 
     # Compute subplot layout
     num_plots = math.ceil(max_quantities_to_use / quantities_per_plot)
@@ -628,8 +628,8 @@ def plot_all_trajectories_and_gradients(
         for i in range(start_idx, end_idx):
             color = colors[i % quantities_per_plot]
             label_name = (
-                chemical_names[i]
-                if chemical_names is not None and i < len(chemical_names)
+                quantity_names[i]
+                if quantity_names is not None and i < len(quantity_names)
                 else f"Quantity {i + 1}"
             )
 
@@ -667,7 +667,7 @@ def plot_all_trajectories_and_gradients(
             axes_traj[plot_idx].set_xscale("log")
         ylabel_traj = "log(Quantity)" if log else "Quantity"
         axes_traj[plot_idx].set_ylabel(ylabel_traj)
-        if chemical_names is not None:
+        if quantity_names is not None:
             axes_traj[plot_idx].legend(
                 loc="center left",
                 bbox_to_anchor=(1.02, 0.5),
@@ -682,7 +682,7 @@ def plot_all_trajectories_and_gradients(
             axes_grad[plot_idx].set_xscale("log")
         axes_grad[plot_idx].set_xlim(time[0], time[-1])
         axes_grad[plot_idx].set_ylabel("Gradient")
-        if chemical_names is not None:
+        if quantity_names is not None:
             axes_grad[plot_idx].legend(
                 loc="center left",
                 bbox_to_anchor=(1.02, 0.5),
@@ -751,7 +751,7 @@ def plot_all_trajectories_and_gradients(
 def debug_numerical_errors_plot(
     dataset_name: str,
     train_data: np.ndarray,
-    chemical_names: list[str] | None = None,
+    quantity_names: list[str] | None = None,
     max_quantities: int = 10,
     threshold: float = 0.1,
     max_faulty: int = 10,
@@ -764,7 +764,7 @@ def debug_numerical_errors_plot(
     Args:
         dataset_name (str): The name of the dataset.
         train_data (np.ndarray): Dataset array of shape [n_samples, n_timesteps, n_quantities].
-        chemical_names (list, optional): Names for each quantity.
+        quantity_names (list, optional): Names for each quantity.
         max_quantities (int, optional): Maximum number of quantities to plot. Default is 10.
         threshold (float, optional): Gradient threshold to define faulty trajectories. Default is 0.1.
         max_faulty (int, optional): Maximum number of faulty trajectories to plot. Default is 10.
@@ -779,10 +779,10 @@ def debug_numerical_errors_plot(
     num_quantities = min(max_quantities, n_quantities)
     train_data = train_data[:, :, :num_quantities]
 
-    if chemical_names is not None:
-        chemical_names = chemical_names[:num_quantities]
+    if quantity_names is not None:
+        quantity_names = quantity_names[:num_quantities]
     else:
-        chemical_names = [f"Quantity {i+1}" for i in range(num_quantities)]
+        quantity_names = [f"Quantity {i+1}" for i in range(num_quantities)]
 
     # Identify faulty trajectories
     gradients = np.gradient(train_data, axis=1)
@@ -797,8 +797,8 @@ def debug_numerical_errors_plot(
         dataset_name=dataset_name,
         train_data=train_data,
         faulty_indices=faulty_indices,
-        chemical_names=chemical_names,
-        max_chemicals=max_quantities,
+        quantity_names=quantity_names,
+        max_quantities=max_quantities,
         log=True,  # Set to False if data is not in log-space
         quantities_per_plot=quantities_per_plot,
     )
@@ -822,13 +822,13 @@ def debug_numerical_errors_plot(
 
         faulty_quantities = np.any(np.abs(traj_gradients) > threshold, axis=0)
         faulty_labels = [
-            chemical_names[q]
+            quantity_names[q]
             for q, is_faulty in enumerate(faulty_quantities)
             if is_faulty
         ]
 
         for q in range(num_quantities):
-            ax.plot(time, trajectory[:, q], label=chemical_names[q], linewidth=1.5)
+            ax.plot(time, trajectory[:, q], label=quantity_names[q], linewidth=1.5)
             if faulty_quantities[q]:
                 spike_timesteps = np.where(np.abs(traj_gradients[:, q]) > threshold)[0]
                 ax.scatter(
@@ -872,21 +872,21 @@ def plot_faulty_initial_conditions_distribution(
     dataset_name: str,
     train_data: np.ndarray,
     faulty_indices: np.ndarray,
-    chemical_names: list[str] | None = None,
-    max_chemicals: int = 10,
+    quantity_names: list[str] | None = None,
+    max_quantities: int = 10,
     log: bool = True,
     quantities_per_plot: int = 10,
     show_title: bool = True,
 ) -> None:
     """
-    Plot the distribution of initial conditions (t=0) for each chemical from faulty trajectories.
+    Plot the distribution of initial conditions (t=0) for each quantity from faulty trajectories.
 
     Args:
         dataset_name (str): The name of the dataset (e.g., "osu2008").
-        train_data (np.ndarray): Training dataset array of shape [num_samples, num_timesteps, num_chemicals].
+        train_data (np.ndarray): Training dataset array of shape [num_samples, num_timesteps, num_quantities].
         faulty_indices (np.ndarray): Indices of faulty trajectories within train_data.
-        chemical_names (list, optional): List of chemical names for labeling the lines.
-        max_chemicals (int, optional): Maximum number of chemicals to plot. Default is 10.
+        quantity_names (list, optional): List of quantity names for labeling the lines.
+        max_quantities (int, optional): Maximum number of quantities to plot. Default is 10.
         log (bool, optional): Whether the data is in log-space and should be exponentiated (i.e., data = 10**data).
         quantities_per_plot (int, optional): Number of quantities to plot per subplot. Default is 10.
     """
@@ -898,28 +898,28 @@ def plot_faulty_initial_conditions_distribution(
     faulty_data = train_data[faulty_indices, :, :]
     faulty_initial_conditions = faulty_data[:, 0, :]  # Extract t=0
 
-    # Cap the number of chemicals to plot at max_chemicals
-    num_chemicals = min(max_chemicals, faulty_initial_conditions.shape[1])
-    faulty_initial_conditions = faulty_initial_conditions[:, :num_chemicals]
+    # Cap the number of quantities to plot at max_quantities
+    num_quantities = min(max_quantities, faulty_initial_conditions.shape[1])
+    faulty_initial_conditions = faulty_initial_conditions[:, :num_quantities]
 
-    if chemical_names is not None:
-        chemical_names = chemical_names[:num_chemicals]
+    if quantity_names is not None:
+        quantity_names = quantity_names[:num_quantities]
     else:
-        chemical_names = [f"Chemical {i+1}" for i in range(num_chemicals)]
+        quantity_names = [f"Chemical {i+1}" for i in range(num_quantities)]
 
-    # Split the chemicals into groups of 10 for plotting
-    num_plots = int(np.ceil(num_chemicals / quantities_per_plot))
+    # Split the quantities into groups of 10 for plotting
+    num_plots = int(np.ceil(num_quantities / quantities_per_plot))
 
     # Initialize list to hold log-transformed non-zero initial conditions
     log_faulty_conditions = []
     zero_counts_faulty = 0
 
     # Transform data to log-space and filter out zeros
-    for i in range(num_chemicals):
-        faulty_chemical_conditions = faulty_initial_conditions[:, i]
+    for i in range(num_quantities):
+        faulty_quantity_conditions = faulty_initial_conditions[:, i]
 
-        non_zero_faulty_conditions = faulty_chemical_conditions[
-            faulty_chemical_conditions > 0
+        non_zero_faulty_conditions = faulty_quantity_conditions[
+            faulty_quantity_conditions > 0
         ]
 
         if log:
@@ -927,7 +927,7 @@ def plot_faulty_initial_conditions_distribution(
         else:
             log_faulty_conditions.append(non_zero_faulty_conditions)
 
-        zero_counts_faulty += np.sum(faulty_chemical_conditions == 0)
+        zero_counts_faulty += np.sum(faulty_quantity_conditions == 0)
 
     # Determine global min and max for histogram bins
     min_values = [np.min(cond) for cond in log_faulty_conditions if len(cond) > 0]
@@ -960,7 +960,7 @@ def plot_faulty_initial_conditions_distribution(
     for plot_idx in range(num_plots):
         ax = axes[plot_idx]
         start_idx = plot_idx * quantities_per_plot
-        end_idx = min((plot_idx + 1) * quantities_per_plot, num_chemicals)
+        end_idx = min((plot_idx + 1) * quantities_per_plot, num_quantities)
 
         for i in range(start_idx, end_idx):
             # Compute histogram for faulty dataset
@@ -974,14 +974,14 @@ def plot_faulty_initial_conditions_distribution(
             ax.plot(
                 10 ** faulty_bin_edges[:-1],  # Convert back to original scale
                 faulty_smoothed_hist,
-                label=chemical_names[i] if chemical_names is not None else None,
+                label=quantity_names[i] if quantity_names is not None else None,
                 color=colors[i % quantities_per_plot],
             )
 
         ax.set_yscale("linear")
         ax.set_ylabel("Density (PDF)")
         ax.set_xlim(10**x_min, 10**x_max)
-        if chemical_names is not None:
+        if quantity_names is not None:
             ax.legend(
                 loc="center left",
                 bbox_to_anchor=(

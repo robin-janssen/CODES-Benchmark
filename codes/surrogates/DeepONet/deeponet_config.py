@@ -2,8 +2,6 @@ from dataclasses import dataclass
 
 from torch import nn
 
-# from data.osu2008.osu_chemicals import osu_masses
-
 
 @dataclass
 class MultiONetBaseConfig:

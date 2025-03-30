@@ -35,13 +35,13 @@ class LatentPoly(AbstractSurrogateModel):
     def __init__(
         self,
         device: str | None = None,
-        n_chemicals: int = 29,
+        n_quantities: int = 29,
         n_timesteps: int = 100,
         model_config: dict | None = None,
     ):
         super().__init__(
             device=device,
-            n_chemicals=n_chemicals,
+            n_quantities=n_quantities,
             n_timesteps=n_timesteps,
             config=model_config,
         )
@@ -50,7 +50,7 @@ class LatentPoly(AbstractSurrogateModel):
         self.config.coder_layers = [
             layer * self.config.layers_factor for layer in coder_layers
         ]
-        self.config.in_features = n_chemicals
+        self.config.in_features = n_quantities
         self.model = PolynomialModelWrapper(config=self.config, device=self.device)
 
     def forward(self, inputs) -> tuple[torch.Tensor, torch.Tensor]:

@@ -68,13 +68,13 @@ def main():
             [full_train_data, full_test_data, full_val_data], axis=0
         )
 
-        num_chems = full_data.shape[2]
+        num_quantities = full_data.shape[2]
 
         plot_all_trajectories_and_gradients(
             dataset,
             full_data,
             labels,
-            max_quantities=num_chems,
+            max_quantities=num_quantities,
             quantities_per_plot=qpp,
             max_trajectories=1000,
             timesteps=timesteps,
@@ -87,7 +87,7 @@ def main():
             dataset,
             full_data,
             timesteps,
-            num_chemicals=num_chems,
+            num_quantities=num_quantities,
             save=True,
             labels=labels,
             sample_idx=863,
@@ -101,7 +101,7 @@ def main():
             dataset,
             full_train_data,
             full_val_data,
-            chemical_names=labels,
+            quantity_names=labels,
             max_quantities=453,
             log=log,
             quantities_per_plot=qpp,

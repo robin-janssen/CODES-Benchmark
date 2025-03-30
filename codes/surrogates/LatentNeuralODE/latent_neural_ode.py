@@ -41,13 +41,13 @@ class LatentNeuralODE(AbstractSurrogateModel):
     def __init__(
         self,
         device: str | None = None,
-        n_chemicals: int = 29,
+        n_quantities: int = 29,
         n_timesteps: int = 100,
         model_config: dict | None = None,
     ):
         super().__init__(
             device=device,
-            n_chemicals=n_chemicals,
+            n_quantities=n_quantities,
             n_timesteps=n_timesteps,
             config=model_config,
         )
@@ -56,7 +56,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         self.config.coder_layers = [
             layer * self.config.layers_factor for layer in coder_layers
         ]
-        self.model = ModelWrapper(config=self.config, n_chemicals=n_chemicals).to(
+        self.model = ModelWrapper(config=self.config, n_quantities=n_quantities).to(
             device
         )
 
@@ -404,19 +404,19 @@ class ModelWrapper(torch.nn.Module):
         deriv2(x): Calculates the second derivative.
     """
 
-    def __init__(self, config, n_chemicals):
+    def __init__(self, config, n_quantities):
         super().__init__()
         self.config = config
         self.loss_weights = [100.0, 1.0, 1.0, 1.0]
 
         self.encoder = Encoder(
-            in_features=n_chemicals,
+            in_features=n_quantities,
             latent_features=config.latent_features,
             width_list=config.coder_layers,
             activation=config.activation,
         )
         self.decoder = Decoder(
-            out_features=n_chemicals,
+            out_features=n_quantities,
             latent_features=config.latent_features,
             width_list=config.coder_layers,
             activation=config.activation,

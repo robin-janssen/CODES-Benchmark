@@ -169,11 +169,11 @@ def training_run(
             suggested_params[key] = bool(strtobool(val))
 
     n_timesteps = train_data.shape[1]
-    n_chemicals = train_data.shape[2]
+    n_quantities = train_data.shape[2]
     surrogate_class = get_surrogate(surr_name)
     model_config = get_model_config(surr_name, config)
     model_config.update(suggested_params)
-    model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
+    model = surrogate_class(device, n_quantities, n_timesteps, model_config)
     model.normalisation = data_params
     model.optuna_trial = trial
     model.trial_update_epochs = 10
