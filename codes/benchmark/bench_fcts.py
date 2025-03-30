@@ -1,4 +1,3 @@
-import time
 from contextlib import redirect_stdout
 from typing import Any
 
@@ -40,6 +39,7 @@ from .bench_utils import (
     get_model_config,
     get_surrogate,
     make_comparison_csv,
+    measure_inference_time,
     measure_memory_footprint,
     save_table_csv,
     write_metrics_to_yaml,
@@ -349,13 +349,12 @@ def time_inference(
     n_runs: int = 5,
 ) -> dict[str, Any]:
     """
-    Time the inference of the surrogate model.
+    Time the inference of the surrogate model (full version with metrics).
 
     Args:
         model: Instance of the surrogate model class.
         surr_name (str): The name of the surrogate model.
         test_loader (DataLoader): The DataLoader object containing the test data.
-        timesteps (np.ndarray): The timesteps array.
         conf (dict): The configuration dictionary.
         n_test_samples (int): The number of test samples.
         n_runs (int, optional): Number of times to run the inference for timing.
@@ -366,34 +365,18 @@ def time_inference(
     training_id = conf["training_id"]
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
 
-    # Run inference multiple times and record the durations
-    inference_times = []
-    for _ in range(n_runs):
-        # _, _ = model.predict(data_loader=test_loader)
-        total_time = 0
-        with torch.inference_mode():
-            for inputs in test_loader:
-                start_time = time.perf_counter()
-                _, _ = model.forward(inputs)
-                end_time = time.perf_counter()
-                total_time += end_time - start_time
-        # total_time /= n_test_samples
-        inference_times.append(total_time)
+    inference_times = measure_inference_time(model, test_loader, n_runs=n_runs)
 
-    # Calculate metrics
     mean_inference_time = np.mean(inference_times)
     std_inference_time = np.std(inference_times)
 
-    # Store metrics
-    timing_metrics = {
+    return {
         "mean_inference_time_per_run": mean_inference_time,
         "std_inference_time_per_run": std_inference_time,
         "num_predictions": n_test_samples,
         "mean_inference_time_per_prediction": mean_inference_time / n_test_samples,
         "std_inference_time_per_prediction": std_inference_time / n_test_samples,
     }
-
-    return timing_metrics
 
 
 def evaluate_compute(
