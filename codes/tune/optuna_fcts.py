@@ -202,7 +202,7 @@ def training_run(
     loss = criterion(preds, targets).item()
     sname, _ = study_name.split("_")
 
-    savepath = os.path.join("optuna_runs", sname, "models")
+    savepath = os.path.join("tuned", sname, "models")
     os.makedirs(savepath, exist_ok=True)
     model_name = f"{surr_name.lower()}_{trial.number}"
     model.save(

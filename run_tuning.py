@@ -356,7 +356,7 @@ if __name__ == "__main__":
     """Main function to run the Optuna tuning."""
     nice_print("Starting Optuna tuning")
     args = parse_arguments()
-    config_path = os.path.join("optuna_runs", args.study_name, "optuna_config.yaml")
+    config_path = os.path.join("tuned", args.study_name, "optuna_config.yaml")
 
     # Derive study_folder_name from config_path
     study_folder_name = os.path.basename(os.path.dirname(config_path))
