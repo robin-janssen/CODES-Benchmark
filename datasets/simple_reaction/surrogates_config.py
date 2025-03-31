@@ -22,10 +22,11 @@ class LatentNeuralODEConfig:
     latent_features: int = 10
     layers_factor: int = 200
     learning_rate: float = 8e-6
-    ode_hidden: int = 7
-    ode_layer_width: int = 200
+    ode_layers: int = 7
+    ode_width: int = 200
     ode_tanh_reg: bool = False
     activation: nn.Module = nn.LeakyReLU()
+    model_version: str = "v1"
 
 
 @dataclass

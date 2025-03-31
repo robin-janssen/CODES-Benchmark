@@ -1,21 +1,44 @@
-from dataclasses import dataclass  # , field
+from dataclasses import dataclass
 
 from torch import nn
 
 
 @dataclass
 class LatentNeuralODEBaseConfig:
-    """Standard model config for LatentNeuralODE"""
+    """
+    Configuration for the LatentNeuralODE surrogate model.
 
+    This dataclass defines all hyperparameters required to configure the architecture
+    and training of a latent neural ODE. It supports both fixed and flexible encoder/decoder
+    structures depending on the `model_version` flag.
+
+    Attributes:
+        model_version (str): Indicates model architecture style.
+            - "v1": Fixed structure (e.g., 4–2–1 layout scaled by factor).
+            - "v2": Fully connected architecture with flexible depth/width.
+        latent_features (int): Size of the latent space (z-dimension).
+        layers_factor (int): Scaling factor for the number of neurons in the encoder/decoder.
+            - Used in "v1" to determine layer widths based on coder_hidden.
+        activation (nn.Module): Activation function used in encoder, decoder, and ODE blocks.
+        coder_layers (int): Number of hidden layers in both encoder and decoder (used in v2).
+        coder_width (int): Number of neurons per hidden layer in encoder/decoder (used in v2).
+        ode_layers (int): Number of hidden layers in the ODE module.
+        ode_width (int): Number of neurons in each hidden layer of the ODE module.
+        ode_tanh_reg (bool): Whether to apply tanh regularization in the ODE output.
+        rtol (float): Relative tolerance for the ODE solver.
+        atol (float): Absolute tolerance for the ODE solver.
+        learning_rate (float): Learning rate for the optimizer.
+    """
+
+    model_version: str = "v1"
     latent_features: int = 5
-    # coder_layers: list[int] = field(default_factory=lambda: [32, 16, 8])
-    activation: nn.Module = nn.ReLU()
-    ode_hidden: int = 4
-    ode_layer_width: int = 64
-    ode_tanh_reg: bool = True
     layers_factor: int = 8
+    activation: nn.Module = nn.ReLU()
+    coder_layers: int = 3
+    coder_width: int = 64
+    ode_layers: int = 4
+    ode_width: int = 64
+    ode_tanh_reg: bool = True
     rtol: float = 1e-5
     atol: float = 1e-5
-    t_steps = 100
     learning_rate: float = 1e-3
-    final_learning_rate: float = 1e-5
