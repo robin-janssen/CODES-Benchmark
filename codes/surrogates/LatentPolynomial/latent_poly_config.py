@@ -20,7 +20,7 @@ class LatentPolynomialBaseConfig:
         learning_rate (float): Learning rate for training.
     """
 
-    model_version: str = "v1"  # Default to new architecture.
+    model_version: str = "v2"  # Default to new architecture.
     latent_features: int = 5
     degree: int = 2
     coder_hidden: int = 4  # Used in v1 only.

@@ -740,15 +740,6 @@ def plot_surr_losses(
         mode="main",
         show_title=show_title,
     )
-    # plot_losses_dual_axis(
-    #     main_train_loss,
-    #     main_test_loss,
-    #     labels=("Train Loss", "Test Loss"),
-    #     title="Main Model Losses",
-    #     save=True,
-    #     conf=conf,
-    #     surr_name=surr_name,
-    # )
 
     # Interpolation losses
     if conf["interpolation"]["enabled"]:

@@ -30,7 +30,7 @@ class LatentNeuralODEBaseConfig:
         learning_rate (float): Learning rate for the optimizer.
     """
 
-    model_version: str = "v1"
+    model_version: str = "v2"
     latent_features: int = 5
     layers_factor: int = 8
     activation: nn.Module = nn.ReLU()

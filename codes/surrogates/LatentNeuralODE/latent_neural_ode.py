@@ -52,10 +52,6 @@ class LatentNeuralODE(AbstractSurrogateModel):
             config=model_config,
         )
         self.config = LatentNeuralODEBaseConfig(**self.config)
-        coder_layers = [4, 2, 1]
-        self.config.coder_layers = [
-            layer * self.config.layers_factor for layer in coder_layers
-        ]
         self.model = ModelWrapper(config=self.config, n_quantities=n_quantities).to(
             device
         )
@@ -269,11 +265,6 @@ class LatentNeuralODE(AbstractSurrogateModel):
         optimizer.train()
 
         scheduler = None
-        # Uncomment and configure the scheduler if needed
-        # if self.config.final_learning_rate is not None:
-        #     scheduler = CosineAnnealingLR(
-        #         optimizer, epochs, eta_min=self.config.final_learning_rate
-        #     )
 
         losses = torch.empty((epochs, len(train_loader)))
         test_losses = torch.empty((epochs))
