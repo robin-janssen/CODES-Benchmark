@@ -16,9 +16,9 @@ profiling*
 study
 sindy
 lorenzo_data.ipynb
-optuna_runs/models
-optuna_runs/studies
-optuna_runs/plots
+tuned/models
+tuned/studies
+tuned/plots
 scripts
 build/
 dist/
@@ -36,4 +36,4 @@ docs/_build/
 .doctrees/
 docs/docs/
 .coverage
-optuna_runs/
+tuned/
