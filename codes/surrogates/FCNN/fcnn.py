@@ -159,7 +159,23 @@ class FullyConnected(AbstractSurrogateModel):
         epochs: int,
         position: int = 0,
         description: str = "Training FullyConnected",
+        multi_objective: bool = False,
     ) -> None:
+        """
+        Train the FullyConnected model.
+
+        Args:
+            train_loader (DataLoader): The DataLoader object containing the training data.
+            test_loader (DataLoader): The DataLoader object containing the test data.
+            epochs (int, optional): The number of epochs to train the model.
+            position (int): The position of the progress bar.
+            description (str): The description for the progress bar.
+            multi_objective (bool): Whether multi-objective optimization is used.
+                                    If True, trial.report is not used (not supported by Optuna).
+
+        Returns:
+            None. The training loss, test loss, and MAE are stored in the model.
+        """
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
         # criterion = nn.MSELoss(reduction="sum")
         criterion = nn.MSELoss()
@@ -196,7 +212,7 @@ class FullyConnected(AbstractSurrogateModel):
                 progress_bar.set_postfix(postfix)
 
                 # Report the test loss to Optuna
-                if self.optuna_trial is not None:
+                if self.optuna_trial is not None and not multi_objective:
                     self.optuna_trial.report(test_losses[index], step=epoch)
                     if self.optuna_trial.should_prune():
                         raise optuna.TrialPruned()

@@ -73,6 +73,7 @@ from .bench_utils import (
     read_yaml_config,
     save_table_csv,
     write_metrics_to_yaml,
+    measure_inference_time,
 )
 
 __all__ = [
@@ -146,4 +147,5 @@ __all__ = [
     "make_comparison_csv",
     "save_table_csv",
     "get_model_config",
+    "measure_inference_time",
 ]

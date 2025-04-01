@@ -196,24 +196,37 @@ def run_single_study(config: dict, study_name: str, db_url: str):
     if not config.get("optuna_logging", False):
         optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-    sampler = optuna.samplers.TPESampler(seed=config["seed"])
-
-    if config["prune"]:
-        epochs = config["epochs"]
-        pruner = optuna.pruners.HyperbandPruner(
-            min_resource=epochs // 8, max_resource=epochs, reduction_factor=2
-        )
-    else:
+    if config["multi_objective"]:
+        sampler = optuna.samplers.NSGAIISampler(seed=config["seed"])
         pruner = optuna.pruners.NopPruner()
 
-    study = optuna.create_study(
-        study_name=study_name,
-        direction="minimize",
-        storage=db_url,
-        sampler=sampler,
-        pruner=pruner,
-        load_if_exists=True,
-    )
+        study = optuna.create_study(
+            study_name=study_name,
+            directions=["minimize", "minimize"],
+            storage=db_url,
+            sampler=sampler,
+            pruner=pruner,
+            load_if_exists=True,
+        )
+    else:
+        sampler = optuna.samplers.TPESampler(seed=config["seed"])
+
+        if config["prune"]:
+            epochs = config["epochs"]
+            pruner = optuna.pruners.HyperbandPruner(
+                min_resource=epochs // 8, max_resource=epochs, reduction_factor=2
+            )
+        else:
+            pruner = optuna.pruners.NopPruner()
+
+        study = optuna.create_study(
+            study_name=study_name,
+            direction="minimize",
+            storage=db_url,
+            sampler=sampler,
+            pruner=pruner,
+            load_if_exists=True,
+        )
 
     device_queue = queue.Queue()
     for dev in config["devices"]:
@@ -275,6 +288,10 @@ def run_all_studies(config: dict, main_study_name: str, db_url: str):
     with tqdm(
         total=total_sub_studies, desc="Overall Surrogates", position=0, leave=True
     ) as arch_pbar:
+        if config.get("multi_objective", False):
+            print(
+                "⚠️ Multi-objective mode enabled: using NSGA-II sampler and disabling pruning."
+            )
         for i, surr in enumerate(surrogates, start=1):
             arch_name = surr["name"]
             study_name = f"{main_study_name}_{arch_name.lower()}"
@@ -293,6 +310,7 @@ def run_all_studies(config: dict, main_study_name: str, db_url: str):
                 "prune": config.get("prune", True),
                 "optuna_logging": config.get("optuna_logging", False),
                 "use_optimal_params": config.get("use_optimal_params", False),
+                "multi_objective": config.get("multi_objective", False),
             }
 
             run_single_study(sub_config, study_name, db_url)
@@ -346,7 +364,7 @@ def parse_arguments():
     parser.add_argument(
         "--study_name",
         type=str,
-        default="primordialtest2",
+        default="primordialtest",
         help="Study identifier.",
     )
     return parser.parse_args()

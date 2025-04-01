@@ -145,6 +145,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         epochs: int,
         position: int = 0,
         description: str = "Training LatentNeuralODE",
+        multi_objective: bool = False,
     ) -> None:
         """
         Fits the model to the training data. Sets the train_loss and test_loss attributes.
@@ -156,6 +157,9 @@ class LatentNeuralODE(AbstractSurrogateModel):
             epochs (int | None): The number of epochs to train the model. If None, uses the value from the config.
             position (int): The position of the progress bar.
             description (str): The description for the progress bar.
+            multi_objective (bool): Whether multi-objective optimization is used.
+                                    If True, trial.report is not used (not supported by Optuna).
+
         """
         # optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
         optimizer = AdamWScheduleFree(
@@ -211,7 +215,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
                     progress_bar.set_postfix(postfix)
 
                     # Report loss to Optuna and prune if necessary
-                    if self.optuna_trial is not None:
+                    if self.optuna_trial is not None and not multi_objective:
                         self.optuna_trial.report(test_losses[index], step=epoch)
                         if self.optuna_trial.should_prune():
                             raise optuna.TrialPruned()
