@@ -372,6 +372,7 @@ class ModelWrapper(torch.nn.Module):
     Wraps the encoder, decoder, and neural ODE into a single model.
     Chooses architecture based on the config.model_version flag.
     """
+
     def __init__(self, config, n_quantities: int):
         super().__init__()
         self.config = config
@@ -383,7 +384,9 @@ class ModelWrapper(torch.nn.Module):
             self.encoder = OldEncoder(
                 in_features=n_quantities,
                 latent_features=config.latent_features,
-                layers_factor=getattr(config, "layers_factor", 8),  # for backward compatibility
+                layers_factor=getattr(
+                    config, "layers_factor", 8
+                ),  # for backward compatibility
                 activation=config.activation,
             )
             self.decoder = OldDecoder(
@@ -640,7 +643,8 @@ class Encoder(torch.nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass to encode the input into the latent space."""
-        return self.mlp(x)
+        out = self.mlp(x)
+        return out
 
 
 class Decoder(torch.nn.Module):
@@ -683,7 +687,8 @@ class Decoder(torch.nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass to decode the latent representation into output features."""
-        return self.mlp(x)
+        out = self.mlp(x)
+        return out
 
 
 class OldEncoder(torch.nn.Module):

@@ -1,10 +1,10 @@
 # Global settings for the benchmark
-training_id: "srtest3"
-surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE", ]
-batch_size: [4096, 4096, 256, 256]
-epochs: [10,10,10,10] # [12000, 10000, 10000, 7000]
+training_id: "primordialtest"
+surrogates: ["LatentNeuralODE"]
+batch_size: [128]
+epochs: [20,100] # [12000, 10000, 10000, 7000]
 dataset: 
-  name: "simple_reaction"
+  name: "primordial"
   log10_transform: True
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True

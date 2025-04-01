@@ -39,6 +39,6 @@ class LatentNeuralODEBaseConfig:
     ode_layers: int = 4
     ode_width: int = 64
     ode_tanh_reg: bool = True
-    rtol: float = 1e-5
-    atol: float = 1e-5
+    rtol: float = 1e-6
+    atol: float = 1e-6
     learning_rate: float = 1e-3

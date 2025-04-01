@@ -27,6 +27,7 @@ def main():
     Main function to analyse the dataset. It checks the dataset and loads the data.
     """
     datasets = [
+        "primordial",
         "simple_reaction",
         "osutest2",
         "coupled_oscillators",
