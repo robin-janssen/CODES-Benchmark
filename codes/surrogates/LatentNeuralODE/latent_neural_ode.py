@@ -78,6 +78,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         timesteps: np.ndarray,
         batch_size: int = 128,
         shuffle: bool = True,
+        dummy_timesteps: bool = True,
     ) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
         """
         Prepares the data for training by creating DataLoader objects.
@@ -100,6 +101,9 @@ class LatentNeuralODE(AbstractSurrogateModel):
         if shuffle:
             shuffled_indices = np.random.permutation(len(dataset_train))
             dataset_train = dataset_train[shuffled_indices]
+
+        if dummy_timesteps:
+            timesteps = np.linspace(0, 1, dataset_train.shape[1])
 
         # Create training DataLoader
         dset_train = ChemDataset(dataset_train, timesteps, device=self.device)

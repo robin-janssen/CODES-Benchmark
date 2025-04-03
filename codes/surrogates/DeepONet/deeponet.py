@@ -237,6 +237,7 @@ class MultiONet(OperatorNetwork):
         timesteps: np.ndarray,
         batch_size: int,
         shuffle: bool = True,
+        dummy_timesteps: bool = True,
     ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
         """
         Prepare the data for the predict or fit methods.
@@ -249,11 +250,17 @@ class MultiONet(OperatorNetwork):
             timesteps (np.ndarray): The timesteps.
             batch_size (int, optional): The batch size.
             shuffle (bool, optional): Whether to shuffle the data.
+            dummy_timesteps (bool, optional): Whether to create a dummy timestep array.
 
         Returns:
             tuple: The training, test, and validation DataLoaders.
         """
         dataloaders = []
+
+        # Create dummy timesteps
+        if dummy_timesteps:
+            timesteps = np.linspace(0, 1, dataset_train.shape[1])
+
         # Create the train dataloader
         dataloader_train = self.create_dataloader(
             dataset_train,
@@ -297,7 +304,7 @@ class MultiONet(OperatorNetwork):
             epochs (int, optional): The number of epochs to train the model.
             position (int): The position of the progress bar.
             description (str): The description for the progress bar.
-            multi_objective (bool): Whether multi-objective optimization is used. 
+            multi_objective (bool): Whether multi-objective optimization is used.
                                     If True, trial.report is not used (not supported by Optuna).
 
         Returns:

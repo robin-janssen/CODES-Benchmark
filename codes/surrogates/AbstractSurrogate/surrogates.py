@@ -158,6 +158,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         timesteps: np.ndarray,
         batch_size: int,
         shuffle: bool,
+        dummy_timesteps: bool = True,
     ) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
         """
         Prepare the data for training, testing, and validation. This method should
@@ -170,6 +171,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             timesteps (np.ndarray): The timesteps.
             batch_size (int): The batch size.
             shuffle (bool): Whether to shuffle the data.
+            dummy_timesteps (bool): Whether to use dummy timesteps. Defaults to True.
 
         Returns:
             tuple[DataLoader, DataLoader, DataLoader]: The DataLoader objects for the

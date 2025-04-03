@@ -126,19 +126,32 @@ class FullyConnected(AbstractSurrogateModel):
     def prepare_data(
         self,
         dataset_train: np.ndarray,
-        dataset_test: np.ndarray,
+        dataset_test: np.ndarray | None,
         dataset_val: np.ndarray | None,
         timesteps: np.ndarray,
         batch_size: int,
         shuffle: bool = True,
+        dummy_timesteps: bool = True,
     ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
         """
         Prepare the data for the predict or fit methods.
-        All datasets: shape (n_samples, n_timesteps, n_quantities)
 
-        Returns: train_loader, test_loader, val_loader
+        Args:
+            dataset_train (np.ndarray): Training data.
+            dataset_test (np.ndarray | None): Test data (optional).
+            dataset_val (np.ndarray | None): Validation data (optional).
+            timesteps (np.ndarray): Timesteps.
+            batch_size (int): Batch size.
+            shuffle (bool, optional): Whether to shuffle the data. Defaults to True.
+            dummy_timesteps (bool, optional): Whether to use dummy timesteps. Defaults to True.
+
+        Returns:
+            tuple[DataLoader, DataLoader | None, DataLoader | None]:
+                DataLoader for training, test, and validation data.
         """
         dataloaders = []
+        if dummy_timesteps:
+            timesteps = np.linspace(0, 1, dataset_train.shape[1])
         loader = self.create_dataloader(dataset_train, timesteps, batch_size, shuffle)
         dataloaders.append(loader)
         for dataset in [dataset_test, dataset_val]:
@@ -207,7 +220,7 @@ class FullyConnected(AbstractSurrogateModel):
                 # Update progress bar postfix
                 postfix = {
                     "train_loss": f"{train_losses[index]:.2e}",
-                    "test_loss": f"{test_losses[index]:.2e}"
+                    "test_loss": f"{test_losses[index]:.2e}",
                 }
                 progress_bar.set_postfix(postfix)
 

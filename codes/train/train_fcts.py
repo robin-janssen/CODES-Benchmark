@@ -82,9 +82,6 @@ def train_and_save_model(
 
     _, n_timesteps, n_quantities = train_data.shape
 
-    # # Replace timesteps with dummy timesteps between 0 and 1
-    # timesteps = np.linspace(0, 1, n_timesteps)
-
     # Get the surrogate class
     surrogate_class = get_surrogate(surr_name)
     model_config = get_model_config(surr_name, config)
@@ -107,6 +104,7 @@ def train_and_save_model(
             timesteps=timesteps,
             batch_size=batch_size,
             shuffle=True,
+            dummy_timesteps=True,
         )
 
     description = make_description(mode, device, str(metric), surr_name)

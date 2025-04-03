@@ -84,6 +84,7 @@ class LatentPoly(AbstractSurrogateModel):
         timesteps: np.ndarray,
         batch_size: int = 128,
         shuffle: bool = True,
+        dummy_timesteps: bool = True,
     ) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
         """
         Prepare DataLoaders for training, testing, and validation.
@@ -95,10 +96,13 @@ class LatentPoly(AbstractSurrogateModel):
             timesteps (np.ndarray): Array of timesteps.
             batch_size (int): Batch size.
             shuffle (bool): Whether to shuffle training data.
+            dummy_timesteps (bool): Whether to use dummy timesteps.
 
         Returns:
             tuple: DataLoaders for training, test, and validation datasets.
         """
+        if dummy_timesteps:
+            timesteps = np.linspace(0, 1, dataset_train.shape[1])
         if shuffle:
             shuffled_indices = np.random.permutation(len(dataset_train))
             dataset_train = dataset_train[shuffled_indices]
