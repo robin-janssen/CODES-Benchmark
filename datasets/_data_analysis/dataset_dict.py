@@ -51,4 +51,9 @@ dataset_dict = {
         "qpp": 5,
         "tol": 1e-30,
     },
+    "primordial": {
+        "log": True,
+        "qpp": 5,
+        "tol": 1e-30,
+    },
 }

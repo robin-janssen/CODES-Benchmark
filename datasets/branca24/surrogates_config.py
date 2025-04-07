@@ -25,6 +25,7 @@ class LatentNeuralODEConfig:
     ode_activation: nn.Module = nn.Tanh()
     ode_tanh_reg: bool = True
     activation: nn.Module = nn.Tanh()
+    model_version: str = "v1"
 
 
 @dataclass

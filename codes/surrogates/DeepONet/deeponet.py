@@ -94,7 +94,7 @@ class OperatorNetwork(AbstractSurrogateModel):
 
     Args:
         device (str, optional): The device to use for training (e.g., 'cpu', 'cuda:0').
-        n_chemicals (int, optional): The number of chemicals.
+        n_quantities (int, optional): The number of quantities.
         n_timesteps (int, optional): The number of timesteps.
 
     Raises:
@@ -105,13 +105,13 @@ class OperatorNetwork(AbstractSurrogateModel):
     def __init__(
         self,
         device: str | None = None,
-        n_chemicals: int = 29,
+        n_quantities: int = 29,
         n_timesteps: int = 100,
         config: dict | None = None,
     ):
         super().__init__(
             device=device,
-            n_chemicals=n_chemicals,
+            n_quantities=n_quantities,
             n_timesteps=n_timesteps,
             config=config,
         )
@@ -149,7 +149,7 @@ class MultiONet(OperatorNetwork):
 
     Args:
         device (str, optional): The device to use for training (e.g., 'cpu', 'cuda:0').
-        n_chemicals (int, optional): The number of chemicals.
+        n_quantities (int, optional): The number of quantities.
         n_timesteps (int, optional): The number of timesteps.
         config (dict, optional): The configuration for the model.
 
@@ -173,24 +173,24 @@ class MultiONet(OperatorNetwork):
     def __init__(
         self,
         device: str | None = None,
-        n_chemicals: int = 29,
+        n_quantities: int = 29,
         n_timesteps: int = 100,
         config: dict | None = None,
     ):
         super().__init__(
             device=device,
-            n_chemicals=n_chemicals,
+            n_quantities=n_quantities,
             n_timesteps=n_timesteps,
             config=config,
         )
         self.config = MultiONetBaseConfig(**self.config)
         self.device = device
-        self.N = n_chemicals  # Number of chemicals
+        self.N = n_quantities  # Number of quantities
         self.outputs = (
-            n_chemicals * self.config.output_factor
+            n_quantities * self.config.output_factor
         )  # Number of neurons in the last layer
         self.branch_net = BranchNet(
-            n_chemicals - (self.config.trunk_input_size - 1),  # +1 due to time
+            n_quantities - (self.config.trunk_input_size - 1),  # +1 due to time
             self.config.hidden_size,
             self.outputs,
             self.config.branch_hidden_layers,
@@ -237,10 +237,11 @@ class MultiONet(OperatorNetwork):
         timesteps: np.ndarray,
         batch_size: int,
         shuffle: bool = True,
+        dummy_timesteps: bool = True,
     ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
         """
         Prepare the data for the predict or fit methods.
-        Note: All datasets must have shape (n_samples, n_timesteps, n_chemicals).
+        Note: All datasets must have shape (n_samples, n_timesteps, n_quantities).
 
         Args:
             dataset_train (np.ndarray): The training data.
@@ -249,11 +250,17 @@ class MultiONet(OperatorNetwork):
             timesteps (np.ndarray): The timesteps.
             batch_size (int, optional): The batch size.
             shuffle (bool, optional): Whether to shuffle the data.
+            dummy_timesteps (bool, optional): Whether to create a dummy timestep array.
 
         Returns:
             tuple: The training, test, and validation DataLoaders.
         """
         dataloaders = []
+
+        # Create dummy timesteps
+        if dummy_timesteps:
+            timesteps = np.linspace(0, 1, dataset_train.shape[1])
+
         # Create the train dataloader
         dataloader_train = self.create_dataloader(
             dataset_train,
@@ -297,7 +304,7 @@ class MultiONet(OperatorNetwork):
             epochs (int, optional): The number of epochs to train the model.
             position (int): The position of the progress bar.
             description (str): The description for the progress bar.
-            multi_objective (bool): Whether multi-objective optimization is used. 
+            multi_objective (bool): Whether multi-objective optimization is used.
                                     If True, trial.report is not used (not supported by Optuna).
 
         Returns:
@@ -442,7 +449,7 @@ class MultiONet(OperatorNetwork):
         Create a DataLoader for the given data.
 
         Args:
-            data (np.ndarray): The data to load. Must have shape (n_samples, n_timesteps, n_chemicals).
+            data (np.ndarray): The data to load. Must have shape (n_samples, n_timesteps, n_quantities).
             timesteps (np.ndarray): The timesteps.
             batch_size (int, optional): The batch size.
             shuffle (bool, optional): Whether to shuffle the data.
@@ -492,7 +499,7 @@ class MultiONet(OperatorNetwork):
         Create a DataLoader with optimized memory-safe shuffling using pre-allocated buffers and direct slicing.
 
         Args:
-            data (np.ndarray): The data to load. Must have shape (n_samples, n_timesteps, n_chemicals).
+            data (np.ndarray): The data to load. Must have shape (n_samples, n_timesteps, n_quantities).
             timesteps (np.ndarray): The timesteps. Shape: (n_timesteps,).
             batch_size (int): The batch size.
             shuffle (bool, optional): Whether to shuffle the data. Defaults to False.
@@ -501,13 +508,13 @@ class MultiONet(OperatorNetwork):
             DataLoader: A DataLoader with precomputed batches.
         """
         device = self.device
-        n_samples, n_timesteps, n_chemicals = data.shape
+        n_samples, n_timesteps, n_quantities = data.shape
         total_samples = n_samples * n_timesteps
 
         # Pre-allocate NumPy arrays
-        branch_inputs = np.empty((total_samples, n_chemicals), dtype=np.float32)
+        branch_inputs = np.empty((total_samples, n_quantities), dtype=np.float32)
         trunk_inputs = np.empty((total_samples, 1), dtype=np.float32)
-        targets = np.empty((total_samples, n_chemicals), dtype=np.float32)
+        targets = np.empty((total_samples, n_quantities), dtype=np.float32)
 
         # Branch Inputs: Repeat the first timestep across all timesteps for each sample
         branch_inputs = np.repeat(data[:, 0, :], n_timesteps, axis=0)
@@ -516,7 +523,7 @@ class MultiONet(OperatorNetwork):
         trunk_inputs = np.tile(timesteps.reshape(1, -1), (n_samples, 1)).reshape(-1, 1)
 
         # Targets: Flatten the data across samples and timesteps
-        targets = data.reshape(-1, n_chemicals)
+        targets = data.reshape(-1, n_quantities)
 
         if shuffle:
             permutation = np.random.permutation(total_samples)

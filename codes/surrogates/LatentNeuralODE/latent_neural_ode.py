@@ -41,22 +41,18 @@ class LatentNeuralODE(AbstractSurrogateModel):
     def __init__(
         self,
         device: str | None = None,
-        n_chemicals: int = 29,
+        n_quantities: int = 29,
         n_timesteps: int = 100,
         model_config: dict | None = None,
     ):
         super().__init__(
             device=device,
-            n_chemicals=n_chemicals,
+            n_quantities=n_quantities,
             n_timesteps=n_timesteps,
             config=model_config,
         )
         self.config = LatentNeuralODEBaseConfig(**self.config)
-        coder_layers = [4, 2, 1]
-        self.config.coder_layers = [
-            layer * self.config.layers_factor for layer in coder_layers
-        ]
-        self.model = ModelWrapper(config=self.config, n_chemicals=n_chemicals).to(
+        self.model = ModelWrapper(config=self.config, n_quantities=n_quantities).to(
             device
         )
 
@@ -82,6 +78,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         timesteps: np.ndarray,
         batch_size: int = 128,
         shuffle: bool = True,
+        dummy_timesteps: bool = True,
     ) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
         """
         Prepares the data for training by creating DataLoader objects.
@@ -104,6 +101,9 @@ class LatentNeuralODE(AbstractSurrogateModel):
         if shuffle:
             shuffled_indices = np.random.permutation(len(dataset_train))
             dataset_train = dataset_train[shuffled_indices]
+
+        if dummy_timesteps:
+            timesteps = np.linspace(0, 1, dataset_train.shape[1])
 
         # Create training DataLoader
         dset_train = ChemDataset(dataset_train, timesteps, device=self.device)
@@ -173,10 +173,6 @@ class LatentNeuralODE(AbstractSurrogateModel):
         criterion = torch.nn.MSELoss()
 
         scheduler = None
-        # if self.config.final_learning_rate is not None:
-        #     scheduler = CosineAnnealingLR(
-        #         optimizer, epochs, eta_min=self.config.final_learning_rate
-        #     )
 
         loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
         train_losses, test_losses, MAEs = [np.zeros(loss_length) for _ in range(3)]
@@ -277,11 +273,6 @@ class LatentNeuralODE(AbstractSurrogateModel):
         optimizer.train()
 
         scheduler = None
-        # Uncomment and configure the scheduler if needed
-        # if self.config.final_learning_rate is not None:
-        #     scheduler = CosineAnnealingLR(
-        #         optimizer, epochs, eta_min=self.config.final_learning_rate
-        #     )
 
         losses = torch.empty((epochs, len(train_loader)))
         test_losses = torch.empty((epochs))
@@ -386,51 +377,55 @@ class LatentNeuralODE(AbstractSurrogateModel):
 
 class ModelWrapper(torch.nn.Module):
     """
-    This class wraps the encoder, decoder and ODE term into a single model. It also
-    provides the integration of the ODE term and the loss calculation.
-
-    Attributes:
-        config (LatentNeuralODEBaseConfig): The configuration for the model.
-        loss_weights (list): The weights for the loss terms.
-        encoder (Encoder): The encoder neural network.
-        decoder (Decoder): The decoder neural network.
-        ode (ODE): The neural ODE term.
-
-    Methods:
-        forward(x, t_range): Performs a forward pass through the model.
-        renormalize_loss_weights(x_true, x_pred): Renormalizes the loss weights.
-        total_loss(x_true, x_pred): Calculates the total loss.
-        identity_loss(x): Calculates the identity loss (encoder -> decoder).
-        l2_loss(x_true, x_pred): Calculates the L2 loss.
-        deriv_loss(x_true, x_pred): Calculates the derivative loss.
-        deriv2_loss(x_true, x_pred): Calculates the second derivative loss.
-        deriv(x): Calculates the first derivative.
-        deriv2(x): Calculates the second derivative.
+    Wraps the encoder, decoder, and neural ODE into a single model.
+    Chooses architecture based on the config.model_version flag.
     """
 
-    def __init__(self, config, n_chemicals):
+    def __init__(self, config, n_quantities: int):
         super().__init__()
         self.config = config
         self.loss_weights = [100.0, 1.0, 1.0, 1.0]
 
-        self.encoder = Encoder(
-            in_features=n_chemicals,
-            latent_features=config.latent_features,
-            width_list=config.coder_layers,
-            activation=config.activation,
-        )
-        self.decoder = Decoder(
-            out_features=n_chemicals,
-            latent_features=config.latent_features,
-            width_list=config.coder_layers,
-            activation=config.activation,
-        )
+        # Conditional instantiation based on model_version.
+        if config.model_version == "v1":
+            # Instantiate the old encoder/decoder.
+            self.encoder = OldEncoder(
+                in_features=n_quantities,
+                latent_features=config.latent_features,
+                layers_factor=getattr(
+                    config, "layers_factor", 8
+                ),  # for backward compatibility
+                activation=config.activation,
+            )
+            self.decoder = OldDecoder(
+                out_features=n_quantities,
+                latent_features=config.latent_features,
+                layers_factor=getattr(config, "layers_factor", 8),
+                activation=config.activation,
+            )
+        else:  # "v2" or any future version
+            self.encoder = Encoder(
+                in_features=n_quantities,
+                latent_features=config.latent_features,
+                coder_layers=config.coder_layers,
+                coder_width=config.coder_width,
+                activation=config.activation,
+            )
+            self.decoder = Decoder(
+                out_features=n_quantities,
+                latent_features=config.latent_features,
+                coder_layers=config.coder_layers,
+                coder_width=config.coder_width,
+                activation=config.activation,
+            )
+
+        # The ODE part remains the same in both versions:
         self.ode = ODE(
             input_shape=config.latent_features,
             output_shape=config.latent_features,
-            n_hidden=config.ode_hidden,
             activation=config.activation,
-            layer_width=config.ode_layer_width,
+            ode_layers=config.ode_layers,
+            ode_width=config.ode_width,
             tanh_reg=config.ode_tanh_reg,
         )
         term = to.ODETerm(self.ode)
@@ -441,20 +436,8 @@ class ModelWrapper(torch.nn.Module):
         self.solver = to.AutoDiffAdjoint(step_method, step_size_controller)
 
     def forward(self, x, t_range):
-        """
-        Perform a forward pass through the model. Applies the encoder to the initial state,
-        then propagates through time in the latent space by integrating the neural ODE term.
-        Finally, the decoder is applied to the latent state to obtain the predicted trajectory.
-
-        Args:
-            x (torch.Tensor): The input tensor.
-            t_range (torch.Tensor): The range of timesteps.
-
-        Returns:
-            torch.Tensor: The predicted trajectory.
-        """
         x0 = x[:, 0, :]
-        z0 = self.encoder(x0)  # x(t=0)
+        z0 = self.encoder(x0)
         t_eval = t_range.repeat(x.shape[0], 1)
         result = self.solver.solve(to.InitialValueProblem(y0=z0, t_eval=t_eval)).ys
         return self.decoder(result)
@@ -574,17 +557,18 @@ class ModelWrapper(torch.nn.Module):
 
 class ODE(torch.nn.Module):
     """
-    The neural ODE term. The term itself is a simple feedforward neural network,
-    a scaled tanh function is applied to the output if tanh_reg is set to True.
+    Neural ODE module that defines the ODE function for latent dynamics.
 
-    Attributes:
-        tanh_reg (bool): Whether to apply a tanh regularization to the output.
-        reg_factor (torch.Tensor): The regularization factor.
-        activation (torch.nn.Module): The activation function.
-        mlp (torch.nn.Sequential): The neural network.
+    The network is a feedforward network with a specified number of hidden layers (ode_layers)
+    and uniform width (ode_width). Optionally applies a scaled tanh regularization.
 
-    Methods:
-        forward(t, x): Perform a forward pass through the neural network.
+    Args:
+        input_shape (int): Input dimension (should match latent_features).
+        output_shape (int): Output dimension (should match latent_features).
+        activation (nn.Module): Activation function.
+        ode_layers (int): Number of hidden layers.
+        ode_width (int): Number of neurons in each hidden layer.
+        tanh_reg (bool): Whether to apply scaled tanh regularization.
     """
 
     def __init__(
@@ -592,162 +576,203 @@ class ODE(torch.nn.Module):
         input_shape: int,
         output_shape: int,
         activation: torch.nn.Module,
-        n_hidden: int,
-        layer_width: int,
+        ode_layers: int,
+        ode_width: int,
         tanh_reg: bool,
     ):
         super().__init__()
-
         self.tanh_reg = tanh_reg
         self.reg_factor = torch.nn.Parameter(torch.tensor(1.0))
         self.activation = activation
 
-        self.mlp = torch.nn.Sequential()
-        self.mlp.append(torch.nn.Linear(input_shape, layer_width, dtype=torch.float64))
-        self.mlp.append(self.activation)
-        for _ in range(n_hidden):
-            self.mlp.append(
-                torch.nn.Linear(layer_width, layer_width, dtype=torch.float64)
-            )
-            self.mlp.append(self.activation)
-        self.mlp.append(torch.nn.Linear(layer_width, output_shape, dtype=torch.float64))
+        layers = []
+        layers.append(torch.nn.Linear(input_shape, ode_width, dtype=torch.float64))
+        layers.append(activation)
+        for _ in range(ode_layers):
+            layers.append(torch.nn.Linear(ode_width, ode_width, dtype=torch.float64))
+            layers.append(activation)
+        layers.append(torch.nn.Linear(ode_width, output_shape, dtype=torch.float64))
+        self.mlp = torch.nn.Sequential(*layers)
 
     def forward(self, t, x):
         """
-        The forward pass through the neural network.
+        Forward pass for the ODE network.
 
         Args:
-            t (torch.Tensor): The time tensor.
-            x (torch.Tensor): The input tensor.
+            t (torch.Tensor): Time tensor (unused in this implementation).
+            x (torch.Tensor): Input latent state.
 
         Returns:
-            torch.Tensor: The output of the neural network.
+            torch.Tensor: Output latent state.
         """
+        output = self.mlp(x)
         if self.tanh_reg:
-            return self.reg_factor * torch.tanh(self.mlp(x) / self.reg_factor)
-        return self.mlp(x)
+            return self.reg_factor * torch.tanh(output / self.reg_factor)
+        return output
 
 
 class Encoder(torch.nn.Module):
     """
-    The encoder neural network. The encoder is a simple feedforward neural network
-    the output of which is of a lower dimension than the input.
+    Fully connected encoder network that maps input features to a lower-dimensional latent space.
 
-    Attributes:
-        in_features (int): The number of input features.
-        latent_features (int): The number of latent features.
-        n_hidden (int): The number of hidden layers.
-        width_list (list): The width of the hidden layers.
-        activation (torch.nn.Module): The activation function.
-        mlp (torch.nn.Sequential): The neural network.
+    The architecture consists of a specified number of hidden layers (coder_layers) with uniform width (coder_width)
+    and ends with a linear mapping to the latent space followed by a Tanh activation.
 
-    Methods:
-        forward(x): Perform a forward pass through the neural network. ("Encode" the input)
+    Args:
+        in_features (int): Number of input features.
+        latent_features (int): Dimension of the latent representation.
+        coder_layers (int): Number of hidden layers.
+        coder_width (int): Number of neurons in each hidden layer.
+        activation (nn.Module): Activation function.
     """
 
     def __init__(
         self,
         in_features: int,
         latent_features: int = 5,
-        width_list: list | None = None,
+        coder_layers: int = 3,
+        coder_width: int = 32,
         activation: torch.nn.Module = torch.nn.ReLU(),
     ):
         super().__init__()
-        self.in_features = in_features
-        self.latent_features = latent_features
-        self.width_list = width_list if width_list is not None else [32, 16, 8]
-        self.n_hidden = len(self.width_list) + 1
-        self.activation = activation
-
-        self.mlp = torch.nn.Sequential()
-        self.mlp.append(
-            torch.nn.Linear(self.in_features, self.width_list[0], dtype=torch.float64)
-        )
-        self.mlp.append(self.activation)
-        for i, width in enumerate(self.width_list[1:]):
-            self.mlp.append(
-                torch.nn.Linear(self.width_list[i], width, dtype=torch.float64)
+        layers = []
+        layers.append(torch.nn.Linear(in_features, coder_width, dtype=torch.float64))
+        layers.append(activation)
+        for _ in range(coder_layers - 1):
+            layers.append(
+                torch.nn.Linear(coder_width, coder_width, dtype=torch.float64)
             )
-            self.mlp.append(self.activation)
-        self.mlp.append(
-            torch.nn.Linear(
-                self.width_list[-1], self.latent_features, dtype=torch.float64
-            )
+            layers.append(activation)
+        layers.append(
+            torch.nn.Linear(coder_width, latent_features, dtype=torch.float64)
         )
-        self.mlp.append(torch.nn.Tanh())
+        layers.append(torch.nn.Tanh())
+        self.mlp = torch.nn.Sequential(*layers)
 
-    def forward(self, x):
-        """
-        Perform a forward pass through the neural network.
-
-        Args:
-            x (torch.Tensor): The input tensor.
-
-        Returns:
-            torch.Tensor: The output of the neural network. ("Encoded" input)
-        """
-        return self.mlp(x)
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass to encode the input into the latent space."""
+        out = self.mlp(x)
+        return out
 
 
 class Decoder(torch.nn.Module):
     """
-    The decoder neural network. The decoder is a simple feedforward neural network
-    the output of which is of a higher dimension than the input. Acts as the approximate
-    inverse of the encoder.
+    Fully connected decoder network that maps the latent representation back to the original output space.
 
-    Attributes:
-        out_features (int): The number of output features.
-        latent_features (int): The number of latent features.
-        width_list (list): The width of the hidden layers.
-        activation (torch.nn.Module): The activation function.
-        mlp (torch.nn.Sequential): The neural network.
+    The network mirrors the encoder structure, using a specified number of hidden layers (coder_layers)
+    with uniform width (coder_width) and ends with a linear mapping to the output features followed by Tanh.
 
-    Methods:
-        forward(x): Perform a forward pass through the neural network. ("Decode" the input)
+    Args:
+        out_features (int): Number of output features.
+        latent_features (int): Dimension of the latent representation.
+        coder_layers (int): Number of hidden layers.
+        coder_width (int): Number of neurons in each hidden layer.
+        activation (nn.Module): Activation function.
     """
 
     def __init__(
         self,
         out_features: int,
         latent_features: int = 5,
-        width_list: list | None = None,
+        coder_layers: int = 3,
+        coder_width: int = 32,
         activation: torch.nn.Module = torch.nn.ReLU(),
     ):
         super().__init__()
-        self.out_features = out_features
-        self.latent_features = latent_features
-        self.width_list = width_list if width_list is not None else [32, 16, 8]
-        self.n_hidden = len(self.width_list) + 1
-        self.activation = activation
-        self.width_list.reverse()
+        layers = []
+        layers.append(
+            torch.nn.Linear(latent_features, coder_width, dtype=torch.float64)
+        )
+        layers.append(activation)
+        for _ in range(coder_layers - 1):
+            layers.append(
+                torch.nn.Linear(coder_width, coder_width, dtype=torch.float64)
+            )
+            layers.append(activation)
+        layers.append(torch.nn.Linear(coder_width, out_features, dtype=torch.float64))
+        layers.append(torch.nn.Tanh())
+        self.mlp = torch.nn.Sequential(*layers)
 
-        self.mlp = torch.nn.Sequential()
-        self.mlp.append(
-            torch.nn.Linear(
-                self.latent_features, self.width_list[0], dtype=torch.float64
-            )
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass to decode the latent representation into output features."""
+        out = self.mlp(x)
+        return out
+
+
+class OldEncoder(torch.nn.Module):
+    """
+    Old encoder using a fixed 4-2-1 structure.
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        latent_features: int = 5,
+        layers_factor: int = 8,
+        activation: torch.nn.Module = torch.nn.ReLU(),
+    ):
+        super().__init__()
+        # Example: coder_layers = [4, 2, 1] scaled by layers_factor.
+        coder_layers = [4 * layers_factor, 2 * layers_factor, 1 * layers_factor]
+        layers = []
+        layers.append(
+            torch.nn.Linear(in_features, coder_layers[0], dtype=torch.float64)
         )
-        self.mlp.append(self.activation)
-        for i, width in enumerate(self.width_list[1:]):
-            self.mlp.append(
-                torch.nn.Linear(self.width_list[i], width, dtype=torch.float64)
-            )
-            self.mlp.append(self.activation)
-        self.mlp.append(
-            torch.nn.Linear(self.width_list[-1], self.out_features, dtype=torch.float64)
+        layers.append(activation)
+        layers.append(
+            torch.nn.Linear(coder_layers[0], coder_layers[1], dtype=torch.float64)
         )
-        self.mlp.append(torch.nn.Tanh())
+        layers.append(activation)
+        layers.append(
+            torch.nn.Linear(coder_layers[1], coder_layers[2], dtype=torch.float64)
+        )
+        layers.append(activation)
+        layers.append(
+            torch.nn.Linear(coder_layers[2], latent_features, dtype=torch.float64)
+        )
+        layers.append(torch.nn.Tanh())
+        self.mlp = torch.nn.Sequential(*layers)
 
     def forward(self, x):
-        """
-        Perform a forward pass through the neural network.
+        return self.mlp(x)
 
-        Args:
-            x (torch.Tensor): The input tensor.
 
-        Returns:
-            torch.Tensor: The output of the neural network. ("Decoded" input)
-        """
+class OldDecoder(torch.nn.Module):
+    """
+    Old decoder corresponding to the old encoder.
+    """
+
+    def __init__(
+        self,
+        out_features: int,
+        latent_features: int = 5,
+        layers_factor: int = 8,
+        activation: torch.nn.Module = torch.nn.ReLU(),
+    ):
+        super().__init__()
+        coder_layers = [4 * layers_factor, 2 * layers_factor, 1 * layers_factor]
+        # Reverse the order for the decoder.
+        coder_layers.reverse()
+        layers = []
+        layers.append(
+            torch.nn.Linear(latent_features, coder_layers[0], dtype=torch.float64)
+        )
+        layers.append(activation)
+        layers.append(
+            torch.nn.Linear(coder_layers[0], coder_layers[1], dtype=torch.float64)
+        )
+        layers.append(activation)
+        layers.append(
+            torch.nn.Linear(coder_layers[1], coder_layers[2], dtype=torch.float64)
+        )
+        layers.append(activation)
+        layers.append(
+            torch.nn.Linear(coder_layers[2], out_features, dtype=torch.float64)
+        )
+        layers.append(torch.nn.Tanh())
+        self.mlp = torch.nn.Sequential(*layers)
+
+    def forward(self, x):
         return self.mlp(x)
 
 

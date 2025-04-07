@@ -80,7 +80,7 @@ def train_and_save_model(
         full_train_data, full_test_data, timesteps, mode, metric
     )
 
-    _, n_timesteps, n_chemicals = train_data.shape
+    _, n_timesteps, n_quantities = train_data.shape
 
     # Get the surrogate class
     surrogate_class = get_surrogate(surr_name)
@@ -89,7 +89,7 @@ def train_and_save_model(
     # Apply threadlock to avoid issues with PyTorch
     with threadlock:
         set_random_seeds(seed, device)
-        model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
+        model = surrogate_class(device, n_quantities, n_timesteps, model_config)
     model.normalisation = data_params
     surr_idx = config["surrogates"].index(surr_name)
 
@@ -104,6 +104,7 @@ def train_and_save_model(
             timesteps=timesteps,
             batch_size=batch_size,
             shuffle=True,
+            dummy_timesteps=True,
         )
 
     description = make_description(mode, device, str(metric), surr_name)

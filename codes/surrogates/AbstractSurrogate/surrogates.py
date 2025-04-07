@@ -24,7 +24,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
     Args:
         device (str, optional): The device to run the model on. Defaults to None.
-        n_chemicals (int, optional): The number of chemicals. Defaults to 29.
+        n_quantities (int, optional): The number of quantities. Defaults to 29.
         n_timesteps (int, optional): The number of timesteps. Defaults to 100.
         config (dict, optional): The configuration dictionary. Defaults to {}.
 
@@ -35,7 +35,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         normalisation (dict): The normalisation parameters.
         train_duration (float): The training duration.
         device (str): The device to run the model on.
-        n_chemicals (int): The number of chemicals.
+        n_quantities (int): The number of quantities.
         n_timesteps (int): The number of timesteps.
         L1 (nn.L1Loss): The L1 loss function.
         config (dict): The configuration dictionary.
@@ -97,7 +97,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
     def __init__(
         self,
         device: str | None = None,
-        n_chemicals: int = 29,
+        n_quantities: int = 29,
         n_timesteps: int = 100,
         config: dict | None = None,
     ):
@@ -107,7 +107,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         self.MAE = None
         self.normalisation = None
         self.device = device
-        self.n_chemicals = n_chemicals
+        self.n_quantities = n_quantities
         self.n_timesteps = n_timesteps
         self.L1 = nn.L1Loss()
         self.config = config if config is not None else {}
@@ -158,6 +158,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         timesteps: np.ndarray,
         batch_size: int,
         shuffle: bool,
+        dummy_timesteps: bool = True,
     ) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
         """
         Prepare the data for training, testing, and validation. This method should
@@ -170,6 +171,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             timesteps (np.ndarray): The timesteps.
             batch_size (int): The batch size.
             shuffle (bool): Whether to shuffle the data.
+            dummy_timesteps (bool): Whether to use dummy timesteps. Defaults to True.
 
         Returns:
             tuple[DataLoader, DataLoader, DataLoader]: The DataLoader objects for the
@@ -242,18 +244,11 @@ class AbstractSurrogateModel(ABC, nn.Module):
         predictions = predictions[:processed_samples, ...]
         targets = targets[:processed_samples, ...]
 
-        targets_numpy = (
-            targets.cpu()
-            .detach()
-            .numpy()
-            .reshape(-1, self.n_timesteps, self.n_chemicals)
-        )
-
         predictions = self.denormalize(predictions)
         targets = self.denormalize(targets)
 
-        predictions = predictions.reshape(-1, self.n_timesteps, self.n_chemicals)
-        targets = targets.reshape(-1, self.n_timesteps, self.n_chemicals)
+        predictions = predictions.reshape(-1, self.n_timesteps, self.n_quantities)
+        targets = targets.reshape(-1, self.n_timesteps, self.n_quantities)
 
         return predictions, targets
 

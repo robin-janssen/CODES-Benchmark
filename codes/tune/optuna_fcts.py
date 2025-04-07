@@ -14,7 +14,7 @@ from codes.benchmark.bench_utils import (
     measure_inference_time,
 )
 from codes.utils import check_and_load_data, make_description, set_random_seeds
-from codes.utils.data_utils import get_data_subset
+from codes.utils.data_utils import download_data, get_data_subset
 
 
 def load_yaml_config(config_path: str) -> dict:
@@ -177,11 +177,11 @@ def training_run(
             suggested_params[key] = bool(strtobool(val))
 
     n_timesteps = train_data.shape[1]
-    n_chemicals = train_data.shape[2]
+    n_quantities = train_data.shape[2]
     surrogate_class = get_surrogate(surr_name)
     model_config = get_model_config(surr_name, config)
     model_config.update(suggested_params)
-    model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
+    model = surrogate_class(device, n_quantities, n_timesteps, model_config)
     model.normalisation = data_params
     model.optuna_trial = trial
     model.trial_update_epochs = 10
@@ -211,7 +211,7 @@ def training_run(
     loss = criterion(preds, targets).item()
     sname, _ = study_name.split("_")
 
-    savepath = os.path.join("optuna_runs", sname, "models")
+    savepath = os.path.join("tuned", sname, "models")
     os.makedirs(savepath, exist_ok=True)
     model_name = f"{surr_name.lower()}_{trial.number}"
     model.save(

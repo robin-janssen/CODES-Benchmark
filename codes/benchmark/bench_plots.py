@@ -109,7 +109,7 @@ def plot_relative_errors_over_time(
         save (bool): Whether to save the plot.
         show_title (bool): Whether to show the title on the plot.
     """
-    # Calculate the mean, median, and percentiles across all samples and chemicals
+    # Calculate the mean, median, and percentiles across all samples and quantities
     mean_errors = np.mean(relative_errors, axis=(0, 2))
     mean = np.mean(mean_errors)
     median_errors = np.median(relative_errors, axis=(0, 2))
@@ -354,7 +354,7 @@ def plot_example_mode_predictions(
     metric: int,
     mode: str = "interpolation",  # Either "interpolation" or "extrapolation"
     example_idx: int = 0,
-    num_chemicals: int = 100,
+    num_quantities: int = 100,
     labels: list[str] | None = None,
     save: bool = False,
     show_title: bool = True,
@@ -373,20 +373,20 @@ def plot_example_mode_predictions(
                       In extrapolation mode, indicates the index of the cutoff timestep.
         mode (str, optional): "interpolation" or "extrapolation". Default is "interpolation".
         example_idx (int, optional): Index of the example to plot. Default is 0.
-        num_chemicals (int, optional): Number of chemicals to plot. Default is 100.
-        labels (list, optional): List of labels for the chemicals.
+        num_quantities (int, optional): Number of quantities to plot. Default is 100.
+        labels (list, optional): List of labels for the quantities.
         save (bool, optional): Whether to save the plot as a file.
         show_title (bool): Whether to show the title on the plot.
     """
-    # Cap the number of chemicals at the maximum available
-    num_chemicals = min(preds.shape[2], num_chemicals)
+    # Cap the number of quantities at the maximum available
+    num_quantities = min(preds.shape[2], num_quantities)
 
-    # Determine the number of plots (10 chemicals per subplot)
-    chemicals_per_plot = 10
-    num_plots = int(np.ceil(num_chemicals / chemicals_per_plot))
+    # Determine the number of plots (10 quantities per subplot)
+    quantities_per_plot = 10
+    num_plots = int(np.ceil(num_quantities / quantities_per_plot))
 
     num_quantities = preds.shape[2]
-    # Define the color palette for plotting chemicals
+    # Define the color palette for plotting quantities
     colors = plt.cm.viridis(np.linspace(0, 1, num_quantities))
 
     # Create the overall figure and subplots
@@ -396,12 +396,12 @@ def plot_example_mode_predictions(
     for plot_idx in range(num_plots):
         ax = fig.add_subplot(gs[plot_idx])
 
-        start_idx = plot_idx * chemicals_per_plot
-        end_idx = min((plot_idx + 1) * chemicals_per_plot, num_chemicals)
+        start_idx = plot_idx * quantities_per_plot
+        end_idx = min((plot_idx + 1) * quantities_per_plot, num_quantities)
         legend_lines = []  # To store ground truth line objects for the legend
 
         for chem_idx in range(start_idx, end_idx):
-            color = colors[chem_idx % chemicals_per_plot]
+            color = colors[chem_idx % quantities_per_plot]
             gt = targets[example_idx, :, chem_idx]
             pred = preds[example_idx, :, chem_idx]
 
@@ -437,7 +437,7 @@ def plot_example_mode_predictions(
         # Label the y-axis
         ax.set_ylabel("Abundance")
 
-        # Add chemical labels if provided
+        # Add quantity labels if provided
         if labels is not None:
             legend_labels = labels[start_idx:end_idx]
             ax.legend(
@@ -502,7 +502,7 @@ def plot_example_predictions_with_uncertainty(
     targets: np.ndarray,
     timesteps: np.ndarray,
     example_idx: int = 0,
-    num_chemicals: int = 100,
+    num_quantities: int = 100,
     labels: list[str] | None = None,
     save: bool = False,
     show_title: bool = True,
@@ -518,20 +518,20 @@ def plot_example_predictions_with_uncertainty(
         targets (np.ndarray): True targets.
         timesteps (np.ndarray): Timesteps array.
         example_idx (int, optional): Index of the example to plot. Default is 0.
-        num_chemicals (int, optional): Number of chemicals to plot. Default is 100.
-        labels (list, optional): List of labels for the chemicals.
+        num_quantities (int, optional): Number of quantities to plot. Default is 100.
+        labels (list, optional): List of labels for the quantities.
         save (bool, optional): Whether to save the plot as a file.
         show_title (bool): Whether to show the title on the plot.
     """
-    # Cap the number of chemicals at 100
-    num_chemicals = min(preds_std.shape[2], num_chemicals)
+    # Cap the number of quantities at 100
+    num_quantities = min(preds_std.shape[2], num_quantities)
 
     # Determine the number of plots needed
-    chemicals_per_plot = 10
-    num_plots = int(np.ceil(num_chemicals / chemicals_per_plot))
+    quantities_per_plot = 10
+    num_plots = int(np.ceil(num_quantities / quantities_per_plot))
 
     # Define the color palette
-    colors = plt.cm.viridis(np.linspace(0, 1, chemicals_per_plot))
+    colors = plt.cm.viridis(np.linspace(0, 1, quantities_per_plot))
 
     # Create subplots
     fig = plt.figure(figsize=(8, 4 * num_plots))
@@ -540,13 +540,13 @@ def plot_example_predictions_with_uncertainty(
     for plot_idx in range(num_plots):
         ax = fig.add_subplot(gs[plot_idx])
 
-        start_idx = plot_idx * chemicals_per_plot
-        end_idx = min((plot_idx + 1) * chemicals_per_plot, num_chemicals)
+        start_idx = plot_idx * quantities_per_plot
+        end_idx = min((plot_idx + 1) * quantities_per_plot, num_quantities)
 
         legend_lines = []  # To store the line objects for the legend
 
         for chem_idx in range(start_idx, end_idx):
-            color = colors[chem_idx % chemicals_per_plot]
+            color = colors[chem_idx % quantities_per_plot]
             gt = targets[example_idx, :, chem_idx]
             mean = preds_mean[example_idx, :, chem_idx]
             std = preds_std[example_idx, :, chem_idx]
@@ -740,15 +740,6 @@ def plot_surr_losses(
         mode="main",
         show_title=show_title,
     )
-    # plot_losses_dual_axis(
-    #     main_train_loss,
-    #     main_test_loss,
-    #     labels=("Train Loss", "Test Loss"),
-    #     title="Main Model Losses",
-    #     save=True,
-    #     conf=conf,
-    #     surr_name=surr_name,
-    # )
 
     # Interpolation losses
     if conf["interpolation"]["enabled"]:
@@ -864,54 +855,54 @@ def plot_surr_losses(
         )
 
 
-def plot_error_distribution_per_chemical(
+def plot_error_distribution_per_quantity(
     surr_name: str,
     conf: dict,
     errors: np.ndarray,
-    chemical_names: list[str] | None = None,
-    num_chemicals: int = 10,
+    quantity_names: list[str] | None = None,
+    num_quantities: int = 10,
     save: bool = True,
     show_title: bool = True,
 ) -> None:
     """
-    Plot the distribution of errors for each chemical as a smoothed histogram plot.
+    Plot the distribution of errors for each quantity as a smoothed histogram plot.
 
     Args:
         surr_name (str): The name of the surrogate model.
         conf (dict): The configuration dictionary.
-        errors (np.ndarray): Errors array of shape [num_samples, num_timesteps, num_chemicals].
-        chemical_names (list, optional): List of chemical names for labeling the lines.
-        num_chemicals (int, optional): Number of chemicals to plot. Default is 10.
+        errors (np.ndarray): Errors array of shape [num_samples, num_timesteps, num_quantities].
+        quantity_names (list, optional): List of quantity names for labeling the lines.
+        num_quantities (int, optional): Number of quantities to plot. Default is 10.
         save (bool, optional): Whether to save the plot as a file.
         show_title (bool): Whether to show the title on the plot.
     """
     # Reshape errors to combine samples and timesteps
-    total_chemicals = errors.shape[2]
-    errors = errors.reshape(-1, total_chemicals)
+    total_quantities = errors.shape[2]
+    errors = errors.reshape(-1, total_quantities)
 
-    # Cap the number of chemicals to plot at 50
-    num_chemicals = min(num_chemicals, 50)
-    errors = errors[:, :num_chemicals]
-    chemical_names = (
-        chemical_names[:num_chemicals] if chemical_names is not None else None
+    # Cap the number of quantities to plot at 50
+    num_quantities = min(num_quantities, 50)
+    errors = errors[:, :num_quantities]
+    quantity_names = (
+        quantity_names[:num_quantities] if quantity_names is not None else None
     )
 
-    # Split the chemicals into groups of 10
-    chemicals_per_plot = 10
-    num_plots = int(np.ceil(num_chemicals / chemicals_per_plot))
+    # Split the quantities into groups of 10
+    quantities_per_plot = 10
+    num_plots = int(np.ceil(num_quantities / quantities_per_plot))
 
     # Initialize list to hold log-transformed non-zero errors and count zeros
     log_errors = []
     zero_counts = 0
 
     # Transform error magnitudes to log-space and filter out zeros
-    for i in range(num_chemicals):
-        chemical_errors = errors[:, i]
-        if np.isnan(chemical_errors).any():
+    for i in range(num_quantities):
+        quantity_errors = errors[:, i]
+        if np.isnan(quantity_errors).any():
             raise ValueError("Error values contain NaNs.")
-        non_zero_chemical_errors = chemical_errors[chemical_errors > 0]
-        log_errors.append(np.log10(non_zero_chemical_errors))
-        zero_counts += np.sum(chemical_errors == 0)
+        non_zero_quantity_errors = quantity_errors[quantity_errors > 0]
+        log_errors.append(np.log10(non_zero_quantity_errors))
+        zero_counts += np.sum(quantity_errors == 0)
 
     # Calculate the 1st and 99th percentiles in the log-space
     min_percentiles = [np.percentile(err, 1) for err in log_errors if len(err) > 0]
@@ -935,15 +926,15 @@ def plot_error_distribution_per_chemical(
     if num_plots == 1:
         axes = [axes]  # Ensure axes is iterable even if there's only one plot
 
-    colors = get_custom_palette(chemicals_per_plot)
+    colors = get_custom_palette(quantities_per_plot)
 
     # Define the x-axis range for plotting
     x_vals = np.linspace(x_min, x_max + 0.1, 100)
 
     for plot_idx in range(num_plots):
         ax = axes[plot_idx]
-        start_idx = plot_idx * chemicals_per_plot
-        end_idx = min((plot_idx + 1) * chemicals_per_plot, num_chemicals)
+        start_idx = plot_idx * quantities_per_plot
+        end_idx = min((plot_idx + 1) * quantities_per_plot, num_quantities)
 
         for i in range(start_idx, end_idx):
             # Compute histogram in log-space
@@ -957,16 +948,16 @@ def plot_error_distribution_per_chemical(
                 10 ** bin_edges[:-1],
                 smoothed_hist,
                 label=(
-                    chemical_names[i]
-                    if chemical_names is not None and len(chemical_names) > i
+                    quantity_names[i]
+                    if quantity_names is not None and len(quantity_names) > i
                     else None
                 ),
-                color=colors[i % chemicals_per_plot],
+                color=colors[i % quantities_per_plot],
             )
 
         ax.set_yscale("linear")
         ax.set_ylabel("Smoothed Histogram Count")
-        if chemical_names is not None:
+        if quantity_names is not None:
             # Move legend outside of plot area on the right, centered vertically
             ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
@@ -2197,7 +2188,7 @@ def plot_error_distribution_comparative(
 
     Args:
         conf (dict): The configuration dictionary.
-        errors (dict): Dictionary containing numpy arrays of shape [num_samples, num_timesteps, num_chemicals] for each model.
+        errors (dict): Dictionary containing numpy arrays of shape [num_samples, num_timesteps, num_quantities] for each model.
         save (bool, optional): Whether to save the plot as a file.
         mode (str, optional): The mode of the plot. Default is "main".
         show_title (bool): Whether to show the title on the plot.

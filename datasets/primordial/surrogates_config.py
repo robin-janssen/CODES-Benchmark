@@ -20,13 +20,14 @@ class LatentNeuralODEConfig:
     """Model config for LatentNeuralODE for the simple_ode dataset"""
 
     latent_features: int = 9
-    layers_factor: int = 200
+    coder_layers: int = 4
+    coder_width: int = 230
     learning_rate: float = 0.0004
-    ode_layers: int = 9
-    ode_width: int = 58
+    ode_layers: int = 5
+    ode_width: int = 150
     ode_tanh_reg: bool = True
     activation: nn.Module = nn.LeakyReLU()
-    model_version: str = "v1"
+    model_version: str = "v2"
 
 
 @dataclass
@@ -46,5 +47,6 @@ class LatentPolyConfig:
     latent_features: int = 6
     degree: int = 2
     learning_rate: float = 0.002
-    layers_factor: int = 64
+    coder_layers: int = 4
+    coder_width: int = 230
     activation: nn.Module = nn.LeakyReLU()

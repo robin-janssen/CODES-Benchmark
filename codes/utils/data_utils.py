@@ -113,14 +113,14 @@ def check_and_load_data(
         for data in (train_data, test_data, val_data):
             if data.ndim != 3:
                 raise DatasetError(
-                    "Data does not have the required shape (n_samples, n_timesteps, n_chemicals)."
+                    "Data does not have the required shape (n_samples, n_timesteps, n_quantities)."
                 )
 
-        _, n_timesteps, n_chemicals = train_data.shape
+        _, n_timesteps, n_quantities = train_data.shape
         n_samples = train_data.shape[0] + test_data.shape[0] + val_data.shape[0]
         if verbose:
             print(
-                f"{mode.capitalize()} data loaded: {n_samples} samples, {n_timesteps} timesteps, {n_chemicals} chemicals."
+                f"{mode.capitalize()} data loaded: {n_samples} samples, {n_timesteps} timesteps, {n_quantities} quantities."
             )
 
         # Load or generate timesteps
@@ -152,9 +152,9 @@ def check_and_load_data(
             labels = f.attrs["labels"]
             if not isinstance(labels, np.ndarray):
                 raise TypeError("Labels must be an array of strings.")
-            if len(labels) != n_chemicals:
+            if len(labels) != n_quantities:
                 raise ValueError(
-                    "The number of labels must match the number of chemicals."
+                    "The number of labels must match the number of quantities."
                 )
         else:
             labels = None
@@ -250,13 +250,13 @@ def create_hdf5_dataset(
     Additionally, store metadata about the dataset.
 
     Args:
-        train_data (np.ndarray): The training data array of shape (n_samples, n_timesteps, n_chemicals).
-        test_data (np.ndarray): The test data array of shape (n_samples, n_timesteps, n_chemicals).
-        val_data (np.ndarray): The validation data array of shape (n_samples, n_timesteps, n_chemicals).
+        train_data (np.ndarray): The training data array of shape (n_samples, n_timesteps, n_quantities).
+        test_data (np.ndarray): The test data array of shape (n_samples, n_timesteps, n_quantities).
+        val_data (np.ndarray): The validation data array of shape (n_samples, n_timesteps, n_quantities).
         dataset_name (str): The name of the dataset.
         data_dir (str): The directory to save the dataset in.
         timesteps (np.ndarray, optional): The timesteps array. If None, integer timesteps will be generated.
-        labels (list[str], optional): The labels for the chemicals.
+        labels (list[str], optional): The labels for the quantities.
     """
 
     # Create dataset directory if it doesn't exist
@@ -277,7 +277,7 @@ def create_hdf5_dataset(
         f.attrs["n_test_samples"] = test_data.shape[0]
         f.attrs["n_val_samples"] = val_data.shape[0]
         f.attrs["n_timesteps"] = train_data.shape[1]
-        f.attrs["n_chemicals"] = train_data.shape[2]
+        f.attrs["n_quantities"] = train_data.shape[2]
         f.attrs["labels"] = labels
 
 
@@ -355,7 +355,7 @@ def create_dataset(
         split (tuple(float, float, float), optional): If test_data and val_data are not provided,
             train_data will be split into training, test and validation data according to these ratios.
         timesteps (np.ndarray, optional): The timesteps array.
-        labels (list[str], optional): The labels for the chemicals.
+        labels (list[str], optional): The labels for the quantities.
 
     Raises:
         FileExistsError: If the dataset already exists.
@@ -373,7 +373,7 @@ def create_dataset(
         raise TypeError("train_data must be a numpy array.")
     if train_data.ndim != 3:
         raise ValueError(
-            "train_data must have shape (n_samples, n_timesteps, n_chemicals)."
+            "train_data must have shape (n_samples, n_timesteps, n_quantities)."
         )
 
     # Check consistency if test_data or val_data are provided.
@@ -390,11 +390,11 @@ def create_dataset(
             raise TypeError("val_data must be a numpy array.")
         if train_data.shape[1:] != test_data.shape[1:]:
             raise ValueError(
-                "train_data and test_data must have the same number of timesteps and chemicals."
+                "train_data and test_data must have the same number of timesteps and quantities."
             )
         if train_data.shape[1:] != val_data.shape[1:]:
             raise ValueError(
-                "train_data and val_data must have the same number of timesteps and chemicals."
+                "train_data and val_data must have the same number of timesteps and quantities."
             )
         np.random.shuffle(test_data)
         np.random.shuffle(val_data)
@@ -459,7 +459,7 @@ def create_dataset(
         if not isinstance(labels, list):
             raise TypeError("labels must be a list of strings.")
         if len(labels) != train_data.shape[2]:
-            raise ValueError("The number of labels must match the number of chemicals.")
+            raise ValueError("The number of labels must match the number of quantities.")
 
     # Create the HDF5 dataset.
     create_hdf5_dataset(

@@ -19,7 +19,7 @@ from .bench_plots import (  # plot_generalization_errors,; rel_errors_and_uq,
     plot_dynamic_correlation_heatmap,
     plot_error_correlation_heatmap,
     plot_error_distribution_comparative,
-    plot_error_distribution_per_chemical,
+    plot_error_distribution_per_quantity,
     plot_example_mode_predictions,
     plot_example_predictions_with_uncertainty,
     plot_generalization_error_comparison,
@@ -86,9 +86,9 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     )
     model_config = get_model_config(surr_name, conf)
     n_timesteps = train_data.shape[1]
-    n_chemicals = train_data.shape[2]
+    n_quantities = train_data.shape[2]
     n_test_samples = n_timesteps * val_data.shape[0]
-    model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
+    model = surrogate_class(device, n_quantities, n_timesteps, model_config)
 
     # Placeholder for metrics
     metrics = {}
@@ -185,25 +185,25 @@ def evaluate_accuracy(
     labels: list | None = None,
 ) -> dict[str, Any]:
     """
-    Evaluate the accuracy of the surrogate model.
+        Evaluate the accuracy of the surrogate model.
+    quantitiesquantities
+        Args:
+            model: Instance of the surrogate model class.
+            surr_name (str): The name of the surrogate model.
+            timesteps (np.ndarray): The timesteps array.
+            test_loader (DataLoader): The DataLoader object containing the test data.
+            conf (dict): The configuration dictionary.
+            labels (list, optional): The labels for the quantities.
 
-    Args:
-        model: Instance of the surrogate model class.
-        surr_name (str): The name of the surrogate model.
-        timesteps (np.ndarray): The timesteps array.
-        test_loader (DataLoader): The DataLoader object containing the test data.
-        conf (dict): The configuration dictionary.
-        labels (list, optional): The labels for the chemical species.
-
-    Returns:
-        dict: A dictionary containing accuracy metrics.
+        Returns:
+            dict: A dictionary containing accuracy metrics.
     """
     training_id = conf["training_id"]
 
     # Load the model
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
     train_time = model.train_duration
-    num_chemicals = model.n_chemicals
+    num_quantities = model.n_quantities
     model_index = conf["surrogates"].index(surr_name)
     n_epochs = conf["epochs"][model_index]
 
@@ -229,12 +229,12 @@ def evaluate_accuracy(
         show_title=TITLE,
     )
 
-    plot_error_distribution_per_chemical(
+    plot_error_distribution_per_quantity(
         surr_name,
         conf,
         relative_errors,
-        chemical_names=labels,
-        num_chemicals=num_chemicals,
+        quantity_names=labels,
+        num_quantities=num_quantities,
         save=True,
         show_title=TITLE,
     )
@@ -431,7 +431,7 @@ def evaluate_interpolation(
         test_loader (DataLoader): The DataLoader object containing the test data.
         timesteps (np.ndarray): The timesteps array.
         conf (dict): The configuration dictionary.
-        labels (list, optional): The labels for the chemical species.
+        labels (list, optional): The labels for the quantities.
 
     Returns:
         dict: A dictionary containing interpolation metrics.
@@ -529,7 +529,7 @@ def evaluate_extrapolation(
         test_loader (DataLoader): The DataLoader object containing the test data.
         timesteps (np.ndarray): The timesteps array.
         conf (dict): The configuration dictionary.
-        labels (list, optional): The labels for the chemical species.
+        labels (list, optional): The labels for the quantities.
 
     Returns:
         dict: A dictionary containing extrapolation metrics.
@@ -793,7 +793,7 @@ def evaluate_UQ(
         test_loader (DataLoader): The DataLoader object containing the test data.
         timesteps (np.ndarray): The timesteps array.
         conf (dict): The configuration dictionary.
-        labels (list, optional): The labels for the chemical species.
+        labels (list, optional): The labels for the quantities.
 
     Returns:
         dict: A dictionary containing UQ metrics.
@@ -952,9 +952,9 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
         training_id = config["training_id"]
         surrogate_class = get_surrogate(surr_name)
         n_timesteps = metrics[surr_name]["timesteps"].shape[0]
-        n_chemicals = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
+        n_quantities = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
         model_config = get_model_config(surr_name, config)
-        model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
+        model = surrogate_class(device, n_quantities, n_timesteps, model_config)
 
         def load_losses(model_identifier: str):
             model.load(training_id, surr_name, model_identifier=model_identifier)
@@ -1001,9 +1001,9 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
 #         training_id = config["training_id"]
 #         surrogate_class = get_surrogate(surr_name)
 #         n_timesteps = metrics[surr_name]["timesteps"].shape[0]
-#         n_chemicals = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
+#         n_quantities = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
 #         model_config = get_model_config(surr_name, config)
-#         model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
+#         model = surrogate_class(device, n_quantities, n_timesteps, model_config)
 #         model_identifier = f"{surr_name.lower()}_main"
 #         model.load(training_id, surr_name, model_identifier=model_identifier)
 #         MAE.append(model.MAE)

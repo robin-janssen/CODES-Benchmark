@@ -129,7 +129,7 @@ def mass_conservation_loss(
     """
     Replaces the standard MSE loss with a sum of the standard MSE loss and a mass conservation loss.
 
-    :param masses: A list of masses for the chemical species.
+    :param masses: A list of masses for the quantities.
     :param criterion: The loss function to use for the standard loss.
     :param weights: A 2-tuple of weights for the standard loss and the mass conservation loss.
     :param device: The device to use for the loss function.
@@ -147,7 +147,7 @@ def mass_conservation_loss(
         """
         standard_loss = criterion(outputs, targets)
 
-        # Calculate the weighted sum of each chemical quantity for predicted and ground truth,
+        # Calculate the weighted sum of each quantity for predicted and ground truth,
         # resulting in the total predicted mass and ground truth mass for each sample in the batch
         predicted_mass = torch.sum(outputs * masses, dim=1)
         true_mass = torch.sum(targets * masses, dim=1)

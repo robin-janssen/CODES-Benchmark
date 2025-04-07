@@ -24,6 +24,7 @@ class LatentNeuralODEConfig:
     learning_rate: float = 0.002
     ode_tanh_reg: bool = False
     activation: nn.Module = nn.GELU()
+    model_version: str = "v1"
 
 
 @dataclass
