@@ -290,15 +290,23 @@ class FullyConnected(AbstractSurrogateModel):
         n_samples, n_timesteps, n_quantities = dataset.shape
         total_samples = n_samples * n_timesteps
 
-        # Expand dataset with time as an additional feature
-        tiled_timesteps = np.tile(timesteps, (n_samples, 1))
-        dataset_with_time = np.concatenate(
-            [dataset, tiled_timesteps.reshape(n_samples, n_timesteps, 1)], axis=2
-        )
+        # For each sample, use the initial state (at time t=0) paired with the current time
+        initial_states = dataset[:, 0, :]  # shape: (n_samples, n_quantities)
+        rep_initial = np.repeat(
+            initial_states[:, np.newaxis, :], n_timesteps, axis=1
+        )  # shape: (n_samples, n_timesteps, n_quantities)
+        time_feature = np.tile(
+            timesteps.reshape(1, n_timesteps, 1), (n_samples, 1, 1)
+        )  # shape: (n_samples, n_timesteps, 1)
+        # Input is [initial_state, time] -> shape: (n_samples, n_timesteps, n_quantities+1)
+        inputs = np.concatenate([rep_initial, time_feature], axis=2)
 
-        # Flatten the data
-        flattened_inputs = dataset_with_time.reshape(-1, n_quantities + 1)
-        flattened_targets = dataset.reshape(-1, n_quantities)
+        # The target is the state at time t for each sample
+        targets = dataset  # shape: (n_samples, n_timesteps, n_quantities)
+
+        # Flatten the inputs and targets for batching
+        flattened_inputs = inputs.reshape(-1, n_quantities + 1)
+        flattened_targets = targets.reshape(-1, n_quantities)
 
         if shuffle:
             permutation = np.random.permutation(total_samples)
@@ -315,14 +323,12 @@ class FullyConnected(AbstractSurrogateModel):
         for batch_idx in range(num_full_batches):
             start = batch_idx * batch_size
             end = start + batch_size
-
             batch_input = (
                 torch.from_numpy(flattened_inputs[start:end]).float().to(device)
             )
             batch_target = (
                 torch.from_numpy(flattened_targets[start:end]).float().to(device)
             )
-
             batched_inputs.append(batch_input)
             batched_targets.append(batch_target)
 
@@ -332,18 +338,15 @@ class FullyConnected(AbstractSurrogateModel):
             batch_target = (
                 torch.from_numpy(flattened_targets[start:]).float().to(device)
             )
-
             batched_inputs.append(batch_input)
             batched_targets.append(batch_target)
 
-        # Create the pre-batched dataset
         dataset_prebatched = FCPrebatchedDataset(batched_inputs, batched_targets)
 
-        # Create the DataLoader with the original configuration
         return DataLoader(
             dataset_prebatched,
-            batch_size=1,  # Each "batch" is a precomputed batch
-            shuffle=False,  # Shuffle the order of batches each epoch
+            batch_size=1,  # Each precomputed batch is treated as one batch
+            shuffle=False,
             num_workers=0,
             collate_fn=fc_collate_fn,
             worker_init_fn=worker_init_fn,
