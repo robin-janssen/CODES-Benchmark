@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "codes"
 version = "0.1.0"
-description = "Benchmarking tool for neural (chemical) ODE surrogate models"
+description = "Benchmarking tool for coupled ODE surrogate models"
 authors = ["Robin Janssen <robin.janssen@stud.uni-heidelberg.de>", "Immanuel Sulzer"]
 license = "GPL-3.0"
 readme = "README.md"

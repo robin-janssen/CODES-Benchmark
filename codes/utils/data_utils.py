@@ -113,14 +113,14 @@ def check_and_load_data(
         for data in (train_data, test_data, val_data):
             if data.ndim != 3:
                 raise DatasetError(
-                    "Data does not have the required shape (n_samples, n_timesteps, n_chemicals)."
+                    "Data does not have the required shape (n_samples, n_timesteps, n_quantities)."
                 )
 
-        _, n_timesteps, n_chemicals = train_data.shape
+        _, n_timesteps, n_quantities = train_data.shape
         n_samples = train_data.shape[0] + test_data.shape[0] + val_data.shape[0]
         if verbose:
             print(
-                f"Data loaded: {n_samples} samples, {n_timesteps} timesteps, {n_chemicals} chemicals."
+                f"{mode.capitalize()} data loaded: {n_samples} samples, {n_timesteps} timesteps, {n_quantities} quantities."
             )
 
         if "timesteps" in f:
@@ -151,9 +151,9 @@ def check_and_load_data(
             labels = f.attrs["labels"]
             if not isinstance(labels, np.ndarray):
                 raise TypeError("Labels must be an array of strings.")
-            if len(labels) != n_chemicals:
+            if len(labels) != n_quantities:
                 raise ValueError(
-                    "The number of labels must match the number of chemicals."
+                    "The number of labels must match the number of quantities."
                 )
         else:
             labels = None
@@ -443,9 +443,9 @@ def create_hdf5_dataset(
     Create an HDF5 file for a dataset with train, test, and validation data, along with optional timesteps and parameters.
 
     Args:
-        train_data (np.ndarray): Training data of shape (n_samples, n_timesteps, n_quantities).
-        test_data (np.ndarray): Test data of shape (n_samples, n_timesteps, n_quantities).
-        val_data (np.ndarray): Validation data of shape (n_samples, n_timesteps, n_quantities).
+        train_data (np.ndarray): The training data array of shape (n_samples, n_timesteps, n_quantities).
+        test_data (np.ndarray): The test data array of shape (n_samples, n_timesteps, n_quantities).
+        val_data (np.ndarray): The validation data array of shape (n_samples, n_timesteps, n_quantities).
         dataset_name (str): The name of the dataset.
         data_dir (str): The directory in which to save the dataset.
         timesteps (np.ndarray, optional): A 1D array of timesteps.
@@ -536,6 +536,143 @@ def get_data_subset(
     return train_data, test_data, timesteps
 
 
+def create_dataset(
+    name: str,
+    train_data: np.ndarray,
+    test_data: np.ndarray | None = None,
+    val_data: np.ndarray | None = None,
+    split: tuple[float, float, float] | None = None,
+    timesteps: np.ndarray | None = None,
+    labels: list[str] | None = None,
+):
+    """
+    Creates a new dataset in the data directory with train, test and validation data.
+
+    If only train_data is provided, it will be split into train, test and validation sets.
+    If split is not provided in this case, a default split of (0.7, 0.1, 0.2) is used.
+
+    Args:
+        name (str): The name of the dataset.
+        train_data (np.ndarray): The training data.
+        test_data (np.ndarray, optional): The test data.
+        val_data (np.ndarray, optional): The validation data.
+        split (tuple(float, float, float), optional): If test_data and val_data are not provided,
+            train_data will be split into training, test and validation data according to these ratios.
+        timesteps (np.ndarray, optional): The timesteps array.
+        labels (list[str], optional): The labels for the quantities.
+
+    Raises:
+        FileExistsError: If the dataset already exists.
+        TypeError: If the train_data (or test_data/val_data when provided) is not a numpy array.
+        ValueError: If the provided data do not have the correct shape or if only one of test_data/val_data is provided.
+    """
+    base_dir = "datasets"
+    dataset_dir = os.path.join(base_dir, name)
+
+    if os.path.exists(dataset_dir):
+        raise FileExistsError(f"Dataset '{name}' already exists.")
+
+    # Verify train_data is a numpy array and has the correct dimensions.
+    if not isinstance(train_data, np.ndarray):
+        raise TypeError("train_data must be a numpy array.")
+    if train_data.ndim != 3:
+        raise ValueError(
+            "train_data must have shape (n_samples, n_timesteps, n_quantities)."
+        )
+
+    # Check consistency if test_data or val_data are provided.
+    if (test_data is None) ^ (val_data is None):
+        raise ValueError(
+            "Either provide only train_data or provide all of train_data, test_data and val_data."
+        )
+
+    # If test_data and val_data are provided, perform type and shape checks.
+    if test_data is not None and val_data is not None:
+        if not isinstance(test_data, np.ndarray):
+            raise TypeError("test_data must be a numpy array.")
+        if not isinstance(val_data, np.ndarray):
+            raise TypeError("val_data must be a numpy array.")
+        if train_data.shape[1:] != test_data.shape[1:]:
+            raise ValueError(
+                "train_data and test_data must have the same number of timesteps and quantities."
+            )
+        if train_data.shape[1:] != val_data.shape[1:]:
+            raise ValueError(
+                "train_data and val_data must have the same number of timesteps and quantities."
+            )
+        np.random.shuffle(test_data)
+        np.random.shuffle(val_data)
+    else:
+        # Only train_data is provided. Use split to partition the data.
+        if split is None:
+            split = (0.7, 0.1, 0.2)  # default split
+        else:
+            if not isinstance(split, (tuple, list)):
+                raise TypeError("split must be a tuple or list of floats.")
+            if len(split) != 3:
+                raise ValueError(
+                    "split must contain three values: train, test, and validation split."
+                )
+            if not all(isinstance(value, float) for value in split):
+                raise TypeError("split values must be floats.")
+            if not all(0 <= value <= 1 for value in split):
+                raise ValueError("split values must be between 0 and 1.")
+            if not isclose(sum(split), 1, abs_tol=1e-5):
+                raise ValueError("split values must sum to 1.")
+
+    # Validate timesteps.
+    if timesteps is None:
+        print("Timesteps not provided and will not be saved.")
+    else:
+        if timesteps.ndim != 1 or timesteps.shape[0] != train_data.shape[1]:
+            raise ValueError(
+                "Timesteps must be a 1D array with length equal to the number of timesteps in the data."
+            )
+
+    # Shuffle the training data.
+    np.random.shuffle(train_data)
+
+    # If only train_data is provided, perform the splitting.
+    if test_data is None and val_data is None:
+        full_data = train_data
+        n_samples = full_data.shape[0]
+        n_train = int(n_samples * split[0])
+        n_test = int(n_samples * split[1])
+
+        train_data = full_data[:n_train]
+        test_data = full_data[n_train : n_train + n_test]
+        val_data = full_data[n_train + n_test :]
+
+        if any(
+            dim == 0
+            for shape in (train_data.shape, test_data.shape, val_data.shape)
+            for dim in shape
+        ):
+            raise ValueError(
+                "Split data contains zero samples. One of the splits is too small."
+            )
+    else:
+        # When test_data and val_data are provided, ignore the split value.
+        if split is not None:
+            print(
+                "Warning: split values will be ignored since test_data and val_data are provided."
+            )
+
+    # Validate labels.
+    if labels is not None:
+        if not isinstance(labels, list):
+            raise TypeError("labels must be a list of strings.")
+        if len(labels) != train_data.shape[2]:
+            raise ValueError("The number of labels must match the number of quantities.")
+
+    # Create the HDF5 dataset.
+    create_hdf5_dataset(
+        train_data, test_data, val_data, name, timesteps=timesteps, labels=labels
+    )
+
+    print(f"Dataset '{name}' created at {dataset_dir}")
+
+
 class DownloadProgressBar(tqdm):
     def update_to(self, b=1, bsize=1, tsize=None):
         """
@@ -550,12 +687,13 @@ class DownloadProgressBar(tqdm):
         self.update(b * bsize - self.n)
 
 
-def download_data(dataset_name: str, path: str | None = None):
+def download_data(dataset_name: str, path: str | None = None, verbose: bool = True):
     """
     Download the specified dataset if it is not present, with a progress bar.
     Args:
         dataset_name (str): The name of the dataset.
         path (str, optional): The path to save the dataset. If None, the default data directory is used.
+        verbose (bool): Whether to print information about the download progress.
     """
     data_path = (
         os.path.abspath(f"datasets/{dataset_name.lower()}/data.hdf5")
@@ -563,7 +701,8 @@ def download_data(dataset_name: str, path: str | None = None):
         else os.path.abspath(path)
     )
     if os.path.isfile(data_path):
-        print(f"Dataset '{dataset_name}' already exists at {data_path}.")
+        if verbose:
+            print(f"Dataset '{dataset_name}' already exists at {data_path}.")
         return
 
     with open("datasets/data_sources.yaml", "r", encoding="utf-8") as file:

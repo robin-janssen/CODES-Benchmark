@@ -67,6 +67,7 @@ if __name__ == "__main__":
         split=split,
         timesteps=timesteps,
         labels=labels,
+        split=(0.7, 0.1, 0.2),
     )
 
     print("Dataset created successfully!")

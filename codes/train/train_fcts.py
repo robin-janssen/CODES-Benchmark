@@ -89,14 +89,14 @@ def train_and_save_model(
     else:
         train_params = test_params = None
 
-    _, n_timesteps, n_chemicals = train_data.shape
+    _, n_timesteps, n_quantities = train_data.shape
 
     surrogate_class = get_surrogate(surr_name)
     model_config = get_model_config(surr_name, config)
 
     with threadlock:
         set_random_seeds(seed, device)
-        model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
+        model = surrogate_class(device, n_quantities, n_timesteps, model_config)
     model.normalisation = data_params
     surr_idx = config["surrogates"].index(surr_name)
 
@@ -114,6 +114,7 @@ def train_and_save_model(
             shuffle=True,
             dataset_train_params=train_params,
             dataset_test_params=test_params,
+            dummy_timesteps=True,
         )
 
     description = make_description(mode, device, str(metric), surr_name)
@@ -177,7 +178,7 @@ def create_task_list_for_surrogate(config, surr_name: str) -> list:
     if config["uncertainty"]["enabled"]:
         n_models = config["uncertainty"]["ensemble_size"]
         for i in range(n_models - 1):
-            tasks.append((surr_name, "UQ", i + 2, id, seed + i, epochs))
+            tasks.append((surr_name, "UQ", i + 1, id, seed + i, epochs))
 
     if config["batch_scaling"]["enabled"]:
         mode = "batchsize"

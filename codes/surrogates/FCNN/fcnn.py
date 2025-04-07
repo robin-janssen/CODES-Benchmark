@@ -16,12 +16,12 @@ def fc_collate_fn(batch):
     Args:
         batch: A list of tuples (input_batch, target_batch)
                where each item is already a precomputed batch of shape:
-                 input_batch -> [batch_size, n_chemicals+1]
-                 target_batch -> [batch_size, n_chemicals]
+                 input_batch -> [batch_size, n_quantities+1]
+                 target_batch -> [batch_size, n_quantities]
     Returns:
         A tuple of tensors with the final shapes:
-        - inputs: [batch_size, n_chemicals+1]
-        - targets: [batch_size, n_chemicals]
+        - inputs: [batch_size, n_quantities+1]
+        - targets: [batch_size, n_quantities]
     """
     # 'batch' is a list of length=1 if DataLoader has batch_size=1,
     # and each element is (input_tensor, target_tensor).
@@ -45,7 +45,7 @@ class FCPrebatchedDataset(Dataset):
 
     def __getitem__(self, index):
         # Return one precomputed batch:
-        # shape -> ( [batch_size, n_chemicals+1], [batch_size, n_chemicals] )
+        # shape -> ( [batch_size, n_quantities+1], [batch_size, n_quantities] )
         return self.inputs_batches[index], self.targets_batches[index]
 
     def __len__(self):
@@ -77,7 +77,7 @@ class FullyConnected(AbstractSurrogateModel):
     def __init__(
         self,
         device: str | None = None,
-        n_chemicals: int = 29,
+        n_quantities: int = 29,
         n_timesteps: int = 100,
         config: dict | None = None,
     ):
@@ -94,16 +94,16 @@ class FullyConnected(AbstractSurrogateModel):
         """
         super().__init__(
             device=device,
-            n_chemicals=n_chemicals,
+            n_quantities=n_quantities,
             n_timesteps=n_timesteps,
             config=config,
         )
         self.config = FCNNBaseConfig(**self.config)
         self.device = device
-        self.N = n_chemicals
+        self.N = n_quantities
 
         self.model = FullyConnectedNet(
-            input_size=self.N + 1,  # 29 chemicals + 1 time input
+            input_size=self.N + 1,  # 29 quantities + 1 time input
             hidden_size=self.config.hidden_size,
             output_size=self.N,
             num_hidden_layers=self.config.num_hidden_layers,
@@ -126,19 +126,32 @@ class FullyConnected(AbstractSurrogateModel):
     def prepare_data(
         self,
         dataset_train: np.ndarray,
-        dataset_test: np.ndarray,
+        dataset_test: np.ndarray | None,
         dataset_val: np.ndarray | None,
         timesteps: np.ndarray,
         batch_size: int,
         shuffle: bool = True,
+        dummy_timesteps: bool = True,
     ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
         """
         Prepare the data for the predict or fit methods.
-        All datasets: shape (n_samples, n_timesteps, n_chemicals)
 
-        Returns: train_loader, test_loader, val_loader
+        Args:
+            dataset_train (np.ndarray): Training data.
+            dataset_test (np.ndarray | None): Test data (optional).
+            dataset_val (np.ndarray | None): Validation data (optional).
+            timesteps (np.ndarray): Timesteps.
+            batch_size (int): Batch size.
+            shuffle (bool, optional): Whether to shuffle the data. Defaults to True.
+            dummy_timesteps (bool, optional): Whether to use dummy timesteps. Defaults to True.
+
+        Returns:
+            tuple[DataLoader, DataLoader | None, DataLoader | None]:
+                DataLoader for training, test, and validation data.
         """
         dataloaders = []
+        if dummy_timesteps:
+            timesteps = np.linspace(0, 1, dataset_train.shape[1])
         loader = self.create_dataloader(dataset_train, timesteps, batch_size, shuffle)
         dataloaders.append(loader)
         for dataset in [dataset_test, dataset_val]:
@@ -159,42 +172,69 @@ class FullyConnected(AbstractSurrogateModel):
         epochs: int,
         position: int = 0,
         description: str = "Training FullyConnected",
+        multi_objective: bool = False,
     ) -> None:
+        """
+        Train the FullyConnected model.
+
+        Args:
+            train_loader (DataLoader): The DataLoader object containing the training data.
+            test_loader (DataLoader): The DataLoader object containing the test data.
+            epochs (int, optional): The number of epochs to train the model.
+            position (int): The position of the progress bar.
+            description (str): The description for the progress bar.
+            multi_objective (bool): Whether multi-objective optimization is used.
+                                    If True, trial.report is not used (not supported by Optuna).
+
+        Returns:
+            None. The training loss, test loss, and MAE are stored in the model.
+        """
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
         # criterion = nn.MSELoss(reduction="sum")
         criterion = nn.MSELoss()
         optimizer = self.setup_optimizer_and_scheduler()
 
-        train_losses, test_losses, MAEs = [np.zeros(epochs) for _ in range(3)]
+        loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
+        train_losses, test_losses, MAEs = [np.zeros(loss_length) for _ in range(3)]
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
+        self.train()
+        optimizer.train()
+
         for epoch in progress_bar:
-            train_losses[epoch] = self.epoch(train_loader, criterion, optimizer)
+            self.epoch(train_loader, criterion, optimizer)
 
-            clr = optimizer.param_groups[0]["lr"]
-            # print_loss = f"{train_losses[epoch].item():.2e}"
-            # progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
-
-            if test_loader is not None:
+            if epoch % self.update_epochs == 0:
+                index = epoch // self.update_epochs
+                # Set model and optimizer to eval mode for evaluation
                 self.eval()
                 optimizer.eval()
+
+                # Calculate losses and MAE
+                preds, targets = self.predict(train_loader)
+                train_losses[index] = criterion(preds, targets).item()
                 preds, targets = self.predict(test_loader)
-                loss = criterion(preds, targets).item()
-                # loss /= len(test_loader.dataset) * self.N
-                test_losses[epoch] = loss
-                MAEs[epoch] = self.L1(preds, targets).item()
+                test_losses[index] = criterion(preds, targets).item()
+                MAEs[index] = self.L1(preds, targets).item()
 
-                print_loss = f"{test_losses[epoch].item():.2e}"
-                progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
+                # Update progress bar postfix
+                postfix = {
+                    "train_loss": f"{train_losses[index]:.2e}",
+                    "test_loss": f"{test_losses[index]:.2e}",
+                }
+                progress_bar.set_postfix(postfix)
 
-                if self.optuna_trial is not None:
-                    if epoch % self.trial_update_epochs == 0:
-                        self.optuna_trial.report(loss, epoch)
-                        if self.optuna_trial.should_prune():
-                            raise optuna.TrialPruned()
+                # Report the test loss to Optuna
+                if self.optuna_trial is not None and not multi_objective:
+                    self.optuna_trial.report(test_losses[index], step=epoch)
+                    if self.optuna_trial.should_prune():
+                        raise optuna.TrialPruned()
+
+                self.train()
+                optimizer.train()
 
         progress_bar.close()
-        self.n_epochs = epoch
+        self.n_epochs = epoch + 1
         self.train_loss = train_losses
         self.test_loss = test_losses
         self.MAE = MAEs
@@ -215,9 +255,6 @@ class FullyConnected(AbstractSurrogateModel):
         criterion: nn.Module,
         optimizer: torch.optim.Optimizer,
     ) -> float:
-        self.train()
-        optimizer.train()
-        total_loss = 0
         # dataset_size = len(data_loader.dataset)
 
         for batch in data_loader:
@@ -229,10 +266,6 @@ class FullyConnected(AbstractSurrogateModel):
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
-            total_loss += loss.item()
-
-        # total_loss /= dataset_size * self.N
-        return total_loss
 
     def create_dataloader(
         self,
@@ -245,7 +278,7 @@ class FullyConnected(AbstractSurrogateModel):
         Create a DataLoader with optimized memory-safe shuffling and batching.
 
         Args:
-            dataset (np.ndarray): The data to load. Shape: (n_samples, n_timesteps, n_chemicals).
+            dataset (np.ndarray): The data to load. Shape: (n_samples, n_timesteps, n_quantities).
             timesteps (np.ndarray): The timesteps. Shape: (n_timesteps,).
             batch_size (int): The batch size.
             shuffle (bool, optional): Whether to shuffle the data. Defaults to False.
@@ -254,7 +287,7 @@ class FullyConnected(AbstractSurrogateModel):
             DataLoader: A DataLoader with precomputed batches.
         """
         device = self.device
-        n_samples, n_timesteps, n_chemicals = dataset.shape
+        n_samples, n_timesteps, n_quantities = dataset.shape
         total_samples = n_samples * n_timesteps
 
         # Expand dataset with time as an additional feature
@@ -264,8 +297,8 @@ class FullyConnected(AbstractSurrogateModel):
         )
 
         # Flatten the data
-        flattened_inputs = dataset_with_time.reshape(-1, n_chemicals + 1)
-        flattened_targets = dataset.reshape(-1, n_chemicals)
+        flattened_inputs = dataset_with_time.reshape(-1, n_quantities + 1)
+        flattened_targets = dataset.reshape(-1, n_quantities)
 
         if shuffle:
             permutation = np.random.permutation(total_samples)

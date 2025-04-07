@@ -24,7 +24,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
     Args:
         device (str, optional): The device to run the model on. Defaults to None.
-        n_chemicals (int, optional): The number of chemicals. Defaults to 29.
+        n_quantities (int, optional): The number of quantities. Defaults to 29.
         n_timesteps (int, optional): The number of timesteps. Defaults to 100.
         config (dict, optional): The configuration dictionary. Defaults to {}.
 
@@ -35,7 +35,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         normalisation (dict): The normalisation parameters.
         train_duration (float): The training duration.
         device (str): The device to run the model on.
-        n_chemicals (int): The number of chemicals.
+        n_quantities (int): The number of quantities.
         n_timesteps (int): The number of timesteps.
         L1 (nn.L1Loss): The L1 loss function.
         config (dict): The configuration dictionary.
@@ -97,7 +97,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
     def __init__(
         self,
         device: str | None = None,
-        n_chemicals: int = 29,
+        n_quantities: int = 29,
         n_timesteps: int = 100,
         config: dict | None = None,
     ):
@@ -107,13 +107,13 @@ class AbstractSurrogateModel(ABC, nn.Module):
         self.MAE = None
         self.normalisation = None
         self.device = device
-        self.n_chemicals = n_chemicals
+        self.n_quantities = n_quantities
         self.n_timesteps = n_timesteps
         self.L1 = nn.L1Loss()
         self.config = config if config is not None else {}
         self.train_duration = None
         self.optuna_trial = None
-        self.trial_update_epochs = 1
+        self.update_epochs = 10
         self.n_epochs = 0
 
     @classmethod
@@ -158,6 +158,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         timesteps: np.ndarray,
         batch_size: int,
         shuffle: bool,
+        dummy_timesteps: bool = True,
     ) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
         """
         Prepare the data for training, testing, and validation. This method should
@@ -170,6 +171,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             timesteps (np.ndarray): The timesteps.
             batch_size (int): The batch size.
             shuffle (bool): Whether to shuffle the data.
+            dummy_timesteps (bool): Whether to use dummy timesteps. Defaults to True.
 
         Returns:
             tuple[DataLoader, DataLoader, DataLoader]: The DataLoader objects for the
@@ -198,10 +200,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         """
         pass
 
-    def predict(
-        self,
-        data_loader: DataLoader,
-    ) -> tuple[Tensor, Tensor]:
+    def predict(self, data_loader: DataLoader) -> tuple[Tensor, Tensor]:
         """
         Evaluate the model on the given dataloader.
 
@@ -212,7 +211,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
         Returns:
             tuple[Tensor, Tensor]: The predictions and targets.
         """
-
         # infer output size
         with torch.inference_mode():
             dummy_inputs = next(iter(data_loader))
@@ -231,12 +229,16 @@ class AbstractSurrogateModel(ABC, nn.Module):
         processed_samples = 0
 
         with torch.inference_mode():
-            for i, inputs in enumerate(data_loader):
+            for inputs in data_loader:
                 preds, targs = self.forward(inputs)
-                batch_size = preds.shape[0]
-                predictions[i * batch_size : (i + 1) * batch_size, ...] = preds
-                targets[i * batch_size : (i + 1) * batch_size, ...] = targs
-                processed_samples += batch_size
+                current_batch_size = preds.shape[0]  # get actual batch size
+                predictions[
+                    processed_samples : processed_samples + current_batch_size, ...
+                ] = preds
+                targets[
+                    processed_samples : processed_samples + current_batch_size, ...
+                ] = targs
+                processed_samples += current_batch_size
 
         # Slice the buffers to include only the processed samples
         predictions = predictions[:processed_samples, ...]
@@ -245,8 +247,8 @@ class AbstractSurrogateModel(ABC, nn.Module):
         predictions = self.denormalize(predictions)
         targets = self.denormalize(targets)
 
-        predictions = predictions.reshape(-1, self.n_timesteps, self.n_chemicals)
-        targets = targets.reshape(-1, self.n_timesteps, self.n_chemicals)
+        predictions = predictions.reshape(-1, self.n_timesteps, self.n_quantities)
+        targets = targets.reshape(-1, self.n_timesteps, self.n_quantities)
 
         return predictions, targets
 
@@ -300,7 +302,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             self.fit.duration if hasattr(self.fit, "duration") else None
         )
         hyperparameters["train_duration"] = self.train_duration
-        hyperparameters["n_epochs"] = self.n_epochs + 1
+        hyperparameters["n_epochs"] = self.n_epochs
         hyperparameters["normalisation"] = self.normalisation
         hyperparameters["device"] = self.device
         if "cuda" in self.device:
@@ -398,9 +400,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             leave=False,
             bar_format=bar_format,
         )
-        progress_bar.set_postfix(
-            {"loss": f"{0:.2e}", "lr": f"{self.config.learning_rate:.1e}"}
-        )
+
         return progress_bar
 
     def denormalize(self, data: Tensor) -> Tensor:

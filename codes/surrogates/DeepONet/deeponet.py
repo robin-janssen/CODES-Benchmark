@@ -94,7 +94,7 @@ class OperatorNetwork(AbstractSurrogateModel):
 
     Args:
         device (str, optional): The device to use for training (e.g., 'cpu', 'cuda:0').
-        n_chemicals (int, optional): The number of chemicals.
+        n_quantities (int, optional): The number of quantities.
         n_timesteps (int, optional): The number of timesteps.
 
     Raises:
@@ -105,13 +105,13 @@ class OperatorNetwork(AbstractSurrogateModel):
     def __init__(
         self,
         device: str | None = None,
-        n_chemicals: int = 29,
+        n_quantities: int = 29,
         n_timesteps: int = 100,
         config: dict | None = None,
     ):
         super().__init__(
             device=device,
-            n_chemicals=n_chemicals,
+            n_quantities=n_quantities,
             n_timesteps=n_timesteps,
             config=config,
         )
@@ -149,7 +149,7 @@ class MultiONet(OperatorNetwork):
 
     Args:
         device (str, optional): The device to use for training (e.g., 'cpu', 'cuda:0').
-        n_chemicals (int, optional): The number of chemicals.
+        n_quantities (int, optional): The number of quantities.
         n_timesteps (int, optional): The number of timesteps.
         config (dict, optional): The configuration for the model.
 
@@ -173,24 +173,24 @@ class MultiONet(OperatorNetwork):
     def __init__(
         self,
         device: str | None = None,
-        n_chemicals: int = 29,
+        n_quantities: int = 29,
         n_timesteps: int = 100,
         config: dict | None = None,
     ):
         super().__init__(
             device=device,
-            n_chemicals=n_chemicals,
+            n_quantities=n_quantities,
             n_timesteps=n_timesteps,
             config=config,
         )
         self.config = MultiONetBaseConfig(**self.config)
         self.device = device
-        self.N = n_chemicals  # Number of chemicals
+        self.N = n_quantities  # Number of quantities
         self.outputs = (
-            n_chemicals * self.config.output_factor
+            n_quantities * self.config.output_factor
         )  # Number of neurons in the last layer
         self.branch_net = BranchNet(
-            n_chemicals - (self.config.trunk_input_size - 1),  # +1 due to time
+            n_quantities - (self.config.trunk_input_size - 1),  # +1 due to time
             self.config.hidden_size,
             self.outputs,
             self.config.branch_hidden_layers,
@@ -237,10 +237,11 @@ class MultiONet(OperatorNetwork):
         timesteps: np.ndarray,
         batch_size: int,
         shuffle: bool = True,
+        dummy_timesteps: bool = True,
     ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
         """
         Prepare the data for the predict or fit methods.
-        Note: All datasets must have shape (n_samples, n_timesteps, n_chemicals).
+        Note: All datasets must have shape (n_samples, n_timesteps, n_quantities).
 
         Args:
             dataset_train (np.ndarray): The training data.
@@ -249,11 +250,17 @@ class MultiONet(OperatorNetwork):
             timesteps (np.ndarray): The timesteps.
             batch_size (int, optional): The batch size.
             shuffle (bool, optional): Whether to shuffle the data.
+            dummy_timesteps (bool, optional): Whether to create a dummy timestep array.
 
         Returns:
             tuple: The training, test, and validation DataLoaders.
         """
         dataloaders = []
+
+        # Create dummy timesteps
+        if dummy_timesteps:
+            timesteps = np.linspace(0, 1, dataset_train.shape[1])
+
         # Create the train dataloader
         dataloader_train = self.create_dataloader(
             dataset_train,
@@ -286,6 +293,7 @@ class MultiONet(OperatorNetwork):
         epochs: int,
         position: int = 0,
         description: str = "Training DeepONet",
+        multi_objective: bool = False,
     ) -> None:
         """
         Train the MultiONet model.
@@ -296,51 +304,60 @@ class MultiONet(OperatorNetwork):
             epochs (int, optional): The number of epochs to train the model.
             position (int): The position of the progress bar.
             description (str): The description for the progress bar.
+            multi_objective (bool): Whether multi-objective optimization is used.
+                                    If True, trial.report is not used (not supported by Optuna).
 
         Returns:
             None. The training loss, test loss, and MAE are stored in the model.
         """
-        # self.n_timesteps = len(timesteps)
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
 
-        # criterion = self.setup_criterion()
         criterion = nn.MSELoss()
-        # optimizer = self.setup_optimizer_and_scheduler(epochs)
         optimizer = self.setup_optimizer_and_scheduler()
 
-        train_losses, test_losses, MAEs = [np.zeros(epochs) for _ in range(3)]
-
+        loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
+        train_losses, test_losses, MAEs = [np.zeros(loss_length) for _ in range(3)]
         progress_bar = self.setup_progress_bar(epochs, position, description)
+        self.train()
+        optimizer.train()
 
         for epoch in progress_bar:
-            train_losses[epoch] = self.epoch(train_loader, criterion, optimizer)
+            self.epoch(train_loader, criterion, optimizer)
 
-            clr = optimizer.param_groups[0]["lr"]
-            # print_loss = f"{train_losses[epoch].item():.2e}"
-            # progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
-            # scheduler.step()
-
-            if test_loader is not None:
+            if epoch % self.update_epochs == 0:
+                index = epoch // self.update_epochs
+                # Set model and optimizer to evaluation mode
                 self.eval()
                 optimizer.eval()
+
+                # Calculate losses and MAE
+                preds, targets = self.predict(train_loader)
+                train_losses[index] = criterion(preds, targets).item()
                 preds, targets = self.predict(test_loader)
-                loss = criterion(preds, targets).item()
-                # loss /= len(test_loader.dataset) * self.N
-                test_losses[epoch] = loss
-                MAEs[epoch] = self.L1(preds, targets).item()
+                test_losses[index] = criterion(preds, targets).item()
+                MAEs[index] = self.L1(preds, targets).item()
 
-                print_loss = f"{test_losses[epoch].item():.2e}"
-                progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
+                # Update progress bar postfix
+                postfix = {
+                    "train_loss": f"{train_losses[index]:.2e}",
+                    "test_loss": f"{test_losses[index]:.2e}",
+                }
+                progress_bar.set_postfix(postfix)
 
-                if self.optuna_trial is not None:
-                    if epoch % self.trial_update_epochs == 0:
-                        self.optuna_trial.report(loss, epoch)
-                        if self.optuna_trial.should_prune():
-                            raise optuna.TrialPruned()
+                # Report the loss to Optuna and check for pruning
+                if self.optuna_trial is not None and not multi_objective:
+
+                    self.optuna_trial.report(test_losses[index], epoch)
+                    if self.optuna_trial.should_prune():
+                        raise optuna.TrialPruned()
+
+                # Set model and optimizer back to training mode
+                self.train()
+                optimizer.train()
 
         progress_bar.close()
 
-        self.n_epochs = epoch
+        self.n_epochs = epoch + 1
         self.train_loss = train_losses
         self.test_loss = test_losses
         self.MAE = MAEs
@@ -408,11 +425,6 @@ class MultiONet(OperatorNetwork):
         Returns:
             float: The total loss for the training step.
         """
-        self.train()
-        optimizer.train()
-        total_loss = 0
-        # dataset_size = len(data_loader.dataset)
-
         for batch in data_loader:
             branch_input, trunk_input, targets = batch
             branch_input, trunk_input, targets = (
@@ -425,10 +437,6 @@ class MultiONet(OperatorNetwork):
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
-            total_loss += loss.item()
-
-        # total_loss /= dataset_size * self.N
-        return total_loss
 
     def create_dataloader_n(
         self,
@@ -441,7 +449,7 @@ class MultiONet(OperatorNetwork):
         Create a DataLoader for the given data.
 
         Args:
-            data (np.ndarray): The data to load. Must have shape (n_samples, n_timesteps, n_chemicals).
+            data (np.ndarray): The data to load. Must have shape (n_samples, n_timesteps, n_quantities).
             timesteps (np.ndarray): The timesteps.
             batch_size (int, optional): The batch size.
             shuffle (bool, optional): Whether to shuffle the data.
@@ -491,7 +499,7 @@ class MultiONet(OperatorNetwork):
         Create a DataLoader with optimized memory-safe shuffling using pre-allocated buffers and direct slicing.
 
         Args:
-            data (np.ndarray): The data to load. Must have shape (n_samples, n_timesteps, n_chemicals).
+            data (np.ndarray): The data to load. Must have shape (n_samples, n_timesteps, n_quantities).
             timesteps (np.ndarray): The timesteps. Shape: (n_timesteps,).
             batch_size (int): The batch size.
             shuffle (bool, optional): Whether to shuffle the data. Defaults to False.
@@ -500,13 +508,13 @@ class MultiONet(OperatorNetwork):
             DataLoader: A DataLoader with precomputed batches.
         """
         device = self.device
-        n_samples, n_timesteps, n_chemicals = data.shape
+        n_samples, n_timesteps, n_quantities = data.shape
         total_samples = n_samples * n_timesteps
 
         # Pre-allocate NumPy arrays
-        branch_inputs = np.empty((total_samples, n_chemicals), dtype=np.float32)
+        branch_inputs = np.empty((total_samples, n_quantities), dtype=np.float32)
         trunk_inputs = np.empty((total_samples, 1), dtype=np.float32)
-        targets = np.empty((total_samples, n_chemicals), dtype=np.float32)
+        targets = np.empty((total_samples, n_quantities), dtype=np.float32)
 
         # Branch Inputs: Repeat the first timestep across all timesteps for each sample
         branch_inputs = np.repeat(data[:, 0, :], n_timesteps, axis=0)
@@ -515,7 +523,7 @@ class MultiONet(OperatorNetwork):
         trunk_inputs = np.tile(timesteps.reshape(1, -1), (n_samples, 1)).reshape(-1, 1)
 
         # Targets: Flatten the data across samples and timesteps
-        targets = data.reshape(-1, n_chemicals)
+        targets = data.reshape(-1, n_quantities)
 
         if shuffle:
             permutation = np.random.permutation(total_samples)
@@ -663,7 +671,7 @@ class MultiONet(OperatorNetwork):
                     MAEs[epoch] = self.L1(preds, targets).item()
 
                     if self.optuna_trial is not None:
-                        self.optuna_trial.report(loss, epoch)
+                        self.optuna_trial.report(loss, step=epoch)
                         if self.optuna_trial.should_prune():
                             raise optuna.TrialPruned()
 

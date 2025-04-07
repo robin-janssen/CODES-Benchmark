@@ -13,7 +13,7 @@ from psycopg2 import sql
 from tqdm import tqdm
 
 from codes.tune import create_objective, load_yaml_config
-from codes.utils import nice_print
+from codes.utils import download_data, nice_print
 
 
 def check_postgres_running(config):
@@ -196,24 +196,37 @@ def run_single_study(config: dict, study_name: str, db_url: str):
     if not config.get("optuna_logging", False):
         optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-    sampler = optuna.samplers.TPESampler(seed=config["seed"])
-
-    if config["prune"]:
-        epochs = config["epochs"]
-        pruner = optuna.pruners.HyperbandPruner(
-            min_resource=epochs // 8, max_resource=epochs, reduction_factor=2
-        )
-    else:
+    if config["multi_objective"]:
+        sampler = optuna.samplers.NSGAIISampler(seed=config["seed"])
         pruner = optuna.pruners.NopPruner()
 
-    study = optuna.create_study(
-        study_name=study_name,
-        direction="minimize",
-        storage=db_url,
-        sampler=sampler,
-        pruner=pruner,
-        load_if_exists=True,
-    )
+        study = optuna.create_study(
+            study_name=study_name,
+            directions=["minimize", "minimize"],
+            storage=db_url,
+            sampler=sampler,
+            pruner=pruner,
+            load_if_exists=True,
+        )
+    else:
+        sampler = optuna.samplers.TPESampler(seed=config["seed"])
+
+        if config["prune"]:
+            epochs = config["epochs"]
+            pruner = optuna.pruners.HyperbandPruner(
+                min_resource=epochs // 8, max_resource=epochs, reduction_factor=2
+            )
+        else:
+            pruner = optuna.pruners.NopPruner()
+
+        study = optuna.create_study(
+            study_name=study_name,
+            direction="minimize",
+            storage=db_url,
+            sampler=sampler,
+            pruner=pruner,
+            load_if_exists=True,
+        )
 
     device_queue = queue.Queue()
     for dev in config["devices"]:
@@ -222,32 +235,36 @@ def run_single_study(config: dict, study_name: str, db_url: str):
     objective_fn = create_objective(config, study_name, device_queue)
     n_trials = config["n_trials"]
     trial_durations = []
+    n_jobs = len(config["devices"])
 
     def trial_complete_callback(study_, trial_):
-        if trial_.state == TrialState.COMPLETE:
-            trial_pbar.update(1)
-            if trial_.datetime_start:
-                duration = time.time() - trial_.datetime_start.timestamp()
-                trial_durations.append(duration)
-                avg_duration = sum(trial_durations) / len(trial_durations)
-                remaining = n_trials - len(trial_durations)
-                eta_seconds = avg_duration * remaining
-                trial_pbar.set_postfix(
-                    {
-                        "ETA": f"{eta_seconds/60:.1f}m",
-                        "LastTrial": f"{duration:.1f}s",
-                    }
-                )
-        elif trial_.state == TrialState.PRUNED:
+        # Update progress bar for any finished trial (complete or pruned)
+        if trial_.state in (TrialState.COMPLETE, TrialState.PRUNED):
             trial_pbar.update(1)
 
+        # For a complete trial, record its duration and update ETA info
+        if trial_.state == TrialState.COMPLETE and trial_.datetime_start:
+            duration = time.time() - trial_.datetime_start.timestamp()
+            trial_durations.append(duration)
+            avg_duration = sum(trial_durations) / len(trial_durations)
+            remaining_trials = n_trials - len(trial_durations)
+            eta_seconds = (avg_duration * remaining_trials) / n_jobs
+            postfix = f"ETA: {eta_seconds/60:.1f}m, Avg: {avg_duration:.1f}s, Last: {duration:.1f}s"
+            trial_pbar.set_postfix_str(postfix)
+
+    download_data(config["dataset"]["name"])
+
     with tqdm(
-        total=n_trials, desc=f"Tuning {study_name}", position=1, leave=True
+        total=n_trials,
+        desc=f"Tuning {study_name}",
+        position=1,
+        leave=True,
+        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [Elapsed: {elapsed}{postfix}]",
     ) as trial_pbar:
         study.optimize(
             objective_fn,
             n_trials=n_trials,
-            n_jobs=len(config["devices"]),
+            n_jobs=n_jobs,
             callbacks=[
                 MaxTrialsCallback(n_trials, states=[TrialState.COMPLETE]),
                 trial_complete_callback,
@@ -271,6 +288,10 @@ def run_all_studies(config: dict, main_study_name: str, db_url: str):
     with tqdm(
         total=total_sub_studies, desc="Overall Surrogates", position=0, leave=True
     ) as arch_pbar:
+        if config.get("multi_objective", False):
+            print(
+                "⚠️ Multi-objective mode enabled: using NSGA-II sampler and disabling pruning."
+            )
         for i, surr in enumerate(surrogates, start=1):
             arch_name = surr["name"]
             study_name = f"{main_study_name}_{arch_name.lower()}"
@@ -289,6 +310,7 @@ def run_all_studies(config: dict, main_study_name: str, db_url: str):
                 "prune": config.get("prune", True),
                 "optuna_logging": config.get("optuna_logging", False),
                 "use_optimal_params": config.get("use_optimal_params", False),
+                "multi_objective": config.get("multi_objective", False),
             }
 
             run_single_study(sub_config, study_name, db_url)
@@ -342,7 +364,7 @@ def parse_arguments():
     parser.add_argument(
         "--study_name",
         type=str,
-        default="lotkavolterra2lr",
+        default="primordialtest",
         help="Study identifier.",
     )
     return parser.parse_args()
@@ -352,7 +374,7 @@ if __name__ == "__main__":
     """Main function to run the Optuna tuning."""
     nice_print("Starting Optuna tuning")
     args = parse_arguments()
-    config_path = os.path.join("optuna_runs", args.study_name, "optuna_config.yaml")
+    config_path = os.path.join("tuned", args.study_name, "optuna_config.yaml")
 
     # Derive study_folder_name from config_path
     study_folder_name = os.path.basename(os.path.dirname(config_path))

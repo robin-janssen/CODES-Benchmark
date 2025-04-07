@@ -39,9 +39,7 @@ def load_study_config(study_name: str) -> dict:
     Load the YAML config used by the study (optuna_config.yaml).
     """
 
-    config_path = os.path.join(
-        "optuna_runs", "studies", study_name, "optuna_config.yaml"
-    )
+    config_path = os.path.join("tuned", "studies", study_name, "optuna_config.yaml")
     with open(config_path, "r") as file:
         return yaml.safe_load(file)
 
@@ -117,7 +115,7 @@ def plot_test_losses(
     plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
 
-    plots_dir = os.path.join("optuna_runs", "studies", study_name, "plots")
+    plots_dir = os.path.join("tuned", "studies", study_name, "plots")
     os.makedirs(plots_dir, exist_ok=True)
     plt.savefig(os.path.join(plots_dir, "test_losses_comparison.png"))
     plt.close()
@@ -134,7 +132,7 @@ def main():
     top_n = args.top_n
 
     # Load the existing study from its DB
-    db_path = f"sqlite:///optuna_runs/studies/{study_name}/{study_name}.db"
+    db_path = f"sqlite:///tuned/studies/{study_name}/{study_name}.db"
     study = optuna.load_study(study_name=study_name, storage=db_path)
 
     # Print best trial
@@ -147,7 +145,7 @@ def main():
     print(f"\nTotal number of runs: {len(study.trials)}")
 
     # Make sure plots directory exists
-    plots_dir = os.path.join("optuna_runs", "studies", study_name, "plots")
+    plots_dir = os.path.join("tuned", "studies", study_name, "plots")
     os.makedirs(plots_dir, exist_ok=True)
 
     # Optionally transform MSE to log10 for better plotting
@@ -176,12 +174,12 @@ def main():
     labels = []
 
     # Models are stored:
-    #   optuna_runs/studies/<study_name>/models/<ClassName>/<model_name>.pth
+    #   tuned/studies/<study_name>/models/<ClassName>/<model_name>.pth
     # where <model_name> might be something like "fullyconnected_3.pth"
     for trial in best_trials:
         model_filename = f"{surrogate_name.lower()}_{trial.number}.pth"
         model_path = os.path.join(
-            "optuna_runs",
+            "tuned",
             "studies",
             study_name,
             "models",

@@ -22,9 +22,9 @@ class LatentNeuralODEConfig:
     latent_features: int = 9
     layers_factor: int = 84
     learning_rate: float = 0.002
-    ode_activation: nn.Module = nn.GELU()
     ode_tanh_reg: bool = False
-    coder_activation: nn.Module = nn.GELU()
+    activation: nn.Module = nn.GELU()
+    model_version: str = "v1"
 
 
 @dataclass
@@ -45,4 +45,4 @@ class LatentPolyConfig:
     degree: int = 1
     learning_rate: float = 3e-4
     layers_factor: int = 92
-    coder_activation: nn.Module = nn.GELU()
+    activation: nn.Module = nn.GELU()

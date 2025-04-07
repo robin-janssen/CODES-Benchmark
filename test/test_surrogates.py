@@ -35,8 +35,8 @@ def dataloaders(instance):
 def test_init(instance):
     assert instance.device == DEVICE, f"device is wrong: {instance.device} != {DEVICE}"
     assert (
-        instance.n_chemicals == N_CHEMICALS
-    ), f"n_chemicals is wrong: {instance.n_chemicals} != {N_CHEMICALS}"
+        instance.n_quantities == N_CHEMICALS
+    ), f"n_quantities is wrong: {instance.n_quantities} != {N_CHEMICALS}"
     assert (
         instance.n_timesteps == N_TIMESTEPS
     ), f"n_timesteps is wrong: {instance.n_timesteps} != {N_TIMESTEPS}"
@@ -84,14 +84,14 @@ def test_fit(instance, dataloaders):
     instance.fit(dataloader_train, dataloader_test, epochs=2)
 
     assert instance.train_loss.shape == torch.Size(
-        [2]
-    ), f"train_loss has wrong shape: {instance.train_loss.shape} != [2]"
+        [1]
+    ), f"train loss has wrong shape: {instance.train_loss.shape} != [1]"
     assert instance.test_loss.shape == torch.Size(
-        [2]
-    ), f"test_loss has wrong shape: {instance.test_loss.shape} != [2]"
+        [1]
+    ), f"test loss has wrong shape: {instance.test_loss.shape} != [1]"
     assert instance.MAE.shape == torch.Size(
-        [2]
-    ), f"MAE has wrong shape: {instance.MAE.shape} != [2]"
+        [1]
+    ), f"MAE has wrong shape: {instance.MAE.shape} != [1]"
 
 
 def test_save_load(instance, tmp_path):

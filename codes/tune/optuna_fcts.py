@@ -2,12 +2,17 @@ import os
 import queue
 from distutils.util import strtobool
 
+import numpy as np
 import optuna
 import torch
 import torch.nn as nn
 import yaml
 
-from codes.benchmark.bench_utils import get_model_config, get_surrogate
+from codes.benchmark.bench_utils import (
+    get_model_config,
+    get_surrogate,
+    measure_inference_time,
+)
 from codes.utils import check_and_load_data, make_description, set_random_seeds
 from codes.utils.data_utils import download_data, get_data_subset
 
@@ -132,9 +137,10 @@ def create_objective(
 
 def training_run(
     trial: optuna.Trial, device: str, config: dict, study_name: str
-) -> float:
+) -> float | tuple[float, float]:
     """
     Run the training for a single Optuna trial and return the loss.
+    In multi-objective mode, also returns the mean inference time.
 
     Args:
         trial (optuna.Trial): Optuna trial object.
@@ -143,10 +149,11 @@ def training_run(
         study_name (str): Name of the study.
 
     Returns:
-        float: Loss value.
+        float: Loss value in single objective mode.
+        tuple[float, float]: (loss, mean_inference_time) in multi objective mode.
     """
 
-    download_data(config["dataset"]["name"])
+    download_data(config["dataset"]["name"], verbose=False)
     train_data, test_data, val_data, timesteps, _, data_params, _ = check_and_load_data(
         config["dataset"]["name"],
         verbose=False,
@@ -186,11 +193,12 @@ def training_run(
             suggested_params[key] = bool(strtobool(val))
 
     n_timesteps = train_data.shape[1]
-    n_chemicals = train_data.shape[2]
+    n_quantities = train_data.shape[2]
     surrogate_class = get_surrogate(surr_name)
     model_config = get_model_config(surr_name, config)
     model_config.update(suggested_params)
-    model = surrogate_class(device, n_chemicals, n_timesteps, model_config)
+    model = surrogate_class(device, n_quantities, n_timesteps, model_config)
+    model.normalisation = data_params
     model.optuna_trial = trial
     model.trial_update_epochs = 10
 
@@ -211,6 +219,7 @@ def training_run(
         epochs=config["epochs"],
         position=pos,
         description=description,
+        multi_objective=config["multi_objective"],
     )
 
     criterion = torch.nn.MSELoss()
@@ -218,7 +227,7 @@ def training_run(
     loss = criterion(preds, targets).item()
     sname, _ = study_name.split("_")
 
-    savepath = os.path.join("optuna_runs", sname, "models")
+    savepath = os.path.join("tuned", sname, "models")
     os.makedirs(savepath, exist_ok=True)
     model_name = f"{surr_name.lower()}_{trial.number}"
     model.save(
@@ -226,4 +235,11 @@ def training_run(
         base_dir="",
         training_id=savepath,
     )
-    return loss
+
+    # Check if we're running multi-objective optimisation
+    if config["multi_objective"]:
+        # Measure inference time
+        inference_times = measure_inference_time(model, test_loader)
+        return loss, np.mean(inference_times)
+    else:
+        return loss

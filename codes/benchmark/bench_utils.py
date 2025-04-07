@@ -8,8 +8,12 @@ from dataclasses import asdict
 import numpy as np
 import torch
 import yaml
+from torch.utils.data import DataLoader
 
 from codes.surrogates import SurrogateModel, surrogate_classes
+from codes.utils import read_yaml_config
+
+import time
 
 
 def check_surrogate(surrogate: str, conf: dict) -> None:
@@ -73,8 +77,7 @@ def check_benchmark(conf: dict) -> None:
             f"Training configuration file not found in directory {trained_dir}."
         )
 
-    with open(yaml_file, "r", encoding="utf-8") as file:
-        training_conf = yaml.safe_load(file)
+    training_conf = read_yaml_config(yaml_file)
 
     # 1. Check Surrogates
     training_surrogates = set(training_conf.get("surrogates", []))
@@ -222,21 +225,6 @@ def get_required_models_list(surrogate: str, conf: dict) -> list:
     return required_models
 
 
-def read_yaml_config(config_path: str) -> dict:
-    """
-    Read the YAML configuration file.
-
-    Args:
-        config_path (str): Path to the YAML configuration file.
-
-    Returns:
-        dict: The configuration dictionary.
-    """
-    with open(config_path, "r", encoding="uft-8") as file:
-        conf = yaml.safe_load(file)
-    return conf
-
-
 def load_model(
     model, training_id: str, surr_name: str, model_identifier: str
 ) -> torch.nn.Module:
@@ -273,67 +261,83 @@ def count_trainable_parameters(model: torch.nn.Module) -> int:
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def measure_memory_footprint(
-    model: torch.nn.Module,
-    inputs: tuple,
-) -> dict:
+def measure_memory_footprint(model: torch.nn.Module, inputs: tuple) -> dict:
     """
-    Measure the memory footprint of the model during the forward and backward pass.
+    Measure the memory footprint of a model during forward and backward passes using
+    peak memory tracking and explicit synchronization.
 
     Args:
         model (torch.nn.Module): The PyTorch model.
         inputs (tuple): The input data for the model.
-        conf (dict): The configuration dictionary.
-        surr_name (str): The name of the surrogate model.
 
     Returns:
-        dict: A dictionary containing memory footprint measurements.
+        dict: A dictionary containing measured memory usages for:
+            - model_memory: Additional memory used when moving the model to GPU.
+            - forward_memory: Peak additional memory during the forward pass with gradients.
+            - backward_memory: Peak additional memory during the backward pass.
+            - forward_memory_nograd: Peak additional memory during the forward pass without gradients.
+        model: The model (possibly moved back to the original device).
     """
-    # def get_memory_usage():
-    #     process = psutil.Process(os.getpid())
-    #     return process.memory_info().rss
+    # Determine the target device
+    device = model.device if hasattr(model, "device") else torch.device("cuda:0")
 
-    def get_memory_usage(model):
-        return torch.cuda.memory_allocated(model.device)
-
+    # Move the model to CPU first (simulate baseline)
     model.to("cpu")
 
-    before_load = get_memory_usage(model)
+    # --- Model loading measurement ---
+    torch.cuda.synchronize(device)
+    torch.cuda.reset_peak_memory_stats(device)
+    before_load = torch.cuda.memory_allocated(device)
 
-    model.to(model.device)
+    model.to(device)
+    torch.cuda.synchronize(device)
+    peak_after_load = torch.cuda.max_memory_allocated(device)
+    model_memory = peak_after_load - before_load
 
-    # Measure memory usage before the forward pass
-    after_load = get_memory_usage(model)
+    # Prepare inputs: move them to the target device
+    if isinstance(inputs, (list, tuple)):
+        inputs = tuple(i.to(device) for i in inputs)
+    else:
+        inputs = inputs.to(device)
 
-    inputs = (
-        tuple(i.to(model.device) for i in inputs)
-        if isinstance(inputs, list) or isinstance(inputs, tuple)
-        else inputs.to(model.device)
-    )
-    before_forward = get_memory_usage(model)
+    # --- Forward pass with gradients ---
+    torch.cuda.synchronize(device)
+    torch.cuda.reset_peak_memory_stats(device)
+    before_forward = torch.cuda.memory_allocated(device)
+
     preds, targets = model(inputs=inputs)
-    after_forward = get_memory_usage(model)
+    torch.cuda.synchronize(device)
+    forward_peak = torch.cuda.max_memory_allocated(device)
+    forward_memory = forward_peak - before_forward
 
-    # Measure memory usage before the backward pass
-    loss = (preds - targets).sum()  # Example loss function
-    before_backward = get_memory_usage(model)
+    # --- Backward pass ---
+    loss = (preds - targets).sum()  # Example loss computation
+    torch.cuda.synchronize(device)
+    torch.cuda.reset_peak_memory_stats(device)
+    before_backward = torch.cuda.memory_allocated(device)
+
     loss.backward()
-    after_backward = get_memory_usage(model)
+    torch.cuda.synchronize(device)
+    backward_peak = torch.cuda.max_memory_allocated(device)
+    backward_memory = backward_peak - before_backward
 
-    del preds, targets, loss
-
-    # Measure pure forward pass memory usage
+    # --- Forward pass without gradients ---
     model.zero_grad()
-    before_forward_nograd = get_memory_usage(model)
+    torch.cuda.synchronize(device)
+    torch.cuda.reset_peak_memory_stats(device)
+    before_forward_nograd = torch.cuda.memory_allocated(device)
+
     with torch.no_grad():
         preds, targets = model(inputs=inputs)
-    after_forward_nograd = get_memory_usage(model)
+    torch.cuda.synchronize(device)
+    forward_nograd_peak = torch.cuda.max_memory_allocated(device)
+    forward_memory_nograd = forward_nograd_peak - before_forward_nograd
 
     memory_usage = {
-        "model_memory": after_load - before_load,
-        "forward_memory": after_forward - before_forward,
-        "backward_memory": after_backward - before_backward,
-        "forward_memory_nograd": after_forward_nograd - before_forward_nograd,
+        "model_memory": model_memory,
+        "forward_memory": forward_memory,
+        "backward_memory": backward_memory,
+        "forward_memory_nograd": forward_memory_nograd,
     }
 
     return memory_usage, model
@@ -425,6 +429,10 @@ def clean_metrics(metrics: dict, conf: dict) -> dict:
         write_metrics["UQ"].pop("pred_uncertainty", None)
         write_metrics["UQ"].pop("max_counts", None)
         write_metrics["UQ"].pop("axis_max", None)
+        write_metrics["UQ"].pop("absolute_errors", None)
+        write_metrics["UQ"].pop("relative_errors", None)
+        write_metrics["UQ"].pop("weighted_diff", None)
+        write_metrics["UQ"].pop("targets", None)
 
     return write_metrics
 
@@ -592,7 +600,7 @@ def make_comparison_csv(metrics: dict, config: dict) -> None:
     all_keys = sorted(all_keys)
 
     # Prepare the CSV file path
-    csv_file_path = f"results/{config['training_id']}/metrics.csv"
+    csv_file_path = f"results/{config['training_id']}/all_metrics.csv"
     os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
     # Write to the CSV file
@@ -615,6 +623,33 @@ def make_comparison_csv(metrics: dict, config: dict) -> None:
 
     if config["verbose"]:
         print(f"Comparison CSV file saved at {csv_file_path}")
+
+
+def save_table_csv(headers: list, rows: list, config: dict) -> None:
+    """
+    Save the CLI table (headers and rows) to a CSV file.
+    This version strips out any formatting (like asterisks) from the table cells.
+
+    Args:
+        headers (list): The list of header names.
+        rows (list): The list of rows, where each row is a list of string values.
+        config (dict): Configuration dictionary that contains 'training_id'.
+
+    Returns:
+        None
+    """
+    # Convert each cell to a string and remove asterisks
+    cleaned_rows = [
+        [str(cell).replace("*", "").strip() for cell in row]
+        for row in rows
+    ]
+    
+    csv_path = f"results/{config['training_id']}/metrics_table.csv"
+    with open(csv_path, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(headers)
+        writer.writerows(cleaned_rows)
+    print(f"CLI table metrics saved to {csv_path}")
 
 
 def get_model_config(surr_name: str, config: dict) -> dict:
@@ -667,3 +702,32 @@ def get_model_config(surr_name: str, config: dict) -> dict:
         model_config = {}
 
     return model_config
+
+
+def measure_inference_time(
+    model,
+    test_loader: DataLoader,
+    n_runs: int = 5,
+) -> list[float]:
+    """
+    Measure total inference time over a DataLoader across multiple runs.
+
+    Args:
+        model: Model instance with a `.forward()` method.
+        test_loader (DataLoader): Loader with test data.
+        n_runs (int): Number of repeated runs for averaging.
+
+    Returns:
+        list[float]: List of total inference times per run (in seconds).
+    """
+    inference_times = []
+    for _ in range(n_runs):
+        total_time = 0
+        with torch.inference_mode():
+            for inputs in test_loader:
+                start_time = time.perf_counter()
+                _, _ = model.forward(inputs)
+                end_time = time.perf_counter()
+                total_time += end_time - start_time
+        inference_times.append(total_time)
+    return inference_times
