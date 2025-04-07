@@ -195,6 +195,7 @@
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="docs/source/codes.tune.html">codes.tune</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.evaluate_study.html">codes.tune.evaluate_study</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.evaluate_tuning.html">codes.tune.evaluate_tuning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.optuna_fcts.html">codes.tune.optuna_fcts</a></li>
 </ul>
 </details></li>
@@ -491,7 +492,7 @@ If split is not provided in this case, a default split of (0.7, 0.1, 0.2) is use
 <li><p><strong>split</strong> (<em>tuple</em><em>(</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – If test_data and val_data are not provided,
 train_data will be split into training, test and validation data according to these ratios.</p></li>
 <li><p><strong>timesteps</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – The timesteps array.</p></li>
-<li><p><strong>labels</strong> (<em>list</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The labels for the chemicals.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The labels for the quantities.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
@@ -512,13 +513,13 @@ Additionally, store metadata about the dataset.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>train_data</strong> (<em>np.ndarray</em>) – The training data array of shape (n_samples, n_timesteps, n_chemicals).</p></li>
-<li><p><strong>test_data</strong> (<em>np.ndarray</em>) – The test data array of shape (n_samples, n_timesteps, n_chemicals).</p></li>
-<li><p><strong>val_data</strong> (<em>np.ndarray</em>) – The validation data array of shape (n_samples, n_timesteps, n_chemicals).</p></li>
+<li><p><strong>train_data</strong> (<em>np.ndarray</em>) – The training data array of shape (n_samples, n_timesteps, n_quantities).</p></li>
+<li><p><strong>test_data</strong> (<em>np.ndarray</em>) – The test data array of shape (n_samples, n_timesteps, n_quantities).</p></li>
+<li><p><strong>val_data</strong> (<em>np.ndarray</em>) – The validation data array of shape (n_samples, n_timesteps, n_quantities).</p></li>
 <li><p><strong>dataset_name</strong> (<em>str</em>) – The name of the dataset.</p></li>
 <li><p><strong>data_dir</strong> (<em>str</em>) – The directory to save the dataset in.</p></li>
 <li><p><strong>timesteps</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – The timesteps array. If None, integer timesteps will be generated.</p></li>
-<li><p><strong>labels</strong> (<em>list</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The labels for the chemicals.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The labels for the quantities.</p></li>
 </ul>
 </dd>
 </dl>
@@ -891,7 +892,7 @@ If split is not provided in this case, a default split of (0.7, 0.1, 0.2) is use
 <li><p><strong>split</strong> (<em>tuple</em><em>(</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – If test_data and val_data are not provided,
 train_data will be split into training, test and validation data according to these ratios.</p></li>
 <li><p><strong>timesteps</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – The timesteps array.</p></li>
-<li><p><strong>labels</strong> (<em>list</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The labels for the chemicals.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The labels for the quantities.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
@@ -912,13 +913,13 @@ Additionally, store metadata about the dataset.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>train_data</strong> (<em>np.ndarray</em>) – The training data array of shape (n_samples, n_timesteps, n_chemicals).</p></li>
-<li><p><strong>test_data</strong> (<em>np.ndarray</em>) – The test data array of shape (n_samples, n_timesteps, n_chemicals).</p></li>
-<li><p><strong>val_data</strong> (<em>np.ndarray</em>) – The validation data array of shape (n_samples, n_timesteps, n_chemicals).</p></li>
+<li><p><strong>train_data</strong> (<em>np.ndarray</em>) – The training data array of shape (n_samples, n_timesteps, n_quantities).</p></li>
+<li><p><strong>test_data</strong> (<em>np.ndarray</em>) – The test data array of shape (n_samples, n_timesteps, n_quantities).</p></li>
+<li><p><strong>val_data</strong> (<em>np.ndarray</em>) – The validation data array of shape (n_samples, n_timesteps, n_quantities).</p></li>
 <li><p><strong>dataset_name</strong> (<em>str</em>) – The name of the dataset.</p></li>
 <li><p><strong>data_dir</strong> (<em>str</em>) – The directory to save the dataset in.</p></li>
 <li><p><strong>timesteps</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – The timesteps array. If None, integer timesteps will be generated.</p></li>
-<li><p><strong>labels</strong> (<em>list</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The labels for the chemicals.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The labels for the quantities.</p></li>
 </ul>
 </dd>
 </dl>

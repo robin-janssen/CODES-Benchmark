@@ -12,6 +12,14 @@ codes.tune.evaluate\_study module
    :undoc-members:
    :show-inheritance:
 
+codes.tune.evaluate\_tuning module
+----------------------------------
+
+.. automodule:: codes.tune.evaluate_tuning
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 codes.tune.optuna\_fcts module
 ------------------------------
 

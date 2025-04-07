@@ -195,6 +195,7 @@
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="docs/source/codes.tune.html">codes.tune</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.evaluate_study.html">codes.tune.evaluate_study</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.evaluate_tuning.html">codes.tune.evaluate_tuning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.optuna_fcts.html">codes.tune.optuna_fcts</a></li>
 </ul>
 </details></li>
@@ -389,7 +390,7 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_correlation_heatmap"><code class="docutils literal notranslate"><span class="pre">plot_error_correlation_heatmap()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_correlation_heatmap_old"><code class="docutils literal notranslate"><span class="pre">plot_error_correlation_heatmap_old()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_distribution_comparative"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_comparative()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_distribution_per_chemical"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_per_chemical()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_distribution_per_quantity"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_per_quantity()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_example_mode_predictions"><code class="docutils literal notranslate"><span class="pre">plot_example_mode_predictions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_example_predictions_with_uncertainty"><code class="docutils literal notranslate"><span class="pre">plot_example_predictions_with_uncertainty()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_generalization_error_comparison"><code class="docutils literal notranslate"><span class="pre">plot_generalization_error_comparison()</span></code></a></li>
@@ -481,7 +482,7 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_dynamic_correlation_heatmap"><code class="docutils literal notranslate"><span class="pre">plot_dynamic_correlation_heatmap()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_error_correlation_heatmap"><code class="docutils literal notranslate"><span class="pre">plot_error_correlation_heatmap()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_error_distribution_comparative"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_comparative()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_error_distribution_per_chemical"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_per_chemical()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_error_distribution_per_quantity"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_per_quantity()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_example_mode_predictions"><code class="docutils literal notranslate"><span class="pre">plot_example_mode_predictions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_example_predictions_with_uncertainty"><code class="docutils literal notranslate"><span class="pre">plot_example_predictions_with_uncertainty()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_generalization_error_comparison"><code class="docutils literal notranslate"><span class="pre">plot_generalization_error_comparison()</span></code></a></li>
@@ -722,7 +723,7 @@
 <li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
 <li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps array.</p></li>
 <li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
-<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the chemical species.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the quantities.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -737,23 +738,25 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.benchmark.bench_fcts.evaluate_accuracy">
 <span class="sig-prename descclassname"><span class="pre">codes.benchmark.bench_fcts.</span></span><span class="sig-name descname"><span class="pre">evaluate_accuracy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.bench_fcts.evaluate_accuracy" title="Link to this definition">#</a></dt>
-<dd><p>Evaluate the accuracy of the surrogate model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
-<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
-<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps array.</p></li>
-<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
-<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
-<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the chemical species.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A dictionary containing accuracy metrics.</p>
-</dd>
+<dd><dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict</p>
+<dd class="field-odd"><p><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span></p>
+<p>Evaluate the accuracy of the surrogate model.</p>
+</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>quantitiesquantities</dt><dd><dl class="simple">
+<dt>Args:</dt><dd><p>model: Instance of the surrogate model class.
+surr_name (str): The name of the surrogate model.
+timesteps (np.ndarray): The timesteps array.
+test_loader (DataLoader): The DataLoader object containing the test data.
+conf (dict): The configuration dictionary.
+labels (list, optional): The labels for the quantities.</p>
+</dd>
+<dt>Returns:</dt><dd><p>dict: A dictionary containing accuracy metrics.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -837,7 +840,7 @@
 <li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
 <li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps array.</p></li>
 <li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
-<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the chemical species.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the quantities.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -861,7 +864,7 @@
 <li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
 <li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps array.</p></li>
 <li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
-<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the chemical species.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the quantities.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1310,7 +1313,7 @@ axis_max (float): The computed upper axis limit such that cutoff_mass of the dat
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
-<li><p><strong>errors</strong> (<em>dict</em>) – Dictionary containing numpy arrays of shape [num_samples, num_timesteps, num_chemicals] for each model.</p></li>
+<li><p><strong>errors</strong> (<em>dict</em>) – Dictionary containing numpy arrays of shape [num_samples, num_timesteps, num_quantities] for each model.</p></li>
 <li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot as a file.</p></li>
 <li><p><strong>mode</strong> (<em>str</em><em>, </em><em>optional</em>) – The mode of the plot. Default is “main”.</p></li>
 <li><p><strong>show_title</strong> (<em>bool</em>) – Whether to show the title on the plot.</p></li>
@@ -1323,17 +1326,17 @@ axis_max (float): The computed upper axis limit such that cutoff_mass of the dat
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="codes.benchmark.bench_plots.plot_error_distribution_per_chemical">
-<span class="sig-prename descclassname"><span class="pre">codes.benchmark.bench_plots.</span></span><span class="sig-name descname"><span class="pre">plot_error_distribution_per_chemical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chemical_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_chemicals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.bench_plots.plot_error_distribution_per_chemical" title="Link to this definition">#</a></dt>
-<dd><p>Plot the distribution of errors for each chemical as a smoothed histogram plot.</p>
+<dt class="sig sig-object py" id="codes.benchmark.bench_plots.plot_error_distribution_per_quantity">
+<span class="sig-prename descclassname"><span class="pre">codes.benchmark.bench_plots.</span></span><span class="sig-name descname"><span class="pre">plot_error_distribution_per_quantity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.bench_plots.plot_error_distribution_per_quantity" title="Link to this definition">#</a></dt>
+<dd><p>Plot the distribution of errors for each quantity as a smoothed histogram plot.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
 <li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
-<li><p><strong>errors</strong> (<em>np.ndarray</em>) – Errors array of shape [num_samples, num_timesteps, num_chemicals].</p></li>
-<li><p><strong>chemical_names</strong> (<em>list</em><em>, </em><em>optional</em>) – List of chemical names for labeling the lines.</p></li>
-<li><p><strong>num_chemicals</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of chemicals to plot. Default is 10.</p></li>
+<li><p><strong>errors</strong> (<em>np.ndarray</em>) – Errors array of shape [num_samples, num_timesteps, num_quantities].</p></li>
+<li><p><strong>quantity_names</strong> (<em>list</em><em>, </em><em>optional</em>) – List of quantity names for labeling the lines.</p></li>
+<li><p><strong>num_quantities</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of quantities to plot. Default is 10.</p></li>
 <li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot as a file.</p></li>
 <li><p><strong>show_title</strong> (<em>bool</em>) – Whether to show the title on the plot.</p></li>
 </ul>
@@ -1346,7 +1349,7 @@ axis_max (float): The computed upper axis limit such that cutoff_mass of the dat
 
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.benchmark.bench_plots.plot_example_mode_predictions">
-<span class="sig-prename descclassname"><span class="pre">codes.benchmark.bench_plots.</span></span><span class="sig-name descname"><span class="pre">plot_example_mode_predictions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'interpolation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_chemicals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.bench_plots.plot_example_mode_predictions" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">codes.benchmark.bench_plots.</span></span><span class="sig-name descname"><span class="pre">plot_example_mode_predictions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'interpolation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.bench_plots.plot_example_mode_predictions" title="Link to this definition">#</a></dt>
 <dd><p>Plot example predictions from a single model alongside targets, and highlight
 either the training timesteps (interpolation mode) or the cutoff point (extrapolation mode).</p>
 <dl class="field-list simple">
@@ -1361,8 +1364,8 @@ either the training timesteps (interpolation mode) or the cutoff point (extrapol
 In extrapolation mode, indicates the index of the cutoff timestep.</p></li>
 <li><p><strong>mode</strong> (<em>str</em><em>, </em><em>optional</em>) – “interpolation” or “extrapolation”. Default is “interpolation”.</p></li>
 <li><p><strong>example_idx</strong> (<em>int</em><em>, </em><em>optional</em>) – Index of the example to plot. Default is 0.</p></li>
-<li><p><strong>num_chemicals</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of chemicals to plot. Default is 100.</p></li>
-<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – List of labels for the chemicals.</p></li>
+<li><p><strong>num_quantities</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of quantities to plot. Default is 100.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – List of labels for the quantities.</p></li>
 <li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot as a file.</p></li>
 <li><p><strong>show_title</strong> (<em>bool</em>) – Whether to show the title on the plot.</p></li>
 </ul>
@@ -1375,7 +1378,7 @@ In extrapolation mode, indicates the index of the cutoff timestep.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.benchmark.bench_plots.plot_example_predictions_with_uncertainty">
-<span class="sig-prename descclassname"><span class="pre">codes.benchmark.bench_plots.</span></span><span class="sig-name descname"><span class="pre">plot_example_predictions_with_uncertainty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds_mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds_std</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_chemicals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.bench_plots.plot_example_predictions_with_uncertainty" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">codes.benchmark.bench_plots.</span></span><span class="sig-name descname"><span class="pre">plot_example_predictions_with_uncertainty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds_mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds_std</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.bench_plots.plot_example_predictions_with_uncertainty" title="Link to this definition">#</a></dt>
 <dd><p>Plot example predictions with uncertainty.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1387,8 +1390,8 @@ In extrapolation mode, indicates the index of the cutoff timestep.</p></li>
 <li><p><strong>targets</strong> (<em>np.ndarray</em>) – True targets.</p></li>
 <li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – Timesteps array.</p></li>
 <li><p><strong>example_idx</strong> (<em>int</em><em>, </em><em>optional</em>) – Index of the example to plot. Default is 0.</p></li>
-<li><p><strong>num_chemicals</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of chemicals to plot. Default is 100.</p></li>
-<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – List of labels for the chemicals.</p></li>
+<li><p><strong>num_quantities</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of quantities to plot. Default is 100.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – List of labels for the quantities.</p></li>
 <li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot as a file.</p></li>
 <li><p><strong>show_title</strong> (<em>bool</em>) – Whether to show the title on the plot.</p></li>
 </ul>
@@ -2503,7 +2506,7 @@ This version strips out any formatting (like asterisks) from the table cells.</p
 <li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
 <li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps array.</p></li>
 <li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
-<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the chemical species.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the quantities.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2518,23 +2521,25 @@ This version strips out any formatting (like asterisks) from the table cells.</p
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.benchmark.evaluate_accuracy">
 <span class="sig-prename descclassname"><span class="pre">codes.benchmark.</span></span><span class="sig-name descname"><span class="pre">evaluate_accuracy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.evaluate_accuracy" title="Link to this definition">#</a></dt>
-<dd><p>Evaluate the accuracy of the surrogate model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
-<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
-<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps array.</p></li>
-<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
-<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
-<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the chemical species.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A dictionary containing accuracy metrics.</p>
-</dd>
+<dd><dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict</p>
+<dd class="field-odd"><p><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span></p>
+<p>Evaluate the accuracy of the surrogate model.</p>
+</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>quantitiesquantities</dt><dd><dl class="simple">
+<dt>Args:</dt><dd><p>model: Instance of the surrogate model class.
+surr_name (str): The name of the surrogate model.
+timesteps (np.ndarray): The timesteps array.
+test_loader (DataLoader): The DataLoader object containing the test data.
+conf (dict): The configuration dictionary.
+labels (list, optional): The labels for the quantities.</p>
+</dd>
+<dt>Returns:</dt><dd><p>dict: A dictionary containing accuracy metrics.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -2618,7 +2623,7 @@ This version strips out any formatting (like asterisks) from the table cells.</p
 <li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
 <li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps array.</p></li>
 <li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
-<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the chemical species.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the quantities.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2642,7 +2647,7 @@ This version strips out any formatting (like asterisks) from the table cells.</p
 <li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
 <li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps array.</p></li>
 <li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
-<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the chemical species.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the quantities.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -3185,7 +3190,7 @@ axis_max (float): The computed upper axis limit such that cutoff_mass of the dat
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
-<li><p><strong>errors</strong> (<em>dict</em>) – Dictionary containing numpy arrays of shape [num_samples, num_timesteps, num_chemicals] for each model.</p></li>
+<li><p><strong>errors</strong> (<em>dict</em>) – Dictionary containing numpy arrays of shape [num_samples, num_timesteps, num_quantities] for each model.</p></li>
 <li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot as a file.</p></li>
 <li><p><strong>mode</strong> (<em>str</em><em>, </em><em>optional</em>) – The mode of the plot. Default is “main”.</p></li>
 <li><p><strong>show_title</strong> (<em>bool</em>) – Whether to show the title on the plot.</p></li>
@@ -3198,17 +3203,17 @@ axis_max (float): The computed upper axis limit such that cutoff_mass of the dat
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="codes.benchmark.plot_error_distribution_per_chemical">
-<span class="sig-prename descclassname"><span class="pre">codes.benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_error_distribution_per_chemical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chemical_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_chemicals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.plot_error_distribution_per_chemical" title="Link to this definition">#</a></dt>
-<dd><p>Plot the distribution of errors for each chemical as a smoothed histogram plot.</p>
+<dt class="sig sig-object py" id="codes.benchmark.plot_error_distribution_per_quantity">
+<span class="sig-prename descclassname"><span class="pre">codes.benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_error_distribution_per_quantity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.plot_error_distribution_per_quantity" title="Link to this definition">#</a></dt>
+<dd><p>Plot the distribution of errors for each quantity as a smoothed histogram plot.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
 <li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
-<li><p><strong>errors</strong> (<em>np.ndarray</em>) – Errors array of shape [num_samples, num_timesteps, num_chemicals].</p></li>
-<li><p><strong>chemical_names</strong> (<em>list</em><em>, </em><em>optional</em>) – List of chemical names for labeling the lines.</p></li>
-<li><p><strong>num_chemicals</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of chemicals to plot. Default is 10.</p></li>
+<li><p><strong>errors</strong> (<em>np.ndarray</em>) – Errors array of shape [num_samples, num_timesteps, num_quantities].</p></li>
+<li><p><strong>quantity_names</strong> (<em>list</em><em>, </em><em>optional</em>) – List of quantity names for labeling the lines.</p></li>
+<li><p><strong>num_quantities</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of quantities to plot. Default is 10.</p></li>
 <li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot as a file.</p></li>
 <li><p><strong>show_title</strong> (<em>bool</em>) – Whether to show the title on the plot.</p></li>
 </ul>
@@ -3221,7 +3226,7 @@ axis_max (float): The computed upper axis limit such that cutoff_mass of the dat
 
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.benchmark.plot_example_mode_predictions">
-<span class="sig-prename descclassname"><span class="pre">codes.benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_example_mode_predictions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'interpolation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_chemicals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.plot_example_mode_predictions" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">codes.benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_example_mode_predictions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'interpolation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.plot_example_mode_predictions" title="Link to this definition">#</a></dt>
 <dd><p>Plot example predictions from a single model alongside targets, and highlight
 either the training timesteps (interpolation mode) or the cutoff point (extrapolation mode).</p>
 <dl class="field-list simple">
@@ -3236,8 +3241,8 @@ either the training timesteps (interpolation mode) or the cutoff point (extrapol
 In extrapolation mode, indicates the index of the cutoff timestep.</p></li>
 <li><p><strong>mode</strong> (<em>str</em><em>, </em><em>optional</em>) – “interpolation” or “extrapolation”. Default is “interpolation”.</p></li>
 <li><p><strong>example_idx</strong> (<em>int</em><em>, </em><em>optional</em>) – Index of the example to plot. Default is 0.</p></li>
-<li><p><strong>num_chemicals</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of chemicals to plot. Default is 100.</p></li>
-<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – List of labels for the chemicals.</p></li>
+<li><p><strong>num_quantities</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of quantities to plot. Default is 100.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – List of labels for the quantities.</p></li>
 <li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot as a file.</p></li>
 <li><p><strong>show_title</strong> (<em>bool</em>) – Whether to show the title on the plot.</p></li>
 </ul>
@@ -3250,7 +3255,7 @@ In extrapolation mode, indicates the index of the cutoff timestep.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.benchmark.plot_example_predictions_with_uncertainty">
-<span class="sig-prename descclassname"><span class="pre">codes.benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_example_predictions_with_uncertainty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds_mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds_std</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_chemicals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.plot_example_predictions_with_uncertainty" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">codes.benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_example_predictions_with_uncertainty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds_mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds_std</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.plot_example_predictions_with_uncertainty" title="Link to this definition">#</a></dt>
 <dd><p>Plot example predictions with uncertainty.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -3262,8 +3267,8 @@ In extrapolation mode, indicates the index of the cutoff timestep.</p></li>
 <li><p><strong>targets</strong> (<em>np.ndarray</em>) – True targets.</p></li>
 <li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – Timesteps array.</p></li>
 <li><p><strong>example_idx</strong> (<em>int</em><em>, </em><em>optional</em>) – Index of the example to plot. Default is 0.</p></li>
-<li><p><strong>num_chemicals</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of chemicals to plot. Default is 100.</p></li>
-<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – List of labels for the chemicals.</p></li>
+<li><p><strong>num_quantities</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of quantities to plot. Default is 100.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – List of labels for the quantities.</p></li>
 <li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to save the plot as a file.</p></li>
 <li><p><strong>show_title</strong> (<em>bool</em>) – Whether to show the title on the plot.</p></li>
 </ul>
@@ -3803,7 +3808,7 @@ Also saves a CSV file with only the metrics that appear in the CLI table.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_correlation_heatmap"><code class="docutils literal notranslate"><span class="pre">plot_error_correlation_heatmap()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_correlation_heatmap_old"><code class="docutils literal notranslate"><span class="pre">plot_error_correlation_heatmap_old()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_distribution_comparative"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_comparative()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_distribution_per_chemical"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_per_chemical()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_distribution_per_quantity"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_per_quantity()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_example_mode_predictions"><code class="docutils literal notranslate"><span class="pre">plot_example_mode_predictions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_example_predictions_with_uncertainty"><code class="docutils literal notranslate"><span class="pre">plot_example_predictions_with_uncertainty()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_generalization_error_comparison"><code class="docutils literal notranslate"><span class="pre">plot_generalization_error_comparison()</span></code></a></li>
@@ -3895,7 +3900,7 @@ Also saves a CSV file with only the metrics that appear in the CLI table.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_dynamic_correlation_heatmap"><code class="docutils literal notranslate"><span class="pre">plot_dynamic_correlation_heatmap()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_error_correlation_heatmap"><code class="docutils literal notranslate"><span class="pre">plot_error_correlation_heatmap()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_error_distribution_comparative"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_comparative()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_error_distribution_per_chemical"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_per_chemical()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_error_distribution_per_quantity"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_per_quantity()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_example_mode_predictions"><code class="docutils literal notranslate"><span class="pre">plot_example_mode_predictions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_example_predictions_with_uncertainty"><code class="docutils literal notranslate"><span class="pre">plot_example_predictions_with_uncertainty()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_generalization_error_comparison"><code class="docutils literal notranslate"><span class="pre">plot_generalization_error_comparison()</span></code></a></li>

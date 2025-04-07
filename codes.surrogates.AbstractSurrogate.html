@@ -197,6 +197,7 @@
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="docs/source/codes.tune.html">codes.tune</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.evaluate_study.html">codes.tune.evaluate_study</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.evaluate_tuning.html">codes.tune.evaluate_tuning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.optuna_fcts.html">codes.tune.optuna_fcts</a></li>
 </ul>
 </details></li>
@@ -359,7 +360,7 @@
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.normalisation"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.normalisation</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.train_duration"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.train_duration</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.device"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.device</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.n_chemicals"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_chemicals</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.n_quantities"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_quantities</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.n_timesteps"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_timesteps</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.L1"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.L1</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.config"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.config</span></code></a></li>
@@ -385,7 +386,7 @@
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.normalisation"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.normalisation</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.train_duration"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.train_duration</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.device"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.device</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.n_chemicals"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_chemicals</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.n_quantities"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_quantities</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.n_timesteps"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_timesteps</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.L1"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.L1</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.config"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.config</span></code></a></li>
@@ -423,7 +424,7 @@
 <span id="codes-surrogates-abstractsurrogate-surrogates-module"></span><h2>codes.surrogates.AbstractSurrogate.surrogates module<a class="headerlink" href="#module-codes.surrogates.AbstractSurrogate.surrogates" title="Link to this heading">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.AbstractSurrogate.surrogates.</span></span><span class="sig-name descname"><span class="pre">AbstractSurrogateModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chemicals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.AbstractSurrogate.surrogates.</span></span><span class="sig-name descname"><span class="pre">AbstractSurrogateModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
 <p>Abstract base class for surrogate models. This class implements the basic
 structure of a surrogate model and defines the methods that need to be
@@ -434,7 +435,7 @@ framework. For more information, see
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>device</strong> (<em>str</em><em>, </em><em>optional</em>) – The device to run the model on. Defaults to None.</p></li>
-<li><p><strong>n_chemicals</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of chemicals. Defaults to 29.</p></li>
+<li><p><strong>n_quantities</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of quantities. Defaults to 29.</p></li>
 <li><p><strong>n_timesteps</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of timesteps. Defaults to 100.</p></li>
 <li><p><strong>config</strong> (<em>dict</em><em>, </em><em>optional</em>) – The configuration dictionary. Defaults to {}.</p></li>
 </ul>
@@ -507,9 +508,9 @@ framework. For more information, see
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.n_chemicals">
-<span class="sig-name descname"><span class="pre">n_chemicals</span></span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.n_chemicals" title="Link to this definition">#</a></dt>
-<dd><p>The number of chemicals.</p>
+<dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.n_quantities">
+<span class="sig-name descname"><span class="pre">n_quantities</span></span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.n_quantities" title="Link to this definition">#</a></dt>
+<dd><p>The number of quantities.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>int</p>
@@ -739,7 +740,7 @@ model is evaluated on.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.prepare_data">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.prepare_data" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.prepare_data" title="Link to this definition">#</a></dt>
 <dd><p>Prepare the data for training, testing, and validation. This method should
 return the DataLoader objects for the training, testing, and validation data.</p>
 <dl class="field-list simple">
@@ -751,6 +752,7 @@ return the DataLoader objects for the training, testing, and validation data.</p
 <li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps.</p></li>
 <li><p><strong>batch_size</strong> (<em>int</em>) – The batch size.</p></li>
 <li><p><strong>shuffle</strong> (<em>bool</em>) – Whether to shuffle the data.</p></li>
+<li><p><strong>dummy_timesteps</strong> (<em>bool</em>) – Whether to use dummy timesteps. Defaults to True.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -819,7 +821,7 @@ return the DataLoader objects for the training, testing, and validation data.</p
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-codes.surrogates.AbstractSurrogate" title="Link to this heading">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogate.AbstractSurrogateModel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.AbstractSurrogate.</span></span><span class="sig-name descname"><span class="pre">AbstractSurrogateModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chemicals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.AbstractSurrogate.</span></span><span class="sig-name descname"><span class="pre">AbstractSurrogateModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
 <p>Abstract base class for surrogate models. This class implements the basic
 structure of a surrogate model and defines the methods that need to be
@@ -830,7 +832,7 @@ framework. For more information, see
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>device</strong> (<em>str</em><em>, </em><em>optional</em>) – The device to run the model on. Defaults to None.</p></li>
-<li><p><strong>n_chemicals</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of chemicals. Defaults to 29.</p></li>
+<li><p><strong>n_quantities</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of quantities. Defaults to 29.</p></li>
 <li><p><strong>n_timesteps</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of timesteps. Defaults to 100.</p></li>
 <li><p><strong>config</strong> (<em>dict</em><em>, </em><em>optional</em>) – The configuration dictionary. Defaults to {}.</p></li>
 </ul>
@@ -903,9 +905,9 @@ framework. For more information, see
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.n_chemicals">
-<span class="sig-name descname"><span class="pre">n_chemicals</span></span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.n_chemicals" title="Link to this definition">#</a></dt>
-<dd><p>The number of chemicals.</p>
+<dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.n_quantities">
+<span class="sig-name descname"><span class="pre">n_quantities</span></span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.n_quantities" title="Link to this definition">#</a></dt>
+<dd><p>The number of quantities.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>int</p>
@@ -1135,7 +1137,7 @@ model is evaluated on.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.prepare_data">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.prepare_data" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.prepare_data" title="Link to this definition">#</a></dt>
 <dd><p>Prepare the data for training, testing, and validation. This method should
 return the DataLoader objects for the training, testing, and validation data.</p>
 <dl class="field-list simple">
@@ -1147,6 +1149,7 @@ return the DataLoader objects for the training, testing, and validation data.</p
 <li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps.</p></li>
 <li><p><strong>batch_size</strong> (<em>int</em>) – The batch size.</p></li>
 <li><p><strong>shuffle</strong> (<em>bool</em>) – Whether to shuffle the data.</p></li>
+<li><p><strong>dummy_timesteps</strong> (<em>bool</em>) – Whether to use dummy timesteps. Defaults to True.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1250,7 +1253,7 @@ return the DataLoader objects for the training, testing, and validation data.</p
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.normalisation"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.normalisation</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.train_duration"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.train_duration</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.device"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.device</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.n_chemicals"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_chemicals</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.n_quantities"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_quantities</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.n_timesteps"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_timesteps</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.L1"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.L1</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.config"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.config</span></code></a></li>
@@ -1276,7 +1279,7 @@ return the DataLoader objects for the training, testing, and validation data.</p
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.normalisation"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.normalisation</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.train_duration"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.train_duration</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.device"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.device</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.n_chemicals"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_chemicals</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.n_quantities"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_quantities</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.n_timesteps"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_timesteps</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.L1"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.L1</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.config"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.config</span></code></a></li>

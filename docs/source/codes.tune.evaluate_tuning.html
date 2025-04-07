@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>codes.train &#8212; CODES  documentation</title>
+    <title>codes.tune.evaluate_tuning &#8212; CODES  documentation</title>
   
   
   
@@ -43,12 +43,12 @@
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'docs/source/codes.train';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'docs/source/codes.tune.evaluate_tuning';</script>
     <link rel="icon" href="../../_static/favicon-96x96.png"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="codes.train.train_fcts" href="codes.train.train_fcts.html" />
-    <link rel="prev" title="codes.surrogates.surrogate_classes" href="codes.surrogates.surrogate_classes.html" />
+    <link rel="next" title="codes.tune.optuna_fcts" href="codes.tune.optuna_fcts.html" />
+    <link rel="prev" title="codes.tune.evaluate_study" href="codes.tune.evaluate_study.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -191,13 +191,13 @@
 <li class="toctree-l2"><a class="reference internal" href="codes.surrogates.surrogate_classes.html">codes.surrogates.surrogate_classes</a></li>
 </ul>
 </details></li>
-<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">codes.train</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="codes.train.html">codes.train</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="codes.train.train_fcts.html">codes.train.train_fcts</a></li>
 </ul>
 </details></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="codes.tune.html">codes.tune</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="codes.tune.html">codes.tune</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="codes.tune.evaluate_study.html">codes.tune.evaluate_study</a></li>
-<li class="toctree-l2"><a class="reference internal" href="codes.tune.evaluate_tuning.html">codes.tune.evaluate_tuning</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">codes.tune.evaluate_tuning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="codes.tune.optuna_fcts.html">codes.tune.optuna_fcts</a></li>
 </ul>
 </details></li>
@@ -265,7 +265,7 @@
       
       
       
-      <li><a href="../../_sources/docs/source/codes.train.rst" target="_blank"
+      <li><a href="../../_sources/docs/source/codes.tune.evaluate_tuning.rst" target="_blank"
    class="btn btn-sm btn-download-source-button dropdown-item"
    title="Download source file"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -339,7 +339,7 @@
               
 
 <div id="jb-print-docs-body" class="onlyprint">
-    <h1>codes.train</h1>
+    <h1>codes.tune.evaluate_tuning</h1>
     <!-- Table of contents -->
     <div id="print-main-content">
         <div id="jb-print-toc">
@@ -353,13 +353,25 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-codes.train">
-<span id="codes-train"></span><h1>codes.train<a class="headerlink" href="#module-codes.train" title="Link to this heading">#</a></h1>
-<p class="rubric">Modules</p>
+  <section id="module-codes.tune.evaluate_tuning">
+<span id="codes-tune-evaluate-tuning"></span><h1>codes.tune.evaluate_tuning<a class="headerlink" href="#module-codes.tune.evaluate_tuning" title="Link to this heading">#</a></h1>
+<p class="rubric">Functions</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="codes.train.train_fcts.html#module-codes.train.train_fcts" title="codes.train.train_fcts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">train_fcts</span></code></a></p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_tuning.evaluate_tuning" title="codes.tune.evaluate_tuning.evaluate_tuning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_tuning</span></code></a>(study_name)</p></td>
+<td><p>Evaluate the tuning step by generating loss plots for each surrogate model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_tuning.load_loss_history" title="codes.tune.evaluate_tuning.load_loss_history"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_loss_history</span></code></a>(model_path)</p></td>
+<td><p>Load loss histories from a saved model file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_tuning.main" title="codes.tune.evaluate_tuning.main"><code class="xref py py-obj docutils literal notranslate"><span class="pre">main</span></code></a>()</p></td>
+<td><p>Main function to evaluate tuning.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_tuning.parse_args" title="codes.tune.evaluate_tuning.parse_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_args</span></code></a>()</p></td>
+<td><p>Parse command-line arguments.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_tuning.plot_losses" title="codes.tune.evaluate_tuning.plot_losses"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_losses</span></code></a>(loss_histories, epochs, labels)</p></td>
+<td><p>Plot the loss trajectories for multiple models using their actual lengths.</p></td>
 </tr>
 </tbody>
 </table>
@@ -378,20 +390,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="codes.surrogates.surrogate_classes.html"
+       href="codes.tune.evaluate_study.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">codes.surrogates.surrogate_classes</p>
+        <p class="prev-next-title">codes.tune.evaluate_study</p>
       </div>
     </a>
     <a class="right-next"
-       href="codes.train.train_fcts.html"
+       href="codes.tune.optuna_fcts.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">codes.train.train_fcts</p>
+        <p class="prev-next-title">codes.tune.optuna_fcts</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

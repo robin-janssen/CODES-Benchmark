@@ -11,4 +11,5 @@
    :recursive:
 
    evaluate_study
+   evaluate_tuning
    optuna_fcts

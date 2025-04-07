@@ -195,6 +195,7 @@
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="docs/source/codes.tune.html">codes.tune</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.evaluate_study.html">codes.tune.evaluate_study</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.evaluate_tuning.html">codes.tune.evaluate_tuning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.optuna_fcts.html">codes.tune.optuna_fcts</a></li>
 </ul>
 </details></li>
@@ -358,6 +359,14 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_study.plot_test_losses"><code class="docutils literal notranslate"><span class="pre">plot_test_losses()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.evaluate_tuning">codes.tune.evaluate_tuning module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.evaluate_tuning"><code class="docutils literal notranslate"><span class="pre">evaluate_tuning()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.load_loss_history"><code class="docutils literal notranslate"><span class="pre">load_loss_history()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.plot_losses"><code class="docutils literal notranslate"><span class="pre">plot_losses()</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.optuna_fcts">codes.tune.optuna_fcts module</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.create_objective"><code class="docutils literal notranslate"><span class="pre">create_objective()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.get_activation_function"><code class="docutils literal notranslate"><span class="pre">get_activation_function()</span></code></a></li>
@@ -471,6 +480,97 @@ Usually, viewing the study database with Optuna Dashboard is more informative.</
 <li><p><strong>labels</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – List of labels for the test losses.</p></li>
 <li><p><strong>study_name</strong> (<em>str</em>) – Name of the study.</p></li>
 <li><p><strong>window_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Size of the window for the moving average. Defaults to 5.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-codes.tune.evaluate_tuning">
+<span id="codes-tune-evaluate-tuning-module"></span><h2>codes.tune.evaluate_tuning module<a class="headerlink" href="#module-codes.tune.evaluate_tuning" title="Link to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.evaluate_tuning.evaluate_tuning">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">evaluate_tuning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.evaluate_tuning" title="Link to this definition">#</a></dt>
+<dd><p>Evaluate the tuning step by generating loss plots for each surrogate model.</p>
+<p>This function looks for folders in “tuned/&lt;study_name&gt;/models”. Each folder should
+correspond to a surrogate model (e.g., “FullyConnected”, “LatentPoly”, etc.). It then
+loads all .pth files within each folder, extracts the loss trajectories (test_loss),
+extracts the trial number from the filename, and generates a loss plot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>study_name</strong> (<em>str</em>) – Name of the study (e.g., “primordialtest”).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.evaluate_tuning.load_loss_history">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">load_loss_history</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.load_loss_history" title="Link to this definition">#</a></dt>
+<dd><p>Load loss histories from a saved model file.</p>
+<p>The saved file is expected to be in the custom format, where the loss histories and other
+attributes are stored under the “attributes” key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model_path</strong> (<em>str</em>) – Path to the .pth file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(train_loss, test_loss, n_epochs)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.evaluate_tuning.main">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.main" title="Link to this definition">#</a></dt>
+<dd><p>Main function to evaluate tuning.</p>
+<p>Reads the study name from command-line arguments, processes each surrogate folder in
+tuned/&lt;study_name&gt;/models, and generates loss plots saved to tuned/&lt;study_name&gt;/.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.evaluate_tuning.parse_args">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.parse_args" title="Link to this definition">#</a></dt>
+<dd><p>Parse command-line arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Parsed arguments containing study_name.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>argparse.Namespace</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.evaluate_tuning.plot_losses">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">plot_losses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loss_histories</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Losses'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'main'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percentage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.plot_losses" title="Link to this definition">#</a></dt>
+<dd><p>Plot the loss trajectories for multiple models using their actual lengths.</p>
+<p>Each loss trajectory is plotted over its own length (i.e. trial-specific number of epochs),
+rather than forcing all trajectories to the length of the shortest one. The global y-axis limits
+are determined from the valid (nonzero) portions of each trajectory after excluding the initial
+percentage of epochs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loss_histories</strong> (<em>tuple</em><em>[</em><em>np.ndarray</em><em>, </em><em>...</em><em>]</em>) – Tuple of loss history arrays.</p></li>
+<li><p><strong>epochs</strong> (<em>int</em>) – Total number of training epochs (used for labeling only).</p></li>
+<li><p><strong>labels</strong> (<em>tuple</em><em>[</em><em>str</em><em>, </em><em>...</em><em>]</em>) – Labels for each loss history.</p></li>
+<li><p><strong>title</strong> (<em>str</em>) – Title for the plot.</p></li>
+<li><p><strong>save</strong> (<em>bool</em>) – Whether to save the plot as an image file.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em><em> | </em><em>None</em>) – Configuration dictionary (used for naming output files).</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em><em> | </em><em>None</em>) – Surrogate model name.</p></li>
+<li><p><strong>mode</strong> (<em>str</em>) – Mode for labeling (e.g., “main” or surrogate name).</p></li>
+<li><p><strong>percentage</strong> (<em>float</em>) – Percentage of initial epochs to exclude from min/max y-value calculation.</p></li>
+<li><p><strong>show_title</strong> (<em>bool</em>) – Whether to display the title.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -794,6 +894,14 @@ tuple[float, float]: (loss, mean_inference_time) in multi objective mode.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_study.moving_average"><code class="docutils literal notranslate"><span class="pre">moving_average()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_study.parse_arguments"><code class="docutils literal notranslate"><span class="pre">parse_arguments()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_study.plot_test_losses"><code class="docutils literal notranslate"><span class="pre">plot_test_losses()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.evaluate_tuning">codes.tune.evaluate_tuning module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.evaluate_tuning"><code class="docutils literal notranslate"><span class="pre">evaluate_tuning()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.load_loss_history"><code class="docutils literal notranslate"><span class="pre">load_loss_history()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.plot_losses"><code class="docutils literal notranslate"><span class="pre">plot_losses()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.optuna_fcts">codes.tune.optuna_fcts module</a><ul class="nav section-nav flex-column">
