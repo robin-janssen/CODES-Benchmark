@@ -71,7 +71,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             model_name: str,
             subfolder: str,
             training_id: str,
-            data_params: dict,
+            data_info: dict,
         ) -> None:
             Saves the model to disk.
 
@@ -265,7 +265,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             model_name (str): The name of the model.
             subfolder (str): The subfolder to save the model in.
             training_id (str): The training identifier.
-            data_params (dict): The data parameters.
+            data_info (dict): The data parameters.
         """
 
         # Make the model directory

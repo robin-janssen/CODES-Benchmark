@@ -63,11 +63,11 @@ def train_and_save_model(
 
     # Load full data and parameters
     (
-        (full_train_data, full_test_data, full_val_data),
-        (full_train_params, full_test_params, full_val_params),
+        (train_data, test_data, _),
+        (train_params, test_params, _),
         timesteps,
         _,
-        data_params,
+        data_info,
         _,
     ) = check_and_load_data(
         config["dataset"]["name"],
@@ -78,16 +78,9 @@ def train_and_save_model(
     )
 
     # Get the appropriate data subset
-    train_data, test_data, timesteps = get_data_subset(
-        full_train_data, full_test_data, timesteps, mode, metric
+    (train_data, test_data), (train_params, test_params), timesteps = get_data_subset(
+        (train_data, test_data), timesteps, mode, metric, (train_params, test_params)
     )
-    # Slice parameter subsets if they exist.
-    if full_train_params is not None and full_test_params is not None:
-        train_params, test_params, _ = get_data_subset(
-            full_train_params, full_test_params, timesteps, mode, metric
-        )
-    else:
-        train_params = test_params = None
 
     _, n_timesteps, n_quantities = train_data.shape
 
@@ -97,7 +90,7 @@ def train_and_save_model(
     with threadlock:
         set_random_seeds(seed, device)
         model = surrogate_class(device, n_quantities, n_timesteps, model_config)
-    model.normalisation = data_params
+    model.normalisation = data_info
     surr_idx = config["surrogates"].index(surr_name)
 
     batch_size = determine_batch_size(config, surr_idx, mode, metric)

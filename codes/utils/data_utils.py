@@ -41,7 +41,7 @@ def check_and_load_data(
             - (train_params, test_params, val_params) or (None, None, None) if parameters are absent
             - timesteps
             - n_train_samples
-            - data_params
+            - data_info
             - labels
 
     Raises:
@@ -100,15 +100,15 @@ def check_and_load_data(
                 "Normalization mode must be either 'disable', 'minmax' or 'standardise'"
             )
         if normalisation_mode != "disable":
-            data_params, train_data, test_data, val_data = normalize_data(
+            data_info, train_data, test_data, val_data = normalize_data(
                 train_data, test_data, val_data, mode=normalisation_mode
             )
             if verbose:
                 print(f"Data normalized (mode: {normalisation_mode}).")
         else:
-            data_params = {"mode": "disable"}
+            data_info = {"mode": "disable"}
 
-        data_params["log10_transform"] = True if log else False
+        data_info["log10_transform"] = True if log else False
 
         for data in (train_data, test_data, val_data):
             if data.ndim != 3:
@@ -145,7 +145,7 @@ def check_and_load_data(
             if verbose:
                 print("Number of training samples not found in metadata.")
 
-        data_params["dataset_name"] = dataset_name
+        data_info["dataset_name"] = dataset_name
 
         if "labels" in f.attrs:
             labels = f.attrs["labels"]
@@ -172,7 +172,7 @@ def check_and_load_data(
         (train_params, test_params, val_params),
         timesteps,
         n_train_samples,
-        data_params,
+        data_info,
         labels,
     )
 
@@ -203,7 +203,7 @@ def normalize_data(
         data_min = np.min(train_data)
         data_max = np.max(train_data)
 
-        data_params = {"min": float(data_min), "max": float(data_max), "mode": mode}
+        data_info = {"min": float(data_min), "max": float(data_max), "mode": mode}
 
         # Normalize the training data
         train_data_norm = 2 * (train_data - data_min) / (data_max - data_min) - 1
@@ -223,7 +223,7 @@ def normalize_data(
         mean = np.mean(train_data)
         std = np.std(train_data)
 
-        data_params = {"mean": float(mean), "std": float(std), "mode": mode}
+        data_info = {"mean": float(mean), "std": float(std), "mode": mode}
 
         # Standardize the training data
         train_data_norm = (train_data - mean) / std
@@ -238,7 +238,7 @@ def normalize_data(
         else:
             val_data_norm = None
 
-    return data_params, train_data_norm, test_data_norm, val_data_norm
+    return data_info, train_data_norm, test_data_norm, val_data_norm
 
 
 def create_dataset(
@@ -486,191 +486,58 @@ def create_hdf5_dataset(
 
 
 def get_data_subset(
-    full_train_data: np.ndarray,
-    full_test_data: np.ndarray,
+    data: tuple[np.ndarray, ...],
     timesteps: np.ndarray,
     mode: str,
     metric: int,
+    params: tuple[np.ndarray, ...] | None = None,
     subset_factor: int = 1,
 ):
     """
     Get the appropriate data subset based on the mode and metric.
 
     Args:
-        full_train_data (np.ndarray): The full training data.
-        full_test_data (np.ndarray): The full test data.
+        data (np.ndarray or tuple): The data array or tuple of arrays of shape (n_samples, n_timesteps, n_quantities).
         timesteps (np.ndarray): The timesteps.
-        mode (str): The benchmark mode (e.g., "accuracy", "interpolation", "extrapolation", "sparse", "UQ").
+        mode (str): The benchmark mode (must be one of "interpolation", "extrapolation", "sparse", "batch_size").
+        For "batch_size", we thin the dataset by a factor of 4 for faster processing.
         metric (int): The specific metric for the mode (e.g., interval, cutoff, factor, batch size).
+        params (np.ndarray or tuple): The parameters array or tuple of arrays of shape (n_samples, n_parameters).
         subset_factor (int): The factor to subset the data by. Default is 1 (use full train and test data).
 
     Returns:
         tuple: The training data, test data, and timesteps subset.
     """
     # First select the appropriate data subset
-    train_data = full_train_data[::subset_factor]
-    test_data = full_test_data[::subset_factor]
+    data_sub = (d[::subset_factor] for d in data)
+    if params is not None:
+        params_sub = (p[::subset_factor] for p in params)
 
     if mode == "interpolation":
         interval = metric
-        train_data = train_data[:, ::interval]
-        test_data = test_data[:, ::interval]
+        data_subset = (d[:, ::interval] for d in data_sub)
+        # Parameters are not subsetted for interpolation
         timesteps = timesteps[::interval]
     elif mode == "extrapolation":
         cutoff = metric
-        train_data = train_data[:, :cutoff]
-        test_data = test_data[:, :cutoff]
+        data_subset = (d[:, :cutoff] for d in data_sub)
+        # Parameters are not subsetted for extrapolation
         timesteps = timesteps[:cutoff]
     elif mode == "sparse":
         factor = metric
-        train_data = train_data[::factor]
-        test_data = test_data[::factor]
+        data_subset = (d[::factor] for d in data_sub)
+        params_subset = (p[::factor] for p in params_sub if params is not None)
+        # Timesteps are not subsetted for sparse
     elif mode == "batch_size":
         factor = 4
-        train_data = train_data[::factor]
-        test_data = test_data[::factor]
+        data_subset = (d[::factor] for d in data_sub)
+        params_subset = (p[::factor] for p in params_sub if params is not None)
+        # Timesteps are not subsetted for batch size
     else:
-        train_data = train_data
-        test_data = test_data
+        data_subset = data_sub
+        params_subset = params_sub
 
-    return train_data, test_data, timesteps
-
-
-def create_dataset(
-    name: str,
-    train_data: np.ndarray,
-    test_data: np.ndarray | None = None,
-    val_data: np.ndarray | None = None,
-    split: tuple[float, float, float] | None = None,
-    timesteps: np.ndarray | None = None,
-    labels: list[str] | None = None,
-):
-    """
-    Creates a new dataset in the data directory with train, test and validation data.
-
-    If only train_data is provided, it will be split into train, test and validation sets.
-    If split is not provided in this case, a default split of (0.7, 0.1, 0.2) is used.
-
-    Args:
-        name (str): The name of the dataset.
-        train_data (np.ndarray): The training data.
-        test_data (np.ndarray, optional): The test data.
-        val_data (np.ndarray, optional): The validation data.
-        split (tuple(float, float, float), optional): If test_data and val_data are not provided,
-            train_data will be split into training, test and validation data according to these ratios.
-        timesteps (np.ndarray, optional): The timesteps array.
-        labels (list[str], optional): The labels for the quantities.
-
-    Raises:
-        FileExistsError: If the dataset already exists.
-        TypeError: If the train_data (or test_data/val_data when provided) is not a numpy array.
-        ValueError: If the provided data do not have the correct shape or if only one of test_data/val_data is provided.
-    """
-    base_dir = "datasets"
-    dataset_dir = os.path.join(base_dir, name)
-
-    if os.path.exists(dataset_dir):
-        raise FileExistsError(f"Dataset '{name}' already exists.")
-
-    # Verify train_data is a numpy array and has the correct dimensions.
-    if not isinstance(train_data, np.ndarray):
-        raise TypeError("train_data must be a numpy array.")
-    if train_data.ndim != 3:
-        raise ValueError(
-            "train_data must have shape (n_samples, n_timesteps, n_quantities)."
-        )
-
-    # Check consistency if test_data or val_data are provided.
-    if (test_data is None) ^ (val_data is None):
-        raise ValueError(
-            "Either provide only train_data or provide all of train_data, test_data and val_data."
-        )
-
-    # If test_data and val_data are provided, perform type and shape checks.
-    if test_data is not None and val_data is not None:
-        if not isinstance(test_data, np.ndarray):
-            raise TypeError("test_data must be a numpy array.")
-        if not isinstance(val_data, np.ndarray):
-            raise TypeError("val_data must be a numpy array.")
-        if train_data.shape[1:] != test_data.shape[1:]:
-            raise ValueError(
-                "train_data and test_data must have the same number of timesteps and quantities."
-            )
-        if train_data.shape[1:] != val_data.shape[1:]:
-            raise ValueError(
-                "train_data and val_data must have the same number of timesteps and quantities."
-            )
-        np.random.shuffle(test_data)
-        np.random.shuffle(val_data)
-    else:
-        # Only train_data is provided. Use split to partition the data.
-        if split is None:
-            split = (0.7, 0.1, 0.2)  # default split
-        else:
-            if not isinstance(split, (tuple, list)):
-                raise TypeError("split must be a tuple or list of floats.")
-            if len(split) != 3:
-                raise ValueError(
-                    "split must contain three values: train, test, and validation split."
-                )
-            if not all(isinstance(value, float) for value in split):
-                raise TypeError("split values must be floats.")
-            if not all(0 <= value <= 1 for value in split):
-                raise ValueError("split values must be between 0 and 1.")
-            if not isclose(sum(split), 1, abs_tol=1e-5):
-                raise ValueError("split values must sum to 1.")
-
-    # Validate timesteps.
-    if timesteps is None:
-        print("Timesteps not provided and will not be saved.")
-    else:
-        if timesteps.ndim != 1 or timesteps.shape[0] != train_data.shape[1]:
-            raise ValueError(
-                "Timesteps must be a 1D array with length equal to the number of timesteps in the data."
-            )
-
-    # Shuffle the training data.
-    np.random.shuffle(train_data)
-
-    # If only train_data is provided, perform the splitting.
-    if test_data is None and val_data is None:
-        full_data = train_data
-        n_samples = full_data.shape[0]
-        n_train = int(n_samples * split[0])
-        n_test = int(n_samples * split[1])
-
-        train_data = full_data[:n_train]
-        test_data = full_data[n_train : n_train + n_test]
-        val_data = full_data[n_train + n_test :]
-
-        if any(
-            dim == 0
-            for shape in (train_data.shape, test_data.shape, val_data.shape)
-            for dim in shape
-        ):
-            raise ValueError(
-                "Split data contains zero samples. One of the splits is too small."
-            )
-    else:
-        # When test_data and val_data are provided, ignore the split value.
-        if split is not None:
-            print(
-                "Warning: split values will be ignored since test_data and val_data are provided."
-            )
-
-    # Validate labels.
-    if labels is not None:
-        if not isinstance(labels, list):
-            raise TypeError("labels must be a list of strings.")
-        if len(labels) != train_data.shape[2]:
-            raise ValueError("The number of labels must match the number of quantities.")
-
-    # Create the HDF5 dataset.
-    create_hdf5_dataset(
-        train_data, test_data, val_data, name, timesteps=timesteps, labels=labels
-    )
-
-    print(f"Dataset '{name}' created at {dataset_dir}")
+    return data_subset, params_subset, timesteps
 
 
 class DownloadProgressBar(tqdm):

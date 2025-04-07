@@ -154,7 +154,7 @@ def training_run(
     """
 
     download_data(config["dataset"]["name"], verbose=False)
-    train_data, test_data, val_data, timesteps, _, data_params, _ = check_and_load_data(
+    train_data, test_data, val_data, timesteps, _, data_info, _ = check_and_load_data(
         config["dataset"]["name"],
         verbose=False,
         log=config["dataset"]["log10_transform"],
@@ -198,7 +198,7 @@ def training_run(
     model_config = get_model_config(surr_name, config)
     model_config.update(suggested_params)
     model = surrogate_class(device, n_quantities, n_timesteps, model_config)
-    model.normalisation = data_params
+    model.normalisation = data_info
     model.optuna_trial = trial
     model.trial_update_epochs = 10
 
