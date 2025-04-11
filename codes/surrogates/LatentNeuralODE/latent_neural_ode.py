@@ -6,9 +6,6 @@ import torch
 import torchode as to
 from schedulefree import AdamWScheduleFree
 from torch.profiler import ProfilerActivity, profile, record_function
-
-# from torch.optim import Adam
-# from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 
 from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
@@ -21,21 +18,16 @@ from codes.utils import time_execution, worker_init_fn
 
 class LatentNeuralODE(AbstractSurrogateModel):
     """
-    LatentNeuralODE is a class that represents a latent neural ordinary differential
-    equation model. It includes an encoder, decoder, and neural ODE. The integrator is
-    implemented by the torchode framework.
+    LatentNeuralODE represents a latent neural ODE model.
+    It includes an encoder, decoder, and neural ODE. Fixed parameters can be injected either
+    into the encoder or later into the ODE network, controlled by config.encode_params.
 
-    Attributes:
-        model (ModelWrapper): The neural network model wrapped in a ModelWrapper object.
-        config (LatentNeuralODEBaseConfig): The configuration for the model.
-
-    Methods:
-        forward(inputs): Takes whatever the dataloader outputs, performs a forward pass
-            through the model and returns the predictions with the respective targets.
-        prepare_data(dataset_train, dataset_test, dataset_val, timesteps, batch_size,
-            shuffle): Prepares the data for training by creating a DataLoader object.
-        fit(train_loader, test_loader, epochs, position, description): Fits the model to
-            the training data. Sets the train_loss and test_loss attributes.
+    Args:
+        device (str | None): Device for training (e.g. 'cpu', 'cuda:0').
+        n_quantities (int): Number of quantities.
+        n_timesteps (int): Number of timesteps.
+        n_parameters (int): Number of fixed parameters (default 0).
+        model_config (dict | None): Configuration for the model.
     """
 
     def __init__(
@@ -43,6 +35,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         device: str | None = None,
         n_quantities: int = 29,
         n_timesteps: int = 100,
+        n_parameters: int = 0,
         model_config: dict | None = None,
     ):
         super().__init__(
@@ -52,23 +45,28 @@ class LatentNeuralODE(AbstractSurrogateModel):
             config=model_config,
         )
         self.config = LatentNeuralODEBaseConfig(**self.config)
-        self.model = ModelWrapper(config=self.config, n_quantities=n_quantities).to(
-            device
-        )
+        self.n_parameters = n_parameters
+        # Instantiate the model wrapper with the additional n_parameters.
+        self.model = ModelWrapper(
+            config=self.config, n_quantities=n_quantities, n_parameters=n_parameters
+        ).to(device)
 
     def forward(self, inputs):
         """
-        Takes whatever the dataloader outputs, performs a forward pass through the
-        model and returns the predictions with the respective targets.
-
-        Args:
-            inputs (Any): the data from the dataloader
-
-        Returns:
-            tuple[torch.Tensor, torch.Tensor]: predictions and targets
+        Forward pass through the model.
+        Expects inputs to be either (data, timesteps) or (data, timesteps, params).
         """
-        targets, timesteps = inputs[0], inputs[1]
-        return self.model(targets, timesteps), targets
+        if len(inputs) == 3:
+            x, t_range, params = inputs
+        else:
+            x, t_range = inputs
+            params = None
+
+        # x has shape (batch, timesteps, n_quantities)
+        # Use the first timestep as the initial condition.
+        x0 = x[:, 0, :]
+        latent_prediction = self.model(x0, t_range, params)
+        return latent_prediction, x
 
     def prepare_data(
         self,
@@ -79,64 +77,87 @@ class LatentNeuralODE(AbstractSurrogateModel):
         batch_size: int = 128,
         shuffle: bool = True,
         dummy_timesteps: bool = True,
+        dataset_train_params: np.ndarray | None = None,
+        dataset_test_params: np.ndarray | None = None,
+        dataset_val_params: np.ndarray | None = None,
     ) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
         """
-        Prepares the data for training by creating DataLoader objects.
-
-        Args:
-            dataset_train (np.ndarray): The training dataset.
-            dataset_test (np.ndarray): The test dataset.
-            dataset_val (np.ndarray): The validation dataset.
-            timesteps (np.ndarray): The array of timesteps.
-            batch_size (int): The batch size for the DataLoader.
-            shuffle (bool): Whether to shuffle the training data.
-
-        Returns:
-            tuple[DataLoader, DataLoader | None, DataLoader | None]:
-                - DataLoader for training data.
-                - DataLoader for test data (None if no test data provided).
-                - DataLoader for validation data (None if no validation data provided).
+        Prepares data by creating DataLoader objects.
+        If fixed parameters are provided, they are passed along with each sample.
         """
-        # Shuffle training data if required
         if shuffle:
             shuffled_indices = np.random.permutation(len(dataset_train))
             dataset_train = dataset_train[shuffled_indices]
+            if dataset_train_params is not None:
+                dataset_train_params = dataset_train_params[shuffled_indices]
 
         if dummy_timesteps:
             timesteps = np.linspace(0, 1, dataset_train.shape[1])
 
-        # Create training DataLoader
-        dset_train = ChemDataset(dataset_train, timesteps, device=self.device)
+        dset_train = ChemDataset(
+            dataset_train,
+            timesteps,
+            device=self.device,
+            parameters=dataset_train_params,
+        )
         dataloader_train = DataLoader(
             dset_train,
             batch_size=batch_size,
-            shuffle=False,  # Shuffle already handled manually above
+            shuffle=False,
             worker_init_fn=worker_init_fn,
-            collate_fn=lambda x: (x[0], x[1]),
+            collate_fn=lambda x: (
+                torch.stack([item[0] for item in x], dim=0),
+                x[0][1],  # timesteps (assumed identical)
+                torch.stack([item[2] for item in x], dim=0) if len(x[0]) == 3 else None,
+            ),
         )
 
-        # Create test DataLoader (no shuffling)
         dataloader_test = None
         if dataset_test is not None:
-            dset_test = ChemDataset(dataset_test, timesteps, device=self.device)
+            dset_test = ChemDataset(
+                dataset_test,
+                timesteps,
+                device=self.device,
+                parameters=dataset_test_params,
+            )
             dataloader_test = DataLoader(
                 dset_test,
                 batch_size=batch_size,
                 shuffle=False,
                 worker_init_fn=worker_init_fn,
-                collate_fn=lambda x: (x[0], x[1]),
+                collate_fn=lambda x: (
+                    torch.stack([item[0] for item in x], dim=0),
+                    x[0][1],
+                    (
+                        torch.stack([item[2] for item in x], dim=0)
+                        if len(x[0]) == 3
+                        else None
+                    ),
+                ),
             )
 
-        # Create validation DataLoader (no shuffling)
         dataloader_val = None
         if dataset_val is not None:
-            dset_val = ChemDataset(dataset_val, timesteps, device=self.device)
+            dset_val = ChemDataset(
+                dataset_val,
+                timesteps,
+                device=self.device,
+                parameters=dataset_val_params,
+            )
             dataloader_val = DataLoader(
                 dset_val,
                 batch_size=batch_size,
                 shuffle=False,
                 worker_init_fn=worker_init_fn,
-                collate_fn=lambda x: (x[0], x[1]),
+                collate_fn=lambda x: (
+                    torch.stack([item[0] for item in x], dim=0),
+                    x[0][1],
+                    (
+                        torch.stack([item[2] for item in x], dim=0)
+                        if len(x[0]) == 3
+                        else None
+                    ),
+                ),
             )
 
         return dataloader_train, dataloader_test, dataloader_val
@@ -183,16 +204,16 @@ class LatentNeuralODE(AbstractSurrogateModel):
         optimizer.train()
 
         for epoch in progress_bar:
-            for i, (x_true, timesteps) in enumerate(train_loader):
+            for i, batch in enumerate(train_loader):
                 optimizer.zero_grad()
-                x_pred = self.model.forward(x_true, timesteps)
-                loss = self.model.total_loss(x_true, x_pred)
+                x_pred = self.model.forward(*batch)
+                loss = self.model.total_loss(batch[0], x_pred)
                 loss.backward()
                 optimizer.step()
 
                 if epoch == 10 and i == 0:
                     with torch.no_grad():
-                        self.model.renormalize_loss_weights(x_true, x_pred)
+                        self.model.renormalize_loss_weights(batch[0], x_pred)
 
             if scheduler is not None:
                 scheduler.step()
@@ -378,69 +399,98 @@ class LatentNeuralODE(AbstractSurrogateModel):
 class ModelWrapper(torch.nn.Module):
     """
     Wraps the encoder, decoder, and neural ODE into a single model.
-    Chooses architecture based on the config.model_version flag.
+    Based on config.encode_params:
+      - If True, fixed parameters are concatenated to the encoder input.
+      - If False, the encoder sees only the data; then fixed parameters are concatenated
+        with the encoder output and passed to an ODE network that maps from (latent + params) to latent.
     """
 
-    def __init__(self, config, n_quantities: int):
+    def __init__(self, config, n_quantities: int, n_parameters: int = 0):
         super().__init__()
-        self.config = config
-        self.loss_weights = [100.0, 1.0, 1.0, 1.0]
+        self.config = config  # Already a LatentNeuralODEBaseConfig instance.
+        self.n_parameters = n_parameters
+        latent_dim = self.config.latent_features
 
-        # Conditional instantiation based on model_version.
-        if config.model_version == "v1":
-            # Instantiate the old encoder/decoder.
-            self.encoder = OldEncoder(
-                in_features=n_quantities,
-                latent_features=config.latent_features,
-                layers_factor=getattr(
-                    config, "layers_factor", 8
-                ),  # for backward compatibility
-                activation=config.activation,
-            )
-            self.decoder = OldDecoder(
-                out_features=n_quantities,
-                latent_features=config.latent_features,
-                layers_factor=getattr(config, "layers_factor", 8),
-                activation=config.activation,
-            )
-        else:  # "v2" or any future version
-            self.encoder = Encoder(
-                in_features=n_quantities,
-                latent_features=config.latent_features,
-                coder_layers=config.coder_layers,
-                coder_width=config.coder_width,
-                activation=config.activation,
-            )
-            self.decoder = Decoder(
-                out_features=n_quantities,
-                latent_features=config.latent_features,
-                coder_layers=config.coder_layers,
-                coder_width=config.coder_width,
-                activation=config.activation,
-            )
+        if self.config.encode_params:
+            # Scheme 1: encoder receives data concatenated with parameters.
+            encoder_in_features = n_quantities + n_parameters
+            # ODE operates on latent state of fixed dimension.
+            ode_input_shape = latent_dim
+            decoder_latent_features = latent_dim
+        else:
+            # Scheme 2: encoder receives only data.
+            encoder_in_features = n_quantities
+            # After encoding, we concatenate parameters to form the initial condition for the ODE.
+            # We then pass this through an ODE network that outputs a latent state of dimension latent_dim.
+            ode_input_shape = latent_dim + n_parameters
+            decoder_latent_features = latent_dim
 
-        # The ODE part remains the same in both versions:
-        self.ode = ODE(
-            input_shape=config.latent_features,
-            output_shape=config.latent_features,
-            activation=config.activation,
-            ode_layers=config.ode_layers,
-            ode_width=config.ode_width,
-            tanh_reg=config.ode_tanh_reg,
+        self.encoder = Encoder(
+            in_features=encoder_in_features,
+            latent_features=latent_dim,
+            coder_layers=self.config.coder_layers,
+            coder_width=self.config.coder_width,
+            activation=self.config.activation,
+        )
+        if self.config.encode_params:
+            # ODE network maps latent_dim -> latent_dim.
+            self.ode = ODE(
+                input_shape=ode_input_shape,
+                output_shape=ode_input_shape,
+                activation=self.config.activation,
+                ode_layers=self.config.ode_layers,
+                ode_width=self.config.ode_width,
+                tanh_reg=self.config.ode_tanh_reg,
+            )
+        else:
+            # ODE network maps (latent_dim + n_parameters) -> latent_dim.
+            self.ode = ODE(
+                input_shape=ode_input_shape,
+                output_shape=latent_dim,
+                activation=self.config.activation,
+                ode_layers=self.config.ode_layers,
+                ode_width=self.config.ode_width,
+                tanh_reg=self.config.ode_tanh_reg,
+            )
+        self.decoder = Decoder(
+            out_features=n_quantities,
+            latent_features=decoder_latent_features,
+            coder_layers=self.config.coder_layers,
+            coder_width=self.config.coder_width,
+            activation=self.config.activation,
         )
         term = to.ODETerm(self.ode)
         step_method = to.Tsit5(term=term)
         step_size_controller = to.IntegralController(
-            atol=config.atol, rtol=config.rtol, term=term
+            atol=self.config.atol, rtol=self.config.rtol, term=term
         )
         self.solver = to.AutoDiffAdjoint(step_method, step_size_controller)
 
-    def forward(self, x, t_range):
-        x0 = x[:, 0, :]
-        z0 = self.encoder(x0)
-        t_eval = t_range.repeat(x.shape[0], 1)
-        result = self.solver.solve(to.InitialValueProblem(y0=z0, t_eval=t_eval)).ys
-        return self.decoder(result)
+    def forward(self, x0, t_range, params=None):
+        if self.config.encode_params:
+            # In scheme 1, the encoder already received the parameters.
+            z0 = self.encoder(x0)
+            # Integrate as usual.
+            t_eval = t_range.repeat(x0.shape[0], 1)
+            latent_traj = self.solver.solve(
+                to.InitialValueProblem(y0=z0, t_eval=t_eval)
+            ).ys
+        else:
+            # In scheme 2, the encoder sees only data.
+            z0 = self.encoder(x0)
+            # Concatenate fixed parameters to the latent state.
+            if params is not None:
+                z0_cat = torch.cat(
+                    [z0, params], dim=1
+                )  # shape: [batch, latent_dim + n_parameters]
+            else:
+                z0_cat = z0
+            t_eval = t_range.repeat(x0.shape[0], 1)
+            # The ODE network is defined to map (latent_dim + n_parameters) -> latent_dim.
+            latent_traj = self.solver.solve(
+                to.InitialValueProblem(y0=z0_cat, t_eval=t_eval)
+            ).ys
+        return self.decoder(latent_traj)
 
     def renormalize_loss_weights(self, x_true, x_pred):
         """
@@ -474,17 +524,23 @@ class ModelWrapper(torch.nn.Module):
             + self.loss_weights[3] * self.deriv2_loss(x_true, x_pred)
         )
 
-    def identity_loss(self, x: torch.Tensor):
+    def identity_loss(self, x: torch.Tensor, params: torch.Tensor = None):
         """
         Calculate the identity loss (Encoder -> Decoder).
 
         Args:
             x (torch.Tensor): The input tensor.
+            params (torch.Tensor | None): Fixed parameters to be passed to the e
 
         Returns:
             torch.Tensor: The identity loss.
         """
-        return self.l2_loss(x, self.decoder(self.encoder(x)))
+        if self.config.encode_params:
+            # For scheme 1, pass the concatenated input.
+            x_input = torch.cat([x, params], dim=1) if params is not None else x
+        else:
+            x_input = x
+        return self.l2_loss(x, self.decoder(self.encoder(x_input)))
 
     @staticmethod
     def l2_loss(x_true: torch.Tensor, x_pred: torch.Tensor):
@@ -557,18 +613,7 @@ class ModelWrapper(torch.nn.Module):
 
 class ODE(torch.nn.Module):
     """
-    Neural ODE module that defines the ODE function for latent dynamics.
-
-    The network is a feedforward network with a specified number of hidden layers (ode_layers)
-    and uniform width (ode_width). Optionally applies a scaled tanh regularization.
-
-    Args:
-        input_shape (int): Input dimension (should match latent_features).
-        output_shape (int): Output dimension (should match latent_features).
-        activation (nn.Module): Activation function.
-        ode_layers (int): Number of hidden layers.
-        ode_width (int): Number of neurons in each hidden layer.
-        tanh_reg (bool): Whether to apply scaled tanh regularization.
+    Neural ODE module defining the function for latent dynamics.
     """
 
     def __init__(
@@ -584,7 +629,6 @@ class ODE(torch.nn.Module):
         self.tanh_reg = tanh_reg
         self.reg_factor = torch.nn.Parameter(torch.tensor(1.0))
         self.activation = activation
-
         layers = []
         layers.append(torch.nn.Linear(input_shape, ode_width, dtype=torch.float64))
         layers.append(activation)
@@ -595,16 +639,6 @@ class ODE(torch.nn.Module):
         self.mlp = torch.nn.Sequential(*layers)
 
     def forward(self, t, x):
-        """
-        Forward pass for the ODE network.
-
-        Args:
-            t (torch.Tensor): Time tensor (unused in this implementation).
-            x (torch.Tensor): Input latent state.
-
-        Returns:
-            torch.Tensor: Output latent state.
-        """
         output = self.mlp(x)
         if self.tanh_reg:
             return self.reg_factor * torch.tanh(output / self.reg_factor)
@@ -613,17 +647,7 @@ class ODE(torch.nn.Module):
 
 class Encoder(torch.nn.Module):
     """
-    Fully connected encoder network that maps input features to a lower-dimensional latent space.
-
-    The architecture consists of a specified number of hidden layers (coder_layers) with uniform width (coder_width)
-    and ends with a linear mapping to the latent space followed by a Tanh activation.
-
-    Args:
-        in_features (int): Number of input features.
-        latent_features (int): Dimension of the latent representation.
-        coder_layers (int): Number of hidden layers.
-        coder_width (int): Number of neurons in each hidden layer.
-        activation (nn.Module): Activation function.
+    Fully connected encoder that maps input features to a latent space.
     """
 
     def __init__(
@@ -650,24 +674,12 @@ class Encoder(torch.nn.Module):
         self.mlp = torch.nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass to encode the input into the latent space."""
-        out = self.mlp(x)
-        return out
+        return self.mlp(x)
 
 
 class Decoder(torch.nn.Module):
     """
-    Fully connected decoder network that maps the latent representation back to the original output space.
-
-    The network mirrors the encoder structure, using a specified number of hidden layers (coder_layers)
-    with uniform width (coder_width) and ends with a linear mapping to the output features followed by Tanh.
-
-    Args:
-        out_features (int): Number of output features.
-        latent_features (int): Dimension of the latent representation.
-        coder_layers (int): Number of hidden layers.
-        coder_width (int): Number of neurons in each hidden layer.
-        activation (nn.Module): Activation function.
+    Fully connected decoder that maps the latent space back to the output.
     """
 
     def __init__(
@@ -694,9 +706,7 @@ class Decoder(torch.nn.Module):
         self.mlp = torch.nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass to decode the latent representation into output features."""
-        out = self.mlp(x)
-        return out
+        return self.mlp(x)
 
 
 class OldEncoder(torch.nn.Module):

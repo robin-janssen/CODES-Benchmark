@@ -6,6 +6,7 @@ epochs: [20,100] # [12000, 10000, 10000, 7000]
 dataset: 
   name: "primordial"
   log10_transform: True
+  log10_transform_params: True
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
   tolerance: 1e-30

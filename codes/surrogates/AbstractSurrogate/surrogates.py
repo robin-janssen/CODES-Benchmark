@@ -99,6 +99,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         device: str | None = None,
         n_quantities: int = 29,
         n_timesteps: int = 100,
+        n_parameters: int = 0,
         config: dict | None = None,
     ):
         super().__init__()
@@ -109,6 +110,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         self.device = device
         self.n_quantities = n_quantities
         self.n_timesteps = n_timesteps
+        self.n_parameters = n_parameters
         self.L1 = nn.L1Loss()
         self.config = config if config is not None else {}
         self.train_duration = None

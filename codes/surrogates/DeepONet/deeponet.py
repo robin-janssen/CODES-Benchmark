@@ -151,6 +151,7 @@ class MultiONet(OperatorNetwork):
         device (str, optional): The device to use for training (e.g., 'cpu', 'cuda:0').
         n_quantities (int, optional): The number of quantities.
         n_timesteps (int, optional): The number of timesteps.
+        n_parameters (int, optional): The number of fixed parameters. Defaults to 0.
         config (dict, optional): The configuration for the model.
 
         The configuration must provide the following information:
@@ -165,6 +166,8 @@ class MultiONet(OperatorNetwork):
         - regularization_factor (float): The regularization factor for the optimizer.
         - masses (np.ndarray, optional): The masses for mass conservation loss.
         - massloss_factor (float, optional): The factor for the mass conservation loss.
+        - params_branch (bool): If True, fixed parameters are concatenated to the branch net;
+              if False, to the trunk net.
 
     Raises:
         TypeError: Invalid configuration for MultiONet model.
@@ -175,6 +178,7 @@ class MultiONet(OperatorNetwork):
         device: str | None = None,
         n_quantities: int = 29,
         n_timesteps: int = 100,
+        n_parameters: int = 0,
         config: dict | None = None,
     ):
         super().__init__(
@@ -189,15 +193,29 @@ class MultiONet(OperatorNetwork):
         self.outputs = (
             n_quantities * self.config.output_factor
         )  # Number of neurons in the last layer
+
+        # Decide where to feed the fixed parameters based on self.config.params_branch.
+        # BranchNet's input is originally:
+        #   n_quantities - (self.config.trunk_input_size - 1)
+        # TrunkNet's input is originally self.config.trunk_input_size.
+        if self.config.params_branch:
+            branch_input_size = (
+                n_quantities - (self.config.trunk_input_size - 1)
+            ) + n_parameters
+            trunk_input_size = self.config.trunk_input_size
+        else:
+            branch_input_size = n_quantities - (self.config.trunk_input_size - 1)
+            trunk_input_size = self.config.trunk_input_size + n_parameters
+
         self.branch_net = BranchNet(
-            n_quantities - (self.config.trunk_input_size - 1),  # +1 due to time
+            branch_input_size,
             self.config.hidden_size,
             self.outputs,
             self.config.branch_hidden_layers,
             self.config.activation,
         ).to(device)
         self.trunk_net = TrunkNet(
-            self.config.trunk_input_size,  # = time + optional additional quantities
+            trunk_input_size,
             self.config.hidden_size,
             self.outputs,
             self.config.trunk_hidden_layers,
@@ -238,6 +256,9 @@ class MultiONet(OperatorNetwork):
         batch_size: int,
         shuffle: bool = True,
         dummy_timesteps: bool = True,
+        dataset_train_params: np.ndarray | None = None,
+        dataset_test_params: np.ndarray | None = None,
+        dataset_val_params: np.ndarray | None = None,
     ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
         """
         Prepare the data for the predict or fit methods.
@@ -248,36 +269,45 @@ class MultiONet(OperatorNetwork):
             dataset_test (np.ndarray): The test data.
             dataset_val (np.ndarray, optional): The validation data.
             timesteps (np.ndarray): The timesteps.
-            batch_size (int, optional): The batch size.
+            batch_size (int): The batch size.
             shuffle (bool, optional): Whether to shuffle the data.
             dummy_timesteps (bool, optional): Whether to create a dummy timestep array.
+            dataset_train_params (np.ndarray | None): Fixed parameters for training samples.
+            dataset_test_params (np.ndarray | None): Fixed parameters for testing samples.
+            dataset_val_params (np.ndarray | None): Fixed parameters for validation samples.
 
         Returns:
             tuple: The training, test, and validation DataLoaders.
         """
         dataloaders = []
 
-        # Create dummy timesteps
         if dummy_timesteps:
             timesteps = np.linspace(0, 1, dataset_train.shape[1])
 
         # Create the train dataloader
         dataloader_train = self.create_dataloader(
-            dataset_train,
-            timesteps,
-            batch_size,
-            shuffle,
+            data=dataset_train,
+            timesteps=timesteps,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            dataset_params=dataset_train_params,
+            params_in_branch=self.config.params_branch,
         )
         dataloaders.append(dataloader_train)
 
         # Create the test and validation dataloaders
-        for dataset in [dataset_test, dataset_val]:
+        for dataset, params in [
+            (dataset_test, dataset_test_params),
+            (dataset_val, dataset_val_params),
+        ]:
             if dataset is not None:
                 dataloader = self.create_dataloader(
-                    dataset,
-                    timesteps,
-                    batch_size,
+                    data=dataset,
+                    timesteps=timesteps,
+                    batch_size=batch_size,
                     shuffle=False,
+                    dataset_params=params,
+                    params_in_branch=self.config.params_branch,
                 )
                 dataloaders.append(dataloader)
             else:
@@ -494,6 +524,8 @@ class MultiONet(OperatorNetwork):
         timesteps: np.ndarray,
         batch_size: int,
         shuffle: bool = False,
+        dataset_params: np.ndarray | None = None,
+        params_in_branch: bool = True,
     ):
         """
         Create a DataLoader with optimized memory-safe shuffling using pre-allocated buffers and direct slicing.
@@ -502,7 +534,10 @@ class MultiONet(OperatorNetwork):
             data (np.ndarray): The data to load. Must have shape (n_samples, n_timesteps, n_quantities).
             timesteps (np.ndarray): The timesteps. Shape: (n_timesteps,).
             batch_size (int): The batch size.
-            shuffle (bool, optional): Whether to shuffle the data. Defaults to False.
+            shuffle (bool, optional): Whether to shuffle the data.
+            dataset_params (np.ndarray | None): Fixed parameters for each sample (shape: [n_samples, n_parameters]).
+            params_in_branch (bool, optional): If True, parameters are concatenated with branch inputs;
+                if False, with trunk inputs.
 
         Returns:
             DataLoader: A DataLoader with precomputed batches.
@@ -511,18 +546,25 @@ class MultiONet(OperatorNetwork):
         n_samples, n_timesteps, n_quantities = data.shape
         total_samples = n_samples * n_timesteps
 
-        # Pre-allocate NumPy arrays
-        branch_inputs = np.empty((total_samples, n_quantities), dtype=np.float32)
-        trunk_inputs = np.empty((total_samples, 1), dtype=np.float32)
-        targets = np.empty((total_samples, n_quantities), dtype=np.float32)
+        # Pre-allocate arrays for branch and trunk inputs, and targets.
+        # Branch Inputs: Repeat the initial state for each sample.
+        branch_inputs = np.repeat(
+            data[:, 0, :], n_timesteps, axis=0
+        )  # shape: (total_samples, n_quantities)
+        # Trunk Inputs: Tile the timesteps for each sample.
+        trunk_inputs = np.tile(timesteps.reshape(1, -1), (n_samples, 1)).reshape(
+            -1, 1
+        )  # shape: (total_samples, 1)
 
-        # Branch Inputs: Repeat the first timestep across all timesteps for each sample
-        branch_inputs = np.repeat(data[:, 0, :], n_timesteps, axis=0)
+        # If parameters are provided, repeat them along the time dimension.
+        if dataset_params is not None:
+            rep_params = np.repeat(dataset_params, n_timesteps, axis=0)
+            if params_in_branch:
+                branch_inputs = np.concatenate([branch_inputs, rep_params], axis=1)
+            else:
+                trunk_inputs = np.concatenate([trunk_inputs, rep_params], axis=1)
 
-        # Trunk Inputs: Tile the timesteps for each sample
-        trunk_inputs = np.tile(timesteps.reshape(1, -1), (n_samples, 1)).reshape(-1, 1)
-
-        # Targets: Flatten the data across samples and timesteps
+        # Targets: Flatten the data across samples and timesteps.
         targets = data.reshape(-1, n_quantities)
 
         if shuffle:
@@ -538,40 +580,35 @@ class MultiONet(OperatorNetwork):
         batched_trunk_inputs = []
         batched_targets = []
 
-        # Iterate over the full batches and slice the arrays into smaller tensors
         for batch_idx in range(num_full_batches):
             start = batch_idx * batch_size
             end = start + batch_size
-
             batch_branch = torch.from_numpy(branch_inputs[start:end]).float().to(device)
             batch_trunk = torch.from_numpy(trunk_inputs[start:end]).float().to(device)
             batch_target = torch.from_numpy(targets[start:end]).float().to(device)
-
             batched_branch_inputs.append(batch_branch)
             batched_trunk_inputs.append(batch_trunk)
             batched_targets.append(batch_target)
 
-        # Handle the remaining samples (if any)
         if remainder > 0:
             start = num_full_batches * batch_size
             batch_branch = torch.from_numpy(branch_inputs[start:]).float().to(device)
             batch_trunk = torch.from_numpy(trunk_inputs[start:]).float().to(device)
             batch_target = torch.from_numpy(targets[start:]).float().to(device)
-
             batched_branch_inputs.append(batch_branch)
             batched_trunk_inputs.append(batch_trunk)
             batched_targets.append(batch_target)
 
-        dataset = PreBatchedDataset(
+        dataset_prebatched = PreBatchedDataset(
             batched_branch_inputs,
             batched_trunk_inputs,
             batched_targets,
         )
 
         return DataLoader(
-            dataset,
-            batch_size=1,  # Each "batch" is now a precomputed batch
-            shuffle=False,  # Shuffling is handled by the precomputed batches
+            dataset_prebatched,
+            batch_size=1,  # Each "batch" is now a precomputed batch.
+            shuffle=False,
             num_workers=0,
             collate_fn=custom_collate_fn,
             worker_init_fn=worker_init_fn,

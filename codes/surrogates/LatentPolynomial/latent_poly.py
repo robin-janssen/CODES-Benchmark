@@ -35,6 +35,7 @@ class LatentPoly(AbstractSurrogateModel):
         device: str | None = None,
         n_quantities: int = 29,
         n_timesteps: int = 100,
+        n_parameters: int = 0,
         model_config: dict | None = None,
     ):
         super().__init__(
@@ -46,22 +47,22 @@ class LatentPoly(AbstractSurrogateModel):
         self.config = LatentPolynomialBaseConfig(**self.config)
         # For backward compatibility: if using v1, compute the fixed width list.
         if self.config.model_version == "v1":
-            # Compute width list for v1 using the fixed [4, 2, 1] structure scaled by layers_factor.
-            coder_layers_old = [
-                self.config.coder_hidden,
-                self.config.coder_hidden // 2,
-                self.config.coder_hidden // 4,
-            ]
-            # Alternatively, if your old logic multiplies fixed numbers by layers_factor:
             coder_layers_old = [
                 4 * self.config.layers_factor,
                 2 * self.config.layers_factor,
                 1 * self.config.layers_factor,
             ]
             self.config.width_list = coder_layers_old
-        # Set the number of input features.
-        self.config.in_features = n_quantities
-        self.model = PolynomialModelWrapper(config=self.config, device=self.device)
+        # Update the number of input features based on whether we encode parameters.
+        if self.config.coefficient_network:
+            self.config.in_features = (
+                n_quantities  # No parameter concatenation to the encoder input.
+            )
+        else:
+            self.config.in_features = n_quantities + n_parameters
+        self.model = PolynomialModelWrapper(
+            config=self.config, device=self.device, n_parameters=n_parameters
+        )
 
     def forward(self, inputs) -> tuple[torch.Tensor, torch.Tensor]:
         """
@@ -69,12 +70,18 @@ class LatentPoly(AbstractSurrogateModel):
 
         Args:
             inputs (tuple): Tuple containing the input tensor and timesteps.
+                If fixed parameters are provided, the tuple is (data, timesteps, params).
 
         Returns:
             tuple[torch.Tensor, torch.Tensor]: (Predictions, Targets)
         """
-        targets, timesteps = inputs[0], inputs[1]
-        return self.model(targets, timesteps), targets
+        # Expect inputs to be (data, timesteps) or (data, timesteps, params)
+        if len(inputs) == 3:
+            x, t_range, params = inputs
+        else:
+            x, t_range = inputs
+            params = None
+        return self.model(x, t_range, params), x
 
     def prepare_data(
         self,
@@ -85,6 +92,9 @@ class LatentPoly(AbstractSurrogateModel):
         batch_size: int = 128,
         shuffle: bool = True,
         dummy_timesteps: bool = True,
+        dataset_train_params: np.ndarray | None = None,
+        dataset_test_params: np.ndarray | None = None,
+        dataset_val_params: np.ndarray | None = None,
     ) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
         """
         Prepare DataLoaders for training, testing, and validation.
@@ -97,6 +107,7 @@ class LatentPoly(AbstractSurrogateModel):
             batch_size (int): Batch size.
             shuffle (bool): Whether to shuffle training data.
             dummy_timesteps (bool): Whether to use dummy timesteps.
+            dataset_*_params (np.ndarray | None): Fixed parameters for each split.
 
         Returns:
             tuple: DataLoaders for training, test, and validation datasets.
@@ -106,38 +117,76 @@ class LatentPoly(AbstractSurrogateModel):
         if shuffle:
             shuffled_indices = np.random.permutation(len(dataset_train))
             dataset_train = dataset_train[shuffled_indices]
-
-        dset_train = ChemDataset(dataset_train, timesteps, device=self.device)
+            if dataset_train_params is not None:
+                dataset_train_params = dataset_train_params[shuffled_indices]
+        # Note: ChemDataset already returns a 3‐tuple when parameters are provided.
+        dset_train = ChemDataset(
+            dataset_train,
+            timesteps,
+            device=self.device,
+            parameters=dataset_train_params,
+        )
         dataloader_train = DataLoader(
             dset_train,
             batch_size=batch_size,
             shuffle=False,
             worker_init_fn=worker_init_fn,
-            collate_fn=lambda x: (x[0], x[1]),
+            collate_fn=lambda x: (
+                torch.stack([item[0] for item in x], dim=0),
+                x[0][1],
+                (
+                    torch.stack([item[2] for item in x], dim=0)
+                    if (len(x[0]) == 3 and x[0][2] is not None)
+                    else None
+                ),
+            ),
         )
-
         dataloader_test = None
         if dataset_test is not None:
-            dset_test = ChemDataset(dataset_test, timesteps, device=self.device)
+            dset_test = ChemDataset(
+                dataset_test,
+                timesteps,
+                device=self.device,
+                parameters=dataset_test_params,
+            )
             dataloader_test = DataLoader(
                 dset_test,
                 batch_size=batch_size,
                 shuffle=False,
                 worker_init_fn=worker_init_fn,
-                collate_fn=lambda x: (x[0], x[1]),
+                collate_fn=lambda x: (
+                    torch.stack([item[0] for item in x], dim=0),
+                    x[0][1],
+                    (
+                        torch.stack([item[2] for item in x], dim=0)
+                        if (len(x[0]) == 3 and x[0][2] is not None)
+                        else None
+                    ),
+                ),
             )
-
         dataloader_val = None
         if dataset_val is not None:
-            dset_val = ChemDataset(dataset_val, timesteps, device=self.device)
+            dset_val = ChemDataset(
+                dataset_val,
+                timesteps,
+                device=self.device,
+                parameters=dataset_val_params,
+            )
             dataloader_val = DataLoader(
                 dset_val,
                 batch_size=batch_size,
                 shuffle=False,
                 worker_init_fn=worker_init_fn,
-                collate_fn=lambda x: (x[0], x[1]),
+                collate_fn=lambda x: (
+                    torch.stack([item[0] for item in x], dim=0),
+                    x[0][1],
+                    (
+                        torch.stack([item[2] for item in x], dim=0)
+                        if (len(x[0]) == 3 and x[0][2] is not None)
+                        else None
+                    ),
+                ),
             )
-
         return dataloader_train, dataloader_test, dataloader_val
 
     @time_execution
@@ -227,8 +276,9 @@ class PolynomialModelWrapper(nn.Module):
     """
     Wraps the Encoder, Decoder, and learnable Polynomial into a single model.
 
-    The correct encoder/decoder architecture is chosen based on the model_version flag
-    in the configuration (v1 uses the old fixed structure; v2 uses the new FCNN design).
+    If config.coefficient_network is True, fixed parameters are not concatenated to the encoder input;
+    instead, a coefficient network predicts the polynomial coefficients based on the parameters.
+    If False, fixed parameters are concatenated to the encoder input and the polynomial coefficients are learned directly.
 
     Attributes:
         config (LatentPolynomialBaseConfig): Model configuration.
@@ -236,65 +286,133 @@ class PolynomialModelWrapper(nn.Module):
         device (str): Device for training.
         encoder (Module): The encoder network.
         decoder (Module): The decoder network.
-        poly (Polynomial): The polynomial model.
+        poly (Polynomial): The polynomial module.
+        coefficient_net (Module | None): The coefficient network (if config.coefficient_network is True).
     """
 
-    def __init__(self, config, device):
+    def __init__(self, config, device, n_parameters: int = 0):
         super().__init__()
         self.config = config
         self.loss_weights = getattr(config, "loss_weights", [100.0, 1.0, 1.0, 1.0])
         self.device = device
+        latent_dim = self.config.latent_features
 
-        # Conditional instantiation based on model_version.
-        if config.model_version == "v1":
+        # Use coefficient_network as the single switch.
+        if self.config.coefficient_network and n_parameters > 0:
+            encoder_in_features = self.config.in_features  # remains n_quantities
+        else:
+            # When not using the coefficient network, the encoder gets concatenated parameters.
+            encoder_in_features = self.config.in_features + n_parameters
+
+        # Instantiate encoder and decoder according to model_version.
+        if self.config.model_version == "v1":
             self.encoder = OldEncoder(
-                in_features=config.in_features,
-                latent_features=config.latent_features,
-                layers_factor=config.layers_factor,
-                activation=config.activation,
+                in_features=encoder_in_features,
+                latent_features=latent_dim,
+                layers_factor=self.config.layers_factor,
+                activation=self.config.activation,
             ).to(self.device)
+            # When parameters are concatenated, adjust the output features accordingly.
+            out_feats = (
+                self.config.in_features
+                if not self.config.coefficient_network
+                else self.config.in_features
+            )
             self.decoder = OldDecoder(
-                out_features=config.in_features,
-                latent_features=config.latent_features,
-                layers_factor=config.layers_factor,
-                activation=config.activation,
+                out_features=out_feats,
+                latent_features=latent_dim,
+                layers_factor=self.config.layers_factor,
+                activation=self.config.activation,
             ).to(self.device)
         else:
             self.encoder = NewEncoder(
-                in_features=config.in_features,
-                latent_features=config.latent_features,
-                coder_layers=config.coder_layers,
-                coder_width=config.coder_width,
-                activation=config.activation,
+                in_features=encoder_in_features,
+                latent_features=latent_dim,
+                coder_layers=self.config.coder_layers,
+                coder_width=self.config.coder_width,
+                activation=self.config.activation,
             ).to(self.device)
+            out_feats = (
+                self.config.in_features
+                if not self.config.coefficient_network
+                else self.config.in_features
+            )
             self.decoder = NewDecoder(
-                out_features=config.in_features,
-                latent_features=config.latent_features,
-                coder_layers=config.coder_layers,
-                coder_width=config.coder_width,
-                activation=config.activation,
+                out_features=out_feats,
+                latent_features=latent_dim,
+                coder_layers=self.config.coder_layers,
+                coder_width=self.config.coder_width,
+                activation=self.config.activation,
             ).to(self.device)
-        self.poly = Polynomial(
-            degree=self.config.degree, dimension=self.config.latent_features
-        ).to(self.device)
+        # Instantiate the polynomial module.
+        self.poly = Polynomial(degree=self.config.degree, dimension=latent_dim).to(
+            self.device
+        )
+        # Instantiate coefficient network only if coefficient_network is True and parameters exist.
+        if self.config.coefficient_network and n_parameters > 0:
+            self.coefficient_net = nn.Sequential(
+                nn.Linear(
+                    n_parameters, self.config.coefficient_width, dtype=torch.float64
+                ),
+                self.config.activation,
+                *[
+                    nn.Sequential(
+                        nn.Linear(
+                            self.config.coefficient_width,
+                            self.config.coefficient_width,
+                            dtype=torch.float64,
+                        ),
+                        self.config.activation,
+                    )
+                    for _ in range(self.config.coefficient_layers - 1)
+                ],
+                nn.Linear(
+                    self.config.coefficient_width,
+                    latent_dim * self.config.degree,
+                    dtype=torch.float64,
+                ),
+            ).to(self.device)
+        else:
+            self.coefficient_net = None
 
-    def forward(self, x, t_range):
+    def forward(self, x, t_range, params=None):
         """
         Forward pass through the model.
 
         Args:
-            x (torch.Tensor): Input tensor.
+            x (torch.Tensor): Input tensor of shape (batch, timesteps, n_quantities).
             t_range (torch.Tensor): Time range tensor.
+            params (torch.Tensor | None): Fixed parameters of shape (batch, n_parameters), if provided.
 
         Returns:
             torch.Tensor: Predicted trajectory.
         """
         current_batch_size = x.shape[0]
         x0 = x[:, 0, :]
-        z0 = self.encoder(x0)
+        if self.config.coefficient_network and params is not None:
+            # Scheme using coefficient network:
+            encoder_input = x0  # Encoder gets only the raw data.
+        else:
+            # Otherwise, concatenate fixed parameters to the encoder input (if provided).
+            if params is not None:
+                encoder_input = torch.cat([x0, params], dim=1)
+            else:
+                encoder_input = x0
+        z0 = self.encoder(encoder_input)
         t = t_range.unsqueeze(0).repeat(current_batch_size, 1)
-        # Apply the polynomial and add the initial latent state.
-        z_pred = self.poly(t) + z0.unsqueeze(1)
+        if self.config.coefficient_network and (params is not None):
+            # Use the coefficient network to predict polynomial coefficients.
+            # Compute time basis using the internal _prepare_t method.
+            B = self.poly._prepare_t(t)  # shape (batch, timesteps, degree)
+            coef_vec = self.coefficient_net(params)  # shape (batch, latent_dim*degree)
+            coef = coef_vec.view(current_batch_size, z0.shape[1], self.config.degree)
+            # Multiply basis with predicted coefficients:
+            poly_out = torch.bmm(
+                B, coef.transpose(1, 2)
+            )  # shape (batch, timesteps, latent_dim)
+        else:
+            poly_out = self.poly(t)
+        z_pred = poly_out + z0.unsqueeze(1)
         return self.decoder(z_pred)
 
     def renormalize_loss_weights(self, x_true, x_pred):

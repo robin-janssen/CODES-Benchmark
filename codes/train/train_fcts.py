@@ -73,6 +73,7 @@ def train_and_save_model(
         config["dataset"]["name"],
         verbose=False,
         log=config["dataset"]["log10_transform"],
+        log_params=config.get("log10_transform_params", False),
         normalisation_mode=config["dataset"]["normalise"],
         tolerance=config["dataset"]["tolerance"],
     )
@@ -83,13 +84,16 @@ def train_and_save_model(
     )
 
     _, n_timesteps, n_quantities = train_data.shape
+    n_params = train_params.shape[1] if train_params is not None else 0
 
     surrogate_class = get_surrogate(surr_name)
     model_config = get_model_config(surr_name, config)
 
     with threadlock:
         set_random_seeds(seed, device)
-        model = surrogate_class(device, n_quantities, n_timesteps, model_config)
+        model = surrogate_class(
+            device, n_quantities, n_timesteps, n_params, model_config
+        )
     model.normalisation = data_info
     surr_idx = config["surrogates"].index(surr_name)
 

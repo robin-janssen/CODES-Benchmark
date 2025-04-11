@@ -21,6 +21,7 @@ def check_and_load_data(
     dataset_name: str,
     verbose: bool = True,
     log: bool = True,
+    log_params: bool = True,
     normalisation_mode: str = "standardise",
     tolerance: float | None = None,
 ):
@@ -31,6 +32,7 @@ def check_and_load_data(
         dataset_name (str): The name of the dataset.
         verbose (bool): Whether to print information about the loaded data.
         log (bool): Whether to log-transform the data (log10).
+        log_params (bool): Whether to log-transform the parameters.
         normalisation_mode (str): The normalization mode, either "disable", "minmax", or "standardise".
         tolerance (float, optional): The tolerance value for log-transformation.
             Values below this will be set to the tolerance value. Pass None to disable.
@@ -41,7 +43,7 @@ def check_and_load_data(
             - (train_params, test_params, val_params) or (None, None, None) if parameters are absent
             - timesteps
             - n_train_samples
-            - data_info
+            - data_info (including transformation parameters for data and for parameters)
             - labels
 
     Raises:
@@ -73,16 +75,27 @@ def check_and_load_data(
                     f"'{mode}' data not found in {data_file_path}. Available data: {', '.join(list(f.keys()))}"
                 )
 
+        # Load data
         train_data = np.asarray(f["train"], dtype=np.float32)
         test_data = np.asarray(f["test"], dtype=np.float32)
         val_data = np.asarray(f["val"], dtype=np.float32)
 
+        # Load parameters if available
+        if ("train_params" in f) and ("test_params" in f) and ("val_params" in f):
+            train_params = np.asarray(f["train_params"], dtype=np.float32)
+            test_params = np.asarray(f["test_params"], dtype=np.float32)
+            val_params = np.asarray(f["val_params"], dtype=np.float32)
+        else:
+            train_params = test_params = val_params = None
+
+        # Apply tolerance to data if needed
         if tolerance is not None:
             tolerance = np.float32(tolerance)
             train_data = np.where(train_data < tolerance, tolerance, train_data)
             test_data = np.where(test_data < tolerance, tolerance, test_data)
             val_data = np.where(val_data < tolerance, tolerance, val_data)
 
+        # Log-transform data and parameters if requested.
         if log:
             try:
                 train_data = np.log10(train_data)
@@ -95,6 +108,19 @@ def check_and_load_data(
                     "Data contains non-positive values and cannot be log-transformed."
                 )
 
+        if log_params and train_params is not None:
+            try:
+                train_params = np.log10(train_params)
+                test_params = np.log10(test_params)
+                val_params = np.log10(val_params)
+                if verbose:
+                    print("Parameters log-transformed.")
+            except ValueError:
+                print(
+                    "Params contain non-positive values and cannot be log-transformed."
+                )
+
+        # Normalize data using the existing normalize_data function.
         if normalisation_mode not in ["disable", "minmax", "standardise"]:
             raise ValueError(
                 "Normalization mode must be either 'disable', 'minmax' or 'standardise'"
@@ -108,6 +134,19 @@ def check_and_load_data(
         else:
             data_info = {"mode": "disable"}
 
+        # Normalize parameters if they are present.
+        if train_params is not None:
+            params_info, train_params, test_params, val_params = normalize_data(
+                train_params, test_params, val_params, mode=normalisation_mode
+            )
+            # Rename the normalization keys for parameters.
+            if normalisation_mode == "minmax":
+                data_info["min_params"] = params_info["min"]
+                data_info["max_params"] = params_info["max"]
+            elif normalisation_mode == "standardise":
+                data_info["mean_params"] = params_info["mean"]
+                data_info["std_params"] = params_info["std"]
+
         data_info["log10_transform"] = True if log else False
 
         for data in (train_data, test_data, val_data):
@@ -120,9 +159,10 @@ def check_and_load_data(
         n_samples = train_data.shape[0] + test_data.shape[0] + val_data.shape[0]
         if verbose:
             print(
-                f"{mode.capitalize()} data loaded: {n_samples} samples, {n_timesteps} timesteps, {n_quantities} quantities."
+                f"Data loaded: {n_samples} samples, {n_timesteps} timesteps, {n_quantities} quantities."
             )
 
+        # Load or generate timesteps
         if "timesteps" in f:
             timesteps = f["timesteps"][:]
             if verbose:
@@ -159,13 +199,6 @@ def check_and_load_data(
             labels = None
             if verbose:
                 print("Labels not found in metadata.")
-
-        if ("train_params" in f) and ("test_params" in f) and ("val_params" in f):
-            train_params = np.asarray(f["train_params"], dtype=np.float32)
-            test_params = np.asarray(f["test_params"], dtype=np.float32)
-            val_params = np.asarray(f["val_params"], dtype=np.float32)
-        else:
-            train_params = test_params = val_params = None
 
     return (
         (train_data, test_data, val_data),
