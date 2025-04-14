@@ -230,6 +230,61 @@ def coupled_nonlinear_oscillators(t, state):
     )
 
 
+def parametric_lotka_volterra(t, n: np.ndarray, params: np.ndarray) -> np.ndarray:
+    """
+    Defines a parametric Lotka–Volterra model for three predators and three prey.
+    The external parameter(s) influence both the reproduction rates and the predation rates.
+
+    Parameters
+    ----------
+    t : float
+        Current time
+    n : np.ndarray
+        Current populations [p1, p2, p3, q1, q2, q3].
+    params : np.ndarray
+        Fixed parameter(s) [alpha]. For example, higher alpha represents higher environmental stress,
+        reducing prey reproduction and intensifying predator efficiency.
+
+    Returns
+    -------
+    np.ndarray
+        Derivatives [dp1/dt, dp2/dt, dp3/dt, dq1/dt, dq2/dt, dq3/dt].
+    """
+    # Unpack populations:
+    p1, p2, p3, q1, q2, q3 = n
+    # External parameter (e.g., environmental stress or radiation intensity)
+    alpha = params[0]  # if more parameters are desired, extend appropriately.
+
+    # Modified reproduction rates for prey (reduce with increasing alpha)
+    rep_p1 = (0.5 - 0.1 * alpha) * p1
+    rep_p2 = (0.6 - 0.1 * alpha) * p2
+    rep_p3 = (0.4 - 0.1 * alpha) * p3
+
+    # Modified predation terms (increased by alpha)
+    pred1 = (0.02 + 0.01 * alpha) * p1 * q1 + (0.01 + 0.005 * alpha) * p1 * q2
+    pred2 = (0.03 + 0.015 * alpha) * p2 * q1 + (0.015 + 0.007 * alpha) * p2 * q3
+    pred3 = (0.01 + 0.005 * alpha) * p3 * q2 + (0.025 + 0.010 * alpha) * p3 * q3
+
+    # Predator death rate remains fixed
+    death_q1 = 0.1 * q1
+    death_q2 = 0.08 * q2
+    death_q3 = 0.12 * q3
+
+    # Predator gains
+    gain_q1 = 0.005 * p1 * q1 + 0.007 * p2 * q1
+    gain_q2 = 0.006 * p1 * q2 + 0.009 * p3 * q2
+    gain_q3 = 0.008 * p2 * q3 + 0.01 * p3 * q3
+
+    dp1_dt = rep_p1 - pred1
+    dp2_dt = rep_p2 - pred2
+    dp3_dt = rep_p3 - pred3
+    dq1_dt = -death_q1 + gain_q1
+    dq2_dt = -death_q2 + gain_q2
+    dq3_dt = -death_q3 + gain_q3
+
+    return np.array([dp1_dt, dp2_dt, dp3_dt, dq1_dt, dq2_dt, dq3_dt])
+
+
 def osu_ode(t: float, y: np.ndarray) -> np.ndarray:
     """
     ODE system for the reduced osu2008 chemical network.
@@ -1574,5 +1629,26 @@ FUNCS: Dict[str, Dict[str, Any]] = {
         "solver_options": {"method": "BDF", "atol": 1e-6, "rtol": 1e-6},
         "log_time": True,
         "final_transform": True,
+    },
+    "parametric_lotka_volterra": {
+        "func": parametric_lotka_volterra,
+        "tsteps": np.linspace(0, 100, 101),
+        "ndim": 6,
+        "labels": ["Predator1", "Predator2", "Predator3", "Prey1", "Prey2", "Prey3"],
+        "sampling": {
+            "space": "log",
+            "bounds": [
+                (1, 10.0),
+                (1, 10.0),
+                (1, 10.0),
+                (1, 10.0),
+                (1, 10.0),
+                (1, 10.0),
+            ],
+            "params_space": "linear",
+            "params_bounds": [(0.0, 1.0)],
+        },
+        # New key: specify bounds for the fixed parameter(s),
+        # for example, one parameter influencing reproduction and predation.
     },
 }

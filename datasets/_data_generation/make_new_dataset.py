@@ -1,4 +1,5 @@
 import sys
+
 import numpy as np
 
 # Add the path where create_dataset is defined (adjust if needed)
@@ -13,9 +14,9 @@ if __name__ == "__main__":
     # n_samples: total number of trajectories
     # n_timesteps: number of time steps in each trajectory
     # n_quantities: number of quantities (e.g., chemical species) per time step
-    n_samples = 300    # total number of trajectories
+    n_samples = 300  # total number of trajectories
     n_timesteps = 100  # e.g., 100 time points
-    n_quantities = 5   # e.g., 5 chemical species
+    n_quantities = 5  # e.g., 5 chemical species
 
     # Create dummy trajectory data.
     # The data is a 3D array with shape (n_samples, n_timesteps, n_quantities)

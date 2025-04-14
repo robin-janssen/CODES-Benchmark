@@ -37,4 +37,4 @@ class MultiONetBaseConfig:
     regularization_factor: float = 0.0
     massloss_factor: float = 0.0
     activation: nn.Module = nn.ReLU()
-    params_branch: False
+    params_branch: bool = True

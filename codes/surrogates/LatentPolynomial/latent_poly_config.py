@@ -18,6 +18,7 @@ class LatentPolynomialBaseConfig:
         coder_width (int): (v2 only) Number of neurons in every hidden layer in the encoder/decoder.
         activation (nn.Module): Activation function.
         learning_rate (float): Learning rate for training.
+        coefficient_network (bool): Whether to use a coefficient network for polynomial coefficients.
     """
 
     model_version: str = "v2"  # Default to new architecture.
@@ -29,3 +30,4 @@ class LatentPolynomialBaseConfig:
     coder_width: int = 32  # Used in v2 only.
     activation: nn.Module = nn.ReLU()
     learning_rate: float = 1e-3
+    coefficient_network: bool = True
