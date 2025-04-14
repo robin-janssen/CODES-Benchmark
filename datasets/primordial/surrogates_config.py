@@ -7,12 +7,12 @@ from torch import nn
 class MultiONetConfig:
     """Model config for MultiONet for the simple_ode dataset"""
 
-    branch_hidden_layers: int = 6
-    trunk_hidden_layers: int = 4
-    hidden_size: int = 347
-    output_factor: int = 90
-    learning_rate: float = 1.2e-5
-    activation: nn.Module = nn.ReLU()
+    branch_hidden_layers: int = 8
+    trunk_hidden_layers: int = 6
+    hidden_size: int = 250
+    output_factor: int = 115
+    learning_rate: float = 1e-4
+    activation: nn.Module = nn.Tanh()
 
 
 @dataclass
@@ -44,9 +44,9 @@ class FullyConnectedConfig:
 class LatentPolyConfig:
     """Model config for LatentPoly for the simple_ode dataset"""
 
-    latent_features: int = 6
-    degree: int = 2
-    learning_rate: float = 0.002
-    coder_layers: int = 4
-    coder_width: int = 230
+    latent_features: int = 9
+    degree: int = 1
+    learning_rate: float = 0.0002
+    coder_layers: int = 2
+    coder_width: int = 264
     activation: nn.Module = nn.LeakyReLU()
