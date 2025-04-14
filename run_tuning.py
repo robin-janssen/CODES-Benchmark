@@ -1,4 +1,5 @@
 import argparse
+import math
 import os
 import queue
 import subprocess
@@ -187,11 +188,6 @@ def initialize_postgres(config, study_folder_name):
 def run_single_study(config: dict, study_name: str, db_url: str):
     """
     Run a single Optuna study.
-
-    Args:
-        config (dict): Configuration dictionary.
-        study_name (str): Name of the study.
-        db_url (str): PostgreSQL connection URL.
     """
     if not config.get("optuna_logging", False):
         optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -237,12 +233,15 @@ def run_single_study(config: dict, study_name: str, db_url: str):
     trial_durations = []
     n_jobs = len(config["devices"])
 
+    # Calculate the number of warmup trials (10% of total)
+    warmup_trials = max(1, int(n_trials * 0.10))
+
     def trial_complete_callback(study_, trial_):
         # Update progress bar for any finished trial (complete or pruned)
         if trial_.state in (TrialState.COMPLETE, TrialState.PRUNED):
             trial_pbar.update(1)
 
-        # For a complete trial, record its duration and update ETA info
+        # For a complete trial, record its duration and update ETA info.
         if trial_.state == TrialState.COMPLETE and trial_.datetime_start:
             duration = time.time() - trial_.datetime_start.timestamp()
             trial_durations.append(duration)
@@ -251,6 +250,24 @@ def run_single_study(config: dict, study_name: str, db_url: str):
             eta_seconds = (avg_duration * remaining_trials) / n_jobs
             postfix = f"ETA: {eta_seconds/60:.1f}m, Avg: {avg_duration:.1f}s, Last: {duration:.1f}s"
             trial_pbar.set_postfix_str(postfix)
+
+            # Once enough warmup trials are complete, compute mean and std,
+            # and then set the threshold to warmup_mean + 2 * warmup_std.
+            if (
+                len(trial_durations) >= warmup_trials
+                and "runtime_threshold" not in study_.user_attrs
+            ):
+                warmup_mean = avg_duration
+                variance = sum((d - warmup_mean) ** 2 for d in trial_durations) / len(
+                    trial_durations
+                )
+                warmup_std = math.sqrt(variance)
+                computed_threshold = warmup_mean + 2 * warmup_std
+                study_.set_user_attr("runtime_threshold", computed_threshold)
+                print(
+                    f"\n[Study] Warmup complete. Runtime threshold set to {computed_threshold:.1f}s "
+                    f"(warmup mean = {warmup_mean:.1f}s, std = {warmup_std:.1f}s) over {len(trial_durations)} warmup trials."
+                )
 
     download_data(config["dataset"]["name"])
 
@@ -364,7 +381,7 @@ def parse_arguments():
     parser.add_argument(
         "--study_name",
         type=str,
-        default="primordialtest",
+        default="primordial4",
         help="Study identifier.",
     )
     return parser.parse_args()

@@ -1,10 +1,12 @@
 import dataclasses
 import os
+import time
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, TypeVar
 
 import numpy as np
+import optuna
 import torch
 import yaml
 from torch import Tensor, nn
@@ -331,7 +333,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
         save_attributes = {
             k: v
-            for k, v in self.__dict__.items()
+            for k, v in self.__dict__.copy().items()
             if k != "state_dict" and not k.startswith("_")
         }
         model_dict = {"state_dict": self.state_dict(), "attributes": save_attributes}
@@ -394,6 +396,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         Returns:
             tqdm: The progress bar.
         """
+
         bar_format = "{l_bar}{bar}| {n_fmt:>5}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt} {postfix}]"
         progress_bar = tqdm(
             range(epochs),
@@ -402,6 +405,9 @@ class AbstractSurrogateModel(ABC, nn.Module):
             leave=False,
             bar_format=bar_format,
         )
+
+        # Only used for time_pruning in multi objective optimisation
+        self._trial_start_time = time.time()
 
         return progress_bar
 
@@ -431,6 +437,65 @@ class AbstractSurrogateModel(ABC, nn.Module):
                 data = 10**data
 
         return data
+
+    def time_pruning(self, current_epoch: int, total_epochs: int) -> None:
+        """
+        Determine whether a trial should be pruned based on projected runtime,
+        but only after a warmup period (10% of the total epochs).
+
+        Warmup: Do not prune if current_epoch is less than warmup_epochs.
+        After warmup, compute the average epoch time, extrapolate the total runtime,
+        and retrieve the threshold (runtime_threshold) from the study's user attributes.
+        If the projected runtime exceeds the threshold, raise an optuna.TrialPruned exception.
+
+        Args:
+            current_epoch (int): The current epoch count.
+            total_epochs (int): The planned total number of epochs.
+
+        Raises:
+            optuna.TrialPruned: If the projected runtime exceeds the threshold.
+        """
+        # Define warmup period based on 10% of total epochs.
+        warmup_epochs = max(1, int(total_epochs * 0.10))
+        if current_epoch < warmup_epochs:
+            # Do not attempt to prune before the warmup period is complete.
+            # print(
+            #     f"[time_pruning] Warmup period: {current_epoch}/{warmup_epochs} epochs completed. Skipping pruning check."
+            # )
+            return
+
+        elapsed = time.time() - self._trial_start_time
+        completed_epochs = max(current_epoch, 1)
+        average_epoch_time = elapsed / completed_epochs
+        projected_total_time = average_epoch_time * total_epochs
+
+        # Retrieve threshold from study's user attributes.
+        if self.optuna_trial is not None and hasattr(self.optuna_trial, "study"):
+            threshold = self.optuna_trial.study.user_attrs.get(
+                "runtime_threshold", None
+            )
+        else:
+            threshold = None
+
+        # print(
+        #     f"[time_pruning] Epoch: {current_epoch}/{total_epochs} | "
+        #     f"Elapsed: {elapsed:.1f}s | Avg per epoch: {average_epoch_time:.1f}s | "
+        #     f"Projected total: {projected_total_time:.1f}s | Threshold: {threshold:.1f}s"
+        # )
+
+        if threshold is not None:
+            if projected_total_time > threshold:
+                if self.optuna_trial is not None:
+                    tqdm.write(
+                        f"[time_pruning] Projected total time {projected_total_time:.1f}s exceeds threshold {threshold:.1f}s. Pruning trial."
+                    )
+                    self.optuna_trial.set_user_attr(
+                        "prune_reason",
+                        f"Projected runtime {projected_total_time:.1f}s exceeds threshold {threshold:.1f}s",
+                    )
+                raise optuna.TrialPruned(
+                    f"Projected total time {projected_total_time:.1f}s exceeds threshold {threshold:.1f}s"
+                )
 
 
 SurrogateModel = TypeVar("SurrogateModel", bound=AbstractSurrogateModel)

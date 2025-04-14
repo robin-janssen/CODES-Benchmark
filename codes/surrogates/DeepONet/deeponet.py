@@ -375,11 +375,13 @@ class MultiONet(OperatorNetwork):
                 progress_bar.set_postfix(postfix)
 
                 # Report the loss to Optuna and check for pruning
-                if self.optuna_trial is not None and not multi_objective:
-
-                    self.optuna_trial.report(test_losses[index], epoch)
-                    if self.optuna_trial.should_prune():
-                        raise optuna.TrialPruned()
+                if self.optuna_trial is not None:
+                    if multi_objective:
+                        self.time_pruning(current_epoch=epoch, total_epochs=epochs)
+                    else:
+                        self.optuna_trial.report(test_losses[index], epoch)
+                        if self.optuna_trial.should_prune():
+                            raise optuna.TrialPruned()
 
                 # Set model and optimizer back to training mode
                 self.train()

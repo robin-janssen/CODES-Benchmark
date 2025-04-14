@@ -256,10 +256,13 @@ class LatentPoly(AbstractSurrogateModel):
                     )
 
                     # Report loss to Optuna and prune if necessary
-                    if self.optuna_trial is not None and not multi_objective:
-                        self.optuna_trial.report(test_losses[index], step=epoch)
-                        if self.optuna_trial.should_prune():
-                            raise optuna.TrialPruned()
+                    if self.optuna_trial is not None:
+                        if multi_objective:
+                            self.time_pruning(current_epoch=epoch, total_epochs=epochs)
+                        else:
+                            self.optuna_trial.report(test_losses[index], step=epoch)
+                            if self.optuna_trial.should_prune():
+                                raise optuna.TrialPruned()
 
                     self.model.train()
                     optimizer.train()

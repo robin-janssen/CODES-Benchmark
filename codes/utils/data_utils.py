@@ -523,54 +523,80 @@ def get_data_subset(
     timesteps: np.ndarray,
     mode: str,
     metric: int,
-    params: tuple[np.ndarray, ...] | None = None,
+    params: tuple[np.ndarray, ...] | None | tuple[None, ...] = None,
     subset_factor: int = 1,
 ):
     """
     Get the appropriate data subset based on the mode and metric.
 
     Args:
-        data (np.ndarray or tuple): The data array or tuple of arrays of shape (n_samples, n_timesteps, n_quantities).
+        data (tuple[np.ndarray, ...]): A tuple of data arrays of shape (n_samples, n_timesteps, n_quantities).
         timesteps (np.ndarray): The timesteps.
         mode (str): The benchmark mode (must be one of "interpolation", "extrapolation", "sparse", "batch_size").
-        For "batch_size", we thin the dataset by a factor of 4 for faster processing.
+                    For "batch_size", we thin the dataset by a factor of 4 for faster processing.
         metric (int): The specific metric for the mode (e.g., interval, cutoff, factor, batch size).
-        params (np.ndarray or tuple): The parameters array or tuple of arrays of shape (n_samples, n_parameters).
+        params (tuple[np.ndarray, ...] | None | tuple[None, ...]): Optional parameters (or tuple of parameters)
+                    with shape (n_samples, n_parameters). If None, params_subset will be None.
+                    If it is a tuple of Nones, then params_subset will be that tuple of Nones.
         subset_factor (int): The factor to subset the data by. Default is 1 (use full train and test data).
 
     Returns:
-        tuple: The training data, test data, and timesteps subset.
+        tuple: (data_subset, params_subset, timesteps_subset)
     """
-    # First select the appropriate data subset
-    data_sub = (d[::subset_factor] for d in data)
-    if params is not None:
-        params_sub = (p[::subset_factor] for p in params)
+    # First, subsample the data based on subset_factor.
+    data_sub = tuple(d[::subset_factor] for d in data)
 
-    if mode == "interpolation":
-        interval = metric
-        data_subset = (d[:, ::interval] for d in data_sub)
-        # Parameters are not subsetted for interpolation
-        timesteps = timesteps[::interval]
-    elif mode == "extrapolation":
-        cutoff = metric
-        data_subset = (d[:, :cutoff] for d in data_sub)
-        # Parameters are not subsetted for extrapolation
-        timesteps = timesteps[:cutoff]
-    elif mode == "sparse":
-        factor = metric
-        data_subset = (d[::factor] for d in data_sub)
-        params_subset = (p[::factor] for p in params_sub if params is not None)
-        # Timesteps are not subsetted for sparse
-    elif mode == "batch_size":
-        factor = 4
-        data_subset = (d[::factor] for d in data_sub)
-        params_subset = (p[::factor] for p in params_sub if params is not None)
-        # Timesteps are not subsetted for batch size
+    # Handle params:
+    if params is None:
+        params_subset = None
     else:
-        data_subset = data_sub
-        params_subset = params_sub
+        # Even if params is a tuple of Nones, this comprehension will preserve None entries.
+        params_subset = tuple(
+            p[::subset_factor] if p is not None else None for p in params
+        )
 
-    return data_subset, params_subset, timesteps
+    # Mode-specific resampling.
+    if mode == "interpolation":
+        # For interpolation, subsample timesteps and data along axis=1 with the given interval.
+        interval = metric
+        data_subset = tuple(d[:, ::interval] for d in data_sub)
+        timesteps_subset = timesteps[::interval]
+        # Parameters are not further subsetted.
+
+    elif mode == "extrapolation":
+        # For extrapolation, take the first 'cutoff' timesteps.
+        cutoff = metric
+        data_subset = tuple(d[:, :cutoff] for d in data_sub)
+        timesteps_subset = timesteps[:cutoff]
+        # Parameters are not further subsetted.
+
+    elif mode == "sparse":
+        # For sparse mode, further thin the dataset by the provided factor.
+        factor = metric
+        data_subset = tuple(d[::factor] for d in data_sub)
+        timesteps_subset = timesteps  # Timesteps are not subsetted for sparse mode.
+        if params is not None:
+            # Subset each parameter array if it is not None.
+            params_subset = tuple(
+                p[::factor] if p is not None else None for p in params_subset
+            )
+
+    elif mode == "batch_size":
+        # For batch_size, we thin the dataset by a constant factor (4).
+        factor = 4
+        data_subset = tuple(d[::factor] for d in data_sub)
+        timesteps_subset = timesteps  # Timesteps are not subsetted for batch_size.
+        if params is not None:
+            params_subset = tuple(
+                p[::factor] if p is not None else None for p in params_subset
+            )
+    else:
+        # If no valid mode is provided, fall back to the data already sub-sampled by subset_factor.
+        data_subset = data_sub
+        timesteps_subset = timesteps
+        # params_subset remains unchanged.
+
+    return data_subset, params_subset, timesteps_subset
 
 
 class DownloadProgressBar(tqdm):

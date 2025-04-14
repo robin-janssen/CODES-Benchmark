@@ -154,37 +154,46 @@ def training_run(
     """
 
     download_data(config["dataset"]["name"], verbose=False)
-    train_data, test_data, val_data, timesteps, _, data_info, _ = check_and_load_data(
-        config["dataset"]["name"],
-        verbose=False,
-        log=config["dataset"]["log10_transform"],
-        normalisation_mode=config["dataset"]["normalise"],
-    )
+    # (train_data, test_data, val_data), _, timesteps, _, data_info, _ = (
+    #     check_and_load_data(
+    #         config["dataset"]["name"],
+    #         verbose=False,
+    #         log=config["dataset"]["log10_transform"],
+    #         normalisation_mode=config["dataset"]["normalise"],
+    #     )
+    # )
 
     # Load full data and parameters
     (
-        (train_data, test_data, val_data),
-        _,
+        (train_data, test_data, _),
+        (train_params, test_params, _),
         timesteps,
         _,
-        _,
+        data_info,
         _,
     ) = check_and_load_data(
         config["dataset"]["name"],
         verbose=False,
         log=config["dataset"]["log10_transform"],
+        log_params=config.get("log10_transform_params", False),
         normalisation_mode=config["dataset"]["normalise"],
         tolerance=config["dataset"]["tolerance"],
     )
 
     subset_factor = config["dataset"].get("subset_factor", 1)
-    train_data, test_data, timesteps = get_data_subset(
-        train_data, test_data, timesteps, "sparse", subset_factor
+    # Get the appropriate data subset
+    (train_data, test_data), (train_params, test_params), timesteps = get_data_subset(
+        (train_data, test_data),
+        timesteps,
+        "sparse",
+        subset_factor,
+        (train_params, test_params),
     )
 
     set_random_seeds(config["seed"], device=device)
     surr_name = config["surrogate"]["name"]
     suggested_params = make_optuna_params(trial, config["optuna_params"])
+    n_params = train_params.shape[1] if train_params is not None else 0
 
     for key, val in suggested_params.items():
         if "activation" in key:
@@ -197,7 +206,7 @@ def training_run(
     surrogate_class = get_surrogate(surr_name)
     model_config = get_model_config(surr_name, config)
     model_config.update(suggested_params)
-    model = surrogate_class(device, n_quantities, n_timesteps, model_config)
+    model = surrogate_class(device, n_quantities, n_timesteps, n_params, model_config)
     model.normalisation = data_info
     model.optuna_trial = trial
     model.trial_update_epochs = 10
@@ -205,10 +214,13 @@ def training_run(
     train_loader, test_loader, _ = model.prepare_data(
         dataset_train=train_data,
         dataset_test=test_data,
-        dataset_val=val_data,
+        dataset_val=None,
         timesteps=timesteps,
         batch_size=config["batch_size"],
         shuffle=True,
+        dataset_train_params=train_params,
+        dataset_test_params=test_params,
+        dummy_timesteps=True,
     )
 
     description = make_description("Optuna", device, str(trial.number), surr_name)
