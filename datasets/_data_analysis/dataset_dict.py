@@ -56,4 +56,9 @@ dataset_dict = {
         "qpp": 5,
         "tol": 1e-30,
     },
+    "lv_parametric": {
+        "log": True,
+        "qpp": 3,
+        "tol": 1e-30,
+    },
 }

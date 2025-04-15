@@ -274,9 +274,9 @@ def parse_args() -> ArgumentParser:
     parser = ArgumentParser(
         description="Generate datasets for ODE systems and save them in HDF5 format."
     )
-    parser.add_argument("--num_train", "-tr", type=int, default=700)
-    parser.add_argument("--num_test", "-te", type=int, default=100)
-    parser.add_argument("--num_val", "-va", type=int, default=200)
+    parser.add_argument("--num_train", "-tr", type=int, default=70)
+    parser.add_argument("--num_test", "-te", type=int, default=10)
+    parser.add_argument("--num_val", "-va", type=int, default=20)
     parser.add_argument(
         "--func",
         "-f",
@@ -285,7 +285,7 @@ def parse_args() -> ArgumentParser:
         default="parametric_lotka_volterra",
         help=f"Name of the function to generate data for. Choices: {list(FUNCS.keys())}.",
     )
-    parser.add_argument("--name", "-n", type=str, default="osutest")
+    parser.add_argument("--name", "-n", type=str, default="lv_parametric")
     parser.add_argument("--force", "-fo", action="store_true")
     parser.add_argument("--seed", "-s", type=int, default=42)
     return parser.parse_args()

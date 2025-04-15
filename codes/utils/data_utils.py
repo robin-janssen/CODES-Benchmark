@@ -136,9 +136,10 @@ def check_and_load_data(
 
         # Normalize parameters if they are present.
         if train_params is not None:
-            params_info, train_params, test_params, val_params = normalize_data(
-                train_params, test_params, val_params, mode=normalisation_mode
-            )
+            if normalisation_mode != "disable":
+                params_info, train_params, test_params, val_params = normalize_data(
+                    train_params, test_params, val_params, mode=normalisation_mode
+                )
             # Rename the normalization keys for parameters.
             if normalisation_mode == "minmax":
                 data_info["min_params"] = params_info["min"]

@@ -3,13 +3,19 @@ import sys
 
 import numpy as np
 
-# Navigate up one level from the current working directory to access 'codes'
-current_path = os.path.dirname(os.path.abspath(__file__))  # Path to this script
-project_root = os.path.abspath(os.path.join(current_path, "../../"))  # Go up two levels
+# Move two levels up from the current working directory if the script is run from _data_analysis
+if os.path.basename(os.getcwd()) == "_data_analysis":
+    current_path = os.path.dirname(os.path.abspath(__file__))  # Path to this script
+    print("Current path:", current_path)
+    project_root = os.path.abspath(
+        os.path.join(current_path, "../../")
+    )  # Go up two levels
+    print("Project root:", project_root)
+else:
+    project_root = os.getcwd()  # Current working directory
+    print("Current working directory:", project_root)
 
-# Add the 'codes' directory to the system path
-codes_path = os.path.join(project_root, "codes")
-sys.path.insert(1, codes_path)
+sys.path.insert(1, project_root)
 print(sys.path)
 
 from codes import check_and_load_data, download_data
@@ -27,6 +33,7 @@ def main():
     Main function to analyse the dataset. It checks the dataset and loads the data.
     """
     datasets = [
+        "lv_parametric",
         "primordial",
         "simple_reaction",
         "osutest2",
@@ -90,7 +97,7 @@ def main():
             num_quantities=num_quantities,
             save=True,
             labels=labels,
-            sample_idx=863,
+            sample_idx=86,
             log=log,
             quantities_per_plot=qpp,
             show_title=TITLE,

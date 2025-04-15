@@ -5,34 +5,6 @@ import numpy as np
 spy = 365.0 * 24.0 * 3600.0  # Seconds per year
 
 
-def lotka_volterra(n: np.ndarray) -> np.ndarray:
-    """
-    Defines the Lotka-Volterra predator-prey model with three predators and three prey.
-
-    Parameters
-    ----------
-    n : np.ndarray
-        Current populations [p1, p2, p3, q1, q2, q3].
-
-    Returns
-    -------
-    np.ndarray
-        Derivatives [dp1/dt, dp2/dt, dp3/dt, dq1/dt, dq2/dt, dq3/dt].
-    """
-    p1, p2, p3, q1, q2, q3 = n
-    derivatives = np.array(
-        [
-            0.5 * p1 - 0.02 * p1 * q1 - 0.01 * p1 * q2,
-            0.6 * p2 - 0.03 * p2 * q1 - 0.015 * p2 * q3,
-            0.4 * p3 - 0.01 * p3 * q2 - 0.025 * p3 * q3,
-            -0.1 * q1 + 0.005 * p1 * q1 + 0.007 * p2 * q1,
-            -0.08 * q2 + 0.006 * p1 * q2 + 0.009 * p3 * q2,
-            -0.12 * q3 + 0.008 * p2 * q3 + 0.01 * p3 * q3,
-        ]
-    )
-    return derivatives
-
-
 def reaction(t: float, n: np.ndarray) -> np.ndarray:
     """
     Defines a chemically motivated reaction system with five species.
@@ -228,61 +200,6 @@ def coupled_nonlinear_oscillators(t, state):
     return np.array(
         [dx1_dt, dx2_dt, dx3_dt, dx4_dt, dx5_dt, dv1_dt, dv2_dt, dv3_dt, dv4_dt, dv5_dt]
     )
-
-
-def parametric_lotka_volterra(t, n: np.ndarray, params: np.ndarray) -> np.ndarray:
-    """
-    Defines a parametric Lotka–Volterra model for three predators and three prey.
-    The external parameter(s) influence both the reproduction rates and the predation rates.
-
-    Parameters
-    ----------
-    t : float
-        Current time
-    n : np.ndarray
-        Current populations [p1, p2, p3, q1, q2, q3].
-    params : np.ndarray
-        Fixed parameter(s) [alpha]. For example, higher alpha represents higher environmental stress,
-        reducing prey reproduction and intensifying predator efficiency.
-
-    Returns
-    -------
-    np.ndarray
-        Derivatives [dp1/dt, dp2/dt, dp3/dt, dq1/dt, dq2/dt, dq3/dt].
-    """
-    # Unpack populations:
-    p1, p2, p3, q1, q2, q3 = n
-    # External parameter (e.g., environmental stress or radiation intensity)
-    alpha = params[0]  # if more parameters are desired, extend appropriately.
-
-    # Modified reproduction rates for prey (reduce with increasing alpha)
-    rep_p1 = (0.5 - 0.1 * alpha) * p1
-    rep_p2 = (0.6 - 0.1 * alpha) * p2
-    rep_p3 = (0.4 - 0.1 * alpha) * p3
-
-    # Modified predation terms (increased by alpha)
-    pred1 = (0.02 + 0.01 * alpha) * p1 * q1 + (0.01 + 0.005 * alpha) * p1 * q2
-    pred2 = (0.03 + 0.015 * alpha) * p2 * q1 + (0.015 + 0.007 * alpha) * p2 * q3
-    pred3 = (0.01 + 0.005 * alpha) * p3 * q2 + (0.025 + 0.010 * alpha) * p3 * q3
-
-    # Predator death rate remains fixed
-    death_q1 = 0.1 * q1
-    death_q2 = 0.08 * q2
-    death_q3 = 0.12 * q3
-
-    # Predator gains
-    gain_q1 = 0.005 * p1 * q1 + 0.007 * p2 * q1
-    gain_q2 = 0.006 * p1 * q2 + 0.009 * p3 * q2
-    gain_q3 = 0.008 * p2 * q3 + 0.01 * p3 * q3
-
-    dp1_dt = rep_p1 - pred1
-    dp2_dt = rep_p2 - pred2
-    dp3_dt = rep_p3 - pred3
-    dq1_dt = -death_q1 + gain_q1
-    dq2_dt = -death_q2 + gain_q2
-    dq3_dt = -death_q3 + gain_q3
-
-    return np.array([dp1_dt, dp2_dt, dp3_dt, dq1_dt, dq2_dt, dq3_dt])
 
 
 def osu_ode(t: float, y: np.ndarray) -> np.ndarray:
@@ -1518,6 +1435,98 @@ def osu_initial_conditions(num: int) -> np.ndarray:
     return ic
 
 
+def lotka_volterra(n: np.ndarray) -> np.ndarray:
+    """
+    Defines the Lotka-Volterra predator-prey model with three predators and three prey.
+
+    Parameters
+    ----------
+    n : np.ndarray
+        Current populations [p1, p2, p3, q1, q2, q3].
+
+    Returns
+    -------
+    np.ndarray
+        Derivatives [dp1/dt, dp2/dt, dp3/dt, dq1/dt, dq2/dt, dq3/dt].
+    """
+    p1, p2, p3, q1, q2, q3 = n
+    derivatives = np.array(
+        [
+            0.5 * p1 - 0.02 * p1 * q1 - 0.01 * p1 * q2,
+            0.6 * p2 - 0.03 * p2 * q1 - 0.015 * p2 * q3,
+            0.4 * p3 - 0.01 * p3 * q2 - 0.025 * p3 * q3,
+            -0.1 * q1 + 0.005 * p1 * q1 + 0.007 * p2 * q1,
+            -0.08 * q2 + 0.006 * p1 * q2 + 0.009 * p3 * q2,
+            -0.12 * q3 + 0.008 * p2 * q3 + 0.01 * p3 * q3,
+        ]
+    )
+    return derivatives
+
+
+def parametric_lotka_volterra(
+    t: float, n: np.ndarray, params: np.ndarray
+) -> np.ndarray:
+    """
+    Defines a parametric Lotka–Volterra model for three predators and three prey.
+    The equations follow those of the standard Lotka–Volterra model, except that the
+    prey reproduction rates and predation coefficients are slightly modified by an
+    external parameter alpha.
+
+    Parameters
+    ----------
+    t : float
+        Current time (unused in these autonomous equations).
+    n : np.ndarray
+        Current populations [p1, p2, p3, q1, q2, q3].
+    params : np.ndarray
+        Fixed parameter(s) [alpha]. A higher alpha might represent greater environmental stress.
+
+    Returns
+    -------
+    np.ndarray
+        Derivatives [dp1/dt, dp2/dt, dp3/dt, dq1/dt, dq2/dt, dq3/dt].
+    """
+    # Unpack populations:
+    p1, p2, p3, q1, q2, q3 = n
+    alpha = params[0]  # external parameter controlling the slight modifications
+    epsilon = 0.0  # 0.001  # small factor for a slight modification
+
+    # Modified reproduction rates (same as lotka_volterra with a small reduction)
+    rep_p1 = (0.5 * (1 - epsilon * alpha)) * p1
+    rep_p2 = (0.6 * (1 - epsilon * alpha)) * p2
+    rep_p3 = (0.4 * (1 - epsilon * alpha)) * p3
+
+    # Modified predation terms (scaled slightly upward)
+    pred1 = (0.02 * (1 + epsilon * alpha)) * p1 * q1 + (
+        0.01 * (1 + epsilon * alpha)
+    ) * p1 * q2
+    pred2 = (0.03 * (1 + epsilon * alpha)) * p2 * q1 + (
+        0.015 * (1 + epsilon * alpha)
+    ) * p2 * q3
+    pred3 = (0.01 * (1 + epsilon * alpha)) * p3 * q2 + (
+        0.025 * (1 + epsilon * alpha)
+    ) * p3 * q3
+
+    # Predator death rates (unchanged)
+    death_q1 = 0.1 * q1
+    death_q2 = 0.08 * q2
+    death_q3 = 0.12 * q3
+
+    # Predator gains (unchanged)
+    gain_q1 = 0.005 * p1 * q1 + 0.007 * p2 * q1
+    gain_q2 = 0.006 * p1 * q2 + 0.009 * p3 * q2
+    gain_q3 = 0.008 * p2 * q3 + 0.01 * p3 * q3
+
+    dp1_dt = rep_p1 - pred1
+    dp2_dt = rep_p2 - pred2
+    dp3_dt = rep_p3 - pred3
+    dq1_dt = -death_q1 + gain_q1
+    dq2_dt = -death_q2 + gain_q2
+    dq3_dt = -death_q3 + gain_q3
+
+    return np.array([dp1_dt, dp2_dt, dp3_dt, dq1_dt, dq2_dt, dq3_dt])
+
+
 FUNCS: Dict[str, Dict[str, Any]] = {
     "lotka_volterra": {
         "func": lotka_volterra,
@@ -1648,7 +1657,6 @@ FUNCS: Dict[str, Dict[str, Any]] = {
             "params_space": "linear",
             "params_bounds": [(0.0, 1.0)],
         },
-        # New key: specify bounds for the fixed parameter(s),
-        # for example, one parameter influencing reproduction and predation.
+        # "solver_options": {"method": "BDF", "atol": 1e-8, "rtol": 1e-8},
     },
 }

@@ -248,7 +248,7 @@ def run_single_study(config: dict, study_name: str, db_url: str):
             avg_duration = sum(trial_durations) / len(trial_durations)
             remaining_trials = n_trials - len(trial_durations)
             eta_seconds = (avg_duration * remaining_trials) / n_jobs
-            postfix = f"ETA: {eta_seconds/60:.1f}m, Avg: {avg_duration:.1f}s, Last: {duration:.1f}s"
+            postfix = f"ETA: {eta_seconds / 60:.1f}m, Avg: {avg_duration:.1f}s, Last: {duration:.1f}s"
             trial_pbar.set_postfix_str(postfix)
 
             # Once enough warmup trials are complete, compute mean and std,
@@ -381,7 +381,7 @@ def parse_arguments():
     parser.add_argument(
         "--study_name",
         type=str,
-        default="primordial4",
+        default="primordialtest5",
         help="Study identifier.",
     )
     return parser.parse_args()
