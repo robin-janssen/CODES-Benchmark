@@ -63,49 +63,59 @@ def generate_initial_samples(
     """
     Generates Sobol samples for initial conditions and (optionally) fixed parameters.
 
-    Parameters
-    ----------
-    num : int
-        Number of samples.
-    sampling : dict
-        Sampling settings. This dictionary should contain:
-          - "bounds": bounds for the state variables.
-          - Optionally, "params_bounds": bounds for the fixed parameters.
-          - "space": sampling space for state variables ('linear' or 'log').
-          - Optionally, "params_space": sampling space for the parameters.
-    seed : int, optional
-        Random seed.
-
-    Returns
-    -------
-    tuple[np.ndarray, np.ndarray | None]
-        (initial_conditions, params)
-        with shapes (num, n_state) and (num, n_params) respectively.
+    Bounds are always in linear space. 'space' / 'params_space' only switch
+    between linear vs. log-uniform sampling across those linear bounds.
     """
     state_bounds = sampling["bounds"]
     params_bounds = sampling.get("params_bounds", None)
-    if params_bounds is not None:
-        combined_bounds = state_bounds + params_bounds
-    else:
-        combined_bounds = state_bounds
 
-    sobol_dim = len(combined_bounds)
+    # Determine sampling spaces
+    state_space = sampling.get("space", "linear")
+    params_space = sampling.get("params_space", state_space)
+
+    # Build per-dimension transformed bounds
+    transformed_bounds: list[tuple[float, float]] = []
+
+    # State dims
+    for lb, ub in state_bounds:
+        if state_space == "log":
+            if lb <= 0 or ub <= 0:
+                raise ValueError("All state bounds must be positive for log sampling.")
+            transformed_bounds.append((np.log(lb), np.log(ub)))
+        else:
+            transformed_bounds.append((lb, ub))
+
+    # Param dims (if any)
+    if params_bounds is not None:
+        for lb, ub in params_bounds:
+            if params_space == "log":
+                if lb <= 0 or ub <= 0:
+                    raise ValueError(
+                        "All param bounds must be positive for log sampling."
+                    )
+                transformed_bounds.append((np.log(lb), np.log(ub)))
+            else:
+                transformed_bounds.append((lb, ub))
+
+    # Sobol in the transformed space
+    sobol_dim = len(transformed_bounds)
     sampler = qmc.Sobol(d=sobol_dim, scramble=True, seed=seed)
     m = int(np.ceil(np.log2(num)))
-    samples = sampler.random_base2(m=m)[:num]
-    lower_bounds, upper_bounds = zip(*combined_bounds)
-    samples = qmc.scale(samples, lower_bounds, upper_bounds)
+    raw = sampler.random_base2(m=m)[:num]
+    lowers, uppers = zip(*transformed_bounds)
+    scaled = qmc.scale(raw, lowers, uppers)
 
+    # Split out states and params
     n_state = len(state_bounds)
-    initial_conditions = samples[:, :n_state]
-    params = samples[:, n_state:] if params_bounds is not None else None
+    initial_conditions = scaled[:, :n_state]
+    params = scaled[:, n_state:] if params_bounds is not None else None
 
-    if sampling.get("space", "linear") == "log":
+    # Exponentiate back any log-sampled dims
+    if state_space == "log":
         initial_conditions = np.exp(initial_conditions)
-    if params is not None:
-        p_space = sampling.get("params_space", sampling.get("space", "linear"))
-        if p_space == "log":
-            params = np.exp(params)
+    if params is not None and params_space == "log":
+        params = np.exp(params)
+
     return initial_conditions, params
 
 
@@ -274,9 +284,9 @@ def parse_args() -> ArgumentParser:
     parser = ArgumentParser(
         description="Generate datasets for ODE systems and save them in HDF5 format."
     )
-    parser.add_argument("--num_train", "-tr", type=int, default=70)
-    parser.add_argument("--num_test", "-te", type=int, default=10)
-    parser.add_argument("--num_val", "-va", type=int, default=20)
+    parser.add_argument("--num_train", "-tr", type=int, default=140)
+    parser.add_argument("--num_test", "-te", type=int, default=20)
+    parser.add_argument("--num_val", "-va", type=int, default=40)
     parser.add_argument(
         "--func",
         "-f",

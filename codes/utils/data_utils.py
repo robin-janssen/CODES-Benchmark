@@ -630,6 +630,7 @@ def download_data(dataset_name: str, path: str | None = None, verbose: bool = Tr
     if os.path.isfile(data_path):
         if verbose:
             print(f"Dataset '{dataset_name}' already exists at {data_path}.")
+            print_data_info(data_path)
         return
 
     with open("datasets/data_sources.yaml", "r", encoding="utf-8") as file:
@@ -650,3 +651,27 @@ def download_data(dataset_name: str, path: str | None = None, verbose: bool = Tr
     ) as t:
         urllib.request.urlretrieve(url, data_path, reporthook=t.update_to)
     print(f"Dataset '{dataset_name}' downloaded successfully.")
+    if verbose:
+        print_data_info(data_path)
+
+
+def print_data_info(data_path):
+    with h5py.File(data_path, "r") as f:
+        print("Dataset Info:")
+        n_quantities = f.attrs["n_quantities"]
+        train_samples = f.attrs["n_train_samples"]
+        test_samples = f.attrs["n_test_samples"]
+        val_samples = f.attrs["n_val_samples"]
+        total_samples = train_samples + test_samples + val_samples
+        if "n_parameters" in f.attrs:
+            n_parameters = f.attrs["n_parameters"]
+            print(
+                f" - Dataset comprises {n_quantities} quantities and {n_parameters} parameters."
+            )
+        else:
+            print(
+                f" - Dataset comprises {n_quantities} quantities and no additional parameters."
+            )
+        print(
+            f" - Total of {total_samples} samples, train/test/val split is {train_samples}/{test_samples}/{val_samples}."
+        )
