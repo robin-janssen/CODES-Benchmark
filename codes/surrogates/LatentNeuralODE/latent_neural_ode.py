@@ -175,18 +175,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         """
         Fits the model to the training data. Sets the train_loss and test_loss attributes.
         After 10 epochs, the loss weights are renormalized to scale the individual loss terms.
-
-        Args:
-            train_loader (DataLoader): The data loader for the training data.
-            test_loader (DataLoader): The data loader for the test data.
-            epochs (int | None): The number of epochs to train the model. If None, uses the value from the config.
-            position (int): The position of the progress bar.
-            description (str): The description for the progress bar.
-            multi_objective (bool): Whether multi-objective optimization is used.
-                                    If True, trial.report is not used (not supported by Optuna).
-
         """
-        # optimizer = Adam(self.model.parameters(), lr=self.config.learning_rate)
         optimizer = AdamWScheduleFree(
             self.model.parameters(),
             lr=self.config.learning_rate,
@@ -205,15 +194,21 @@ class LatentNeuralODE(AbstractSurrogateModel):
 
         for epoch in progress_bar:
             for i, batch in enumerate(train_loader):
+                x_true, t_range, params = batch
                 optimizer.zero_grad()
-                x_pred = self.forward(batch)[0]
-                loss = self.model.total_loss(batch[0], x_pred)
+
+                # forward pass
+                x_pred, _ = self.forward((x_true, t_range, params))
+
+                # total loss now takes params into account for identity term
+                loss = self.model.total_loss(x_true, x_pred, params)
                 loss.backward()
                 optimizer.step()
 
+                # renormalize once after 10 epochs
                 if epoch == 10 and i == 0:
                     with torch.no_grad():
-                        self.model.renormalize_loss_weights(batch[0], x_pred)
+                        self.model.renormalize_loss_weights(x_true, x_pred, params)
 
             if scheduler is not None:
                 scheduler.step()
@@ -221,25 +216,22 @@ class LatentNeuralODE(AbstractSurrogateModel):
             if epoch % self.update_epochs == 0:
                 index = epoch // self.update_epochs
                 with torch.inference_mode():
-                    # Set model and optimizer to evaluation mode
                     self.model.eval()
                     optimizer.eval()
 
-                    # Calculate losses and MAE
                     preds, targets = self.predict(train_loader)
                     train_losses[index] = criterion(preds, targets).item()
                     preds, targets = self.predict(test_loader)
                     test_losses[index] = criterion(preds, targets).item()
                     MAEs[index] = self.L1(preds, targets).item()
 
-                    # Update progress bar postfix
-                    postfix = {
-                        "train_loss": f"{train_losses[index]:.2e}",
-                        "test_loss": f"{test_losses[index]:.2e}",
-                    }
-                    progress_bar.set_postfix(postfix)
+                    progress_bar.set_postfix(
+                        {
+                            "train_loss": f"{train_losses[index]:.2e}",
+                            "test_loss": f"{test_losses[index]:.2e}",
+                        }
+                    )
 
-                    # Report loss to Optuna and prune if necessary
                     if self.optuna_trial is not None:
                         if multi_objective:
                             self.time_pruning(current_epoch=epoch, total_epochs=epochs)
@@ -248,7 +240,6 @@ class LatentNeuralODE(AbstractSurrogateModel):
                             if self.optuna_trial.should_prune():
                                 raise optuna.TrialPruned()
 
-                    # Set model and optimizer back to training mode
                     self.model.train()
                     optimizer.train()
 
@@ -472,8 +463,9 @@ class ModelWrapper(torch.nn.Module):
 
     def forward(self, x0, t_range, params=None):
         if self.config.encode_params:
-            # In scheme 1, the encoder already received the parameters.
-            z0 = self.encoder(x0)
+            # In scheme 1, the encoder receives the parameters
+            encoder_in = torch.cat((x0, params), dim=1)
+            z0 = self.encoder(encoder_in)
             # Integrate as usual.
             t_eval = t_range.repeat(x0.shape[0], 1)
             latent_traj = self.solver.solve(
@@ -510,41 +502,41 @@ class ModelWrapper(torch.nn.Module):
         self.loss_weights[2] = 1 / self.deriv_loss(x_true, x_pred).item()
         self.loss_weights[3] = 1 / self.deriv2_loss(x_true, x_pred).item()
 
-    def total_loss(self, x_true, x_pred):
+    def total_loss(
+        self, x_true: torch.Tensor, x_pred: torch.Tensor, params: torch.Tensor = None
+    ):
         """
-        Calculate the total loss based on the loss weights.
-
-        Args:
-            x_true (torch.Tensor): The true trajectory.
-            x_pred (torch.Tensor): The predicted trajectory
-
-        Returns:
-            torch.Tensor: The total loss.
+        Calculate the total loss based on the loss weights, including params for identity.
         """
         return (
             self.loss_weights[0] * self.l2_loss(x_true, x_pred)
-            + self.loss_weights[1] * self.identity_loss(x_true)
+            + self.loss_weights[1] * self.identity_loss(x_true, params)
             + self.loss_weights[2] * self.deriv_loss(x_true, x_pred)
             + self.loss_weights[3] * self.deriv2_loss(x_true, x_pred)
         )
 
-    def identity_loss(self, x: torch.Tensor, params: torch.Tensor = None):
+    def identity_loss(self, x_true: torch.Tensor, params: torch.Tensor = None):
         """
-        Calculate the identity loss (Encoder -> Decoder).
+        Calculate the identity loss (Encoder -> Decoder) on the initial state x0.
 
         Args:
-            x (torch.Tensor): The input tensor.
-            params (torch.Tensor | None): Fixed parameters to be passed to the e
-
+            x_true (torch.Tensor): The full trajectory (batch, timesteps, features).
+            params (torch.Tensor | None): Fixed parameters (batch, n_parameters).
         Returns:
-            torch.Tensor: The identity loss.
+            torch.Tensor: The identity loss on x0.
         """
+        # only reconstruct the initial state
+        x0 = x_true[:, 0, :]
         if self.config.encode_params:
-            # For scheme 1, pass the concatenated input.
-            x_input = torch.cat([x, params], dim=1) if params is not None else x
+            assert params is not None, "encode_params=True requires params"
+            enc_input = torch.cat([x0, params], dim=1)
         else:
-            x_input = x
-        return self.l2_loss(x, self.decoder(self.encoder(x_input)))
+            enc_input = x0
+
+        # encode-decode
+        z0 = self.encoder(enc_input)
+        x0_hat = self.decoder(z0)
+        return self.l2_loss(x0, x0_hat)
 
     @staticmethod
     def l2_loss(x_true: torch.Tensor, x_pred: torch.Tensor):

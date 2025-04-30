@@ -3,18 +3,17 @@ import optuna
 import torch
 from schedulefree import AdamWScheduleFree
 from torch import nn
+
 # from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from codes.surrogates.AbstractSurrogate.surrogates import \
-    AbstractSurrogateModel
-from codes.surrogates.LatentNeuralODE.latent_neural_ode import \
-    Decoder as NewDecoder
-from codes.surrogates.LatentNeuralODE.latent_neural_ode import \
-    Encoder as NewEncoder
+from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
+from codes.surrogates.LatentNeuralODE.latent_neural_ode import Decoder as NewDecoder
+from codes.surrogates.LatentNeuralODE.latent_neural_ode import Encoder as NewEncoder
 from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
-from codes.surrogates.LatentPolynomial.latent_poly_config import \
-    LatentPolynomialBaseConfig
+from codes.surrogates.LatentPolynomial.latent_poly_config import (
+    LatentPolynomialBaseConfig,
+)
 from codes.utils import time_execution, worker_init_fn
 
 
@@ -355,23 +354,21 @@ class PolynomialModelWrapper(nn.Module):
         # Instantiate coefficient network only if coefficient_network is True and parameters exist.
         if self.config.coefficient_network and n_parameters > 0:
             self.coefficient_net = nn.Sequential(
-                nn.Linear(
-                    n_parameters, self.config.coefficient_width, dtype=torch.float64
-                ),
+                nn.Linear(n_parameters, self.config.coeff_width, dtype=torch.float64),
                 self.config.activation,
                 *[
                     nn.Sequential(
                         nn.Linear(
-                            self.config.coefficient_width,
-                            self.config.coefficient_width,
+                            self.config.coeff_width,
+                            self.config.coeff_width,
                             dtype=torch.float64,
                         ),
                         self.config.activation,
                     )
-                    for _ in range(self.config.coefficient_layers - 1)
+                    for _ in range(self.config.coeff_layers - 1)
                 ],
                 nn.Linear(
-                    self.config.coefficient_width,
+                    self.config.coeff_width,
                     latent_dim * self.config.degree,
                     dtype=torch.float64,
                 ),
