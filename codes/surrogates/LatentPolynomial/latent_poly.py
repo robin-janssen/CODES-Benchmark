@@ -3,17 +3,18 @@ import optuna
 import torch
 from schedulefree import AdamWScheduleFree
 from torch import nn
-
 # from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
-from codes.surrogates.LatentNeuralODE.latent_neural_ode import Decoder as NewDecoder
-from codes.surrogates.LatentNeuralODE.latent_neural_ode import Encoder as NewEncoder
+from codes.surrogates.AbstractSurrogate.surrogates import \
+    AbstractSurrogateModel
+from codes.surrogates.LatentNeuralODE.latent_neural_ode import \
+    Decoder as NewDecoder
+from codes.surrogates.LatentNeuralODE.latent_neural_ode import \
+    Encoder as NewEncoder
 from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
-from codes.surrogates.LatentPolynomial.latent_poly_config import (
-    LatentPolynomialBaseConfig,
-)
+from codes.surrogates.LatentPolynomial.latent_poly_config import \
+    LatentPolynomialBaseConfig
 from codes.utils import time_execution, worker_init_fn
 
 
@@ -76,11 +77,11 @@ class LatentPoly(AbstractSurrogateModel):
             tuple[torch.Tensor, torch.Tensor]: (Predictions, Targets)
         """
         # Expect inputs to be (data, timesteps) or (data, timesteps, params)
-        if len(inputs) == 3:
-            x, t_range, params = inputs
-        else:
-            x, t_range = inputs
-            params = None
+        # if len(inputs) == 3:
+        x, t_range, params = inputs
+        # else:
+        #     x, t_range = inputs
+        #     params = None
         return self.model(x, t_range, params), x
 
     def prepare_data(
@@ -225,16 +226,16 @@ class LatentPoly(AbstractSurrogateModel):
         optimizer.train()
 
         for epoch in progress_bar:
-            for i, (x_true, timesteps) in enumerate(train_loader):
+            for i, batch in enumerate(train_loader):
                 optimizer.zero_grad()
-                x_pred = self.model.forward(x_true, timesteps)
-                loss = self.model.total_loss(x_true, x_pred)
+                x_pred = self.forward(batch)[0]
+                loss = self.model.total_loss(batch[0], x_pred)
                 loss.backward()
                 optimizer.step()
 
                 if epoch == 10 and i == 0:
                     with torch.no_grad():
-                        self.model.renormalize_loss_weights(x_true, x_pred)
+                        self.model.renormalize_loss_weights(batch[0], x_pred)
 
             if epoch % self.update_epochs == 0:
                 index = epoch // self.update_epochs

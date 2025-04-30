@@ -56,11 +56,11 @@ class LatentNeuralODE(AbstractSurrogateModel):
         Forward pass through the model.
         Expects inputs to be either (data, timesteps) or (data, timesteps, params).
         """
-        if len(inputs) == 3:
-            x, t_range, params = inputs
-        else:
-            x, t_range = inputs
-            params = None
+        # if len(inputs) == 3:
+        x, t_range, params = inputs
+        # else:
+        #     x, t_range = inputs
+        #     params = None
 
         # x has shape (batch, timesteps, n_quantities)
         # Use the first timestep as the initial condition.
@@ -206,7 +206,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         for epoch in progress_bar:
             for i, batch in enumerate(train_loader):
                 optimizer.zero_grad()
-                x_pred = self.model.forward(*batch)
+                x_pred = self.forward(batch)[0]
                 loss = self.model.total_loss(batch[0], x_pred)
                 loss.backward()
                 optimizer.step()
@@ -413,6 +413,7 @@ class ModelWrapper(torch.nn.Module):
         self.config = config  # Already a LatentNeuralODEBaseConfig instance.
         self.n_parameters = n_parameters
         latent_dim = self.config.latent_features
+        self.loss_weights = [100.0, 1.0, 1.0, 1.0]
 
         if self.config.encode_params:
             # Scheme 1: encoder receives data concatenated with parameters.
