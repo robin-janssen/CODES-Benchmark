@@ -59,33 +59,56 @@ def get_activation_function(name: str) -> nn.Module:
 
 def make_optuna_params(trial: optuna.Trial, optuna_params: dict) -> dict:
     """
-    Make Optuna suggested parameters from the optuna_config.yaml file.
-
-    Args:
-        trial (optuna.Trial): Optuna trial object.
-        optuna_params (dict): Optuna parameters dictionary.
-
-    Returns:
-        dict: Suggested parameters.
+    Make Optuna suggested parameters from optuna_config.yaml,
+    handling conditional sampling of coeff_width and coeff_layers
+    based on the value of coeff_network.
     """
-
     suggested_params = {}
-    for param_name, param_options in optuna_params.items():
-        if param_options["type"] == "int":
-            suggested_params[param_name] = trial.suggest_int(
-                param_name, param_options["low"], param_options["high"]
+
+    #  Sample all params except the conditional ones
+    conditional_keys = {"coeff_width", "coeff_layers", "coeff_network"}
+    for name, opts in optuna_params.items():
+        if name in conditional_keys:
+            continue
+        if opts["type"] == "int":
+            suggested_params[name] = trial.suggest_int(name, opts["low"], opts["high"])
+        elif opts["type"] == "float":
+            suggested_params[name] = trial.suggest_float(
+                name,
+                opts["low"],
+                opts["high"],
+                log=opts.get("log", False),
             )
-        elif param_options["type"] == "float":
-            suggested_params[param_name] = trial.suggest_float(
-                param_name,
-                param_options["low"],
-                param_options["high"],
-                log=param_options.get("log", False),
-            )
-        elif param_options["type"] == "categorical":
-            suggested_params[param_name] = trial.suggest_categorical(
-                param_name, param_options["choices"]
-            )
+        elif opts["type"] == "categorical":
+            suggested_params[name] = trial.suggest_categorical(name, opts["choices"])
+
+    # Handle conditional parameters
+    if "coeff_network" in optuna_params:
+        opts = optuna_params["coeff_network"]
+        suggested_params["coeff_network"] = trial.suggest_categorical(
+            "coeff_network", opts["choices"]
+        )
+
+    if suggested_params.get("coeff_network", False):
+        for ck in ["coeff_width", "coeff_layers"]:
+            if ck in optuna_params:
+                opts = optuna_params[ck]
+                if opts["type"] == "int":
+                    suggested_params[ck] = trial.suggest_int(
+                        ck, opts["low"], opts["high"]
+                    )
+                elif opts["type"] == "float":
+                    suggested_params[ck] = trial.suggest_float(
+                        ck,
+                        opts["low"],
+                        opts["high"],
+                        log=opts.get("log", False),
+                    )
+                elif opts["type"] == "categorical":
+                    suggested_params[ck] = trial.suggest_categorical(
+                        ck, opts["choices"]
+                    )
+
     return suggested_params
 
 
@@ -188,8 +211,10 @@ def training_run(
     n_params = train_params.shape[1] if train_params is not None else 0
 
     for key, val in suggested_params.items():
+        # Get activation function module
         if "activation" in key:
             suggested_params[key] = get_activation_function(val)
+        # Turn strungs into bools
         if "ode_tanh_reg" in key:
             suggested_params[key] = bool(strtobool(val))
 

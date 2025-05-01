@@ -3,18 +3,17 @@ import optuna
 import torch
 from schedulefree import AdamWScheduleFree
 from torch import nn
+
 # from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from codes.surrogates.AbstractSurrogate.surrogates import \
-    AbstractSurrogateModel
-from codes.surrogates.LatentNeuralODE.latent_neural_ode import \
-    Decoder as NewDecoder
-from codes.surrogates.LatentNeuralODE.latent_neural_ode import \
-    Encoder as NewEncoder
+from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
+from codes.surrogates.LatentNeuralODE.latent_neural_ode import Decoder as NewDecoder
+from codes.surrogates.LatentNeuralODE.latent_neural_ode import Encoder as NewEncoder
 from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
-from codes.surrogates.LatentPolynomial.latent_poly_config import \
-    LatentPolynomialBaseConfig
+from codes.surrogates.LatentPolynomial.latent_poly_config import (
+    LatentPolynomialBaseConfig,
+)
 from codes.utils import time_execution, worker_init_fn
 
 
@@ -56,7 +55,7 @@ class LatentPoly(AbstractSurrogateModel):
             ]
             self.config.width_list = coder_layers_old
         # # Update the number of input features based on whether we encode parameters.
-        # if self.config.coefficient_network:
+        # if self.config.coeff_network:
         #     self.config.in_features = (
         #         n_quantities  # No parameter concatenation to the encoder input.
         #     )
@@ -282,7 +281,7 @@ class PolynomialModelWrapper(nn.Module):
     """
     Wraps the Encoder, Decoder, and learnable Polynomial into a single model.
 
-    If config.coefficient_network is True, fixed parameters are not concatenated to the encoder input;
+    If config.coeff_network is True, fixed parameters are not concatenated to the encoder input;
     instead, a coefficient network predicts the polynomial coefficients based on the parameters.
     If False, fixed parameters are concatenated to the encoder input and the polynomial coefficients are learned directly.
 
@@ -293,7 +292,7 @@ class PolynomialModelWrapper(nn.Module):
         encoder (Module): The encoder network.
         decoder (Module): The decoder network.
         poly (Polynomial): The polynomial module.
-        coefficient_net (Module | None): The coefficient network (if config.coefficient_network is True).
+        coefficient_net (Module | None): The coefficient network (if config.coeff_network is True).
     """
 
     def __init__(self, config, device, n_parameters: int = 0):
@@ -303,8 +302,8 @@ class PolynomialModelWrapper(nn.Module):
         self.device = device
         latent_dim = self.config.latent_features
 
-        # Use coefficient_network as the single switch.
-        if self.config.coefficient_network and n_parameters > 0:
+        # Use coeff_network as the single switch.
+        if self.config.coeff_network and n_parameters > 0:
             encoder_in_features = self.config.n_quantities  # remains n_quantities
         else:
             # When not using the coefficient network, the encoder gets concatenated parameters.
@@ -321,7 +320,7 @@ class PolynomialModelWrapper(nn.Module):
             # When parameters are concatenated, adjust the output features accordingly.
             # out_feats = (
             #     self.config.in_features
-            #     if not self.config.coefficient_network
+            #     if not self.config.coeff_network
             #     else self.config.in_features
             # )
             self.decoder = OldDecoder(
@@ -340,7 +339,7 @@ class PolynomialModelWrapper(nn.Module):
             ).to(self.device)
             # out_feats = (
             #     self.config.in_features
-            #     if not self.config.coefficient_network
+            #     if not self.config.coeff_network
             #     else self.config.in_features
             # )
             self.decoder = NewDecoder(
@@ -354,8 +353,8 @@ class PolynomialModelWrapper(nn.Module):
         self.poly = Polynomial(degree=self.config.degree, dimension=latent_dim).to(
             self.device
         )
-        # Instantiate coefficient network only if coefficient_network is True and parameters exist.
-        if self.config.coefficient_network and n_parameters > 0:
+        # Instantiate coefficient network only if coeff_network is True and parameters exist.
+        if self.config.coeff_network and n_parameters > 0:
             self.coefficient_net = nn.Sequential(
                 nn.Linear(n_parameters, self.config.coeff_width, dtype=torch.float64),
                 self.config.activation,
@@ -393,7 +392,7 @@ class PolynomialModelWrapper(nn.Module):
         """
         current_batch_size = x.shape[0]
         x0 = x[:, 0, :]
-        if self.config.coefficient_network and params is not None:
+        if self.config.coeff_network and params is not None:
             # Scheme using coefficient network:
             encoder_input = x0  # Encoder gets only the raw data.
         else:
@@ -404,7 +403,7 @@ class PolynomialModelWrapper(nn.Module):
                 encoder_input = x0
         z0 = self.encoder(encoder_input)
         t = t_range.unsqueeze(0).repeat(current_batch_size, 1)
-        if self.config.coefficient_network and (params is not None):
+        if self.config.coeff_network and (params is not None):
             # Use the coefficient network to predict polynomial coefficients.
             # Compute time basis using the internal _prepare_t method.
             B = self.poly._prepare_t(t)  # shape (batch, timesteps, degree)
@@ -456,7 +455,7 @@ class PolynomialModelWrapper(nn.Module):
         """
         x0 = x_true[:, 0, :]  # [batch, n_quantities]
         # decide what to feed into the encoder:
-        if params is None or self.config.coefficient_network:
+        if params is None or self.config.coeff_network:
             enc_in = x0
         else:
             enc_in = torch.cat([x0, params], dim=1)
