@@ -1,5 +1,5 @@
 # Global settings for the benchmark
-training_id: "parametrictest2"
+training_id: "parametrictest1"
 surrogates: ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
 batch_size: [8192, 8192, 256, 256]
 epochs: [50, 50, 10, 10]
@@ -12,7 +12,7 @@ dataset:
   tolerance: 1e-30
   subset_factor: 1
   log_timesteps: True
-devices: ["cuda:0"] # , "cuda:5", "cuda:6", "cuda:7"] # ["cuda:2", "cuda:3", "cuda:4", "cuda:5", "cuda:6", "cuda:7", "cuda:8", "cuda:9"]
+devices: ["cuda:4"] # , "cuda:5", "cuda:6", "cuda:7"] # ["cuda:2", "cuda:3", "cuda:4", "cuda:5", "cuda:6", "cuda:7", "cuda:8", "cuda:9"]
 seed: 42
 verbose: True
 

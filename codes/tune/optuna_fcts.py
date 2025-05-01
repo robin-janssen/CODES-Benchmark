@@ -154,14 +154,6 @@ def training_run(
     """
 
     download_data(config["dataset"]["name"], verbose=False)
-    # (train_data, test_data, val_data), _, timesteps, _, data_info, _ = (
-    #     check_and_load_data(
-    #         config["dataset"]["name"],
-    #         verbose=False,
-    #         log=config["dataset"]["log10_transform"],
-    #         normalisation_mode=config["dataset"]["normalise"],
-    #     )
-    # )
 
     # Load full data and parameters
     (

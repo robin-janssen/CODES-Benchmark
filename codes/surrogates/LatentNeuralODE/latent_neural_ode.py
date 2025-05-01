@@ -392,100 +392,108 @@ class LatentNeuralODE(AbstractSurrogateModel):
 
 class ModelWrapper(torch.nn.Module):
     """
-    Wraps the encoder, decoder, and neural ODE into a single model.
-    Based on config.encode_params:
-      - If True, fixed parameters are concatenated to the encoder input.
-      - If False, the encoder sees only the data; then fixed parameters are concatenated
-        with the encoder output and passed to an ODE network that maps from (latent + params) to latent.
+    Wraps the encoder, decoder, and neural ODE in three distinct modes:
+
+    1. **No parameters** (n_parameters=0)
+       - Encoder: input = state_dim
+       - ODE: latent_dim -> latent_dim (the solver always evolves the latent state)
+       - Decoder: latent_dim -> output dimensions
+
+    2. **encode_params=True**
+       - Encoder: input = state_dim + param_dim
+       - ODE: latent_dim -> latent_dim
+       - Decoder: latent_dim -> output dimensions
+
+    3. **encode_params=False**
+       - Encoder: input = state_dim
+       - Base ODE: (latent_dim + param_dim) -> latent_dim
+       - Wrapped in ODEWithParams so that solver state = latent_dim
+       - Decoder: latent_dim -> output dimensions
     """
 
     def __init__(self, config, n_quantities: int, n_parameters: int = 0):
         super().__init__()
-        self.config = config  # Already a LatentNeuralODEBaseConfig instance.
+        self.config = config
         self.n_parameters = n_parameters
-        latent_dim = self.config.latent_features
-        self.loss_weights = [100.0, 1.0, 1.0, 1.0]
+        latent_dim = config.latent_features
+        self.loss_weights = getattr(config, "loss_weights", [100.0, 1.0, 1.0, 1.0])
 
-        if self.config.encode_params:
-            # Scheme 1: encoder receives data concatenated with parameters.
-            encoder_in_features = n_quantities + n_parameters
-            # ODE operates on latent state of fixed dimension.
-            ode_input_shape = latent_dim
-            decoder_latent_features = latent_dim
+        # --- Build encoder ---
+        if n_parameters == 0:
+            enc_in = n_quantities
+        elif config.encode_params:
+            enc_in = n_quantities + n_parameters
         else:
-            # Scheme 2: encoder receives only data.
-            encoder_in_features = n_quantities
-            # After encoding, we concatenate parameters to form the initial condition for the ODE.
-            # We then pass this through an ODE network that outputs a latent state of dimension latent_dim.
-            ode_input_shape = latent_dim + n_parameters
-            decoder_latent_features = latent_dim
-
+            enc_in = n_quantities
         self.encoder = Encoder(
-            in_features=encoder_in_features,
+            in_features=enc_in,
             latent_features=latent_dim,
-            coder_layers=self.config.coder_layers,
-            coder_width=self.config.coder_width,
-            activation=self.config.activation,
+            coder_layers=config.coder_layers,
+            coder_width=config.coder_width,
+            activation=config.activation,
         )
-        if self.config.encode_params:
-            # ODE network maps latent_dim -> latent_dim.
-            self.ode = ODE(
-                input_shape=ode_input_shape,
-                output_shape=ode_input_shape,
-                activation=self.config.activation,
-                ode_layers=self.config.ode_layers,
-                ode_width=self.config.ode_width,
-                tanh_reg=self.config.ode_tanh_reg,
-            )
-        else:
-            # ODE network maps (latent_dim + n_parameters) -> latent_dim.
-            self.ode = ODE(
-                input_shape=ode_input_shape,
+
+        # --- Build ODE ---
+        if n_parameters == 0 or config.encode_params:
+            # solver state = latent_dim
+            ode_net = ODE(
+                input_shape=latent_dim + (0 if config.encode_params else 0),
                 output_shape=latent_dim,
-                activation=self.config.activation,
-                ode_layers=self.config.ode_layers,
-                ode_width=self.config.ode_width,
-                tanh_reg=self.config.ode_tanh_reg,
+                activation=config.activation,
+                ode_layers=config.ode_layers,
+                ode_width=config.ode_width,
+                tanh_reg=config.ode_tanh_reg,
             )
+            ode_module = ode_net
+        else:
+            # wrap base ODE to inject params: solver sees latent_dim state
+            base_ode = ODE(
+                input_shape=latent_dim + n_parameters,
+                output_shape=latent_dim,
+                activation=config.activation,
+                ode_layers=config.ode_layers,
+                ode_width=config.ode_width,
+                tanh_reg=config.ode_tanh_reg,
+            )
+            ode_module = ODEWithParams(base_ode, n_parameters, latent_dim)
+
+        self.ode = ode_module
+        term = to.ODETerm(self.ode)
+        step = to.Tsit5(term=term)
+        ctrl = to.IntegralController(atol=config.atol, rtol=config.rtol, term=term)
+        self.solver = to.AutoDiffAdjoint(step, ctrl)
+
+        # --- Build decoder ---
         self.decoder = Decoder(
             out_features=n_quantities,
-            latent_features=decoder_latent_features,
-            coder_layers=self.config.coder_layers,
-            coder_width=self.config.coder_width,
-            activation=self.config.activation,
+            latent_features=latent_dim,
+            coder_layers=config.coder_layers,
+            coder_width=config.coder_width,
+            activation=config.activation,
         )
-        term = to.ODETerm(self.ode)
-        step_method = to.Tsit5(term=term)
-        step_size_controller = to.IntegralController(
-            atol=self.config.atol, rtol=self.config.rtol, term=term
-        )
-        self.solver = to.AutoDiffAdjoint(step_method, step_size_controller)
 
-    def forward(self, x0, t_range, params=None):
-        if self.config.encode_params:
-            # In scheme 1, the encoder receives the parameters
-            encoder_in = torch.cat((x0, params), dim=1)
-            z0 = self.encoder(encoder_in)
-            # Integrate as usual.
-            t_eval = t_range.repeat(x0.shape[0], 1)
-            latent_traj = self.solver.solve(
-                to.InitialValueProblem(y0=z0, t_eval=t_eval)
-            ).ys
+    def forward(
+        self, x0: torch.Tensor, t_range: torch.Tensor, params: torch.Tensor = None
+    ):
+        # encode initial state
+        if self.n_parameters > 0 and self.config.encode_params:
+            assert params is not None
+            enc_in = torch.cat([x0, params], dim=1)
         else:
-            # In scheme 2, the encoder sees only data.
-            z0 = self.encoder(x0)
-            # Concatenate fixed parameters to the latent state.
-            if params is not None:
-                z0_cat = torch.cat(
-                    [z0, params], dim=1
-                )  # shape: [batch, latent_dim + n_parameters]
-            else:
-                z0_cat = z0
-            t_eval = t_range.repeat(x0.shape[0], 1)
-            # The ODE network is defined to map (latent_dim + n_parameters) -> latent_dim.
-            latent_traj = self.solver.solve(
-                to.InitialValueProblem(y0=z0_cat, t_eval=t_eval)
-            ).ys
+            enc_in = x0
+        z0 = self.encoder(enc_in)
+
+        # if using closure to inject params
+        if self.n_parameters > 0 and not self.config.encode_params:
+            assert params is not None
+            self.ode.set_params(params)
+
+        # solve dynamics
+        t_eval = t_range.repeat(x0.size(0), 1)
+        sol = self.solver.solve(to.InitialValueProblem(y0=z0, t_eval=t_eval))
+        latent_traj = sol.ys  # [timesteps, batch, latent_dim]
+
+        # decode
         return self.decoder(latent_traj)
 
     def renormalize_loss_weights(self, x_true, x_pred):
@@ -639,6 +647,34 @@ class ODE(torch.nn.Module):
         if self.tanh_reg:
             return self.reg_factor * torch.tanh(output / self.reg_factor)
         return output
+
+
+class ODEWithParams(torch.nn.Module):
+    """
+    Wraps a base ODE module so that parameters are injected as a constant.
+    The solver sees only the latent state y (dim = latent_dim),
+    but ODEWithParams.forward will concatenate y with p to compute dy/dt.
+    """
+
+    def __init__(self, base_ode: torch.nn.Module, n_parameters: int, latent_dim: int):
+        super().__init__()
+        self.base_ode = base_ode
+        self.latent_dim = latent_dim
+        self.n_parameters = n_parameters
+        self.p_const: Optional[torch.Tensor] = None
+
+    def set_params(self, params: torch.Tensor):
+        # params: [batch, n_parameters]
+        self.p_const = params
+
+    def forward(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        # y: [batch, latent_dim]
+        assert self.p_const is not None, "Call set_params() before solving."
+        # concat state with params
+        inp = torch.cat([y, self.p_const], dim=1)  # [batch, latent_dim + n_parameters]
+        # compute derivative of latent only
+        dy = self.base_ode(t, inp)  # [batch, latent_dim]
+        return dy
 
 
 class Encoder(torch.nn.Module):

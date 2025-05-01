@@ -44,4 +44,4 @@ class LatentNeuralODEBaseConfig:
     rtol: float = 1e-6
     atol: float = 1e-6
     learning_rate: float = 1e-3
-    encode_params: bool = True
+    encode_params: bool = False

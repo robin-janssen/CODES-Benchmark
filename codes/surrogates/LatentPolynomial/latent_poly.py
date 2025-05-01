@@ -3,17 +3,18 @@ import optuna
 import torch
 from schedulefree import AdamWScheduleFree
 from torch import nn
-
 # from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
-from codes.surrogates.LatentNeuralODE.latent_neural_ode import Decoder as NewDecoder
-from codes.surrogates.LatentNeuralODE.latent_neural_ode import Encoder as NewEncoder
+from codes.surrogates.AbstractSurrogate.surrogates import \
+    AbstractSurrogateModel
+from codes.surrogates.LatentNeuralODE.latent_neural_ode import \
+    Decoder as NewDecoder
+from codes.surrogates.LatentNeuralODE.latent_neural_ode import \
+    Encoder as NewEncoder
 from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
-from codes.surrogates.LatentPolynomial.latent_poly_config import (
-    LatentPolynomialBaseConfig,
-)
+from codes.surrogates.LatentPolynomial.latent_poly_config import \
+    LatentPolynomialBaseConfig
 from codes.utils import time_execution, worker_init_fn
 
 
@@ -45,6 +46,7 @@ class LatentPoly(AbstractSurrogateModel):
             config=model_config,
         )
         self.config = LatentPolynomialBaseConfig(**self.config)
+        self.config.n_quantities = n_quantities
         # For backward compatibility: if using v1, compute the fixed width list.
         if self.config.model_version == "v1":
             coder_layers_old = [
@@ -53,13 +55,13 @@ class LatentPoly(AbstractSurrogateModel):
                 1 * self.config.layers_factor,
             ]
             self.config.width_list = coder_layers_old
-        # Update the number of input features based on whether we encode parameters.
-        if self.config.coefficient_network:
-            self.config.in_features = (
-                n_quantities  # No parameter concatenation to the encoder input.
-            )
-        else:
-            self.config.in_features = n_quantities + n_parameters
+        # # Update the number of input features based on whether we encode parameters.
+        # if self.config.coefficient_network:
+        #     self.config.in_features = (
+        #         n_quantities  # No parameter concatenation to the encoder input.
+        #     )
+        # else:
+        #     self.config.in_features = n_quantities + n_parameters
         self.model = PolynomialModelWrapper(
             config=self.config, device=self.device, n_parameters=n_parameters
         )
@@ -226,15 +228,16 @@ class LatentPoly(AbstractSurrogateModel):
 
         for epoch in progress_bar:
             for i, batch in enumerate(train_loader):
+                x_true, _, params = batch
                 optimizer.zero_grad()
-                x_pred = self.forward(batch)[0]
-                loss = self.model.total_loss(batch[0], x_pred)
+                x_pred, _ = self.forward(batch)
+                loss = self.model.total_loss(x_true, x_pred, params)
                 loss.backward()
                 optimizer.step()
 
                 if epoch == 10 and i == 0:
                     with torch.no_grad():
-                        self.model.renormalize_loss_weights(batch[0], x_pred)
+                        self.model.renormalize_loss_weights(x_true, x_pred)
 
             if epoch % self.update_epochs == 0:
                 index = epoch // self.update_epochs
@@ -302,10 +305,10 @@ class PolynomialModelWrapper(nn.Module):
 
         # Use coefficient_network as the single switch.
         if self.config.coefficient_network and n_parameters > 0:
-            encoder_in_features = self.config.in_features  # remains n_quantities
+            encoder_in_features = self.config.n_quantities  # remains n_quantities
         else:
             # When not using the coefficient network, the encoder gets concatenated parameters.
-            encoder_in_features = self.config.in_features + n_parameters
+            encoder_in_features = self.config.n_quantities + n_parameters
 
         # Instantiate encoder and decoder according to model_version.
         if self.config.model_version == "v1":
@@ -316,13 +319,13 @@ class PolynomialModelWrapper(nn.Module):
                 activation=self.config.activation,
             ).to(self.device)
             # When parameters are concatenated, adjust the output features accordingly.
-            out_feats = (
-                self.config.in_features
-                if not self.config.coefficient_network
-                else self.config.in_features
-            )
+            # out_feats = (
+            #     self.config.in_features
+            #     if not self.config.coefficient_network
+            #     else self.config.in_features
+            # )
             self.decoder = OldDecoder(
-                out_features=out_feats,
+                out_features=self.config.n_quantities,
                 latent_features=latent_dim,
                 layers_factor=self.config.layers_factor,
                 activation=self.config.activation,
@@ -335,13 +338,13 @@ class PolynomialModelWrapper(nn.Module):
                 coder_width=self.config.coder_width,
                 activation=self.config.activation,
             ).to(self.device)
-            out_feats = (
-                self.config.in_features
-                if not self.config.coefficient_network
-                else self.config.in_features
-            )
+            # out_feats = (
+            #     self.config.in_features
+            #     if not self.config.coefficient_network
+            #     else self.config.in_features
+            # )
             self.decoder = NewDecoder(
-                out_features=out_feats,
+                out_features=self.config.n_quantities,
                 latent_features=latent_dim,
                 coder_layers=self.config.coder_layers,
                 coder_width=self.config.coder_width,
@@ -429,35 +432,37 @@ class PolynomialModelWrapper(nn.Module):
         self.loss_weights[2] = 1 / self.deriv_loss(x_true, x_pred).item()
         self.loss_weights[3] = 1 / self.deriv2_loss(x_true, x_pred).item()
 
-    def total_loss(self, x_true, x_pred):
+    def total_loss(
+        self, x_true: torch.Tensor, x_pred: torch.Tensor, params: torch.Tensor = None
+    ):
         """
-        Compute the total loss as a weighted sum of loss terms.
-
-        Args:
-            x_true (torch.Tensor): Ground truth.
-            x_pred (torch.Tensor): Predictions.
-
-        Returns:
-            torch.Tensor: Total loss.
+        Compute the total loss, passing params into identity term.
         """
         return (
             self.loss_weights[0] * self.l2_loss(x_true, x_pred)
-            + self.loss_weights[1] * self.identity_loss(x_true)
+            + self.loss_weights[1] * self.identity_loss(x_true, params)
             + self.loss_weights[2] * self.deriv_loss(x_true, x_pred)
             + self.loss_weights[3] * self.deriv2_loss(x_true, x_pred)
         )
 
-    def identity_loss(self, x: torch.Tensor):
+    def identity_loss(
+        self, x_true: torch.Tensor, params: torch.Tensor = None
+    ) -> torch.Tensor:
         """
-        Compute the identity loss between inputs and decoded outputs.
-
-        Args:
-            x (torch.Tensor): Input tensor.
-
-        Returns:
-            torch.Tensor: Identity loss.
+        Identity loss on the initial state x0, handling three cases:
+          1. No params: params is None → encode x0 only.
+          2. coeff_network=True: encode x0 only, ignore params here.
+          3. coeff_network=False and params provided: encode [x0, params].
         """
-        return self.l2_loss(x, self.decoder(self.encoder(x)))
+        x0 = x_true[:, 0, :]  # [batch, n_quantities]
+        # decide what to feed into the encoder:
+        if params is None or self.config.coefficient_network:
+            enc_in = x0
+        else:
+            enc_in = torch.cat([x0, params], dim=1)
+        z0 = self.encoder(enc_in)
+        x0_hat = self.decoder(z0)
+        return self.l2_loss(x0, x0_hat)
 
     @classmethod
     def l2_loss(cls, x_true: torch.Tensor, x_pred: torch.Tensor):
