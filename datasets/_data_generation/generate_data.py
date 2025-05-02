@@ -284,9 +284,9 @@ def parse_args() -> ArgumentParser:
     parser = ArgumentParser(
         description="Generate datasets for ODE systems and save them in HDF5 format."
     )
-    parser.add_argument("--num_train", "-tr", type=int, default=140)
-    parser.add_argument("--num_test", "-te", type=int, default=20)
-    parser.add_argument("--num_val", "-va", type=int, default=40)
+    parser.add_argument("--num_train", "-tr", type=int, default=350)
+    parser.add_argument("--num_test", "-te", type=int, default=50)
+    parser.add_argument("--num_val", "-va", type=int, default=100)
     parser.add_argument(
         "--func",
         "-f",
