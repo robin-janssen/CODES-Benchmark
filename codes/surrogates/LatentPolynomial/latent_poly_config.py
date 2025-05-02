@@ -31,5 +31,5 @@ class LatentPolynomialBaseConfig:
     activation: nn.Module = nn.ReLU()
     learning_rate: float = 1e-3
     coeff_network: bool = True
-    coeff_width = 32  # Used only if coeff_network == True
-    coeff_layers = 4  # Used only if coeff_network == True
+    coeff_width: int = 32  # Used only if coeff_network == True
+    coeff_layers: int = 4  # Used only if coeff_network == True

@@ -234,7 +234,7 @@ def run_single_study(config: dict, study_name: str, db_url: str):
     n_jobs = len(config["devices"])
 
     # Calculate the number of warmup trials (10% of total)
-    warmup_trials = max(1, int(n_trials * 0.10))
+    warmup_trials = max(5, int(n_trials * 0.10))
 
     def trial_complete_callback(study_, trial_):
         # Update progress bar for any finished trial (complete or pruned)
@@ -262,7 +262,7 @@ def run_single_study(config: dict, study_name: str, db_url: str):
                     trial_durations
                 )
                 warmup_std = math.sqrt(variance)
-                computed_threshold = warmup_mean + 2 * warmup_std
+                computed_threshold = warmup_mean + 3 * warmup_std
                 study_.set_user_attr("runtime_threshold", computed_threshold)
                 print(
                     f"\n[Study] Warmup complete. Runtime threshold set to {computed_threshold:.1f}s "
@@ -381,7 +381,7 @@ def parse_arguments():
     parser.add_argument(
         "--study_name",
         type=str,
-        default="primordialtest5",
+        default="lvparamstest3",
         help="Study identifier.",
     )
     return parser.parse_args()

@@ -496,7 +496,7 @@ class ModelWrapper(torch.nn.Module):
         # decode
         return self.decoder(latent_traj)
 
-    def renormalize_loss_weights(self, x_true, x_pred):
+    def renormalize_loss_weights(self, x_true, x_pred, params):
         """
         Renormalize the loss weights based on the current loss values so that they are accurately
         weighted based on the provided weights. To be used once after a short burn in phase.
@@ -506,7 +506,7 @@ class ModelWrapper(torch.nn.Module):
             x_pred (torch.Tensor): The predicted trajectory
         """
         self.loss_weights[0] = 1 / self.l2_loss(x_true, x_pred).item() * 100
-        self.loss_weights[1] = 1 / self.identity_loss(x_true).item()
+        self.loss_weights[1] = 1 / self.identity_loss(x_true, params).item()
         self.loss_weights[2] = 1 / self.deriv_loss(x_true, x_pred).item()
         self.loss_weights[3] = 1 / self.deriv2_loss(x_true, x_pred).item()
 

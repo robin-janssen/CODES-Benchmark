@@ -1660,7 +1660,7 @@ FUNCS: Dict[str, Dict[str, Any]] = {
                 (1, 10.0),
             ],
             "params_space": "linear",
-            "params_bounds": [(0.0, 0.5)],
+            "params_bounds": [(0.0, 1)],
         },
         # "solver_options": {"method": "BDF", "atol": 1e-8, "rtol": 1e-8},
     },

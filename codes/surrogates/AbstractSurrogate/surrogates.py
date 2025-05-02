@@ -456,7 +456,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             optuna.TrialPruned: If the projected runtime exceeds the threshold.
         """
         # Define warmup period based on 10% of total epochs.
-        warmup_epochs = max(1, int(total_epochs * 0.10))
+        warmup_epochs = max(50, int(total_epochs * 0.02))
         if current_epoch < warmup_epochs:
             # Do not attempt to prune before the warmup period is complete.
             # print(
