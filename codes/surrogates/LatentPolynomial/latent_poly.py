@@ -236,7 +236,7 @@ class LatentPoly(AbstractSurrogateModel):
 
                 if epoch == 10 and i == 0:
                     with torch.no_grad():
-                        self.model.renormalize_loss_weights(x_true, x_pred)
+                        self.model.renormalize_loss_weights(x_true, x_pred, params)
 
             if epoch % self.update_epochs == 0:
                 index = epoch // self.update_epochs
@@ -418,7 +418,7 @@ class PolynomialModelWrapper(nn.Module):
         z_pred = poly_out + z0.unsqueeze(1)
         return self.decoder(z_pred)
 
-    def renormalize_loss_weights(self, x_true, x_pred):
+    def renormalize_loss_weights(self, x_true, x_pred, params=None):
         """
         Renormalize loss weights based on current loss values.
 
@@ -427,7 +427,7 @@ class PolynomialModelWrapper(nn.Module):
             x_pred (torch.Tensor): Model predictions.
         """
         self.loss_weights[0] = 1 / self.l2_loss(x_true, x_pred).item() * 100
-        self.loss_weights[1] = 1 / self.identity_loss(x_true).item()
+        self.loss_weights[1] = 1 / self.identity_loss(x_true, params).item()
         self.loss_weights[2] = 1 / self.deriv_loss(x_true, x_pred).item()
         self.loss_weights[3] = 1 / self.deriv2_loss(x_true, x_pred).item()
 
