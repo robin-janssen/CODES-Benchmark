@@ -30,6 +30,6 @@ class LatentPolynomialBaseConfig:
     coder_width: int = 32  # Used in v2 only.
     activation: nn.Module = nn.ReLU()
     learning_rate: float = 1e-3
-    coeff_network: bool = True
+    coeff_network: bool = False
     coeff_width: int = 32  # Used only if coeff_network == True
     coeff_layers: int = 4  # Used only if coeff_network == True

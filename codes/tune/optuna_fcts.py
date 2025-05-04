@@ -59,57 +59,65 @@ def get_activation_function(name: str) -> nn.Module:
 
 def make_optuna_params(trial: optuna.Trial, optuna_params: dict) -> dict:
     """
-    Make Optuna suggested parameters from optuna_config.yaml,
-    handling conditional sampling of coeff_width and coeff_layers
-    based on the value of coeff_network.
+    Suggest hyperparameters from optuna_params, sampling coeff_width/layers
+    only if coeff_network == True, converting any "True"/"False" strings into bool,
+    and mapping any activation names into nn.Modules.
     """
-    suggested_params = {}
+    suggested = {}
 
-    #  Sample all params except the conditional ones
-    conditional_keys = {"coeff_width", "coeff_layers", "coeff_network"}
+    switch_key = "coeff_network"
+    children = {"coeff_width", "coeff_layers"}
+
+    # 1) Sample all independent params (skip switch & its children)
+    skip = children | {switch_key}
     for name, opts in optuna_params.items():
-        if name in conditional_keys:
+        if name in skip:
             continue
         if opts["type"] == "int":
-            suggested_params[name] = trial.suggest_int(name, opts["low"], opts["high"])
+            suggested[name] = trial.suggest_int(name, opts["low"], opts["high"])
         elif opts["type"] == "float":
-            suggested_params[name] = trial.suggest_float(
-                name,
-                opts["low"],
-                opts["high"],
-                log=opts.get("log", False),
+            suggested[name] = trial.suggest_float(
+                name, opts["low"], opts["high"], log=opts.get("log", False)
             )
-        elif opts["type"] == "categorical":
-            suggested_params[name] = trial.suggest_categorical(name, opts["choices"])
+        else:  # categorical
+            suggested[name] = trial.suggest_categorical(name, opts["choices"])
 
-    # Handle conditional parameters
-    if "coeff_network" in optuna_params:
-        opts = optuna_params["coeff_network"]
-        suggested_params["coeff_network"] = trial.suggest_categorical(
-            "coeff_network", opts["choices"]
-        )
+    # 2) Sample the coeff_network switch
+    if switch_key in optuna_params:
+        opts = optuna_params[switch_key]
+        raw = trial.suggest_categorical(switch_key, opts["choices"])
+        # convert string → bool if needed
+        if isinstance(raw, str) and raw.lower() in ("true", "false"):
+            suggested[switch_key] = bool(strtobool(raw))
+        else:
+            suggested[switch_key] = raw
 
-    if suggested_params.get("coeff_network", False):
-        for ck in ["coeff_width", "coeff_layers"]:
-            if ck in optuna_params:
-                opts = optuna_params[ck]
+    # 3) Conditionally sample coeff_width & coeff_layers
+    if suggested.get(switch_key, False):
+        for child in children:
+            if child in optuna_params:
+                opts = optuna_params[child]
                 if opts["type"] == "int":
-                    suggested_params[ck] = trial.suggest_int(
-                        ck, opts["low"], opts["high"]
+                    suggested[child] = trial.suggest_int(
+                        child, opts["low"], opts["high"]
                     )
                 elif opts["type"] == "float":
-                    suggested_params[ck] = trial.suggest_float(
-                        ck,
-                        opts["low"],
-                        opts["high"],
-                        log=opts.get("log", False),
+                    suggested[child] = trial.suggest_float(
+                        child, opts["low"], opts["high"], log=opts.get("log", False)
                     )
-                elif opts["type"] == "categorical":
-                    suggested_params[ck] = trial.suggest_categorical(
-                        ck, opts["choices"]
-                    )
+                else:
+                    suggested[child] = trial.suggest_categorical(child, opts["choices"])
 
-    return suggested_params
+    # 4) Post‐process all values: booleans and activation modules
+    for name, val in list(suggested.items()):
+        # a) convert any remaining "True"/"False" strings into bool
+        if isinstance(val, str) and val.lower() in ("true", "false"):
+            suggested[name] = bool(strtobool(val))
+        # b) map activation names to nn.Modules
+        if "activation" in name:
+            suggested[name] = get_activation_function(suggested[name])
+
+    return suggested
 
 
 def create_objective(
@@ -209,14 +217,6 @@ def training_run(
     surr_name = config["surrogate"]["name"]
     suggested_params = make_optuna_params(trial, config["optuna_params"])
     n_params = train_params.shape[1] if train_params is not None else 0
-
-    for key, val in suggested_params.items():
-        # Get activation function module
-        if "activation" in key:
-            suggested_params[key] = get_activation_function(val)
-        # Turn strungs into bools
-        if "ode_tanh_reg" in key:
-            suggested_params[key] = bool(strtobool(val))
 
     n_timesteps = train_data.shape[1]
     n_quantities = train_data.shape[2]

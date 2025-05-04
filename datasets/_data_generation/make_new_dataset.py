@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     # Define a split tuple for training, testing, and validation data.
     # These values must sum to 1. Here we use 70% for training, 20% for testing, and 10% for validation.
-    split = (0.7, 0.2, 0.1)
+    split = (0.7, 0.1, 0.2)
 
     # ------------------------------
     # Optional: Define Labels
@@ -65,10 +65,9 @@ if __name__ == "__main__":
         "dummy_ode_dataset",
         data=full_dataset,
         params=full_params,  # These parameters are optional and not required for the benchmark.
-        split=split,
         timesteps=timesteps,
         labels=labels,
-        split=(0.7, 0.1, 0.2),
+        split=split,
     )
 
     print("Dataset created successfully!")

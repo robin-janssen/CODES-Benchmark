@@ -514,7 +514,8 @@ def create_hdf5_dataset(
         f.attrs["n_val_samples"] = val_data.shape[0]
         f.attrs["n_timesteps"] = train_data.shape[1]
         f.attrs["n_quantities"] = train_data.shape[2]
-        f.attrs["labels"] = labels
+        if labels is not None:
+            f.attrs["labels"] = labels
         if train_params is not None:
             f.attrs["n_parameters"] = train_params.shape[1]
 
