@@ -663,6 +663,7 @@ def print_data_info(data_path):
         train_samples = f.attrs["n_train_samples"]
         test_samples = f.attrs["n_test_samples"]
         val_samples = f.attrs["n_val_samples"]
+        labels = f.attrs.get("labels", None)
         total_samples = train_samples + test_samples + val_samples
         if "n_parameters" in f.attrs:
             n_parameters = f.attrs["n_parameters"]
@@ -676,3 +677,4 @@ def print_data_info(data_path):
         print(
             f" - Total of {total_samples} samples, train/test/val split is {train_samples}/{test_samples}/{val_samples}."
         )
+        print(f" - Labels: {labels if labels is not None else 'No labels provided'}")

@@ -1,10 +1,10 @@
 # Global settings for the benchmark
-training_id: "parametrictest1"
-surrogates: ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
-batch_size: [8192, 8192, 256, 256]
-epochs: [50, 50, 10, 10]
+training_id: "lv_params2"
+surrogates:  ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
+batch_size: [4096, 4096, 256, 256]
+epochs: [4096, 4096, 4096, 4096]
 dataset: 
-  name: "lv_parametric"
+  name: "lv_parametric_no_params"
   log10_transform: True
   log10_transform_params: False
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
@@ -12,7 +12,7 @@ dataset:
   tolerance: 1e-30
   subset_factor: 1
   log_timesteps: True
-devices: ["cuda:4"] # , "cuda:5", "cuda:6", "cuda:7"] # ["cuda:2", "cuda:3", "cuda:4", "cuda:5", "cuda:6", "cuda:7", "cuda:8", "cuda:9"]
+devices: ["cuda:4", "cuda:5", "cuda:6", "cuda:9"]
 seed: 42
 verbose: True
 
@@ -34,10 +34,8 @@ uncertainty:
   ensemble_size: 5  # Number of models for deep ensemble
 
 # Evaluations during benchmark
-losses: False
-gradients: False
-timing: False
-compute: False
-compare: False # Whether to compare the surrogates
-
-
+losses: True
+gradients: True
+timing: True
+compute: True
+compare: True # Whether to compare the surrogates

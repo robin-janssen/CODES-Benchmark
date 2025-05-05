@@ -33,8 +33,9 @@ def main():
     Main function to analyse the dataset. It checks the dataset and loads the data.
     """
     datasets = [
-        "lv_parametric",
+        "primordial_parametric",
         "primordial",
+        "lv_parametric",
         "simple_reaction",
         "osutest2",
         "coupled_oscillators",
