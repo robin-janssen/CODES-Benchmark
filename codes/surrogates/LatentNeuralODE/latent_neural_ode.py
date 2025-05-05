@@ -535,8 +535,7 @@ class ModelWrapper(torch.nn.Module):
         """
         # only reconstruct the initial state
         x0 = x_true[:, 0, :]
-        if self.config.encode_params:
-            assert params is not None, "encode_params=True requires params"
+        if self.config.encode_params and params is not None:
             enc_input = torch.cat([x0, params], dim=1)
         else:
             enc_input = x0

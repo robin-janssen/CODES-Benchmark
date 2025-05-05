@@ -187,15 +187,16 @@ def initialize_postgres(config, study_folder_name):
 
 def run_single_study(config: dict, study_name: str, db_url: str):
     """
-    Run a single Optuna study.
+    Run a single Optuna study with a custom runtime-based pruning threshold
+    computed from the first warmup_trials by trial number (start order).
     """
     if not config.get("optuna_logging", False):
         optuna.logging.set_verbosity(optuna.logging.WARNING)
 
+    # Create sampler and pruner as before
     if config["multi_objective"]:
         sampler = optuna.samplers.NSGAIISampler(seed=config["seed"])
         pruner = optuna.pruners.NopPruner()
-
         study = optuna.create_study(
             study_name=study_name,
             directions=["minimize", "minimize"],
@@ -206,15 +207,15 @@ def run_single_study(config: dict, study_name: str, db_url: str):
         )
     else:
         sampler = optuna.samplers.TPESampler(seed=config["seed"])
-
-        if config["prune"]:
-            epochs = config["epochs"]
-            pruner = optuna.pruners.HyperbandPruner(
-                min_resource=epochs // 8, max_resource=epochs, reduction_factor=2
+        pruner = (
+            optuna.pruners.HyperbandPruner(
+                min_resource=config["epochs"] // 8,
+                max_resource=config["epochs"],
+                reduction_factor=2,
             )
-        else:
-            pruner = optuna.pruners.NopPruner()
-
+            if config.get("prune", False)
+            else optuna.pruners.NopPruner()
+        )
         study = optuna.create_study(
             study_name=study_name,
             direction="minimize",
@@ -224,51 +225,65 @@ def run_single_study(config: dict, study_name: str, db_url: str):
             load_if_exists=True,
         )
 
+    # Prepare device queue
     device_queue = queue.Queue()
     for dev in config["devices"]:
         device_queue.put(dev)
 
     objective_fn = create_objective(config, study_name, device_queue)
     n_trials = config["n_trials"]
-    trial_durations = []
     n_jobs = len(config["devices"])
 
-    # Calculate the number of warmup trials (10% of total)
+    # Number of initial trials by start order for warmup
     warmup_trials = max(5, int(n_trials * 0.10))
 
-    def trial_complete_callback(study_, trial_):
+    # Track all completed durations for ETA
+    all_durations: list[float] = []
+    # Track durations of initial warmup trials (trial.number < warmup_trials)
+    init_durations: list[float] = []
+
+    def trial_complete_callback(study_: optuna.Study, trial_: optuna.trial.FrozenTrial):
         # Update progress bar for any finished trial (complete or pruned)
         if trial_.state in (TrialState.COMPLETE, TrialState.PRUNED):
             trial_pbar.update(1)
 
-        # For a complete trial, record its duration and update ETA info.
-        if trial_.state == TrialState.COMPLETE and trial_.datetime_start:
-            duration = time.time() - trial_.datetime_start.timestamp()
-            trial_durations.append(duration)
-            avg_duration = sum(trial_durations) / len(trial_durations)
-            remaining_trials = n_trials - len(trial_durations)
-            eta_seconds = (avg_duration * remaining_trials) / n_jobs
-            postfix = f"ETA: {eta_seconds / 60:.1f}m, Avg: {avg_duration:.1f}s, Last: {duration:.1f}s"
-            trial_pbar.set_postfix_str(postfix)
+        # Only handle COMPLETE trials for timing
+        if trial_.state != TrialState.COMPLETE or not trial_.datetime_start:
+            return
 
-            # Once enough warmup trials are complete, compute mean and std,
-            # and then set the threshold to warmup_mean + 2 * warmup_std.
+        # Compute duration
+        duration = time.time() - trial_.datetime_start.timestamp()
+        # Record for ETA
+        all_durations.append(duration)
+        avg_duration = sum(all_durations) / len(all_durations)
+        remaining = n_trials - len(all_durations)
+        eta = (avg_duration * remaining) / n_jobs
+        postfix = (
+            f"ETA: {eta / 60:.1f}m, Avg: {avg_duration:.1f}s, Last: {duration:.1f}s"
+        )
+        trial_pbar.set_postfix_str(postfix)
+
+        # If this trial is within the first warmup_trials by start (trial.number)
+        if trial_.number < warmup_trials:
+            init_durations.append(duration)
+            # Once we've collected all warmup durations, set threshold
             if (
-                len(trial_durations) >= warmup_trials
+                len(init_durations) == warmup_trials
                 and "runtime_threshold" not in study_.user_attrs
             ):
-                warmup_mean = avg_duration
-                variance = sum((d - warmup_mean) ** 2 for d in trial_durations) / len(
-                    trial_durations
+                mean_init = sum(init_durations) / len(init_durations)
+                var = sum((d - mean_init) ** 2 for d in init_durations) / len(
+                    init_durations
                 )
-                warmup_std = math.sqrt(variance)
-                computed_threshold = warmup_mean + 3 * warmup_std
-                study_.set_user_attr("runtime_threshold", computed_threshold)
+                std_init = math.sqrt(var)
+                threshold = mean_init + 2 * std_init
+                study_.set_user_attr("runtime_threshold", threshold)
                 print(
-                    f"\n[Study] Warmup complete. Runtime threshold set to {computed_threshold:.1f}s "
-                    f"(warmup mean = {warmup_mean:.1f}s, std = {warmup_std:.1f}s) over {len(trial_durations)} warmup trials."
+                    f"\n[Study] Warmup complete. Runtime threshold set to {threshold:.1f}s "
+                    f"(mean = {mean_init:.1f}s, std = {std_init:.1f}s) over {warmup_trials} trials."
                 )
 
+    # Download dataset once
     download_data(config["dataset"]["name"])
 
     with tqdm(
