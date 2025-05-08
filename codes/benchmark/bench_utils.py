@@ -295,7 +295,7 @@ def measure_memory_footprint(model: torch.nn.Module, inputs: tuple) -> dict:
 
     # Prepare inputs: move them to the target device
     if isinstance(inputs, (list, tuple)):
-        inputs = tuple(i.to(device) for i in inputs)
+        inputs = tuple((i.to(device) if i is not None else i) for i in inputs)
     else:
         inputs = inputs.to(device)
 

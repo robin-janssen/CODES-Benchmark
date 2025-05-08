@@ -1,20 +1,20 @@
 # Global settings for the benchmark
-training_id: "lv_params2"
-surrogates:  ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
-batch_size: [4096, 4096, 256, 256]
-epochs: [4096, 4096, 4096, 4096]
+training_id: "primordial_params1"
+surrogates: ["MultiONet", "FullyConnected", "LatentPoly"] # ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
+batch_size: [8192, 8192, 512] # [8192, 8192, 512, 512]
+epochs: [15000, 15000, 15000] # [15000, 15000, 15000, 15000]
 dataset: 
-  name: "lv_parametric_no_params"
+  name: "primordial_parametric"
   log10_transform: True
   log10_transform_params: False
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
-  tolerance: 1e-30
+  tolerance: 1e-15
   subset_factor: 1
   log_timesteps: True
-devices: ["cuda:4", "cuda:5", "cuda:6", "cuda:9"]
+devices: ["cuda:3"]
 seed: 42
-verbose: True
+verbose: False
 
 # Models to train
 interpolation: 

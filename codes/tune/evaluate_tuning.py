@@ -61,7 +61,8 @@ def plot_losses(
             maxs.append(vals.max())
     ymin = min(mins) if mins else 1e-8
     ymax = max(maxs) if maxs else 1.0
-    colors = plt.cm.magma(np.linspace(0.15, 0.85, len(loss_histories)))
+    # colors = plt.cm.magma(np.linspace(0.15, 0.85, len(loss_histories)))
+    colors = plt.cm.tab10(np.linspace(0, 1, len(loss_histories)))
 
     plt.figure(figsize=(6, 4))
     for loss, lab in zip(loss_histories, labels):
