@@ -9,6 +9,7 @@ codes.tune.evaluate\_tuning
    .. autosummary::
    
       evaluate_tuning
+      get_best_trials
       load_loss_history
       main
       parse_args

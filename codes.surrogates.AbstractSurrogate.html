@@ -374,6 +374,7 @@
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.register"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.register()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.save"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.save()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.setup_progress_bar"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.setup_progress_bar()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.time_pruning"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.time_pruning()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -400,6 +401,7 @@
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.register"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.register()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.save"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.save()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.setup_progress_bar"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.setup_progress_bar()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.time_pruning"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.time_pruning()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -424,7 +426,7 @@
 <span id="codes-surrogates-abstractsurrogate-surrogates-module"></span><h2>codes.surrogates.AbstractSurrogate.surrogates module<a class="headerlink" href="#module-codes.surrogates.AbstractSurrogate.surrogates" title="Link to this heading">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.AbstractSurrogate.surrogates.</span></span><span class="sig-name descname"><span class="pre">AbstractSurrogateModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.AbstractSurrogate.surrogates.</span></span><span class="sig-name descname"><span class="pre">AbstractSurrogateModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
 <p>Abstract base class for surrogate models. This class implements the basic
 structure of a surrogate model and defines the methods that need to be
@@ -604,7 +606,7 @@ Evaluates the model on the given data loader.</p>
 <dd><p>model_name: str,
 subfolder: str,
 training_id: str,
-data_params: dict,</p>
+data_info: dict,</p>
 </dd></dl>
 
 <dl class="py method">
@@ -784,7 +786,7 @@ return the DataLoader objects for the training, testing, and validation data.</p
 <li><p><strong>model_name</strong> (<em>str</em>) – The name of the model.</p></li>
 <li><p><strong>subfolder</strong> (<em>str</em>) – The subfolder to save the model in.</p></li>
 <li><p><strong>training_id</strong> (<em>str</em>) – The training identifier.</p></li>
-<li><p><strong>data_params</strong> (<em>dict</em>) – The data parameters.</p></li>
+<li><p><strong>data_info</strong> (<em>dict</em>) – The data parameters.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -814,6 +816,31 @@ return the DataLoader objects for the training, testing, and validation data.</p
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.time_pruning">
+<span class="sig-name descname"><span class="pre">time_pruning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_epochs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.time_pruning" title="Link to this definition">#</a></dt>
+<dd><p>Determine whether a trial should be pruned based on projected runtime,
+but only after a warmup period (10% of the total epochs).</p>
+<p>Warmup: Do not prune if current_epoch is less than warmup_epochs.
+After warmup, compute the average epoch time, extrapolate the total runtime,
+and retrieve the threshold (runtime_threshold) from the study’s user attributes.
+If the projected runtime exceeds the threshold, raise an optuna.TrialPruned exception.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>current_epoch</strong> (<em>int</em>) – The current epoch count.</p></li>
+<li><p><strong>total_epochs</strong> (<em>int</em>) – The planned total number of epochs.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>optuna.TrialPruned</strong> – If the projected runtime exceeds the threshold.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -821,7 +848,7 @@ return the DataLoader objects for the training, testing, and validation data.</p
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-codes.surrogates.AbstractSurrogate" title="Link to this heading">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogate.AbstractSurrogateModel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.AbstractSurrogate.</span></span><span class="sig-name descname"><span class="pre">AbstractSurrogateModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.AbstractSurrogate.</span></span><span class="sig-name descname"><span class="pre">AbstractSurrogateModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
 <p>Abstract base class for surrogate models. This class implements the basic
 structure of a surrogate model and defines the methods that need to be
@@ -1001,7 +1028,7 @@ Evaluates the model on the given data loader.</p>
 <dd><p>model_name: str,
 subfolder: str,
 training_id: str,
-data_params: dict,</p>
+data_info: dict,</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1181,7 +1208,7 @@ return the DataLoader objects for the training, testing, and validation data.</p
 <li><p><strong>model_name</strong> (<em>str</em>) – The name of the model.</p></li>
 <li><p><strong>subfolder</strong> (<em>str</em>) – The subfolder to save the model in.</p></li>
 <li><p><strong>training_id</strong> (<em>str</em>) – The training identifier.</p></li>
-<li><p><strong>data_params</strong> (<em>dict</em>) – The data parameters.</p></li>
+<li><p><strong>data_info</strong> (<em>dict</em>) – The data parameters.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -1207,6 +1234,31 @@ return the DataLoader objects for the training, testing, and validation data.</p
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>tqdm</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.time_pruning">
+<span class="sig-name descname"><span class="pre">time_pruning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_epochs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.time_pruning" title="Link to this definition">#</a></dt>
+<dd><p>Determine whether a trial should be pruned based on projected runtime,
+but only after a warmup period (10% of the total epochs).</p>
+<p>Warmup: Do not prune if current_epoch is less than warmup_epochs.
+After warmup, compute the average epoch time, extrapolate the total runtime,
+and retrieve the threshold (runtime_threshold) from the study’s user attributes.
+If the projected runtime exceeds the threshold, raise an optuna.TrialPruned exception.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>current_epoch</strong> (<em>int</em>) – The current epoch count.</p></li>
+<li><p><strong>total_epochs</strong> (<em>int</em>) – The planned total number of epochs.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>optuna.TrialPruned</strong> – If the projected runtime exceeds the threshold.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1267,6 +1319,7 @@ return the DataLoader objects for the training, testing, and validation data.</p
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.register"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.register()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.save"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.save()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.setup_progress_bar"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.setup_progress_bar()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel.time_pruning"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.time_pruning()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -1293,6 +1346,7 @@ return the DataLoader objects for the training, testing, and validation data.</p
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.register"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.register()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.save"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.save()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.setup_progress_bar"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.setup_progress_bar()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.time_pruning"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.time_pruning()</span></code></a></li>
 </ul>
 </li>
 </ul>

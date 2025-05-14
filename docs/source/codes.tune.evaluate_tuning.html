@@ -358,20 +358,23 @@
 <p class="rubric">Functions</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_tuning.evaluate_tuning" title="codes.tune.evaluate_tuning.evaluate_tuning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_tuning</span></code></a>(study_name)</p></td>
-<td><p>Evaluate the tuning step by generating loss plots for each surrogate model.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_tuning.evaluate_tuning" title="codes.tune.evaluate_tuning.evaluate_tuning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_tuning</span></code></a>(study_prefix[, top_n])</p></td>
+<td><p>For all surrogate studies named '&lt;study_prefix&gt;_&lt;surrogate&gt;', plot the top_n test-loss trajectories.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_tuning.load_loss_history" title="codes.tune.evaluate_tuning.load_loss_history"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_loss_history</span></code></a>(model_path)</p></td>
-<td><p>Load loss histories from a saved model file.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_tuning.get_best_trials" title="codes.tune.evaluate_tuning.get_best_trials"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_best_trials</span></code></a>(study, top_n)</p></td>
+<td><p>Return trial numbers of best 'top_n' trials.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_tuning.main" title="codes.tune.evaluate_tuning.main"><code class="xref py py-obj docutils literal notranslate"><span class="pre">main</span></code></a>()</p></td>
-<td><p>Main function to evaluate tuning.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_tuning.load_loss_history" title="codes.tune.evaluate_tuning.load_loss_history"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_loss_history</span></code></a>(model_path)</p></td>
+<td><p>Load loss histories from a saved model file (.pth).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_tuning.parse_args" title="codes.tune.evaluate_tuning.parse_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_args</span></code></a>()</p></td>
-<td><p>Parse command-line arguments.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_tuning.main" title="codes.tune.evaluate_tuning.main"><code class="xref py py-obj docutils literal notranslate"><span class="pre">main</span></code></a>()</p></td>
+<td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_tuning.plot_losses" title="codes.tune.evaluate_tuning.plot_losses"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_losses</span></code></a>(loss_histories, epochs, labels)</p></td>
-<td><p>Plot the loss trajectories for multiple models using their actual lengths.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_tuning.parse_args" title="codes.tune.evaluate_tuning.parse_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_args</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.evaluate_tuning.plot_losses" title="codes.tune.evaluate_tuning.plot_losses"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_losses</span></code></a>(loss_histories, epochs, labels)</p></td>
+<td><p>Plot multiple loss trajectories on a log scale.</p></td>
 </tr>
 </tbody>
 </table>

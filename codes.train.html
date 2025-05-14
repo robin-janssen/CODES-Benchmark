@@ -439,22 +439,19 @@ configuration file.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.train.train_fcts.train_and_save_model">
 <span class="sig-prename descclassname"><span class="pre">codes.train.train_fcts.</span></span><span class="sig-name descname"><span class="pre">train_and_save_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device='cpu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threadlock=&lt;codes.train.train_fcts.DummyLock</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.train.train_fcts.train_and_save_model" title="Link to this definition">#</a></dt>
-<dd><p>Train and save a model for a specific benchmark mode. The parameters are determined
-by the task(s) which is created from the config file.
-Threadlock is used to make the training deterministic. In the single-threaded case,
-uses a dummy lock instead.</p>
+<dd><p>Train and save a model for a specific benchmark mode.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
-<li><p><strong>mode</strong> (<em>str</em>) – The benchmark mode (e.g. “main”, “interpolation”, “extrapolation”).</p></li>
+<li><p><strong>mode</strong> (<em>str</em>) – The benchmark mode.</p></li>
 <li><p><strong>metric</strong> (<em>int</em>) – The metric for the benchmark mode.</p></li>
 <li><p><strong>training_id</strong> (<em>str</em>) – The training ID for the current training session.</p></li>
-<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – The random seed for the training. Defaults to None.</p></li>
-<li><p><strong>epochs</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of epochs for the training. Defaults to None.</p></li>
-<li><p><strong>device</strong> (<em>str</em><em>, </em><em>optional</em>) – The device for the training. Defaults to “cpu”.</p></li>
-<li><p><strong>position</strong> (<em>int</em><em>, </em><em>optional</em>) – The position of the model in the task list. Defaults to 1.</p></li>
-<li><p><strong>threadlock</strong> (<em>threading.Lock</em><em>, </em><em>optional</em>) – A lock to prevent threading issues with PyTorch. Defaults to None.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – Random seed for training.</p></li>
+<li><p><strong>epochs</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of training epochs.</p></li>
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>optional</em>) – Device to run training on.</p></li>
+<li><p><strong>position</strong> (<em>int</em><em>, </em><em>optional</em>) – Model position in the task list.</p></li>
+<li><p><strong>threadlock</strong> (<em>threading.Lock</em><em>, </em><em>optional</em>) – Lock for deterministic threading.</p></li>
 </ul>
 </dd>
 </dl>
@@ -517,22 +514,19 @@ configuration file.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.train.train_and_save_model">
 <span class="sig-prename descclassname"><span class="pre">codes.train.</span></span><span class="sig-name descname"><span class="pre">train_and_save_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device='cpu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threadlock=&lt;codes.train.train_fcts.DummyLock</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.train.train_and_save_model" title="Link to this definition">#</a></dt>
-<dd><p>Train and save a model for a specific benchmark mode. The parameters are determined
-by the task(s) which is created from the config file.
-Threadlock is used to make the training deterministic. In the single-threaded case,
-uses a dummy lock instead.</p>
+<dd><p>Train and save a model for a specific benchmark mode.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
-<li><p><strong>mode</strong> (<em>str</em>) – The benchmark mode (e.g. “main”, “interpolation”, “extrapolation”).</p></li>
+<li><p><strong>mode</strong> (<em>str</em>) – The benchmark mode.</p></li>
 <li><p><strong>metric</strong> (<em>int</em>) – The metric for the benchmark mode.</p></li>
 <li><p><strong>training_id</strong> (<em>str</em>) – The training ID for the current training session.</p></li>
-<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – The random seed for the training. Defaults to None.</p></li>
-<li><p><strong>epochs</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of epochs for the training. Defaults to None.</p></li>
-<li><p><strong>device</strong> (<em>str</em><em>, </em><em>optional</em>) – The device for the training. Defaults to “cpu”.</p></li>
-<li><p><strong>position</strong> (<em>int</em><em>, </em><em>optional</em>) – The position of the model in the task list. Defaults to 1.</p></li>
-<li><p><strong>threadlock</strong> (<em>threading.Lock</em><em>, </em><em>optional</em>) – A lock to prevent threading issues with PyTorch. Defaults to None.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – Random seed for training.</p></li>
+<li><p><strong>epochs</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of training epochs.</p></li>
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>optional</em>) – Device to run training on.</p></li>
+<li><p><strong>position</strong> (<em>int</em><em>, </em><em>optional</em>) – Model position in the task list.</p></li>
+<li><p><strong>threadlock</strong> (<em>threading.Lock</em><em>, </em><em>optional</em>) – Lock for deterministic threading.</p></li>
 </ul>
 </dd>
 </dl>
