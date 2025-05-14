@@ -54,18 +54,23 @@ dataset_dict = {
     "primordial": {
         "log": True,
         "qpp": 5,
-        "tol": 1e-30,
+        "tol": 1e-20,
         "log_time": True,
     },
     "lv_parametric": {
         "log": True,
         "qpp": 3,
-        "tol": 1e-30,
+        "tol": 1e-20,
+    },
+    "lv_parametric_no_params": {
+        "log": True,
+        "qpp": 3,
+        "tol": 1e-20,
     },
     "primordial_parametric": {
         "log": True,
         "qpp": 5,
-        "tol": 1e-30,
+        "tol": 1e-20,
         "log_time": True,
     },
 }

@@ -33,9 +33,10 @@ def main():
     Main function to analyse the dataset. It checks the dataset and loads the data.
     """
     datasets = [
+        "lv_parametric",
+        "lv_parametric_no_params",
         "primordial_parametric",
         "primordial",
-        "lv_parametric",
         "simple_reaction",
         "osutest2",
         "coupled_oscillators",
@@ -122,7 +123,7 @@ def main():
                 full_data,
                 labels,
                 max_quantities=10,
-                threshold=2,
+                threshold=4,
                 max_faulty=5,
                 quantities_per_plot=qpp,
             )
