@@ -29,7 +29,7 @@ def plot_example_trajectories(
     labels = (
         labels[:num_quantities]
         if labels is not None
-        else [f"Quantity {i+1}" for i in range(num_quantities)]
+        else [f"Quantity {i + 1}" for i in range(num_quantities)]
     )
     num_plots = math.ceil(num_quantities / quantities_per_plot)
     nrows, ncols = compute_subplot_layout(num_plots)
@@ -373,7 +373,7 @@ def plot_initial_conditions_distribution(
     quantity_names = (
         quantity_names[:num_quantities]
         if quantity_names is not None
-        else [f"Chemical {i+1}" for i in range(num_quantities)]
+        else [f"Chemical {i + 1}" for i in range(num_quantities)]
     )
     num_plots = math.ceil(num_quantities / quantities_per_plot)
     nrows, ncols = compute_subplot_layout(num_plots)
@@ -782,12 +782,13 @@ def debug_numerical_errors_plot(
     if quantity_names is not None:
         quantity_names = quantity_names[:num_quantities]
     else:
-        quantity_names = [f"Quantity {i+1}" for i in range(num_quantities)]
+        quantity_names = [f"Quantity {i + 1}" for i in range(num_quantities)]
 
     # Identify faulty trajectories
     gradients = np.gradient(train_data, axis=1)
     faulty_mask = np.any(np.abs(gradients) > threshold, axis=(1, 2))
     faulty_indices = np.where(faulty_mask)[0]
+    print(f"Detected {len(faulty_indices)} faulty trajectories")
 
     if faulty_indices.size == 0:
         print("No faulty trajectories found.")
@@ -905,7 +906,7 @@ def plot_faulty_initial_conditions_distribution(
     if quantity_names is not None:
         quantity_names = quantity_names[:num_quantities]
     else:
-        quantity_names = [f"Chemical {i+1}" for i in range(num_quantities)]
+        quantity_names = [f"Chemical {i + 1}" for i in range(num_quantities)]
 
     # Split the quantities into groups of 10 for plotting
     num_plots = int(np.ceil(num_quantities / quantities_per_plot))

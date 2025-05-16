@@ -59,34 +59,65 @@ def get_activation_function(name: str) -> nn.Module:
 
 def make_optuna_params(trial: optuna.Trial, optuna_params: dict) -> dict:
     """
-    Make Optuna suggested parameters from the optuna_config.yaml file.
-
-    Args:
-        trial (optuna.Trial): Optuna trial object.
-        optuna_params (dict): Optuna parameters dictionary.
-
-    Returns:
-        dict: Suggested parameters.
+    Suggest hyperparameters from optuna_params, sampling coeff_width/layers
+    only if coeff_network == True, converting any "True"/"False" strings into bool,
+    and mapping any activation names into nn.Modules.
     """
+    suggested = {}
 
-    suggested_params = {}
-    for param_name, param_options in optuna_params.items():
-        if param_options["type"] == "int":
-            suggested_params[param_name] = trial.suggest_int(
-                param_name, param_options["low"], param_options["high"]
+    switch_key = "coeff_network"
+    children = {"coeff_width", "coeff_layers"}
+
+    # 1) Sample all independent params (skip switch & its children)
+    skip = children | {switch_key}
+    for name, opts in optuna_params.items():
+        if name in skip:
+            continue
+        if opts["type"] == "int":
+            suggested[name] = trial.suggest_int(name, opts["low"], opts["high"])
+        elif opts["type"] == "float":
+            suggested[name] = trial.suggest_float(
+                name, opts["low"], opts["high"], log=opts.get("log", False)
             )
-        elif param_options["type"] == "float":
-            suggested_params[param_name] = trial.suggest_float(
-                param_name,
-                param_options["low"],
-                param_options["high"],
-                log=param_options.get("log", False),
-            )
-        elif param_options["type"] == "categorical":
-            suggested_params[param_name] = trial.suggest_categorical(
-                param_name, param_options["choices"]
-            )
-    return suggested_params
+        else:  # categorical
+            suggested[name] = trial.suggest_categorical(name, opts["choices"])
+
+    # 2) Sample the coeff_network switch
+    if switch_key in optuna_params:
+        opts = optuna_params[switch_key]
+        raw = trial.suggest_categorical(switch_key, opts["choices"])
+        # convert string → bool if needed
+        if isinstance(raw, str) and raw.lower() in ("true", "false"):
+            suggested[switch_key] = bool(strtobool(raw))
+        else:
+            suggested[switch_key] = raw
+
+    # 3) Conditionally sample coeff_width & coeff_layers
+    if suggested.get(switch_key, False):
+        for child in children:
+            if child in optuna_params:
+                opts = optuna_params[child]
+                if opts["type"] == "int":
+                    suggested[child] = trial.suggest_int(
+                        child, opts["low"], opts["high"]
+                    )
+                elif opts["type"] == "float":
+                    suggested[child] = trial.suggest_float(
+                        child, opts["low"], opts["high"], log=opts.get("log", False)
+                    )
+                else:
+                    suggested[child] = trial.suggest_categorical(child, opts["choices"])
+
+    # 4) Post‐process all values: booleans and activation modules
+    for name, val in list(suggested.items()):
+        # a) convert any remaining "True"/"False" strings into bool
+        if isinstance(val, str) and val.lower() in ("true", "false"):
+            suggested[name] = bool(strtobool(val))
+        # b) map activation names to nn.Modules
+        if "activation" in name:
+            suggested[name] = get_activation_function(suggested[name])
+
+    return suggested
 
 
 def create_objective(
@@ -154,45 +185,59 @@ def training_run(
     """
 
     download_data(config["dataset"]["name"], verbose=False)
-    train_data, test_data, val_data, timesteps, _, data_params, _ = check_and_load_data(
+
+    # Load full data and parameters
+    (
+        (train_data, test_data, _),
+        (train_params, test_params, _),
+        timesteps,
+        _,
+        data_info,
+        _,
+    ) = check_and_load_data(
         config["dataset"]["name"],
         verbose=False,
         log=config["dataset"]["log10_transform"],
+        log_params=config.get("log10_transform_params", False),
         normalisation_mode=config["dataset"]["normalise"],
+        tolerance=config["dataset"]["tolerance"],
     )
 
     subset_factor = config["dataset"].get("subset_factor", 1)
-    train_data, test_data, timesteps = get_data_subset(
-        train_data, test_data, timesteps, "sparse", subset_factor
+    # Get the appropriate data subset
+    (train_data, test_data), (train_params, test_params), timesteps = get_data_subset(
+        (train_data, test_data),
+        timesteps,
+        "sparse",
+        subset_factor,
+        (train_params, test_params),
     )
 
     set_random_seeds(config["seed"], device=device)
     surr_name = config["surrogate"]["name"]
     suggested_params = make_optuna_params(trial, config["optuna_params"])
-
-    for key, val in suggested_params.items():
-        if "activation" in key:
-            suggested_params[key] = get_activation_function(val)
-        if "ode_tanh_reg" in key:
-            suggested_params[key] = bool(strtobool(val))
+    n_params = train_params.shape[1] if train_params is not None else 0
 
     n_timesteps = train_data.shape[1]
     n_quantities = train_data.shape[2]
     surrogate_class = get_surrogate(surr_name)
     model_config = get_model_config(surr_name, config)
     model_config.update(suggested_params)
-    model = surrogate_class(device, n_quantities, n_timesteps, model_config)
-    model.normalisation = data_params
+    model = surrogate_class(device, n_quantities, n_timesteps, n_params, model_config)
+    model.normalisation = data_info
     model.optuna_trial = trial
     model.trial_update_epochs = 10
 
     train_loader, test_loader, _ = model.prepare_data(
         dataset_train=train_data,
         dataset_test=test_data,
-        dataset_val=val_data,
+        dataset_val=None,
         timesteps=timesteps,
         batch_size=config["batch_size"],
         shuffle=True,
+        dataset_train_params=train_params,
+        dataset_test_params=test_params,
+        dummy_timesteps=True,
     )
 
     description = make_description("Optuna", device, str(trial.number), surr_name)

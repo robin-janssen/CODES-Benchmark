@@ -79,6 +79,7 @@ class FullyConnected(AbstractSurrogateModel):
         device: str | None = None,
         n_quantities: int = 29,
         n_timesteps: int = 100,
+        n_parameters: int = 0,  # New argument; set to 0 if no parameters are used.
         config: dict | None = None,
     ):
         """
@@ -102,8 +103,12 @@ class FullyConnected(AbstractSurrogateModel):
         self.device = device
         self.N = n_quantities
 
+        # The input is the initial state (n_quantities), plus one for the time,
+        # plus n_parameters (if any).
+        input_size = self.N + 1 + n_parameters
+
         self.model = FullyConnectedNet(
-            input_size=self.N + 1,  # 29 quantities + 1 time input
+            input_size=input_size,
             hidden_size=self.config.hidden_size,
             output_size=self.N,
             num_hidden_layers=self.config.num_hidden_layers,
@@ -132,6 +137,9 @@ class FullyConnected(AbstractSurrogateModel):
         batch_size: int,
         shuffle: bool = True,
         dummy_timesteps: bool = True,
+        dataset_train_params: np.ndarray | None = None,
+        dataset_test_params: np.ndarray | None = None,
+        dataset_val_params: np.ndarray | None = None,
     ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
         """
         Prepare the data for the predict or fit methods.
@@ -144,6 +152,9 @@ class FullyConnected(AbstractSurrogateModel):
             batch_size (int): Batch size.
             shuffle (bool, optional): Whether to shuffle the data. Defaults to True.
             dummy_timesteps (bool, optional): Whether to use dummy timesteps. Defaults to True.
+            dataset_train_params (np.ndarray | None): Training parameters of shape (n_samples, n_parameters).
+            dataset_test_params (np.ndarray | None): Testing parameters of shape (n_samples, n_parameters).
+            dataset_val_params (np.ndarray | None): Validation parameters of shape (n_samples, n_parameters).
 
         Returns:
             tuple[DataLoader, DataLoader | None, DataLoader | None]:
@@ -152,12 +163,21 @@ class FullyConnected(AbstractSurrogateModel):
         dataloaders = []
         if dummy_timesteps:
             timesteps = np.linspace(0, 1, dataset_train.shape[1])
-        loader = self.create_dataloader(dataset_train, timesteps, batch_size, shuffle)
+        loader = self.create_dataloader(
+            dataset_train,
+            timesteps,
+            batch_size,
+            shuffle,
+            dataset_params=dataset_train_params,
+        )
         dataloaders.append(loader)
-        for dataset in [dataset_test, dataset_val]:
+        for dataset, params in [
+            (dataset_test, dataset_test_params),
+            (dataset_val, dataset_val_params),
+        ]:
             if dataset is not None:
                 loader = self.create_dataloader(
-                    dataset, timesteps, batch_size, shuffle=False
+                    dataset, timesteps, batch_size, shuffle=False, dataset_params=params
                 )
                 dataloaders.append(loader)
             else:
@@ -225,10 +245,13 @@ class FullyConnected(AbstractSurrogateModel):
                 progress_bar.set_postfix(postfix)
 
                 # Report the test loss to Optuna
-                if self.optuna_trial is not None and not multi_objective:
-                    self.optuna_trial.report(test_losses[index], step=epoch)
-                    if self.optuna_trial.should_prune():
-                        raise optuna.TrialPruned()
+                if self.optuna_trial is not None:
+                    if multi_objective:
+                        self.time_pruning(current_epoch=epoch, total_epochs=epochs)
+                    else:
+                        self.optuna_trial.report(test_losses[index], step=epoch)
+                        if self.optuna_trial.should_prune():
+                            raise optuna.TrialPruned()
 
                 self.train()
                 optimizer.train()
@@ -273,6 +296,7 @@ class FullyConnected(AbstractSurrogateModel):
         timesteps: np.ndarray,
         batch_size: int,
         shuffle: bool = False,
+        dataset_params: np.ndarray | None = None,
     ) -> DataLoader:
         """
         Create a DataLoader with optimized memory-safe shuffling and batching.
@@ -282,6 +306,7 @@ class FullyConnected(AbstractSurrogateModel):
             timesteps (np.ndarray): The timesteps. Shape: (n_timesteps,).
             batch_size (int): The batch size.
             shuffle (bool, optional): Whether to shuffle the data. Defaults to False.
+            dataset_params (np.ndarray | None): Fixed parameters for each sample (shape: (n_samples, n_parameters)).
 
         Returns:
             DataLoader: A DataLoader with precomputed batches.
@@ -290,22 +315,31 @@ class FullyConnected(AbstractSurrogateModel):
         n_samples, n_timesteps, n_quantities = dataset.shape
         total_samples = n_samples * n_timesteps
 
-        # For each sample, use the initial state (at time t=0) paired with the current time
+        # For each sample, use the initial state (at time t=0) paired with the current time.
         initial_states = dataset[:, 0, :]  # shape: (n_samples, n_quantities)
         rep_initial = np.repeat(
             initial_states[:, np.newaxis, :], n_timesteps, axis=1
-        )  # shape: (n_samples, n_timesteps, n_quantities)
+        )  # (n_samples, n_timesteps, n_quantities)
         time_feature = np.tile(
             timesteps.reshape(1, n_timesteps, 1), (n_samples, 1, 1)
-        )  # shape: (n_samples, n_timesteps, 1)
-        # Input is [initial_state, time] -> shape: (n_samples, n_timesteps, n_quantities+1)
-        inputs = np.concatenate([rep_initial, time_feature], axis=2)
+        )  # (n_samples, n_timesteps, 1)
 
-        # The target is the state at time t for each sample
+        # If parameters are provided, repeat them along the time dimension.
+        if dataset_params is not None:
+            rep_params = np.tile(
+                dataset_params[:, np.newaxis, :], (1, n_timesteps, 1)
+            )  # (n_samples, n_timesteps, n_parameters)
+            # Concatenate initial state, time feature, and parameters.
+            inputs = np.concatenate([rep_initial, time_feature, rep_params], axis=2)
+        else:
+            # Without parameters, input is just [initial_state, time].
+            inputs = np.concatenate([rep_initial, time_feature], axis=2)
+
+        # Target remains the state at time t.
         targets = dataset  # shape: (n_samples, n_timesteps, n_quantities)
 
-        # Flatten the inputs and targets for batching
-        flattened_inputs = inputs.reshape(-1, n_quantities + 1)
+        # Flatten inputs and targets for batching.
+        flattened_inputs = inputs.reshape(-1, inputs.shape[2])
         flattened_targets = targets.reshape(-1, n_quantities)
 
         if shuffle:
@@ -313,7 +347,6 @@ class FullyConnected(AbstractSurrogateModel):
             flattened_inputs = flattened_inputs[permutation]
             flattened_targets = flattened_targets[permutation]
 
-        # Slice the flattened data into batches
         num_full_batches = total_samples // batch_size
         remainder = total_samples % batch_size
 
@@ -345,8 +378,8 @@ class FullyConnected(AbstractSurrogateModel):
 
         return DataLoader(
             dataset_prebatched,
-            batch_size=1,  # Each precomputed batch is treated as one batch
-            shuffle=False,
+            batch_size=1,  # Each precomputed batch is treated as one batch.
+            shuffle=False,  # Shuffle the order of batches each epoch.
             num_workers=0,
             collate_fn=fc_collate_fn,
             worker_init_fn=worker_init_fn,
