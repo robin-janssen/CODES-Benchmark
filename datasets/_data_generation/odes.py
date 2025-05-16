@@ -5,34 +5,6 @@ import numpy as np
 spy = 365.0 * 24.0 * 3600.0  # Seconds per year
 
 
-def lotka_volterra(n: np.ndarray) -> np.ndarray:
-    """
-    Defines the Lotka-Volterra predator-prey model with three predators and three prey.
-
-    Parameters
-    ----------
-    n : np.ndarray
-        Current populations [p1, p2, p3, q1, q2, q3].
-
-    Returns
-    -------
-    np.ndarray
-        Derivatives [dp1/dt, dp2/dt, dp3/dt, dq1/dt, dq2/dt, dq3/dt].
-    """
-    p1, p2, p3, q1, q2, q3 = n
-    derivatives = np.array(
-        [
-            0.5 * p1 - 0.02 * p1 * q1 - 0.01 * p1 * q2,
-            0.6 * p2 - 0.03 * p2 * q1 - 0.015 * p2 * q3,
-            0.4 * p3 - 0.01 * p3 * q2 - 0.025 * p3 * q3,
-            -0.1 * q1 + 0.005 * p1 * q1 + 0.007 * p2 * q1,
-            -0.08 * q2 + 0.006 * p1 * q2 + 0.009 * p3 * q2,
-            -0.12 * q3 + 0.008 * p2 * q3 + 0.01 * p3 * q3,
-        ]
-    )
-    return derivatives
-
-
 def reaction(t: float, n: np.ndarray) -> np.ndarray:
     """
     Defines a chemically motivated reaction system with five species.
@@ -1463,6 +1435,103 @@ def osu_initial_conditions(num: int) -> np.ndarray:
     return ic
 
 
+def lotka_volterra(t: float, n: np.ndarray) -> np.ndarray:
+    """
+    Defines the Lotka-Volterra predator-prey model with three predators and three prey.
+
+    Parameters
+    ----------
+    n : np.ndarray
+        Current populations [p1, p2, p3, q1, q2, q3].
+
+    Returns
+    -------
+    np.ndarray
+        Derivatives [dp1/dt, dp2/dt, dp3/dt, dq1/dt, dq2/dt, dq3/dt].
+    """
+    p1, p2, p3, q1, q2, q3 = n
+    derivatives = np.array(
+        [
+            0.5 * p1 - 0.02 * p1 * q1 - 0.01 * p1 * q2,
+            0.6 * p2 - 0.03 * p2 * q1 - 0.015 * p2 * q3,
+            0.4 * p3 - 0.01 * p3 * q2 - 0.025 * p3 * q3,
+            -0.1 * q1 + 0.005 * p1 * q1 + 0.007 * p2 * q1,
+            -0.08 * q2 + 0.006 * p1 * q2 + 0.009 * p3 * q2,
+            -0.12 * q3 + 0.008 * p2 * q3 + 0.01 * p3 * q3,
+        ]
+    )
+    return derivatives
+
+
+import numpy as np
+
+
+def parametric_lotka_volterra(
+    t: float, n: np.ndarray, params: np.ndarray
+) -> np.ndarray:
+    """
+    Parametric Lotka–Volterra for three predators and three prey.
+
+    For alpha = 0, this is bit-for-bit identical to the base lotka_volterra:
+      dp1/dt = 0.5 p1 - 0.02 p1 q1 - 0.01 p1 q2
+      … etc …
+
+    For alpha > 0, prey growth rates are scaled by (1 - alpha)
+    and predation rates by (1 + alpha), giving a slight perturbation.
+
+    Parameters
+    ----------
+    t : float
+        Time (unused; system is autonomous).
+    n : np.ndarray
+        Populations [p1, p2, p3, q1, q2, q3].
+    params : np.ndarray
+        [alpha], with alpha ≥ 0 controlling deviation.
+
+    Returns
+    -------
+    np.ndarray
+        Derivatives [dp1_dt, dp2_dt, dp3_dt, dq1_dt, dq2_dt, dq3_dt].
+    """
+    p1, p2, p3, q1, q2, q3 = n
+    alpha = params[0]
+
+    # --- reproduction rates (prey) ---
+    # baseline: 0.5, 0.6, 0.4
+    rep_p1 = 0.5 * (1.0 - alpha) * p1
+    rep_p2 = 0.6 * (1.0 - alpha) * p2
+    rep_p3 = 0.4 * (1.0 - alpha) * p3
+
+    # --- predation terms ---
+    # baseline coefficients: 0.02, 0.01, 0.03, 0.015, 0.01, 0.025
+    pred1 = (0.02 * (1.0 + alpha)) * p1 * q1 + (0.01 * (1.0 + alpha)) * p1 * q2
+
+    pred2 = (0.03 * (1.0 + alpha)) * p2 * q1 + (0.015 * (1.0 + alpha)) * p2 * q3
+
+    pred3 = (0.01 * (1.0 + alpha)) * p3 * q2 + (0.025 * (1.0 + alpha)) * p3 * q3
+
+    # --- predator death rates (unchanged) ---
+    death_q1 = 0.1 * q1
+    death_q2 = 0.08 * q2
+    death_q3 = 0.12 * q3
+
+    # --- predator gains (unchanged) ---
+    gain_q1 = 0.005 * p1 * q1 + 0.007 * p2 * q1
+    gain_q2 = 0.006 * p1 * q2 + 0.009 * p3 * q2
+    gain_q3 = 0.008 * p2 * q3 + 0.01 * p3 * q3
+
+    # --- assemble derivatives ---
+    dp1_dt = rep_p1 - pred1
+    dp2_dt = rep_p2 - pred2
+    dp3_dt = rep_p3 - pred3
+
+    dq1_dt = -death_q1 + gain_q1
+    dq2_dt = -death_q2 + gain_q2
+    dq3_dt = -death_q3 + gain_q3
+
+    return np.array([dp1_dt, dp2_dt, dp3_dt, dq1_dt, dq2_dt, dq3_dt])
+
+
 FUNCS: Dict[str, Dict[str, Any]] = {
     "lotka_volterra": {
         "func": lotka_volterra,
@@ -1574,5 +1643,25 @@ FUNCS: Dict[str, Dict[str, Any]] = {
         "solver_options": {"method": "BDF", "atol": 1e-6, "rtol": 1e-6},
         "log_time": True,
         "final_transform": True,
+    },
+    "parametric_lotka_volterra": {
+        "func": parametric_lotka_volterra,
+        "tsteps": np.linspace(0, 100, 101),
+        "ndim": 6,
+        "labels": ["Predator1", "Predator2", "Predator3", "Prey1", "Prey2", "Prey3"],
+        "sampling": {
+            "space": "log",
+            "bounds": [
+                (1, 10.0),
+                (1, 10.0),
+                (1, 10.0),
+                (1, 10.0),
+                (1, 10.0),
+                (1, 10.0),
+            ],
+            "params_space": "linear",
+            "params_bounds": [(0.0, 1)],
+        },
+        # "solver_options": {"method": "BDF", "atol": 1e-8, "rtol": 1e-8},
     },
 }

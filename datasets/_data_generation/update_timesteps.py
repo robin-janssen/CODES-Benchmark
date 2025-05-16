@@ -15,7 +15,7 @@ def main():
         args (Namespace): The command line arguments.
     """
     # Check if the data file exists and load the data
-    train_data, test_data, val_data, timesteps, n_train_samples, data_params, labels = (
+    train_data, test_data, val_data, timesteps, n_train_samples, data_info, labels = (
         check_and_load_data("osutest", log=False, normalisation_mode="disable")
     )
 

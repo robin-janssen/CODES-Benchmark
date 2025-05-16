@@ -23,6 +23,7 @@ class MultiONetBaseConfig:
         regularization_factor (float): L2 regularization coefficient.
         massloss_factor (float): Additional weight for a mass conservation loss term.
         activation (nn.Module): Activation function used in all layers.
+        params_branch (bool): Flag to indicate whether parameters (if present) are passed to the branch or trunk net.
     """
 
     masses: list[float] | None = None
@@ -36,3 +37,4 @@ class MultiONetBaseConfig:
     regularization_factor: float = 0.0
     massloss_factor: float = 0.0
     activation: nn.Module = nn.ReLU()
+    params_branch: bool = True

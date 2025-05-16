@@ -76,23 +76,34 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     else:
         batch_size = conf["batch_size"]
 
-    train_data, test_data, val_data, timesteps, n_train_samples, _, labels = (
-        check_and_load_data(
-            conf["dataset"]["name"],
-            verbose=False,
-            log=conf["dataset"]["log10_transform"],
-            normalisation_mode=conf["dataset"]["normalise"],
-        )
+    # Load full data and parameters
+    (
+        (train_data, test_data, val_data),
+        (train_params, test_params, val_params),
+        timesteps,
+        n_train_samples,
+        _,
+        labels,
+    ) = check_and_load_data(
+        conf["dataset"]["name"],
+        verbose=False,
+        log=conf["dataset"]["log10_transform"],
+        log_params=conf.get("log10_transform_params", False),
+        normalisation_mode=conf["dataset"]["normalise"],
+        tolerance=conf["dataset"]["tolerance"],
     )
+
     model_config = get_model_config(surr_name, conf)
     n_timesteps = train_data.shape[1]
     n_quantities = train_data.shape[2]
     n_test_samples = n_timesteps * val_data.shape[0]
-    model = surrogate_class(device, n_quantities, n_timesteps, model_config)
+    n_params = train_params.shape[1] if train_params is not None else 0
+    model = surrogate_class(device, n_quantities, n_timesteps, n_params, model_config)
 
     # Placeholder for metrics
     metrics = {}
     metrics["timesteps"] = timesteps
+    metrics["n_params"] = n_params
 
     # Create dataloader for the validation data
     _, _, val_loader = model.prepare_data(
@@ -101,7 +112,11 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
         dataset_val=val_data,
         timesteps=timesteps,
         batch_size=batch_size,
-        shuffle=False,
+        shuffle=True,
+        dataset_train_params=train_params,
+        dataset_test_params=test_params,
+        dataset_val_params=val_params,
+        dummy_timesteps=True,
     )
 
     # Plot training losses
@@ -953,8 +968,11 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
         surrogate_class = get_surrogate(surr_name)
         n_timesteps = metrics[surr_name]["timesteps"].shape[0]
         n_quantities = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
+        n_params = metrics[surr_name]["n_params"]
         model_config = get_model_config(surr_name, config)
-        model = surrogate_class(device, n_quantities, n_timesteps, model_config)
+        model = surrogate_class(
+            device, n_quantities, n_timesteps, n_params, model_config
+        )
 
         def load_losses(model_identifier: str):
             model.load(training_id, surr_name, model_identifier=model_identifier)

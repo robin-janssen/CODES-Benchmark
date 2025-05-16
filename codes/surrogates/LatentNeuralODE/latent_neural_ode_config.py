@@ -28,6 +28,8 @@ class LatentNeuralODEBaseConfig:
         rtol (float): Relative tolerance for the ODE solver.
         atol (float): Absolute tolerance for the ODE solver.
         learning_rate (float): Learning rate for the optimizer.
+        encode_params (bool): Whether to encode parameters in the encoder.
+            - If False, parameters are passed after the encoder, as additional inputs to the ODE network.
     """
 
     model_version: str = "v2"
@@ -42,3 +44,4 @@ class LatentNeuralODEBaseConfig:
     rtol: float = 1e-6
     atol: float = 1e-6
     learning_rate: float = 1e-3
+    encode_params: bool = False

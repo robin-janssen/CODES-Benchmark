@@ -20,7 +20,7 @@ def save_plot(
     dpi: int = 300,
     base_dir: str = "plots",  # Base directory for saving plots
     increase_count: bool = False,  # Whether to increase the count for existing filenames
-    format: str = "pdf",  # Format for saving the plot
+    format: str = "jpg",  # Format for saving the plot
 ) -> None:
     """
     Save the plot to a file, creating necessary directories if they don't exist.
@@ -122,9 +122,9 @@ def plot_relative_errors_over_time(
     p99_lower = np.percentile(relative_errors, 0.5, axis=(0, 2))
 
     plt.figure(figsize=(6, 4))
-    mean_label = f"Mean Error\nMean={mean*100:.2f}%"
+    mean_label = f"Mean Error\nMean={mean * 100:.2f}%"
     plt.plot(timesteps, mean_errors, label=mean_label, color="blue")
-    median_label = f"Median Error\nMedian={median*100:.2f}%"
+    median_label = f"Median Error\nMedian={median * 100:.2f}%"
     plt.plot(timesteps, median_errors, label=median_label, color="red")
 
     # Shading areas
@@ -816,7 +816,9 @@ def plot_surr_losses(
         uq_train_losses = [main_train_loss]
         uq_test_losses = [main_test_loss]
         for i in range(n_models - 1):
-            train_loss, test_loss, epochs = load_losses(f"{surr_name.lower()}_UQ_{i+1}")
+            train_loss, test_loss, epochs = load_losses(
+                f"{surr_name.lower()}_UQ_{i + 1}"
+            )
             uq_train_losses.append(train_loss)
             uq_test_losses.append(test_loss)
         plot_losses(
@@ -1397,7 +1399,7 @@ def plot_relative_errors(
 
     for i, surrogate in enumerate(mean_errors.keys()):
         mean = np.mean(mean_errors[surrogate])
-        mean_label = f"{surrogate}\nMean = {mean*100:.2f}%"
+        mean_label = f"{surrogate}\nMean = {mean * 100:.2f}%"
         plt.plot(
             timesteps,
             mean_errors[surrogate],
@@ -1406,7 +1408,7 @@ def plot_relative_errors(
             linestyle=linestyles[0],
         )
         median = np.mean(median_errors[surrogate])
-        median_label = f"{surrogate}\nMedian = {median*100:.2f}%"
+        median_label = f"{surrogate}\nMedian = {median * 100:.2f}%"
         plt.plot(
             timesteps,
             median_errors[surrogate],
@@ -2895,7 +2897,7 @@ def rel_errors_and_uq(
 
     for i, surrogate in enumerate(mean_errors.keys()):
         mean = np.mean(mean_errors[surrogate])
-        mean_label = f"{surrogate} Mean={mean*100:.2f} %"
+        mean_label = f"{surrogate} Mean={mean * 100:.2f} %"
         ax1.plot(
             timesteps,
             mean_errors[surrogate],
@@ -2904,7 +2906,7 @@ def rel_errors_and_uq(
             linestyle=linestyles[0],
         )
         median = np.mean(median_errors[surrogate])
-        median_label = f"{surrogate} Median={median*100:.2f} %"
+        median_label = f"{surrogate} Median={median * 100:.2f} %"
         ax1.plot(
             timesteps,
             median_errors[surrogate],

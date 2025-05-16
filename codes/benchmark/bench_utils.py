@@ -2,6 +2,7 @@ import csv
 import importlib.util
 import inspect
 import os
+import time
 from copy import deepcopy
 from dataclasses import asdict
 
@@ -12,8 +13,6 @@ from torch.utils.data import DataLoader
 
 from codes.surrogates import SurrogateModel, surrogate_classes
 from codes.utils import read_yaml_config
-
-import time
 
 
 def check_surrogate(surrogate: str, conf: dict) -> None:
@@ -219,7 +218,7 @@ def get_required_models_list(surrogate: str, conf: dict) -> list:
     if conf["uncertainty"]["enabled"]:
         n_models = conf["uncertainty"]["ensemble_size"]
         required_models.extend(
-            [f"{surrogate.lower()}_UQ_{i+1}.pth" for i in range(n_models - 1)]
+            [f"{surrogate.lower()}_UQ_{i + 1}.pth" for i in range(n_models - 1)]
         )
 
     return required_models
@@ -296,7 +295,7 @@ def measure_memory_footprint(model: torch.nn.Module, inputs: tuple) -> dict:
 
     # Prepare inputs: move them to the target device
     if isinstance(inputs, (list, tuple)):
-        inputs = tuple(i.to(device) for i in inputs)
+        inputs = tuple((i.to(device) if i is not None else i) for i in inputs)
     else:
         inputs = inputs.to(device)
 
@@ -640,10 +639,9 @@ def save_table_csv(headers: list, rows: list, config: dict) -> None:
     """
     # Convert each cell to a string and remove asterisks
     cleaned_rows = [
-        [str(cell).replace("*", "").strip() for cell in row]
-        for row in rows
+        [str(cell).replace("*", "").strip() for cell in row] for row in rows
     ]
-    
+
     csv_path = f"results/{config['training_id']}/metrics_table.csv"
     with open(csv_path, "w", newline="") as f:
         writer = csv.writer(f)
