@@ -1,42 +1,41 @@
 # Global settings for the benchmark
-training_id: "primordialtest3"
-surrogates: ["LatentNeuralODE"]
-batch_size: [128]
-epochs: [20,100] # [12000, 10000, 10000, 7000]
-dataset: 
-  name: "primordial"
+training_id: "mpstest2"
+surrogates: ["FullyConnected"]
+batch_size: [16384]
+epochs: [20000] # [12000, 10000, 10000, 7000]
+dataset:
+  name: "lotka_volterra"
   log10_transform: True
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
   tolerance: 1e-30
   subset_factor: 1
-  log_timesteps: True
-devices: ["cuda:0", "cuda:1"] # ["cuda:2", "cuda:3", "cuda:4", "cuda:5", "cuda:6", "cuda:7", "cuda:8", "cuda:9"]
+  log_timesteps: False
+devices: ["mps"] # ["cuda:2", "cuda:3", "cuda:4", "cuda:5", "cuda:6", "cuda:7", "cuda:8", "cuda:9"]
 seed: 42
 verbose: False
 
 # Models to train
-interpolation: 
+interpolation:
   enabled: False
   intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
 extrapolation:
   enabled: False
   cutoffs: [50, 60, 70, 80, 90]
-sparse: 
+sparse:
   enabled: False
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
   enabled: False
   sizes: [64, 512, 1024, 4096]
-uncertainty: 
+uncertainty:
   enabled: False
-  ensemble_size: 5  # Number of models for deep ensemble
+  ensemble_size: 5 # Number of models for deep ensemble
 
 # Evaluations during benchmark
-losses: False
-gradients: False
-timing: False
+losses: True
+gradients: True
+timing: True
 compute: False
 compare: False # Whether to compare the surrogates
-
 
