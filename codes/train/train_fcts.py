@@ -92,9 +92,15 @@ def train_and_save_model(
     with threadlock:
         set_random_seeds(seed, device)
         model = surrogate_class(
-            device, n_quantities, n_timesteps, n_params, model_config
+            device,
+            n_quantities,
+            n_timesteps,
+            n_params,
+            config["training_id"],
+            model_config,
         )
     model.normalisation = data_info
+    model.checkpointing = config.get("checkpointing", False)
     surr_idx = config["surrogates"].index(surr_name)
 
     batch_size = determine_batch_size(config, surr_idx, mode, metric)

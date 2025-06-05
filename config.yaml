@@ -1,8 +1,8 @@
 # Global settings for the benchmark
-training_id: "cloudtest"
-surrogates: ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"] # ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
+training_id: "test_checkpointing4"
+surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"] # ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
 batch_size: [65536, 65536, 512, 512] # [8192, 8192, 512, 512]
-epochs: [50, 50, 50, 50] # [20000, 7500, 20000, 15000]
+epochs: [20, 20, 20, 20] # [20000, 7500, 20000, 15000]
 dataset: 
   name: "cloud"
   log10_transform: True
@@ -12,9 +12,10 @@ dataset:
   tolerance: 1e-25
   subset_factor: 1
   log_timesteps: True
-devices: ["cuda:0", "cuda:1", "cuda:2", "cuda:3", "cuda:4", "cuda:5", "cuda:6", "cuda:7"]
+devices: ["cuda:5"]
 seed: 42
 verbose: False
+checkpointing: True
 
 # Models to train
 interpolation: 

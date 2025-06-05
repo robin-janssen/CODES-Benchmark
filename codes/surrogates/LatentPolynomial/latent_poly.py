@@ -1,5 +1,4 @@
 import numpy as np
-import optuna
 import torch
 from schedulefree import AdamWScheduleFree
 from torch import nn
@@ -36,12 +35,14 @@ class LatentPoly(AbstractSurrogateModel):
         n_quantities: int = 29,
         n_timesteps: int = 100,
         n_parameters: int = 0,
+        training_id: str | None = None,
         config: dict | None = None,
     ):
         super().__init__(
             device=device,
             n_quantities=n_quantities,
             n_timesteps=n_timesteps,
+            training_id=training_id,
             config=config,
         )
         self.config = LatentPolynomialBaseConfig(**self.config)
@@ -217,13 +218,17 @@ class LatentPoly(AbstractSurrogateModel):
         )
 
         loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
-        train_losses, test_losses, MAEs = [np.zeros(loss_length) for _ in range(3)]
+        self.train_loss, self.test_loss, self.MAE = [
+            np.zeros(loss_length) for _ in range(3)
+        ]
         criterion = nn.MSELoss()
 
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
         self.model.train()
         optimizer.train()
+
+        self.setup_checkpoint()
 
         for epoch in progress_bar:
             for i, batch in enumerate(train_loader):
@@ -238,43 +243,20 @@ class LatentPoly(AbstractSurrogateModel):
                     with torch.no_grad():
                         self.model.renormalize_loss_weights(x_true, x_pred, params)
 
-            if epoch % self.update_epochs == 0:
-                index = epoch // self.update_epochs
-                with torch.inference_mode():
-                    self.model.eval()
-                    optimizer.eval()
-
-                    preds, targets = self.predict(train_loader)
-                    train_losses[index] = criterion(preds, targets).item()
-                    preds, targets = self.predict(test_loader)
-                    test_losses[index] = criterion(preds, targets).item()
-                    MAEs[index] = self.L1(preds, targets).item()
-
-                    progress_bar.set_postfix(
-                        {
-                            "train_loss": f"{train_losses[index]:.2e}",
-                            "test_loss": f"{test_losses[index]:.2e}",
-                        }
-                    )
-
-                    # Report loss to Optuna and prune if necessary
-                    if self.optuna_trial is not None:
-                        if multi_objective:
-                            self.time_pruning(current_epoch=epoch, total_epochs=epochs)
-                        else:
-                            self.optuna_trial.report(test_losses[index], step=epoch)
-                            if self.optuna_trial.should_prune():
-                                raise optuna.TrialPruned()
-
-                    self.model.train()
-                    optimizer.train()
+            self.validate(
+                epoch=epoch,
+                train_loader=train_loader,
+                test_loader=test_loader,
+                criterion=criterion,
+                optimizer=optimizer,
+                progress_bar=progress_bar,
+                total_epochs=epochs,
+                multi_objective=multi_objective,
+            )
 
         progress_bar.close()
-
         self.n_epochs = epoch + 1
-        self.train_loss = train_losses
-        self.test_loss = test_losses
-        self.MAE = MAEs
+        self.get_checkpoint(test_loader, criterion)
 
 
 class PolynomialModelWrapper(nn.Module):
