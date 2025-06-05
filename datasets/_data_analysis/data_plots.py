@@ -633,7 +633,7 @@ def plot_all_trajectories_and_gradients(
                 else f"Quantity {i + 1}"
             )
 
-            # Trajectories Plot (without noise)
+            # Trajectories Plot
             for sample_idx in range(train_data.shape[0]):
                 axes_traj[plot_idx].plot(
                     time,
@@ -646,7 +646,7 @@ def plot_all_trajectories_and_gradients(
                 time, avg_trajectories[:, i], label=label_name, color=color, linewidth=1
             )
 
-            # Gradients Plot (without noise)
+            # Gradients Plot
             for sample_idx in range(train_data.shape[0]):
                 axes_grad[plot_idx].plot(
                     time,

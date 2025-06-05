@@ -33,6 +33,7 @@ def main():
     Main function to analyse the dataset. It checks the dataset and loads the data.
     """
     datasets = [
+        "cloud",
         "lv_parametric",
         "lv_parametric_no_params",
         "primordial_parametric",
