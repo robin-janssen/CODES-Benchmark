@@ -7,11 +7,12 @@ from torch import nn
 class MultiONetConfig:
     """Model config for MultiONet for the simple_ode dataset"""
 
+    # primordial3, trial 41
     branch_hidden_layers: int = 8
     trunk_hidden_layers: int = 8
     hidden_size: int = 130
     output_factor: int = 98
-    learning_rate: float = 2e-4
+    learning_rate: float = 5e-4
     activation: nn.Module = nn.Tanh()
 
 
@@ -19,10 +20,11 @@ class MultiONetConfig:
 class LatentNeuralODEConfig:
     """Model config for LatentNeuralODE for the simple_ode dataset"""
 
+    # primordial5, trial 3
     latent_features: int = 10
     coder_layers: int = 4
     coder_width: int = 350
-    learning_rate: float = 2e-4
+    learning_rate: float = 8e-4
     ode_layers: int = 10
     ode_width: int = 157
     ode_tanh_reg: bool = True
@@ -34,6 +36,7 @@ class LatentNeuralODEConfig:
 class FullyConnectedConfig:
     """Model config for FullyConnected for the simple_ode dataset"""
 
+    # primordial4, trial 64
     hidden_size: int = 453
     num_hidden_layers: int = 1
     learning_rate: float = 5e-4
@@ -44,9 +47,10 @@ class FullyConnectedConfig:
 class LatentPolyConfig:
     """Model config for LatentPoly for the simple_ode dataset"""
 
+    # primordial3, trial 90
     latent_features: int = 9
     degree: int = 1
-    learning_rate: float = 2e-4
+    learning_rate: float = 8e-4
     coder_layers: int = 2
     coder_width: int = 264
     activation: nn.Module = nn.LeakyReLU()

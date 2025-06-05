@@ -27,7 +27,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         n_quantities (int): Number of quantities.
         n_timesteps (int): Number of timesteps.
         n_parameters (int): Number of fixed parameters (default 0).
-        model_config (dict | None): Configuration for the model.
+        config (dict | None): Configuration for the model.
     """
 
     def __init__(
@@ -36,13 +36,13 @@ class LatentNeuralODE(AbstractSurrogateModel):
         n_quantities: int = 29,
         n_timesteps: int = 100,
         n_parameters: int = 0,
-        model_config: dict | None = None,
+        config: dict | None = None,
     ):
         super().__init__(
             device=device,
             n_quantities=n_quantities,
             n_timesteps=n_timesteps,
-            config=model_config,
+            config=config,
         )
         self.config = LatentNeuralODEBaseConfig(**self.config)
         self.n_parameters = n_parameters

@@ -24,5 +24,5 @@ class FCNNBaseConfig:
     num_hidden_layers: int = 5
     learning_rate: float = 1e-4
     schedule: bool = False
-    regularization_factor: float = 0.012
+    regularization_factor: float = 0  # 0.012
     activation: nn.Module = nn.ReLU()

@@ -53,6 +53,9 @@ def get_activation_function(name: str) -> nn.Module:
         "sigmoid": nn.Sigmoid(),
         "identity": nn.Identity(),
         "elu": nn.ELU(),
+        "prelu": nn.PReLU(),
+        "mish": nn.Mish(),
+        "silu": nn.SiLU(),
     }
     return activation_functions[name.lower()]
 

@@ -36,13 +36,13 @@ class LatentPoly(AbstractSurrogateModel):
         n_quantities: int = 29,
         n_timesteps: int = 100,
         n_parameters: int = 0,
-        model_config: dict | None = None,
+        config: dict | None = None,
     ):
         super().__init__(
             device=device,
             n_quantities=n_quantities,
             n_timesteps=n_timesteps,
-            config=model_config,
+            config=config,
         )
         self.config = LatentPolynomialBaseConfig(**self.config)
         self.config.n_quantities = n_quantities
