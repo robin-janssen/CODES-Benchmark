@@ -98,7 +98,13 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     n_quantities = train_data.shape[2]
     n_test_samples = n_timesteps * val_data.shape[0]
     n_params = train_params.shape[1] if train_params is not None else 0
-    model = surrogate_class(device, n_quantities, n_timesteps, n_params, model_config)
+    model = surrogate_class(
+        device=device,
+        n_quantities=n_quantities,
+        n_timesteps=n_timesteps,
+        n_parameters=n_params,
+        config=model_config,
+    )
 
     # Placeholder for metrics
     metrics = {}
@@ -231,7 +237,10 @@ def evaluate_accuracy(
     # Calculate relative errors
     absolute_errors = np.abs(preds - targets)
     mean_absolute_error = np.mean(absolute_errors)
-    relative_errors = np.abs(absolute_errors / targets)
+    relative_error_threshold = float(conf.get("relative_error_threshold", 0.0))
+    relative_errors = np.abs(
+        absolute_errors / np.maximum(np.abs(targets), relative_error_threshold)
+    )
 
     # Plot relative errors over time
     plot_relative_errors_over_time(
@@ -840,7 +849,8 @@ def evaluate_UQ(
     errors_time = np.mean(errors, axis=(0, 2))
     avg_correlation, _ = pearsonr(errors.flatten(), preds_std.flatten())
     preds_std_time = np.mean(preds_std, axis=(0, 2))
-    rel_errors = np.abs(errors / targets)
+    rel_error_threshold = float(conf.get("relative_error_threshold", 0.0))
+    rel_errors = np.abs(errors / np.maximum(np.abs(targets), rel_error_threshold))
 
     # Compute a target-weighted, signed difference between predicted uncertainty and error.
     # Negative values indicate overconfidence (PU is too low compared to error),
@@ -971,7 +981,11 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
         n_params = metrics[surr_name]["n_params"]
         model_config = get_model_config(surr_name, config)
         model = surrogate_class(
-            device, n_quantities, n_timesteps, n_params, model_config
+            device=device,
+            n_quantities=n_quantities,
+            n_timesteps=n_timesteps,
+            n_parameters=n_params,
+            config=model_config,
         )
 
         def load_losses(model_identifier: str):

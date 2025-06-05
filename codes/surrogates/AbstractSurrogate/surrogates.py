@@ -587,10 +587,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
             final_loss = criterion(preds, targets).item()
 
         if final_loss < self.best_test_loss:
-            print(
-                f"Final epoch (loss = {final_loss:.4f}) is better than "
-                f"stored best loss {self.best_test_loss:.4f}. Keeping final weights."
-            )
             try:
                 os.remove(self._checkpoint_path)
             except Exception:
@@ -603,11 +599,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
             self._checkpoint_path, map_location=self.device, weights_only=True
         )
         self.load_state_dict(checkpoint_state)
-        print(
-            f"Loaded best weights from epoch {self.best_epoch} "
-            f"(test loss = {self.best_test_loss:.4f}), "
-            f"because final loss {final_loss:.4f} was worse."
-        )
 
         try:
             os.remove(self._checkpoint_path)

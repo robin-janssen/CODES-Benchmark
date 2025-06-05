@@ -1,21 +1,21 @@
 # Global settings for the benchmark
-training_id: "test_checkpointing4"
-surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE"] # ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
-batch_size: [65536, 65536, 512, 512] # [8192, 8192, 512, 512]
-epochs: [20, 20, 20, 20] # [20000, 7500, 20000, 15000]
+training_id: "primordial_params"
+surrogates: ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"] # ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
+batch_size: [8192, 8192, 512, 512] # [8192, 8192, 512, 512]
+epochs: [20000, 7500, 20000, 15000] # [20000, 7500, 20000, 15000]
 dataset: 
-  name: "cloud"
+  name: "primordial_parametric"
   log10_transform: True
   log10_transform_params: False
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
-  tolerance: 1e-25
+  tolerance: 1e-20
   subset_factor: 1
   log_timesteps: True
-devices: ["cuda:5"]
+devices: ["cuda:5", "cuda:2", "cuda:4", "cuda:5", "cuda:7", "cuda:9"]
 seed: 42
 verbose: False
-checkpointing: True
+relative_error_threshold: 1e-6  # Threshold for relative error in evaluations
 
 # Models to train
 interpolation: 

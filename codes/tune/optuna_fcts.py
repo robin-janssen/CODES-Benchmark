@@ -226,7 +226,13 @@ def training_run(
     surrogate_class = get_surrogate(surr_name)
     model_config = get_model_config(surr_name, config)
     model_config.update(suggested_params)
-    model = surrogate_class(device, n_quantities, n_timesteps, n_params, model_config)
+    model = surrogate_class(
+        device=device,
+        n_quantities=n_quantities,
+        n_timesteps=n_timesteps,
+        n_parameters=n_params,
+        config=model_config,
+    )
     model.normalisation = data_info
     model.optuna_trial = trial
     model.trial_update_epochs = 10

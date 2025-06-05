@@ -452,10 +452,7 @@ def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
     write_metrics = convert_to_standard_types(write_metrics)
 
     # Make results directory
-    try:
-        os.makedirs(f"results/{conf['training_id']}")
-    except FileExistsError:
-        pass
+    os.makedirs(f"results/{conf['training_id']}", exist_ok=True)
 
     with open(
         f"results/{conf['training_id']}/{surr_name.lower()}_metrics.yaml",

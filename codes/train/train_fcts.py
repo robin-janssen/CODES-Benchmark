@@ -92,12 +92,12 @@ def train_and_save_model(
     with threadlock:
         set_random_seeds(seed, device)
         model = surrogate_class(
-            device,
-            n_quantities,
-            n_timesteps,
-            n_params,
-            config["training_id"],
-            model_config,
+            device=device,
+            n_quantities=n_quantities,
+            n_timesteps=n_timesteps,
+            n_parameters=n_params,
+            config=model_config,
+            training_id=config["training_id"],
         )
     model.normalisation = data_info
     model.checkpointing = config.get("checkpointing", False)
