@@ -7,7 +7,7 @@ from scipy.stats import pearsonr
 from tabulate import tabulate
 from torch.utils.data import DataLoader
 
-from codes.utils import check_and_load_data
+from codes.utils import batch_factor_to_float, check_and_load_data
 
 from .bench_plots import inference_time_bar_plot  # int_ext_sparse,
 from .bench_plots import (  # plot_generalization_errors,; rel_errors_and_uq,
@@ -738,12 +738,16 @@ def evaluate_batchsize(
         dict: A dictionary containing batch size training metrics.
     """
     training_id = conf["training_id"]
-    batch_sizes = conf["batch_scaling"]["sizes"].copy()
+    batch_factors = conf["batch_scaling"]["sizes"].copy()
     batch_metrics = {}
 
     # Identify the batch size of the main model
     model_idx = conf["surrogates"].index(surr_name)
     main_batch_size = conf["batch_size"][model_idx]
+
+    batch_sizes = [
+        int(main_batch_size * batch_factor_to_float(bf)) for bf in batch_factors
+    ]
 
     # Add main batch size to the list of batch sizes
     if main_batch_size not in batch_sizes:
@@ -855,7 +859,9 @@ def evaluate_UQ(
     # Compute a target-weighted, signed difference between predicted uncertainty and error.
     # Negative values indicate overconfidence (PU is too low compared to error),
     # positive values indicate underconfidence.
-    weighted_diff = (preds_std - errors) / targets
+    weighted_diff = (preds_std - errors) / np.maximum(
+        np.abs(targets), rel_error_threshold
+    )
 
     # Plots (existing UQ plots)
     plot_example_predictions_with_uncertainty(

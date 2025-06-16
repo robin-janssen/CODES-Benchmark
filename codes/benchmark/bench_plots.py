@@ -7,6 +7,8 @@ from matplotlib.colors import ListedColormap
 from matplotlib.gridspec import GridSpec
 from scipy.ndimage import gaussian_filter1d
 
+from codes.utils import batch_factor_to_float
+
 from .bench_utils import format_time
 
 # Utility functions for plotting
@@ -835,10 +837,16 @@ def plot_surr_losses(
 
     # Batchsize losses
     if conf["batch_scaling"]["enabled"]:
-        batch_sizes = conf["batch_scaling"]["sizes"]
+        batch_factors = conf["batch_scaling"]["sizes"]
         batch_train_losses = []
         batch_test_losses = []
-        for batch_size in batch_sizes:
+        batch_sizes = []
+        surr_index = conf["surrogates"].index(surr_name)
+        main_model_bs = conf["batch_size"][surr_index]
+        for batch_factor in batch_factors:
+            batch_factor = batch_factor_to_float(batch_factor)
+            batch_size = int(main_model_bs * batch_factor)
+            batch_sizes.append(batch_size)
             train_loss, test_loss, epochs = load_losses(
                 f"{surr_name.lower()}_batchsize_{batch_size}"
             )
