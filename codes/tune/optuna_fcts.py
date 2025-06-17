@@ -122,6 +122,7 @@ def make_optuna_params(trial: optuna.Trial, optuna_params: dict) -> dict:
 
     return suggested
 
+
 def create_objective(
     config: dict, study_name: str, device_queue: queue.Queue
 ) -> callable:

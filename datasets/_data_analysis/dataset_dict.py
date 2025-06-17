@@ -75,8 +75,14 @@ dataset_dict = {
     },
     "cloud": {
         "log": True,
-        "qpp": 10,
-        "tol": 1e-30,
+        "qpp": 8,
+        "tol": 1e-25,
+        "log_time": True,
+    },
+    "cloud_parametric": {
+        "log": True,
+        "qpp": 8,
+        "tol": 1e-25,
         "log_time": True,
     },
 }

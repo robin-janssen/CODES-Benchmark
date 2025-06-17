@@ -33,11 +33,12 @@ def main():
     Main function to analyse the dataset. It checks the dataset and loads the data.
     """
     datasets = [
+        "primordial_parametric",
+        "primordial",
+        "cloud_parametric",
         "cloud",
         "lv_parametric",
         "lv_parametric_no_params",
-        "primordial_parametric",
-        "primordial",
         "simple_reaction",
         "osutest2",
         "coupled_oscillators",
@@ -102,6 +103,7 @@ def main():
             labels=labels,
             sample_idx=86,
             log=log,
+            log_time=dataset_dict[dataset].get("log_time", False),
             quantities_per_plot=qpp,
             show_title=TITLE,
         )

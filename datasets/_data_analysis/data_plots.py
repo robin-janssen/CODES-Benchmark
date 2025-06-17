@@ -21,6 +21,7 @@ def plot_example_trajectories(
     save: bool = False,
     sample_idx: int = 0,
     log: bool = False,
+    log_time: bool = False,
     quantities_per_plot: int = 6,
     show_title: bool = True,
 ) -> None:
@@ -61,6 +62,8 @@ def plot_example_trajectories(
             borderaxespad=0.0,
             fontsize="small",
         )
+        if log_time:
+            ax.set_xscale("log")
 
     for ax in axes[num_plots:]:
         ax.set_visible(False)
