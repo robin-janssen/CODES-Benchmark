@@ -583,9 +583,9 @@ def get_data_subset(
                 p[::factor] if p is not None else None for p in params_subset
             )
 
-    elif mode == "batch_size":
-        # For batch_size, we thin the dataset by a constant factor (4).
-        factor = 4
+    elif mode == "batchsize":
+        # For batch_size, we thin the dataset by a constant factor.
+        factor = 1
         data_subset = tuple(d[::factor] for d in data_sub)
         timesteps_subset = timesteps  # Timesteps are not subsetted for batch_size.
         if params is not None:

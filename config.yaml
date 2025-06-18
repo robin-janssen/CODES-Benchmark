@@ -1,20 +1,21 @@
 # Global settings for the benchmark
-training_id: "primordial_params_others"
-surrogates: ["MultiONet", "FullyConnected", "LatentPoly"] # ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
-batch_size: [8192, 8192, 512] # [8192, 8192, 512, 512]
-epochs: [20000, 7500, 15000] # [20000, 7500, 20000, 15000]
+training_id: "cloud_full"
+surrogates: ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"] 
+batch_size: [65536, 65536, 512, 512] 
+epochs: [20000, 20000, 11000, 20000] # [20000, 7500, 20000, 15000]
 dataset: 
-  name: "primordial_parametric"
+  name: "cloud"
   log10_transform: True
   log10_transform_params: False
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
-  tolerance: 1e-20
+  tolerance: 1e-25
   subset_factor: 1
   log_timesteps: True
-devices: ["cuda:1", "cuda:2", "cuda:4", "cuda:5", "cuda:7", "cuda:9"]
+devices: ["cuda:2", "cuda:3", "cuda:4", "cuda:5", "cuda:6", "cuda:7", "cuda:8", "cuda:9"] 
 seed: 42
 verbose: False
+relative_error_threshold: 1e-10
 
 # Models to train
 interpolation: 
@@ -28,7 +29,7 @@ sparse:
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
   enabled: True
-  sizes: [64, 512, 1024, 4096]
+  sizes: [1/16, 1/8, 1/4, 1/2]
 uncertainty: 
   enabled: True
   ensemble_size: 5  # Number of models for deep ensemble

@@ -53,6 +53,9 @@ def get_activation_function(name: str) -> nn.Module:
         "sigmoid": nn.Sigmoid(),
         "identity": nn.Identity(),
         "elu": nn.ELU(),
+        "prelu": nn.PReLU(),
+        "mish": nn.Mish(),
+        "silu": nn.SiLU(),
     }
     return activation_functions[name.lower()]
 
@@ -74,7 +77,9 @@ def make_optuna_params(trial: optuna.Trial, optuna_params: dict) -> dict:
         if name in skip:
             continue
         if opts["type"] == "int":
-            suggested[name] = trial.suggest_int(name, opts["low"], opts["high"])
+            suggested[name] = trial.suggest_int(
+                name, opts["low"], opts["high"], step=opts.get("step", 1)
+            )
         elif opts["type"] == "float":
             suggested[name] = trial.suggest_float(
                 name, opts["low"], opts["high"], log=opts.get("log", False)
@@ -223,7 +228,13 @@ def training_run(
     surrogate_class = get_surrogate(surr_name)
     model_config = get_model_config(surr_name, config)
     model_config.update(suggested_params)
-    model = surrogate_class(device, n_quantities, n_timesteps, n_params, model_config)
+    model = surrogate_class(
+        device=device,
+        n_quantities=n_quantities,
+        n_timesteps=n_timesteps,
+        n_parameters=n_params,
+        config=model_config,
+    )
     model.normalisation = data_info
     model.optuna_trial = trial
     model.trial_update_epochs = 10

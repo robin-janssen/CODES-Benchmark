@@ -7,7 +7,7 @@ from scipy.stats import pearsonr
 from tabulate import tabulate
 from torch.utils.data import DataLoader
 
-from codes.utils import check_and_load_data
+from codes.utils import batch_factor_to_float, check_and_load_data
 
 from .bench_plots import inference_time_bar_plot  # int_ext_sparse,
 from .bench_plots import (  # plot_generalization_errors,; rel_errors_and_uq,
@@ -98,7 +98,13 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     n_quantities = train_data.shape[2]
     n_test_samples = n_timesteps * val_data.shape[0]
     n_params = train_params.shape[1] if train_params is not None else 0
-    model = surrogate_class(device, n_quantities, n_timesteps, n_params, model_config)
+    model = surrogate_class(
+        device=device,
+        n_quantities=n_quantities,
+        n_timesteps=n_timesteps,
+        n_parameters=n_params,
+        config=model_config,
+    )
 
     # Placeholder for metrics
     metrics = {}
@@ -231,7 +237,10 @@ def evaluate_accuracy(
     # Calculate relative errors
     absolute_errors = np.abs(preds - targets)
     mean_absolute_error = np.mean(absolute_errors)
-    relative_errors = np.abs(absolute_errors / targets)
+    relative_error_threshold = float(conf.get("relative_error_threshold", 0.0))
+    relative_errors = np.abs(
+        absolute_errors / np.maximum(np.abs(targets), relative_error_threshold)
+    )
 
     # Plot relative errors over time
     plot_relative_errors_over_time(
@@ -729,12 +738,16 @@ def evaluate_batchsize(
         dict: A dictionary containing batch size training metrics.
     """
     training_id = conf["training_id"]
-    batch_sizes = conf["batch_scaling"]["sizes"].copy()
+    batch_factors = conf["batch_scaling"]["sizes"].copy()
     batch_metrics = {}
 
     # Identify the batch size of the main model
     model_idx = conf["surrogates"].index(surr_name)
     main_batch_size = conf["batch_size"][model_idx]
+
+    batch_sizes = [
+        int(main_batch_size * batch_factor_to_float(bf)) for bf in batch_factors
+    ]
 
     # Add main batch size to the list of batch sizes
     if main_batch_size not in batch_sizes:
@@ -840,12 +853,15 @@ def evaluate_UQ(
     errors_time = np.mean(errors, axis=(0, 2))
     avg_correlation, _ = pearsonr(errors.flatten(), preds_std.flatten())
     preds_std_time = np.mean(preds_std, axis=(0, 2))
-    rel_errors = np.abs(errors / targets)
+    rel_error_threshold = float(conf.get("relative_error_threshold", 0.0))
+    rel_errors = np.abs(errors / np.maximum(np.abs(targets), rel_error_threshold))
 
     # Compute a target-weighted, signed difference between predicted uncertainty and error.
     # Negative values indicate overconfidence (PU is too low compared to error),
     # positive values indicate underconfidence.
-    weighted_diff = (preds_std - errors) / targets
+    weighted_diff = (preds_std - errors) / np.maximum(
+        np.abs(targets), rel_error_threshold
+    )
 
     # Plots (existing UQ plots)
     plot_example_predictions_with_uncertainty(
@@ -971,7 +987,11 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
         n_params = metrics[surr_name]["n_params"]
         model_config = get_model_config(surr_name, config)
         model = surrogate_class(
-            device, n_quantities, n_timesteps, n_params, model_config
+            device=device,
+            n_quantities=n_quantities,
+            n_timesteps=n_timesteps,
+            n_parameters=n_params,
+            config=model_config,
         )
 
         def load_losses(model_identifier: str):

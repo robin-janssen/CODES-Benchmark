@@ -102,6 +102,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         n_quantities: int = 29,
         n_timesteps: int = 100,
         n_parameters: int = 0,
+        training_id: str | None = None,
         config: dict | None = None,
     ):
         super().__init__()
@@ -119,6 +120,13 @@ class AbstractSurrogateModel(ABC, nn.Module):
         self.optuna_trial = None
         self.update_epochs = 10
         self.n_epochs = 0
+        self.training_id = training_id
+
+        # Checkpointing attributes
+        self.checkpointing: bool = False
+        self.best_test_loss: float | None = None
+        self.best_epoch: int | None = None
+        self._checkpoint_path: str | None = None
 
     @classmethod
     def register(cls, surrogate: type["AbstractSurrogateModel"]):
@@ -496,6 +504,171 @@ class AbstractSurrogateModel(ABC, nn.Module):
                 raise optuna.TrialPruned(
                     f"Projected total time {projected_total_time:.1f}s exceeds threshold {threshold:.1f}s"
                 )
+
+    def setup_checkpoint(self) -> None:
+        """
+        Prepare everything needed to save the single 'best' checkpoint.
+        Must be called before any call to `self.checkpoint(...)`.
+        """
+        if not self.checkpointing:
+            return
+
+        self.best_test_loss = float("inf")
+        self.best_epoch = -1
+
+        # Build a small folder under `trained/<training_id>/<ModelClass>/`.
+        training_id = self.training_id
+        if training_id is None:
+            raise RuntimeError(
+                "Cannot call setup_checkpoint(): Attribute `self.training_id` is missing."
+            )
+
+        model_dir = os.path.join(
+            os.getcwd(),
+            "trained",
+            training_id,
+            self.__class__.__name__,
+        )
+        os.makedirs(model_dir, exist_ok=True)
+
+        # We’ll store exactly one file called "best_checkpoint.pth"
+        self._checkpoint_path = os.path.join(model_dir, "best_checkpoint.pth")
+
+    def checkpoint(self, test_loss: float, epoch: int) -> None:
+        """
+        If save_best is True and test_loss < self.best_test_loss,
+        overwrite the single-file checkpoint on disk and update best_test_loss/epoch.
+        """
+        if not self.checkpointing:
+            return
+
+        if self.best_test_loss is None:
+            raise RuntimeError(
+                "You must call setup_checkpoint() before calling checkpoint()."
+            )
+
+        # If this epoch is strictly better than anything before, overwrite:
+        if test_loss < self.best_test_loss:
+            self.best_test_loss = test_loss
+            self.best_epoch = epoch
+            torch.save(self.state_dict(), self._checkpoint_path)
+
+    def get_checkpoint(
+        self,
+        test_loader: torch.utils.data.DataLoader,
+        criterion: nn.Module,
+    ) -> None:
+        """
+        After training, compare the current model’s test loss to the best recorded loss.
+        If the final model is better, keep it; otherwise load the saved best checkpoint.
+
+        Args:
+            test_loader (DataLoader): DataLoader for computing final test loss.
+            criterion (nn.Module): Loss function used for evaluation.
+        """
+        if not self.checkpointing:
+            return
+
+        if self.best_epoch is None or self.best_epoch < 0:
+            return
+
+        if self._checkpoint_path is None or not os.path.isfile(self._checkpoint_path):
+            print(
+                f"Warning: no checkpoint file found at {self._checkpoint_path}. "
+                "Skipping load of best weights."
+            )
+            self.best_epoch = -1
+            self.best_test_loss = None
+            return
+
+        self.eval()
+        with torch.inference_mode():
+            preds, targets = self.predict(test_loader)
+            final_loss = criterion(preds, targets).item()
+
+        if final_loss < self.best_test_loss:
+            try:
+                os.remove(self._checkpoint_path)
+            except Exception:
+                pass
+            self.best_epoch = self.n_epochs - 1
+            self.best_test_loss = final_loss
+            return
+
+        checkpoint_state = torch.load(
+            self._checkpoint_path, map_location=self.device, weights_only=True
+        )
+        self.load_state_dict(checkpoint_state)
+
+        try:
+            os.remove(self._checkpoint_path)
+        except Exception:
+            pass
+
+    def validate(
+        self,
+        epoch: int,
+        train_loader: DataLoader,
+        test_loader: DataLoader,
+        criterion: nn.Module,
+        optimizer: torch.optim.Optimizer,
+        progress_bar: tqdm,
+        total_epochs: int,
+        multi_objective: bool,
+    ) -> None:
+        """
+        Shared “validation + checkpoint” logic, to be called once per epoch in each fit().
+
+        Relies on:
+          - self.update_epochs (int)
+          - self.train_loss  (np.ndarray)
+          - self.test_loss   (np.ndarray)
+          - self.MAE         (np.ndarray)
+          - self.optuna_trial
+          - self.L1 (nn.L1Loss)
+          - self.predict(...)
+          - self.checkpoint(test_loss, epoch)
+
+        Only runs if (epoch % self.update_epochs) == 0.
+        """
+
+        # 1) If it's not time to check yet, do nothing.
+        if epoch % self.update_epochs != 0:
+            return
+
+        index = epoch // self.update_epochs
+
+        # 2) Switch into inference/eval mode and compute losses
+        with torch.inference_mode():
+            self.eval()
+            optimizer.eval() if hasattr(optimizer, "eval") else None
+
+            # Compute losses
+            preds, targets = self.predict(train_loader)
+            self.train_loss[index] = criterion(preds, targets).item()
+            preds, targets = self.predict(test_loader)
+            self.test_loss[index] = criterion(preds, targets).item()
+            self.MAE[index] = self.L1(preds, targets).item()
+
+            progress_bar.set_postfix(
+                {
+                    "train_loss": f"{self.train_loss[index]:.2e}",
+                    "test_loss": f"{self.test_loss[index]:.2e}",
+                }
+            )
+
+            if self.optuna_trial is not None:
+                if multi_objective:
+                    self.time_pruning(current_epoch=epoch, total_epochs=total_epochs)
+                else:
+                    self.optuna_trial.report(self.test_loss[index], step=epoch)
+                    if self.optuna_trial.should_prune():
+                        raise optuna.TrialPruned()
+
+            self.checkpoint(self.test_loss[index], epoch)
+
+            self.train()
+            optimizer.train() if hasattr(optimizer, "train") else None
 
 
 SurrogateModel = TypeVar("SurrogateModel", bound=AbstractSurrogateModel)

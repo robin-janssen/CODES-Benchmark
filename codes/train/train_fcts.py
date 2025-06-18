@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 from codes.benchmark.bench_utils import get_model_config, get_surrogate
 from codes.utils import (
+    batch_factor_to_float,
     check_and_load_data,
     determine_batch_size,
     get_data_subset,
@@ -92,9 +93,15 @@ def train_and_save_model(
     with threadlock:
         set_random_seeds(seed, device)
         model = surrogate_class(
-            device, n_quantities, n_timesteps, n_params, model_config
+            device=device,
+            n_quantities=n_quantities,
+            n_timesteps=n_timesteps,
+            n_parameters=n_params,
+            config=model_config,
+            training_id=config["training_id"],
         )
     model.normalisation = data_info
+    model.checkpointing = config.get("checkpointing", False)
     surr_idx = config["surrogates"].index(surr_name)
 
     batch_size = determine_batch_size(config, surr_idx, mode, metric)
@@ -124,6 +131,7 @@ def train_and_save_model(
         description=description,
     )
 
+    metric = batch_size if mode == "batchsize" else metric
     model_name = f"{surr_name.lower()}_{mode}_{str(metric)}".strip("_")
     model_name = model_name.replace("__", "_")
     base_dir = os.path.join(os.getcwd(), "trained")
@@ -179,8 +187,10 @@ def create_task_list_for_surrogate(config, surr_name: str) -> list:
 
     if config["batch_scaling"]["enabled"]:
         mode = "batchsize"
-        for bs in config["batch_scaling"]["sizes"]:
-            tasks.append((surr_name, mode, bs, id, seed + bs, epochs))
+        for bf in config["batch_scaling"]["sizes"]:
+            bf_index = config["batch_scaling"]["sizes"].index(bf)
+            bf = batch_factor_to_float(bf)
+            tasks.append((surr_name, mode, float(bf), id, seed + bf_index, epochs))
 
     return tasks
 

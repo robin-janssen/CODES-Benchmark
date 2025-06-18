@@ -3,6 +3,7 @@ import math
 import os
 import re
 import subprocess
+import sys
 import time
 
 import matplotlib.pyplot as plt
@@ -12,6 +13,11 @@ import psycopg2
 import torch
 from optuna.trial import TrialState
 from psycopg2 import sql
+
+# add codes directory to path
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 from codes.tune import load_yaml_config
 from codes.utils import nice_print
