@@ -8,6 +8,7 @@ codes.utils.utils
 
    .. autosummary::
    
+      batch_factor_to_float
       check_training_status
       create_model_dir
       determine_batch_size

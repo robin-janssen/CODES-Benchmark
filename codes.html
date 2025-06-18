@@ -545,17 +545,21 @@
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.n_timesteps"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.n_timesteps</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.L1"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.L1</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.config"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.checkpoint"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.checkpoint()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.denormalize"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.denormalize()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.fit"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.fit()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.forward"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.get_checkpoint"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.get_checkpoint()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.get_registered_classes"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.get_registered_classes()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.load"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.load()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.predict"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.predict()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.prepare_data"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.prepare_data()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.register"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.register()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.save"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.setup_checkpoint"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.setup_checkpoint()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.setup_progress_bar"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.setup_progress_bar()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.time_pruning"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.time_pruning()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.validate"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.validate()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.BranchNet"><code class="docutils literal notranslate"><span class="pre">BranchNet</span></code></a><ul>
@@ -730,6 +734,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="codes.utils.html#module-codes.utils.utils">codes.utils.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.utils.batch_factor_to_float"><code class="docutils literal notranslate"><span class="pre">batch_factor_to_float()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.utils.check_training_status"><code class="docutils literal notranslate"><span class="pre">check_training_status()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.utils.create_model_dir"><code class="docutils literal notranslate"><span class="pre">create_model_dir()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.utils.determine_batch_size"><code class="docutils literal notranslate"><span class="pre">determine_batch_size()</span></code></a></li>
@@ -747,6 +752,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="codes.utils.html#module-codes.utils">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.batch_factor_to_float"><code class="docutils literal notranslate"><span class="pre">batch_factor_to_float()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.check_and_load_data"><code class="docutils literal notranslate"><span class="pre">check_and_load_data()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.check_training_status"><code class="docutils literal notranslate"><span class="pre">check_training_status()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.create_dataset"><code class="docutils literal notranslate"><span class="pre">create_dataset()</span></code></a></li>
