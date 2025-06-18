@@ -11,13 +11,12 @@ project_root = os.path.abspath(os.path.join(current_path, "../../"))  # Go up tw
 # Add the 'codes' directory to the system path
 codes_path = os.path.join(project_root, "codes")
 sys.path.insert(1, codes_path)
+sys.path.insert(1, project_root)  # Also add the project root for other imports
 print(sys.path)
 
 from codes import check_and_load_data, download_data
 from datasets._data_analysis.data_plots import (  # plot_example_trajectories_poster,; plot_average_gradients_over_time,
     debug_numerical_errors_plot,
-    plot_all_gradients_over_time,
-    plot_all_trajectories_over_time,
     plot_example_trajectories,
     plot_initial_conditions_distribution,
 )
@@ -33,12 +32,11 @@ def main(args):
     # Load full data
     download_data(args.dataset)
     (
-        full_train_data,
-        full_test_data,
-        full_val_data,
+        (full_train_data, full_test_data, full_val_data),
+        (train_params, test_params, val_params),
         timesteps,
-        _,
-        _,
+        n_train_samples,
+        data_info,
         labels,
     ) = check_and_load_data(
         args.dataset,
@@ -60,15 +58,6 @@ def main(args):
         log=log,
         quantities_per_plot=qpp,
     )
-
-    # plot_example_trajectories_poster(
-    #     args.dataset,
-    #     full_train_data,
-    #     timesteps,
-    #     save=True,
-    #     labels=labels,
-    #     sample_idx=7,
-    # )
 
     full_data = np.concatenate([full_train_data, full_test_data, full_val_data], axis=0)
 
@@ -94,35 +83,12 @@ def main(args):
         quantities_per_plot=qpp,
     )
 
-    # plot_average_gradients_over_time(
-    #     args.dataset,
-    #     full_data,
-    #     labels,
-    #     max_quantities=30,
-    # )
-
-    plot_all_trajectories_over_time(
-        args.dataset,
-        full_data,
-        labels,
-        max_quantities=30,
-        quantities_per_plot=qpp,
-    )
-
-    plot_all_gradients_over_time(
-        args.dataset,
-        full_data,
-        labels,
-        max_quantities=30,
-        quantities_per_plot=qpp,
-    )
-
 
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
         "--dataset",
-        default="coupled_oscillators",
+        default="cloud_parametric",
         type=str,
         help="Name of the dataset.",
     )

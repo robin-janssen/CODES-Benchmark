@@ -159,6 +159,9 @@ def plot_relative_errors_over_time(
     plt.xlabel("Time")
     plt.ylabel("Relative Error")
     plt.xlim(timesteps[0], timesteps[-1])
+    plt.ylim(bottom=1e-8)
+    if conf["dataset"]["log_timesteps"]:
+        plt.xscale("log")
     if show_title:
         plt.title(title)
     plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
@@ -334,6 +337,8 @@ def plot_average_errors_over_time(
     plt.xlim(timesteps[0], timesteps[-1])
     plt.ylabel("Mean Absolute Error")
     plt.yscale("log")
+    if conf["dataset"]["log_timesteps"]:
+        plt.xscale("log")
     title = f"Mean Absolute Errors over Time ({mode.capitalize()}, {surr_name})"
     filename = f"{mode}_errors_over_time.png"
 
@@ -452,6 +457,8 @@ def plot_example_mode_predictions(
 
         # Set the x-axis limits based on the timesteps array
         ax.set_xlim(timesteps.min(), timesteps.max())
+        if conf["dataset"]["log_timesteps"]:
+            ax.set_xscale("log")
 
     # Add a single x-axis label to the bottom of the figure
     fig.text(0.5, 0.04, "Time", ha="center", va="center", fontsize=12)
@@ -473,10 +480,10 @@ def plot_example_mode_predictions(
 
     # Set the overall title with details depending on the mode
     if mode == "interpolation":
-        title = f"DeepEnsemble: Example Predictions (Interpolation, {surr_name})\n"
+        title = f"Interpolation: Example Predictions (Interpolation, {surr_name})\n"
         extra_info = f"Sample Index: {example_idx}, Training Interval: {metric}"
     elif mode == "extrapolation":
-        title = f"DeepEnsemble: Example Predictions (Extrapolation, {surr_name})\n"
+        title = f"Extrapolation: Example Predictions (Extrapolation, {surr_name})\n"
         extra_info = f"Sample Index: {example_idx}, Cutoff Timestep: {metric}"
     else:
         raise ValueError(
@@ -591,6 +598,8 @@ def plot_example_predictions_with_uncertainty(
 
         # Set the x limit exactly from the lowest to the highest timestep
         ax.set_xlim(timesteps.min(), timesteps.max())
+        if conf["dataset"]["log_timesteps"]:
+            ax.set_xscale("log")
 
     # Add a single x-axis label to the bottom plot
     fig.text(0.5, 0.04, "Time", ha="center", va="center", fontsize=12)
@@ -658,6 +667,8 @@ def plot_average_uncertainty_over_time(
     plt.xlabel("Time")
     plt.ylabel("Average Uncertainty / Mean Absolute Error")
     plt.xlim(timesteps[0], timesteps[-1])
+    if conf["dataset"]["log_timesteps"]:
+        plt.xscale("log")
     if show_title:
         plt.title("Average Uncertainty and Mean Absolute Error Over Time")
     plt.legend()
@@ -974,7 +985,9 @@ def plot_error_distribution_per_quantity(
     fig.align_ylabels()
 
     plt.xscale("log")  # Log scale for error magnitudes
-    plt.xlim(10**x_min, 10**x_max)  # Set x-axis range based on log-space calculations
+    plt.xlim(
+        np.maximum(10**x_min, 1e-8), 10**x_max
+    )  # Set x-axis range based on log-space calculations
     plt.xlabel("Relative Error")
     if show_title:
         if num_plots > 1:
@@ -1431,6 +1444,8 @@ def plot_relative_errors(
     plt.yscale("log")
     if show_title:
         plt.title("Comparison of Relative Errors Over Time")
+    if config["dataset"]["log_timesteps"]:
+        plt.xscale("log")
     plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
     if save and config:
@@ -1491,6 +1506,8 @@ def plot_uncertainty_over_time_comparison(
     plt.xlim(timesteps[0], timesteps[-1])
     plt.ylabel("Uncertainty / MAE")
     plt.yscale("log")
+    if config["dataset"]["log_timesteps"]:
+        plt.xscale("log")
     if show_title:
         plt.title("Comparison of Predictive Uncertainty and True MAE over Time")
     plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
@@ -2274,7 +2291,7 @@ def plot_error_distribution_comparative(
             )
 
     plt.xscale("log")  # Log scale for error magnitudes
-    plt.xlim(10**x_min, 10**x_max)  # Set x-axis range based on log-space calculations
+    plt.xlim(np.maximum(10**x_min, 1e-8), 10**x_max)  # Set x-axis range
 
     if mode == "main":
         title = "Distribution of Surrogate Relative Errors"

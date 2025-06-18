@@ -77,7 +77,9 @@ def make_optuna_params(trial: optuna.Trial, optuna_params: dict) -> dict:
         if name in skip:
             continue
         if opts["type"] == "int":
-            suggested[name] = trial.suggest_int(name, opts["low"], opts["high"])
+            suggested[name] = trial.suggest_int(
+                name, opts["low"], opts["high"], step=opts.get("step", 1)
+            )
         elif opts["type"] == "float":
             suggested[name] = trial.suggest_float(
                 name, opts["low"], opts["high"], log=opts.get("log", False)
