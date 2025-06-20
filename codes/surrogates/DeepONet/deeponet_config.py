@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
-from torch import nn
+from AbstractSurrogate import AbstractSurrogateBaseConfig
 
 
 @dataclass
-class MultiONetBaseConfig:
+class MultiONetBaseConfig(AbstractSurrogateBaseConfig):
     """
     Configuration for the MultiONet surrogate model.
 
@@ -18,11 +18,7 @@ class MultiONetBaseConfig:
         branch_hidden_layers (int): Number of hidden layers in each branch network.
         trunk_hidden_layers (int): Number of hidden layers in the trunk network.
         output_factor (int): Multiplier for the output dimension (neurons = output_factor * num_quantities).
-        learning_rate (float): Learning rate for the optimizer.
-        schedule (bool): Whether to apply a learning rate scheduler.
-        regularization_factor (float): L2 regularization coefficient.
         massloss_factor (float): Additional weight for a mass conservation loss term.
-        activation (nn.Module): Activation function used in all layers.
         params_branch (bool): Flag to indicate whether parameters (if present) are passed to the branch or trunk net.
     """
 
@@ -32,9 +28,5 @@ class MultiONetBaseConfig:
     branch_hidden_layers: int = 5
     trunk_hidden_layers: int = 5
     output_factor: int = 10
-    learning_rate: float = 3e-4
-    schedule: bool = False
-    regularization_factor: float = 0.0
     massloss_factor: float = 0.0
-    activation: nn.Module = nn.ReLU()
     params_branch: bool = True

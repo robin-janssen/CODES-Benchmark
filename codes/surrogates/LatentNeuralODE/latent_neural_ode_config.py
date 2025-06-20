@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
-from torch import nn
+from AbstractSurrogate import AbstractSurrogateBaseConfig
 
 
 @dataclass
-class LatentNeuralODEBaseConfig:
+class LatentNeuralODEBaseConfig(AbstractSurrogateBaseConfig):
     """
     Configuration for the LatentNeuralODE surrogate model.
 
@@ -19,7 +19,6 @@ class LatentNeuralODEBaseConfig:
         latent_features (int): Size of the latent space (z-dimension).
         layers_factor (int): Scaling factor for the number of neurons in the encoder/decoder.
             - Used in "v1" to determine layer widths based on coder_hidden.
-        activation (nn.Module): Activation function used in encoder, decoder, and ODE blocks.
         coder_layers (int): Number of hidden layers in both encoder and decoder (used in v2).
         coder_width (int): Number of neurons per hidden layer in encoder/decoder (used in v2).
         ode_layers (int): Number of hidden layers in the ODE module.
@@ -27,7 +26,6 @@ class LatentNeuralODEBaseConfig:
         ode_tanh_reg (bool): Whether to apply tanh regularization in the ODE output.
         rtol (float): Relative tolerance for the ODE solver.
         atol (float): Absolute tolerance for the ODE solver.
-        learning_rate (float): Learning rate for the optimizer.
         encode_params (bool): Whether to encode parameters in the encoder.
             - If False, parameters are passed after the encoder, as additional inputs to the ODE network.
     """
@@ -35,7 +33,6 @@ class LatentNeuralODEBaseConfig:
     model_version: str = "v2"
     latent_features: int = 5
     layers_factor: int = 8
-    activation: nn.Module = nn.ReLU()
     coder_layers: int = 3
     coder_width: int = 64
     ode_layers: int = 4
@@ -43,5 +40,4 @@ class LatentNeuralODEBaseConfig:
     ode_tanh_reg: bool = True
     rtol: float = 1e-6
     atol: float = 1e-6
-    learning_rate: float = 1e-3
     encode_params: bool = False
