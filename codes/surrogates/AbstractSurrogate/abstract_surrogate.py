@@ -675,13 +675,22 @@ class AbstractSurrogateModel(ABC, nn.Module):
         epochs: int,
     ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
         """
-        Set up optimizer and scheduler based on self.config.
-        Supports 'adamw', 'sgd' optimizers and 'schedulefree', 'cosine', 'poly' schedulers.
+        Set up optimizer and scheduler based on self.config.scheduler and self.config.optimizer.
+        Supports "adamw", "sgd" optimizers and "schedulefree", "cosine", "poly" schedulers.
+        Patches standard optimizers so that .train() and .eval() exist as no-ops.
+        Patches ScheduleFree optimizers to have a no-op scheduler.step().
+        For ScheduleFree optimizers, use lr warmup for the first 1% of epochs.
+        For Poly scheduler, use a power decay based on self.config.poly_power.
+        For Cosine scheduler, use a minimum learning rate defined by self.config.eta_min.
 
         Args:
-            epochs (int): Total number of training epochs.
+            epochs (int): The number of epochs the training will run for.
+
         Returns:
-            (optimizer, scheduler)
+            tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
+                The optimizer and scheduler instances.
+        Raises:
+            ValueError: If an unknown optimizer or scheduler is specified in the config.
         """
         scheduler_name = self.config.scheduler.lower()
         optimizer_name = self.config.optimizer.lower()
@@ -696,7 +705,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             def load_state_dict(self, state_dict):
                 pass
 
-        # Optimizer
+        # create optimizer
         if optimizer_name == "adamw":
             if scheduler_name == "schedulefree":
                 from schedulefree import AdamWScheduleFree
@@ -705,6 +714,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
                     self.parameters(),
                     lr=self.config.learning_rate,
                     weight_decay=self.config.regularization_factor,
+                    warmup_steps=max(1, epochs // 100),
                 )
             else:
                 from torch.optim import AdamW
@@ -724,6 +734,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
                     lr=self.config.learning_rate,
                     weight_decay=self.config.regularization_factor,
                     momentum=momentum,
+                    warmup_steps=max(1, epochs // 100),
                 )
             else:
                 from torch.optim import SGD
@@ -737,7 +748,21 @@ class AbstractSurrogateModel(ABC, nn.Module):
         else:
             raise ValueError(f"Unknown optimizer '{self.config.optimizer}'")
 
-        # Scheduler
+        # Patch optimizer to have no-op train() and eval(), if not present
+        if not hasattr(optimizer, "train"):
+
+            def _opt_train():
+                pass
+
+            optimizer.train = _opt_train
+        if not hasattr(optimizer, "eval"):
+
+            def _opt_eval():
+                pass
+
+            optimizer.eval = _opt_eval
+
+        # create scheduler
         if scheduler_name == "schedulefree":
             scheduler = DummyScheduler()
         elif scheduler_name == "cosine":

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from AbstractSurrogate import AbstractSurrogateBaseConfig
+from codes.surrogates.AbstractSurrogate import AbstractSurrogateBaseConfig
 
 
 @dataclass
