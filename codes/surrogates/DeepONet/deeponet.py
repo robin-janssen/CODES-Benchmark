@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
+from codes.surrogates.AbstractSurrogate import AbstractSurrogateModel
 from codes.utils import time_execution, worker_init_fn
 
 from .deeponet_config import MultiONetBaseConfig

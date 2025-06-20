@@ -3,9 +3,10 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 
-from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
-from codes.surrogates.FCNN.fcnn_config import FCNNBaseConfig
+from codes.surrogates.AbstractSurrogate import AbstractSurrogateModel
 from codes.utils import time_execution, worker_init_fn
+
+from .fcnn_config import FCNNBaseConfig
 
 
 def fc_collate_fn(batch):

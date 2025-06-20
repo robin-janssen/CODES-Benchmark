@@ -5,14 +5,13 @@ from torch import nn
 # from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
-from codes.surrogates.LatentNeuralODE.latent_neural_ode import Decoder as NewDecoder
-from codes.surrogates.LatentNeuralODE.latent_neural_ode import Encoder as NewEncoder
-from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
-from codes.surrogates.LatentPolynomial.latent_poly_config import (
-    LatentPolynomialBaseConfig,
-)
+from codes.surrogates import ChemDataset
+from codes.surrogates import Decoder as NewDecoder
+from codes.surrogates import Encoder as NewEncoder
+from codes.surrogates.AbstractSurrogate import AbstractSurrogateModel
 from codes.utils import time_execution, worker_init_fn
+
+from .latent_poly_config import LatentPolynomialBaseConfig
 
 
 class LatentPoly(AbstractSurrogateModel):
