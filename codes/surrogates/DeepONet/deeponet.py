@@ -1,11 +1,8 @@
 from typing import TypeVar
 
 import numpy as np
-import optuna
 import torch
 import torch.nn as nn
-from schedulefree import AdamWScheduleFree
-from torch.profiler import ProfilerActivity, profile, record_function
 from torch.utils.data import DataLoader, TensorDataset
 
 from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
@@ -347,7 +344,7 @@ class MultiONet(OperatorNetwork):
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
 
         criterion = nn.MSELoss()
-        optimizer = self.setup_optimizer_and_scheduler()
+        optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
 
         loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
         self.train_loss, self.test_loss, self.MAE = [
@@ -361,6 +358,8 @@ class MultiONet(OperatorNetwork):
 
         for epoch in progress_bar:
             self.epoch(train_loader, criterion, optimizer)
+
+            scheduler.step()
 
             self.validate(
                 epoch=epoch,
@@ -391,37 +390,6 @@ class MultiONet(OperatorNetwork):
                 self.config.masses, crit, weights, self.device
             )
         return crit
-
-    def setup_optimizer_and_scheduler(
-        self,
-        # epochs: int,
-        # ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
-    ) -> torch.optim.Optimizer:
-        """
-        Utility function to set up the optimizer and scheduler for training.
-
-        Args:
-            epochs (int): The number of epochs to train the model.
-
-        Returns:
-            tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler): The optimizer and scheduler.
-        """
-        # optimizer = torch.optim.Adam(
-        #     self.parameters(),
-        #     lr=self.config.learning_rate,
-        #     weight_decay=self.config.regularization_factor,
-        # )
-        # if self.config.schedule:
-        #     scheduler = torch.optim.lr_scheduler.LinearLR(
-        #         optimizer, start_factor=1, end_factor=0.3, total_iters=epochs
-        #     )
-        # else:
-        #     scheduler = torch.optim.lr_scheduler.LinearLR(
-        #         optimizer, start_factor=1, end_factor=1, total_iters=epochs
-        #     )
-        # return optimizer, scheduler
-        optimizer = AdamWScheduleFree(self.parameters(), lr=self.config.learning_rate)
-        return optimizer
 
     def epoch(
         self,
@@ -598,110 +566,6 @@ class MultiONet(OperatorNetwork):
             collate_fn=custom_collate_fn,
             worker_init_fn=worker_init_fn,
         )
-
-    @time_execution
-    def fit_profile(
-        self,
-        train_loader: DataLoader,
-        test_loader: DataLoader,
-        epochs: int,
-        position: int = 0,
-        description: str = "Training DeepONet",
-        profile_enabled: bool = True,  # Flag to enable/disable profiling
-        profile_save_path: str = "chrome_trace_profile.json",  # Path to save Chrome trace
-        profile_batches: int = 10,  # Number of batches to profile
-    ) -> None:
-        """
-        Train the MultiONet model with optional profiling for a limited scope.
-
-        Args:
-            train_loader (DataLoader): The DataLoader object containing the training data.
-            test_loader (DataLoader): The DataLoader object containing the test data.
-            epochs (int): The number of epochs to train the model.
-            position (int): The position of the progress bar.
-            description (str): The description for the progress bar.
-            profile_enabled (bool): Whether to enable PyTorch profiling.
-            profile_save_path (str): Path to save the profiling data.
-            profile_batches (int): Number of batches to profile in the second epoch.
-
-        Returns:
-            None. The training loss, test loss, and MAE are stored in the model.
-        """
-        self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
-
-        criterion = self.setup_criterion()
-        optimizer = self.setup_optimizer_and_scheduler()
-
-        train_losses, test_losses, MAEs = [np.zeros(epochs) for _ in range(3)]
-
-        progress_bar = self.setup_progress_bar(epochs, position, description)
-
-        profiler = None
-        if profile_enabled:
-            profiler = profile(
-                activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-                record_shapes=True,
-                profile_memory=True,
-                with_stack=True,
-            )
-
-        for epoch in progress_bar:
-            with record_function("train_epoch"):
-                if profile_enabled and epoch == 1:
-                    # Pass the profiler and number of batches to the epoch method
-                    train_losses[epoch] = self.epoch(
-                        train_loader, criterion, optimizer, profiler, profile_batches
-                    )
-                    # Print profiling summaries
-                    print("\n### Profiling Summary ###\n")
-                    print("\n### Key Averages (sorted by CUDA total time) ###\n")
-                    print(
-                        profiler.key_averages().table(
-                            sort_by="cuda_time_total", row_limit=10
-                        )
-                    )
-                    print("\n### Key Averages (sorted by CPU total time) ###\n")
-                    print(
-                        profiler.key_averages().table(
-                            sort_by="cpu_time_total", row_limit=10
-                        )
-                    )
-                    print("\n### Memory Usage Summary ###\n")
-                    print(
-                        profiler.key_averages().table(
-                            sort_by="self_cuda_memory_usage", row_limit=10
-                        )
-                    )
-                    profiler.export_chrome_trace(profile_save_path)
-                    print(f"Chrome trace saved to '{profile_save_path}'")
-                else:
-                    # Normal training for all other epochs
-                    train_losses[epoch] = self.epoch(train_loader, criterion, optimizer)
-
-                clr = optimizer.param_groups[0]["lr"]
-                print_loss = f"{train_losses[epoch].item():.2e}"
-                progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
-                # scheduler.step()
-
-            if test_loader is not None:
-                with record_function("eval_epoch"):
-                    self.eval()
-                    optimizer.eval()
-                    preds, targets = self.predict(test_loader)
-                    loss = criterion(preds, targets).item() / torch.numel(targets)
-                    test_losses[epoch] = loss
-                    MAEs[epoch] = self.L1(preds, targets).item()
-
-                    if self.optuna_trial is not None:
-                        self.optuna_trial.report(loss, step=epoch)
-                        if self.optuna_trial.should_prune():
-                            raise optuna.TrialPruned()
-
-        progress_bar.close()
-
-        self.train_loss = train_losses
-        self.test_loss = test_losses
-        self.MAE = MAEs
 
     def epoch_profile(
         self,

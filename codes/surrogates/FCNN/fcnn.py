@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from schedulefree import AdamWScheduleFree
 from torch.utils.data import DataLoader, Dataset
 
 from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
@@ -213,7 +212,7 @@ class FullyConnected(AbstractSurrogateModel):
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
         # criterion = nn.MSELoss(reduction="sum")
         criterion = nn.MSELoss()
-        optimizer = self.setup_optimizer_and_scheduler()
+        optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
 
         loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
         self.train_loss, self.test_loss, self.MAE = [
@@ -229,6 +228,8 @@ class FullyConnected(AbstractSurrogateModel):
         for epoch in progress_bar:
             self.epoch(train_loader, criterion, optimizer)
 
+            scheduler.step()
+
             self.validate(
                 epoch=epoch,
                 train_loader=train_loader,
@@ -243,16 +244,6 @@ class FullyConnected(AbstractSurrogateModel):
         progress_bar.close()
         self.n_epochs = epoch + 1
         self.get_checkpoint(test_loader, criterion)
-
-    def setup_optimizer_and_scheduler(self) -> torch.optim.Optimizer:
-        """
-        Utility function to set up the optimizer and (optionally) scheduler.
-        """
-        optimizer = AdamWScheduleFree(
-            self.parameters(),
-            lr=self.config.learning_rate,
-        )
-        return optimizer
 
     def epoch(
         self,

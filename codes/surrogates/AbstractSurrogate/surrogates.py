@@ -670,5 +670,78 @@ class AbstractSurrogateModel(ABC, nn.Module):
             self.train()
             optimizer.train() if hasattr(optimizer, "train") else None
 
+    def setup_optimizer_and_scheduler(
+        self,
+        epochs: int,
+        # ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
+    ) -> torch.optim.Optimizer:
+        """
+        Utility function to set up the optimizer and scheduler for training.
+
+        Args:
+            epochs (int): The number of epochs to train the model.
+
+        Returns:
+            tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler): The optimizer and scheduler.
+        """
+        if self.config.schedule:
+            from torch.optim.lr_scheduler import CosineAnnealingLR
+
+            scheduler = CosineAnnealingLR(
+                self.setup_optimizer(),
+                T_max=epochs,
+                eta_min=self.config.learning_rate * 0.1,
+            )
+            if self.config.optimizer == "adamw":
+                from torch.optim import AdamW
+
+                optimizer = AdamW(
+                    self.parameters(),
+                    lr=self.config.learning_rate,
+                    weight_decay=self.config.regularization_factor,
+                )
+            elif self.config.optimizer == "SGD":
+                from torch.optim import SGD
+
+                optimizer = SGD(
+                    self.parameters(),
+                    lr=self.config.learning_rate,
+                    weight_decay=self.config.regularization_factor,
+                    momentum=0.9,
+                )
+        else:
+
+            class DummyScheduler:
+                """A scheduler that does nothing, to allow calling .step() unconditionally."""
+
+                def step(self, *args, **kwargs):
+                    pass
+
+                def state_dict(self):
+                    return {}
+
+                def load_state_dict(self, state_dict):
+                    pass
+
+            scheduler = DummyScheduler()
+
+            if self.config.optimizer == "adamw":
+                from schedulefree import AdamWScheduleFree
+
+                optimizer = AdamWScheduleFree(
+                    self.parameters(),
+                    lr=self.config.learning_rate,
+                    weight_decay=self.config.regularization_factor,
+                )
+            elif self.config.optimizer == "SGD":
+                from schedulefree import SGDScheduleFree
+
+                optimizer = SGDScheduleFree(
+                    self.parameters(),
+                    lr=self.config.learning_rate,
+                    weight_decay=self.config.regularization_factor,
+                )
+        return optimizer, scheduler
+
 
 SurrogateModel = TypeVar("SurrogateModel", bound=AbstractSurrogateModel)

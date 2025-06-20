@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-from schedulefree import AdamWScheduleFree
 from torch import nn
 
 # from torch.optim import Adam
@@ -213,9 +212,7 @@ class LatentPoly(AbstractSurrogateModel):
             multi_objective (bool): Whether multi-objective optimization is used.
                                     If True, trial.report is not used (not supported by Optuna).
         """
-        optimizer = AdamWScheduleFree(
-            self.model.parameters(), lr=self.config.learning_rate
-        )
+        optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
 
         loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
         self.train_loss, self.test_loss, self.MAE = [
@@ -242,6 +239,8 @@ class LatentPoly(AbstractSurrogateModel):
                 if epoch == 10 and i == 0:
                     with torch.no_grad():
                         self.model.renormalize_loss_weights(x_true, x_pred, params)
+
+            scheduler.step()
 
             self.validate(
                 epoch=epoch,
