@@ -673,59 +673,32 @@ class AbstractSurrogateModel(ABC, nn.Module):
     def setup_optimizer_and_scheduler(
         self,
         epochs: int,
-        # ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
-    ) -> torch.optim.Optimizer:
+    ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
         """
-        Utility function to set up the optimizer and scheduler for training.
+        Set up optimizer and scheduler based on self.config.
+        Supports 'adamw', 'sgd' optimizers and 'schedulefree', 'cosine', 'poly' schedulers.
 
         Args:
-            epochs (int): The number of epochs to train the model.
-
+            epochs (int): Total number of training epochs.
         Returns:
-            tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler): The optimizer and scheduler.
+            (optimizer, scheduler)
         """
-        if self.config.schedule:
-            from torch.optim.lr_scheduler import CosineAnnealingLR
+        scheduler_name = self.config.scheduler.lower()
+        optimizer_name = self.config.optimizer.lower()
 
-            scheduler = CosineAnnealingLR(
-                self.setup_optimizer(),
-                T_max=epochs,
-                eta_min=self.config.learning_rate * 0.1,
-            )
-            if self.config.optimizer == "adamw":
-                from torch.optim import AdamW
+        class DummyScheduler:
+            def step(self, *args, **kwargs):
+                pass
 
-                optimizer = AdamW(
-                    self.parameters(),
-                    lr=self.config.learning_rate,
-                    weight_decay=self.config.regularization_factor,
-                )
-            elif self.config.optimizer == "SGD":
-                from torch.optim import SGD
+            def state_dict(self):
+                return {}
 
-                optimizer = SGD(
-                    self.parameters(),
-                    lr=self.config.learning_rate,
-                    weight_decay=self.config.regularization_factor,
-                    momentum=0.9,
-                )
-        else:
+            def load_state_dict(self, state_dict):
+                pass
 
-            class DummyScheduler:
-                """A scheduler that does nothing, to allow calling .step() unconditionally."""
-
-                def step(self, *args, **kwargs):
-                    pass
-
-                def state_dict(self):
-                    return {}
-
-                def load_state_dict(self, state_dict):
-                    pass
-
-            scheduler = DummyScheduler()
-
-            if self.config.optimizer == "adamw":
+        # Optimizer
+        if optimizer_name == "adamw":
+            if scheduler_name == "schedulefree":
                 from schedulefree import AdamWScheduleFree
 
                 optimizer = AdamWScheduleFree(
@@ -733,14 +706,59 @@ class AbstractSurrogateModel(ABC, nn.Module):
                     lr=self.config.learning_rate,
                     weight_decay=self.config.regularization_factor,
                 )
-            elif self.config.optimizer == "SGD":
+            else:
+                from torch.optim import AdamW
+
+                optimizer = AdamW(
+                    self.parameters(),
+                    lr=self.config.learning_rate,
+                    weight_decay=self.config.regularization_factor,
+                )
+        elif optimizer_name == "sgd":
+            momentum = self.config.momentum
+            if scheduler_name == "schedulefree":
                 from schedulefree import SGDScheduleFree
 
                 optimizer = SGDScheduleFree(
                     self.parameters(),
                     lr=self.config.learning_rate,
                     weight_decay=self.config.regularization_factor,
+                    momentum=momentum,
                 )
+            else:
+                from torch.optim import SGD
+
+                optimizer = SGD(
+                    self.parameters(),
+                    lr=self.config.learning_rate,
+                    weight_decay=self.config.regularization_factor,
+                    momentum=momentum,
+                )
+        else:
+            raise ValueError(f"Unknown optimizer '{self.config.optimizer}'")
+
+        # Scheduler
+        if scheduler_name == "schedulefree":
+            scheduler = DummyScheduler()
+        elif scheduler_name == "cosine":
+            from torch.optim.lr_scheduler import CosineAnnealingLR
+
+            eta_min = self.config.eta_min
+            scheduler = CosineAnnealingLR(
+                optimizer,
+                T_max=epochs,
+                eta_min=eta_min,
+            )
+        elif scheduler_name == "poly":
+            from torch.optim.lr_scheduler import LambdaLR
+
+            power = self.config.poly_power
+            scheduler = LambdaLR(
+                optimizer, lr_lambda=lambda epoch: (1 - epoch / float(epochs)) ** power
+            )
+        else:
+            raise ValueError(f"Unknown scheduler '{self.config.scheduler}'")
+
         return optimizer, scheduler
 
 
