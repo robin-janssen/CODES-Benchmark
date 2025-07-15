@@ -632,13 +632,13 @@ class AbstractSurrogateModel(ABC, nn.Module):
         Only runs if (epoch % self.update_epochs) == 0.
         """
 
-        # 1) If it's not time to check yet, do nothing.
+        # If it's not time to check yet, do nothing.
         if epoch % self.update_epochs != 0:
             return
 
         index = epoch // self.update_epochs
 
-        # 2) Switch into inference/eval mode and compute losses
+        # Switch into inference/eval mode and compute losses
         with torch.inference_mode():
             self.eval()
             optimizer.eval() if hasattr(optimizer, "eval") else None

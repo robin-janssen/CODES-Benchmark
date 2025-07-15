@@ -25,7 +25,7 @@ def parse_arguments():
     parser.add_argument(
         "--study_name",
         type=str,
-        default="test_study",
+        default="cloudparams",
         help="The name of the study to evaluate.",
     )
     parser.add_argument(
