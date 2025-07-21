@@ -200,7 +200,7 @@ class LatentPoly(AbstractSurrogateModel):
         multi_objective: bool = False,
     ) -> None:
         """
-        Fit the model to the training data.
+        Train the LatentPoly model.
 
         Args:
             train_loader (DataLoader): The data loader for the training data.

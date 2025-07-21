@@ -199,6 +199,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         epochs: int,
         position: int,
         description: str,
+        multi_objective: bool,
     ) -> None:
         """
         Perform the training of the model. Sets the train_loss and test_loss attributes.
@@ -209,16 +210,20 @@ class AbstractSurrogateModel(ABC, nn.Module):
             epochs (int): The number of epochs to train the model for.
             position (int): The position of the progress bar.
             description (str): The description of the progress bar.
+            multi_objective (bool): Whether the training is multi-objective.
         """
         pass
 
-    def predict(self, data_loader: DataLoader) -> tuple[Tensor, Tensor]:
+    def predict(
+        self, data_loader: DataLoader, denormalize: bool = True
+    ) -> tuple[Tensor, Tensor]:
         """
         Evaluate the model on the given dataloader.
 
         Args:
             data_loader (DataLoader): The DataLoader object containing the data the
                 model is evaluated on.
+            denormalize (bool): Whether to denormalize the predictions and targets.
 
         Returns:
             tuple[Tensor, Tensor]: The predictions and targets.
@@ -256,8 +261,9 @@ class AbstractSurrogateModel(ABC, nn.Module):
         predictions = predictions[:processed_samples, ...]
         targets = targets[:processed_samples, ...]
 
-        predictions = self.denormalize(predictions)
-        targets = self.denormalize(targets)
+        if denormalize:
+            predictions = self.denormalize(predictions)
+            targets = self.denormalize(targets)
 
         predictions = predictions.reshape(-1, self.n_timesteps, self.n_quantities)
         targets = targets.reshape(-1, self.n_timesteps, self.n_quantities)

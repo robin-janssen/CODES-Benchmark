@@ -171,8 +171,16 @@ class LatentNeuralODE(AbstractSurrogateModel):
         multi_objective: bool = False,
     ) -> None:
         """
-        Fits the model to the training data. Sets the train_loss and test_loss attributes.
-        After 10 epochs, the loss weights are renormalized to scale the individual loss terms.
+        Train the LatentNeuralODE model.
+
+        Args:
+            train_loader (DataLoader): The data loader for the training data.
+            test_loader (DataLoader): The data loader for the test data.
+            epochs (int | None): The number of epochs to train the model. If None, uses the value from the config.
+            position (int): The position of the progress bar.
+            description (str): The description for the progress bar.
+            multi_objective (bool): Whether multi-objective optimization is used.
+                                    If True, trial.report is not used (not supported by Optuna).
         """
         optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
         criterion = torch.nn.MSELoss()
