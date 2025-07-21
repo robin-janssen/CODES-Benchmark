@@ -62,6 +62,8 @@ def plot_losses(
     for loss in valid:
         start = int(len(loss) * 0.02)
         vals = loss[start:][loss[start:] > 0]
+        vals = vals[~np.isnan(vals)]  # Remove NaNs
+        vals = vals[~np.isinf(vals)]  # Remove Infs
         if vals.size:
             mins.append(vals.min())
             maxs.append(vals.max())
@@ -281,7 +283,7 @@ def parse_args():
     p.add_argument(
         "--study_name",
         type=str,
-        required=True,
+        default="cloudparams",
         help="Main study prefix (e.g. lvparams5)",
     )
     p.add_argument(

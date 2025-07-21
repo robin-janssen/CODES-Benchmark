@@ -72,11 +72,12 @@ def train_and_save_model(
         _,
     ) = check_and_load_data(
         config["dataset"]["name"],
-        verbose=False,
+        verbose=config.get("verbose", False),
         log=config["dataset"]["log10_transform"],
-        log_params=config.get("log10_transform_params", False),
+        log_params=config["dataset"].get("log10_transform_params", False),
         normalisation_mode=config["dataset"]["normalise"],
         tolerance=config["dataset"]["tolerance"],
+        per_species=config["dataset"].get("normalise_per_species", False),
     )
 
     # Get the appropriate data subset

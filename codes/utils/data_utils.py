@@ -24,6 +24,7 @@ def check_and_load_data(
     log_params: bool = True,
     normalisation_mode: str = "standardise",
     tolerance: float | None = None,
+    per_species: bool = False,
 ):
     """
     Check the specified dataset and load the data based on the mode (train or test).
@@ -36,6 +37,7 @@ def check_and_load_data(
         normalisation_mode (str): The normalization mode, either "disable", "minmax", or "standardise".
         tolerance (float, optional): The tolerance value for log-transformation.
             Values below this will be set to the tolerance value. Pass None to disable.
+        per_species (bool): If True, normalize for each species separately.
 
     Returns:
         tuple: A tuple containing:
@@ -127,18 +129,28 @@ def check_and_load_data(
             )
         if normalisation_mode != "disable":
             data_info, train_data, test_data, val_data = normalize_data(
-                train_data, test_data, val_data, mode=normalisation_mode
+                train_data,
+                test_data,
+                val_data,
+                mode=normalisation_mode,
+                per_species=per_species,
             )
             if verbose:
                 print(f"Data normalized (mode: {normalisation_mode}).")
+                print(f"Data info: {data_info}")
         else:
             data_info = {"mode": "disable"}
-
+            if verbose:
+                print("Data not normalized (normalisation disabled).")
         # Normalize parameters if they are present.
         if train_params is not None:
             if normalisation_mode != "disable":
                 params_info, train_params, test_params, val_params = normalize_data(
-                    train_params, test_params, val_params, mode=normalisation_mode
+                    train_params,
+                    test_params,
+                    val_params,
+                    mode=normalisation_mode,
+                    per_species=per_species,
                 )
             # Rename the normalization keys for parameters.
             if normalisation_mode == "minmax":
@@ -211,7 +223,7 @@ def check_and_load_data(
     )
 
 
-def normalize_data(
+def normalize_data_old(
     train_data: np.ndarray,
     test_data: np.ndarray | None = None,
     val_data: np.ndarray | None = None,
@@ -258,6 +270,88 @@ def normalize_data(
         std = np.std(train_data)
 
         data_info = {"mean": float(mean), "std": float(std), "mode": mode}
+
+        # Standardize the training data
+        train_data_norm = (train_data - mean) / std
+
+        if test_data is not None:
+            test_data_norm = (test_data - mean) / std
+        else:
+            test_data_norm = None
+
+        if val_data is not None:
+            val_data_norm = (val_data - mean) / std
+        else:
+            val_data_norm = None
+
+    return data_info, train_data_norm, test_data_norm, val_data_norm
+
+
+def normalize_data(
+    train_data: np.ndarray,
+    test_data: np.ndarray | None = None,
+    val_data: np.ndarray | None = None,
+    mode: str = "standardise",
+    per_species: bool = False,
+) -> tuple:
+    """
+    Normalize the data based on the training data statistics.
+
+    Args:
+        train_data (np.ndarray): Training data array.
+        test_data (np.ndarray, optional): Test data array.
+        val_data (np.ndarray, optional): Validation data array.
+        mode (str): Normalization mode, either "minmax" or "standardise".
+        per_species (bool): If True, normalize for each species separately.
+
+    Returns:
+        tuple: Normalized training data, test data, and validation data.
+    """
+    if mode not in ["minmax", "standardise"]:
+        raise ValueError("Mode must be either 'minmax' or 'standardise'")
+
+    if mode == "minmax":
+        # Compute min and max on the training data across axes 0 and 1 (species-wise min/max)
+        if per_species:
+            data_min = np.min(train_data, axis=(0, 1))
+            data_max = np.max(train_data, axis=(0, 1))
+            # Warn if the min and max are close for some species.
+            print("max-min per species: ", data_max - data_min)
+            if np.any(np.isclose(data_max, data_min, atol=0.1)):
+                print(
+                    "Warning: Some species have very close min and max values. \n Using per-species normalization may emphasize noise."
+                )
+
+        else:
+            data_min = np.min(train_data)
+            data_max = np.max(train_data)
+
+        # data_info = {"min": float(data_min), "max": float(data_max), "mode": mode}
+        data_info = {"min": data_min, "max": data_max, "mode": mode}
+
+        # Normalize the training data
+        train_data_norm = 2 * (train_data - data_min) / (data_max - data_min) - 1
+
+        if test_data is not None:
+            test_data_norm = 2 * (test_data - data_min) / (data_max - data_min) - 1
+        else:
+            test_data_norm = None
+
+        if val_data is not None:
+            val_data_norm = 2 * (val_data - data_min) / (data_max - data_min) - 1
+        else:
+            val_data_norm = None
+
+    elif mode == "standardise":
+        # Compute mean and std on the training data
+        if per_species:
+            mean = np.mean(train_data, axis=(0, 1))
+            std = np.std(train_data, axis=(0, 1))
+        else:
+            mean = np.mean(train_data)
+            std = np.std(train_data)
+
+        data_info = {"mean": mean, "std": std, "mode": mode}
 
         # Standardize the training data
         train_data_norm = (train_data - mean) / std

@@ -195,7 +195,9 @@ def run_single_study(config: dict, study_name: str, db_url: str):
 
     # Create sampler and pruner as before
     if config["multi_objective"]:
-        sampler = optuna.samplers.NSGAIISampler(seed=config["seed"])
+        sampler = optuna.samplers.NSGAIISampler(
+            seed=config["seed"], population_size=config["population_size"]
+        )
         pruner = optuna.pruners.NopPruner()
         study = optuna.create_study(
             study_name=study_name,
@@ -278,7 +280,7 @@ def run_single_study(config: dict, study_name: str, db_url: str):
                 std_init = math.sqrt(var)
                 threshold = mean_init + 2 * std_init
                 study_.set_user_attr("runtime_threshold", threshold)
-                print(
+                tqdm.write(
                     f"\n[Study] Warmup complete. Runtime threshold set to {threshold:.1f}s "
                     f"(mean = {mean_init:.1f}s, std = {std_init:.1f}s) over {warmup_trials} trials."
                 )
@@ -306,7 +308,7 @@ def run_single_study(config: dict, study_name: str, db_url: str):
 
 def run_all_studies(config: dict, main_study_name: str, db_url: str):
     """
-    Run all sub-studies for the given main study.
+    Run all sub-studies for the given main study, merging in any global_optuna_params.
 
     Args:
         config (dict): Configuration dictionary.
@@ -315,8 +317,9 @@ def run_all_studies(config: dict, main_study_name: str, db_url: str):
     """
 
     surrogates = config["surrogates"]
-    total_sub_studies = len(surrogates)
+    global_params = config.get("global_optuna_params", {})
 
+    total_sub_studies = len(surrogates)
     with tqdm(
         total=total_sub_studies, desc="Overall Surrogates", position=0, leave=True
     ) as arch_pbar:
@@ -324,12 +327,24 @@ def run_all_studies(config: dict, main_study_name: str, db_url: str):
             print(
                 "⚠️ Multi-objective mode enabled: using NSGA-II sampler and disabling pruning."
             )
+
         for i, surr in enumerate(surrogates, start=1):
+            # merge global into local optuna_params
+            local = surr.get("optuna_params", {})
+            for name, opts in global_params.items():
+                if name in local:
+                    print(
+                        f"⚠️ Hyperparameter '{name}' defined globally and locally for {surr['name']}; using local settings."
+                    )
+                else:
+                    local[name] = opts
+            surr["optuna_params"] = local
+
             arch_name = surr["name"]
             study_name = f"{main_study_name}_{arch_name.lower()}"
             arch_pbar.set_postfix({"study": study_name})
-            trials = surr.get("trials", config.get("trials", None))
 
+            trials = surr.get("trials", config.get("trials", None))
             sub_config = {
                 "batch_size": surr["batch_size"],
                 "dataset": config["dataset"],
@@ -343,6 +358,7 @@ def run_all_studies(config: dict, main_study_name: str, db_url: str):
                 "optuna_logging": config.get("optuna_logging", False),
                 "use_optimal_params": config.get("use_optimal_params", False),
                 "multi_objective": config.get("multi_objective", False),
+                "population_size": config.get("population_size", 50),
             }
 
             run_single_study(sub_config, study_name, db_url)
@@ -396,7 +412,7 @@ def parse_arguments():
     parser.add_argument(
         "--study_name",
         type=str,
-        default="lvparamstest3",
+        default="cloudparams2",
         help="Study identifier.",
     )
     return parser.parse_args()

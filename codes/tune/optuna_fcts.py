@@ -62,19 +62,34 @@ def get_activation_function(name: str) -> nn.Module:
 
 def make_optuna_params(trial: optuna.Trial, optuna_params: dict) -> dict:
     """
-    Suggest hyperparameters from optuna_params, sampling coeff_width/layers
-    only if coeff_network == True, converting any "True"/"False" strings into bool,
-    and mapping any activation names into nn.Modules.
+    Suggest hyperparameters from optuna_params, sampling conditional parameters:
+      - coeff_width / coeff_layers only if coeff_network is True
+      - momentum only if optimizer == "sgd"
+      - eta_min only if scheduler == "cosine"
+      - poly_power only if scheduler == "poly"
+    Also converts "True"/"False" strings to bool and maps activation names.
     """
     suggested = {}
 
-    switch_key = "coeff_network"
-    children = {"coeff_width", "coeff_layers"}
+    # Define switch keys and their children
+    coeff_switch = "coeff_network"
+    coeff_children = {"coeff_width", "coeff_layers"}
 
-    # 1) Sample all independent params (skip switch & its children)
-    skip = children | {switch_key}
+    optimizer_switch = "optimizer"
+    optimizer_children = {"momentum"}
+
+    scheduler_switch = "scheduler"
+    scheduler_children = {"eta_min", "poly_power"}
+
+    # Sample all independent params (skip all switch keys and their children)
+    skip_keys = (
+        {coeff_switch, optimizer_switch, scheduler_switch}
+        | coeff_children
+        | optimizer_children
+        | scheduler_children
+    )
     for name, opts in optuna_params.items():
-        if name in skip:
+        if name in skip_keys:
             continue
         if opts["type"] == "int":
             suggested[name] = trial.suggest_int(
@@ -85,41 +100,111 @@ def make_optuna_params(trial: optuna.Trial, optuna_params: dict) -> dict:
                 name, opts["low"], opts["high"], log=opts.get("log", False)
             )
         else:  # categorical
-            suggested[name] = trial.suggest_categorical(name, opts["choices"])
+            raw = trial.suggest_categorical(name, opts["choices"])
+            # convert string booleans if needed
+            if isinstance(raw, str) and raw.lower() in ("true", "false"):
+                suggested[name] = bool(strtobool(raw))
+            else:
+                suggested[name] = raw
 
-    # 2) Sample the coeff_network switch
-    if switch_key in optuna_params:
-        opts = optuna_params[switch_key]
-        raw = trial.suggest_categorical(switch_key, opts["choices"])
-        # convert string → bool if needed
+    # Sample coeff_network and its children
+    if coeff_switch in optuna_params:
+        opts = optuna_params[coeff_switch]
+        raw = trial.suggest_categorical(coeff_switch, opts["choices"])
         if isinstance(raw, str) and raw.lower() in ("true", "false"):
-            suggested[switch_key] = bool(strtobool(raw))
+            suggested[coeff_switch] = bool(strtobool(raw))
         else:
-            suggested[switch_key] = raw
-
-    # 3) Conditionally sample coeff_width & coeff_layers
-    if suggested.get(switch_key, False):
-        for child in children:
+            suggested[coeff_switch] = raw
+    if suggested.get(coeff_switch, False):
+        for child in coeff_children:
             if child in optuna_params:
                 opts = optuna_params[child]
                 if opts["type"] == "int":
                     suggested[child] = trial.suggest_int(
-                        child, opts["low"], opts["high"]
+                        child, opts["low"], opts["high"], step=opts.get("step", 1)
                     )
                 elif opts["type"] == "float":
                     suggested[child] = trial.suggest_float(
                         child, opts["low"], opts["high"], log=opts.get("log", False)
                     )
                 else:
-                    suggested[child] = trial.suggest_categorical(child, opts["choices"])
+                    raw = trial.suggest_categorical(child, opts["choices"])
+                    if isinstance(raw, str) and raw.lower() in ("true", "false"):
+                        suggested[child] = bool(strtobool(raw))
+                    else:
+                        suggested[child] = raw
 
-    # 4) Post‐process all values: booleans and activation modules
+    # Sample optimizer and its dependent momentum
+    if optimizer_switch in optuna_params:
+        opts = optuna_params[optimizer_switch]
+        raw = trial.suggest_categorical(optimizer_switch, opts["choices"])
+        # normalize to lowercase string
+        opt_choice = raw.lower() if isinstance(raw, str) else raw
+        suggested[optimizer_switch] = opt_choice
+        if opt_choice == "sgd" and "momentum" in optuna_params:
+            mopts = optuna_params["momentum"]
+            if mopts["type"] == "int":
+                suggested["momentum"] = trial.suggest_int(
+                    "momentum", mopts["low"], mopts["high"], step=mopts.get("step", 1)
+                )
+            elif mopts["type"] == "float":
+                suggested["momentum"] = trial.suggest_float(
+                    "momentum", mopts["low"], mopts["high"], log=mopts.get("log", False)
+                )
+            else:
+                rawm = trial.suggest_categorical("momentum", mopts["choices"])
+                if isinstance(rawm, str) and rawm.lower() in ("true", "false"):
+                    suggested["momentum"] = bool(strtobool(rawm))
+                else:
+                    suggested["momentum"] = rawm
+
+    # Sample scheduler and its dependent eta_min / poly_power
+    if scheduler_switch in optuna_params:
+        opts = optuna_params[scheduler_switch]
+        raw = trial.suggest_categorical(scheduler_switch, opts["choices"])
+        sched_choice = raw.lower() if isinstance(raw, str) else raw
+        suggested[scheduler_switch] = sched_choice
+        if sched_choice == "cosine" and "eta_min" in optuna_params:
+            eopts = optuna_params["eta_min"]
+            if eopts["type"] == "int":
+                suggested["eta_min"] = trial.suggest_int(
+                    "eta_min", eopts["low"], eopts["high"], step=eopts.get("step", 1)
+                )
+            elif eopts["type"] == "float":
+                suggested["eta_min"] = trial.suggest_float(
+                    "eta_min", eopts["low"], eopts["high"], log=eopts.get("log", False)
+                )
+            else:
+                raw_e = trial.suggest_categorical("eta_min", eopts["choices"])
+                if isinstance(raw_e, str) and raw_e.lower() in ("true", "false"):
+                    suggested["eta_min"] = bool(strtobool(raw_e))
+                else:
+                    suggested["eta_min"] = raw_e
+        elif sched_choice == "poly" and "poly_power" in optuna_params:
+            popts = optuna_params["poly_power"]
+            if popts["type"] == "int":
+                suggested["poly_power"] = trial.suggest_int(
+                    "poly_power", popts["low"], popts["high"], step=popts.get("step", 1)
+                )
+            elif popts["type"] == "float":
+                suggested["poly_power"] = trial.suggest_float(
+                    "poly_power",
+                    popts["low"],
+                    popts["high"],
+                    log=popts.get("log", False),
+                )
+            else:
+                raw_p = trial.suggest_categorical("poly_power", popts["choices"])
+                if isinstance(raw_p, str) and raw_p.lower() in ("true", "false"):
+                    suggested["poly_power"] = bool(strtobool(raw_p))
+                else:
+                    suggested["poly_power"] = raw_p
+
+    # Post-process: convert any remaining "True"/"False" strings to bool, and map activations
     for name, val in list(suggested.items()):
-        # a) convert any remaining "True"/"False" strings into bool
         if isinstance(val, str) and val.lower() in ("true", "false"):
             suggested[name] = bool(strtobool(val))
-        # b) map activation names to nn.Modules
-        if "activation" in name:
+        if "activation" in name.lower():
             suggested[name] = get_activation_function(suggested[name])
 
     return suggested
@@ -206,6 +291,7 @@ def training_run(
         log_params=config.get("log10_transform_params", False),
         normalisation_mode=config["dataset"]["normalise"],
         tolerance=config["dataset"]["tolerance"],
+        per_species=config["dataset"].get("normalise_per_species", False),
     )
 
     subset_factor = config["dataset"].get("subset_factor", 1)

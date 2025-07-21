@@ -199,6 +199,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         epochs: int,
         position: int,
         description: str,
+        multi_objective: bool,
     ) -> None:
         """
         Perform the training of the model. Sets the train_loss and test_loss attributes.
@@ -209,16 +210,20 @@ class AbstractSurrogateModel(ABC, nn.Module):
             epochs (int): The number of epochs to train the model for.
             position (int): The position of the progress bar.
             description (str): The description of the progress bar.
+            multi_objective (bool): Whether the training is multi-objective.
         """
         pass
 
-    def predict(self, data_loader: DataLoader) -> tuple[Tensor, Tensor]:
+    def predict(
+        self, data_loader: DataLoader, denormalize: bool = True
+    ) -> tuple[Tensor, Tensor]:
         """
         Evaluate the model on the given dataloader.
 
         Args:
             data_loader (DataLoader): The DataLoader object containing the data the
                 model is evaluated on.
+            denormalize (bool): Whether to denormalize the predictions and targets.
 
         Returns:
             tuple[Tensor, Tensor]: The predictions and targets.
@@ -256,8 +261,9 @@ class AbstractSurrogateModel(ABC, nn.Module):
         predictions = predictions[:processed_samples, ...]
         targets = targets[:processed_samples, ...]
 
-        predictions = self.denormalize(predictions)
-        targets = self.denormalize(targets)
+        if denormalize:
+            predictions = self.denormalize(predictions)
+            targets = self.denormalize(targets)
 
         predictions = predictions.reshape(-1, self.n_timesteps, self.n_quantities)
         targets = targets.reshape(-1, self.n_timesteps, self.n_quantities)
@@ -419,7 +425,36 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
         return progress_bar
 
-    def denormalize(self, data: Tensor) -> Tensor:
+    def denormalize(self, data: Tensor, leave_log: bool = False) -> Tensor:
+        """
+        Denormalize the data.
+
+        Args:
+            data (np.ndarray): The data to denormalize.
+            leave_log (bool): If True, do not exponentiate the data even if log10_transform is True.
+
+        Returns:
+            np.ndarray: The denormalized data.
+        """
+        if self.normalisation is not None:
+            if self.normalisation["mode"] == "disabled":
+                ...
+            elif self.normalisation["mode"] == "minmax":
+                dmax = self.normalisation["max"]
+                dmin = self.normalisation["min"]
+                data = data.to("cpu")
+                data = (data + 1) * (dmax - dmin) / 2 + dmin
+            elif self.normalisation["mode"] == "standardize":
+                mean = self.normalisation["mean"]
+                std = self.normalisation["std"]
+                data = data * std + mean
+
+            if self.normalisation["log10_transform"] and not leave_log:
+                data = 10**data
+
+        return data
+
+    def denormalize_old(self, data: Tensor) -> Tensor:
         """
         Denormalize the data.
 
@@ -632,13 +667,13 @@ class AbstractSurrogateModel(ABC, nn.Module):
         Only runs if (epoch % self.update_epochs) == 0.
         """
 
-        # 1) If it's not time to check yet, do nothing.
+        # If it's not time to check yet, do nothing.
         if epoch % self.update_epochs != 0:
             return
 
         index = epoch // self.update_epochs
 
-        # 2) Switch into inference/eval mode and compute losses
+        # Switch into inference/eval mode and compute losses
         with torch.inference_mode():
             self.eval()
             optimizer.eval() if hasattr(optimizer, "eval") else None
@@ -669,6 +704,122 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
             self.train()
             optimizer.train() if hasattr(optimizer, "train") else None
+
+    def setup_optimizer_and_scheduler(
+        self,
+        epochs: int,
+    ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
+        """
+        Set up optimizer and scheduler based on self.config.scheduler and self.config.optimizer.
+        Supports "adamw", "sgd" optimizers and "schedulefree", "cosine", "poly" schedulers.
+        Patches standard optimizers so that .train() and .eval() exist as no-ops.
+        Patches ScheduleFree optimizers to have a no-op scheduler.step().
+        For ScheduleFree optimizers, use lr warmup for the first 1% of epochs.
+        For Poly scheduler, use a power decay based on self.config.poly_power.
+        For Cosine scheduler, use a minimum learning rate defined by self.config.eta_min.
+
+        Args:
+            epochs (int): The number of epochs the training will run for.
+
+        Returns:
+            tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
+                The optimizer and scheduler instances.
+        Raises:
+            ValueError: If an unknown optimizer or scheduler is specified in the config.
+        """
+        scheduler_name = self.config.scheduler.lower()
+        optimizer_name = self.config.optimizer.lower()
+
+        class DummyScheduler:
+            def step(self, *args, **kwargs):
+                pass
+
+            def state_dict(self):
+                return {}
+
+            def load_state_dict(self, state_dict):
+                pass
+
+        # create optimizer
+        if optimizer_name == "adamw":
+            if scheduler_name == "schedulefree":
+                from schedulefree import AdamWScheduleFree
+
+                optimizer = AdamWScheduleFree(
+                    self.parameters(),
+                    lr=self.config.learning_rate,
+                    weight_decay=self.config.regularization_factor,
+                    warmup_steps=max(1, epochs // 100),
+                )
+            else:
+                from torch.optim import AdamW
+
+                optimizer = AdamW(
+                    self.parameters(),
+                    lr=self.config.learning_rate,
+                    weight_decay=self.config.regularization_factor,
+                )
+        elif optimizer_name == "sgd":
+            momentum = self.config.momentum
+            if scheduler_name == "schedulefree":
+                from schedulefree import SGDScheduleFree
+
+                optimizer = SGDScheduleFree(
+                    self.parameters(),
+                    lr=self.config.learning_rate,
+                    weight_decay=self.config.regularization_factor,
+                    momentum=momentum,
+                    warmup_steps=max(1, epochs // 100),
+                )
+            else:
+                from torch.optim import SGD
+
+                optimizer = SGD(
+                    self.parameters(),
+                    lr=self.config.learning_rate,
+                    weight_decay=self.config.regularization_factor,
+                    momentum=momentum,
+                )
+        else:
+            raise ValueError(f"Unknown optimizer '{self.config.optimizer}'")
+
+        # Patch optimizer to have no-op train() and eval(), if not present
+        if not hasattr(optimizer, "train"):
+
+            def _opt_train():
+                pass
+
+            optimizer.train = _opt_train
+        if not hasattr(optimizer, "eval"):
+
+            def _opt_eval():
+                pass
+
+            optimizer.eval = _opt_eval
+
+        # create scheduler
+        if scheduler_name == "schedulefree":
+            scheduler = DummyScheduler()
+        elif scheduler_name == "cosine":
+            from torch.optim.lr_scheduler import CosineAnnealingLR
+
+            eta_min = self.config.eta_min
+            scheduler = CosineAnnealingLR(
+                optimizer,
+                T_max=epochs,
+                eta_min=eta_min,
+            )
+        elif scheduler_name == "poly":
+            from torch.optim.lr_scheduler import LambdaLR
+
+            power = self.config.poly_power
+            scheduler = LambdaLR(
+                optimizer, lr_lambda=lambda epoch: (1 - epoch / float(epochs)) ** power
+            )
+        else:
+            raise ValueError(f"Unknown scheduler '{self.config.scheduler}'")
+
+        return optimizer, scheduler
 
 
 SurrogateModel = TypeVar("SurrogateModel", bound=AbstractSurrogateModel)

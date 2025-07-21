@@ -1,19 +1,17 @@
 import numpy as np
 import torch
-from schedulefree import AdamWScheduleFree
 from torch import nn
 
 # from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
-from codes.surrogates.LatentNeuralODE.latent_neural_ode import Decoder as NewDecoder
-from codes.surrogates.LatentNeuralODE.latent_neural_ode import Encoder as NewEncoder
-from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
-from codes.surrogates.LatentPolynomial.latent_poly_config import (
-    LatentPolynomialBaseConfig,
-)
+from codes.surrogates import ChemDataset
+from codes.surrogates import Decoder as NewDecoder
+from codes.surrogates import Encoder as NewEncoder
+from codes.surrogates.AbstractSurrogate import AbstractSurrogateModel
 from codes.utils import time_execution, worker_init_fn
+
+from .latent_poly_config import LatentPolynomialBaseConfig
 
 
 class LatentPoly(AbstractSurrogateModel):
@@ -202,7 +200,7 @@ class LatentPoly(AbstractSurrogateModel):
         multi_objective: bool = False,
     ) -> None:
         """
-        Fit the model to the training data.
+        Train the LatentPoly model.
 
         Args:
             train_loader (DataLoader): The data loader for the training data.
@@ -213,9 +211,7 @@ class LatentPoly(AbstractSurrogateModel):
             multi_objective (bool): Whether multi-objective optimization is used.
                                     If True, trial.report is not used (not supported by Optuna).
         """
-        optimizer = AdamWScheduleFree(
-            self.model.parameters(), lr=self.config.learning_rate
-        )
+        optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
 
         loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
         self.train_loss, self.test_loss, self.MAE = [
@@ -242,6 +238,8 @@ class LatentPoly(AbstractSurrogateModel):
                 if epoch == 10 and i == 0:
                     with torch.no_grad():
                         self.model.renormalize_loss_weights(x_true, x_pred, params)
+
+            scheduler.step()
 
             self.validate(
                 epoch=epoch,

@@ -1,19 +1,15 @@
 from typing import Optional
 
 import numpy as np
-import optuna
 import torch
 import torchode as to
-from schedulefree import AdamWScheduleFree
-from torch.profiler import ProfilerActivity, profile, record_function
 from torch.utils.data import DataLoader
 
-from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
-from codes.surrogates.LatentNeuralODE.latent_neural_ode_config import (
-    LatentNeuralODEBaseConfig,
-)
-from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
+from codes.surrogates.AbstractSurrogate import AbstractSurrogateModel
 from codes.utils import time_execution, worker_init_fn
+
+from .latent_neural_ode_config import LatentNeuralODEBaseConfig
+from .utilities import ChemDataset
 
 
 class LatentNeuralODE(AbstractSurrogateModel):
@@ -175,16 +171,19 @@ class LatentNeuralODE(AbstractSurrogateModel):
         multi_objective: bool = False,
     ) -> None:
         """
-        Fits the model to the training data. Sets the train_loss and test_loss attributes.
-        After 10 epochs, the loss weights are renormalized to scale the individual loss terms.
-        """
-        optimizer = AdamWScheduleFree(
-            self.model.parameters(),
-            lr=self.config.learning_rate,
-        )
-        criterion = torch.nn.MSELoss()
+        Train the LatentNeuralODE model.
 
-        scheduler = None
+        Args:
+            train_loader (DataLoader): The data loader for the training data.
+            test_loader (DataLoader): The data loader for the test data.
+            epochs (int | None): The number of epochs to train the model. If None, uses the value from the config.
+            position (int): The position of the progress bar.
+            description (str): The description for the progress bar.
+            multi_objective (bool): Whether multi-objective optimization is used.
+                                    If True, trial.report is not used (not supported by Optuna).
+        """
+        optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
+        criterion = torch.nn.MSELoss()
 
         loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
         self.train_loss, self.test_loss, self.MAE = [
@@ -216,8 +215,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
                     with torch.no_grad():
                         self.model.renormalize_loss_weights(x_true, x_pred, params)
 
-            if scheduler is not None:
-                scheduler.step()
+            scheduler.step()
 
             self.validate(
                 epoch=epoch,
@@ -233,145 +231,6 @@ class LatentNeuralODE(AbstractSurrogateModel):
         progress_bar.close()
         self.n_epochs = epoch + 1
         self.get_checkpoint(test_loader, criterion)
-
-    @time_execution
-    def fit_profile(
-        self,
-        train_loader: DataLoader,
-        test_loader: Optional[DataLoader],
-        epochs: int,
-        position: int = 0,
-        description: str = "Training LatentNeuralODE with Profiling",
-        profile_enabled: bool = True,  # Flag to enable/disable profiling
-        profile_save_path: str = "chrome_trace_profile.json",  # Path to save Chrome trace
-        profile_batches: int = 2,  # Number of batches to profile
-        profile_epoch: int = 2,  # The epoch at which to perform profiling
-    ) -> None:
-        """
-        Fits the model to the training data with optional profiling for a limited scope.
-        Only used if renamed to fit in the main code (and renamed the original fit to something else).
-
-        Args:
-            train_loader (DataLoader): The data loader for the training data.
-            test_loader (DataLoader | None): The data loader for the test data.
-            epochs (int): The number of epochs to train the model.
-            position (int): The position of the progress bar.
-            description (str): The description for the progress bar.
-            profile_enabled (bool): Whether to enable PyTorch profiling.
-            profile_save_path (str): Path to save the profiling data.
-            profile_batches (int): Number of batches to profile in the specified epoch.
-            profile_epoch (int): The epoch at which profiling is performed.
-
-        Returns:
-            None. The training loss, test loss, and MAE are stored in the model.
-        """
-        optimizer = AdamWScheduleFree(
-            self.model.parameters(),
-            lr=self.config.learning_rate,
-        )
-        optimizer.train()
-
-        scheduler = None
-
-        losses = torch.empty((epochs, len(train_loader)))
-        test_losses = torch.empty((epochs))
-        MAEs = torch.empty((epochs))
-
-        progress_bar = self.setup_progress_bar(epochs, position, description)
-
-        profiler = None
-        if profile_enabled:
-            profiler = profile(
-                activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-                record_shapes=True,
-                profile_memory=True,
-                with_stack=True,
-            )
-
-        for epoch in progress_bar:
-            with record_function("train_epoch"):
-                if profile_enabled and epoch == profile_epoch:
-                    profiler.start()
-                    for i, (x_true, timesteps) in enumerate(train_loader):
-                        if i >= profile_batches:
-                            break
-                        optimizer.zero_grad()
-                        x_pred = self.model.forward(x_true, timesteps)
-                        loss = self.model.total_loss(x_true, x_pred)
-                        loss.backward()
-                        optimizer.step()
-                        losses[epoch, i] = loss.item()
-                    profiler.stop()
-
-                    # Print profiling summaries
-                    print("\n### Profiling Summary ###\n")
-                    print("\n### Key Averages (sorted by CUDA total time) ###\n")
-                    print(
-                        profiler.key_averages().table(
-                            sort_by="cuda_time_total", row_limit=10
-                        )
-                    )
-                    print("\n### Key Averages (sorted by CPU total time) ###\n")
-                    print(
-                        profiler.key_averages().table(
-                            sort_by="cpu_time_total", row_limit=10
-                        )
-                    )
-                    print("\n### Memory Usage Summary ###\n")
-                    print(
-                        profiler.key_averages().table(
-                            sort_by="self_cuda_memory_usage", row_limit=10
-                        )
-                    )
-                    profiler.export_chrome_trace(profile_save_path)
-                    print(f"Chrome trace saved to '{profile_save_path}'")
-                else:
-                    # Normal training for all other epochs
-                    for i, (x_true, timesteps) in enumerate(train_loader):
-                        optimizer.zero_grad()
-                        x_pred = self.model.forward(x_true, timesteps)
-                        loss = self.model.total_loss(x_true, x_pred)
-                        loss.backward()
-                        optimizer.step()
-                        losses[epoch, i] = loss.item()
-
-                        if epoch == 10 and i == 0:
-                            with torch.no_grad():
-                                self.model.renormalize_loss_weights(x_true, x_pred)
-
-            clr = optimizer.param_groups[0]["lr"]
-            print_loss = (
-                f"{losses[epoch, -1].item():.2e}" if len(train_loader) > 0 else "N/A"
-            )
-            progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
-
-            if scheduler is not None:
-                scheduler.step()
-
-            if test_loader is not None:
-                with torch.inference_mode():
-                    self.model.eval()
-                    optimizer.eval()
-                    preds, targets = self.predict(test_loader)
-                    self.model.train()
-                    optimizer.train()
-                    loss = self.model.total_loss(preds, targets)
-                    test_losses[epoch] = loss.item()
-                    MAEs[epoch] = self.L1(preds, targets).item()
-
-                    if self.optuna_trial is not None:
-                        self.optuna_trial.report(loss.item(), epoch)
-                        if self.optuna_trial.should_prune():
-                            raise optuna.TrialPruned()
-
-        if profiler is not None:
-            profiler.shutdown()
-
-        progress_bar.close()
-
-        self.train_loss = torch.mean(losses, dim=1)
-        self.test_loss = test_losses
-        self.MAE = MAEs
 
 
 class ModelWrapper(torch.nn.Module):
