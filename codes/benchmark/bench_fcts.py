@@ -86,11 +86,12 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
         labels,
     ) = check_and_load_data(
         conf["dataset"]["name"],
-        verbose=False,
+        verbose=conf.get("verbose", False),
         log=conf["dataset"]["log10_transform"],
         log_params=conf.get("log10_transform_params", False),
         normalisation_mode=conf["dataset"]["normalise"],
         tolerance=conf["dataset"]["tolerance"],
+        per_species=conf["dataset"].get("normalise_per_species", False),
     )
 
     model_config = get_model_config(surr_name, conf)

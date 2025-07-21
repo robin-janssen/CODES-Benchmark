@@ -291,6 +291,7 @@ def training_run(
         log_params=config.get("log10_transform_params", False),
         normalisation_mode=config["dataset"]["normalise"],
         tolerance=config["dataset"]["tolerance"],
+        per_species=config["dataset"].get("normalise_per_species", False),
     )
 
     subset_factor = config["dataset"].get("subset_factor", 1)

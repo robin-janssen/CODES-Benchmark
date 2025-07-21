@@ -22,7 +22,7 @@ def main(args):
 
     config = read_yaml_config(args.config)
     check_benchmark(config)
-    download_data(config["dataset"]["name"])
+    download_data(config["dataset"]["name"], verbose=config.get("verbose", False))
     surrogates = config["surrogates"]
     # Create dictionary to store metrics for all surrogate models
     all_metrics = {surrogate: {} for surrogate in surrogates}

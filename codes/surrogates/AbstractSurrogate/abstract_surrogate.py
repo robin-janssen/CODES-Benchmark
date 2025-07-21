@@ -419,7 +419,36 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
         return progress_bar
 
-    def denormalize(self, data: Tensor) -> Tensor:
+    def denormalize(self, data: Tensor, leave_log: bool = False) -> Tensor:
+        """
+        Denormalize the data.
+
+        Args:
+            data (np.ndarray): The data to denormalize.
+            leave_log (bool): If True, do not exponentiate the data even if log10_transform is True.
+
+        Returns:
+            np.ndarray: The denormalized data.
+        """
+        if self.normalisation is not None:
+            if self.normalisation["mode"] == "disabled":
+                ...
+            elif self.normalisation["mode"] == "minmax":
+                dmax = self.normalisation["max"]
+                dmin = self.normalisation["min"]
+                data = data.to("cpu")
+                data = (data + 1) * (dmax - dmin) / 2 + dmin
+            elif self.normalisation["mode"] == "standardize":
+                mean = self.normalisation["mean"]
+                std = self.normalisation["std"]
+                data = data * std + mean
+
+            if self.normalisation["log10_transform"] and not leave_log:
+                data = 10**data
+
+        return data
+
+    def denormalize_old(self, data: Tensor) -> Tensor:
         """
         Denormalize the data.
 
