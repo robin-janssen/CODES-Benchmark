@@ -4,10 +4,18 @@ codes.surrogates.AbstractSurrogate package
 Submodules
 ----------
 
-codes.surrogates.AbstractSurrogate.surrogates module
-----------------------------------------------------
+codes.surrogates.AbstractSurrogate.abstract\_config module
+----------------------------------------------------------
 
-.. automodule:: codes.surrogates.AbstractSurrogate.surrogates
+.. automodule:: codes.surrogates.AbstractSurrogate.abstract_config
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+codes.surrogates.AbstractSurrogate.abstract\_surrogate module
+-------------------------------------------------------------
+
+.. automodule:: codes.surrogates.AbstractSurrogate.abstract_surrogate
    :members:
    :undoc-members:
    :show-inheritance:

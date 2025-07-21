@@ -183,7 +183,8 @@
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="docs/source/codes.surrogates.html">codes.surrogates</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="docs/source/codes.surrogates.AbstractSurrogate.html">codes.surrogates.AbstractSurrogate</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/source/codes.surrogates.AbstractSurrogate.surrogates.html">codes.surrogates.AbstractSurrogate.surrogates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/source/codes.surrogates.AbstractSurrogate.abstract_config.html">codes.surrogates.AbstractSurrogate.abstract_config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/source/codes.surrogates.AbstractSurrogate.abstract_surrogate.html">codes.surrogates.AbstractSurrogate.abstract_surrogate</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.surrogates.surrogate_classes.html">codes.surrogates.surrogate_classes</a></li>
@@ -607,14 +608,21 @@ Required for Optuna to suggest activation functions.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.optuna_fcts.make_optuna_params">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.optuna_fcts.</span></span><span class="sig-name descname"><span class="pre">make_optuna_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optuna_params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.optuna_fcts.make_optuna_params" title="Link to this definition">#</a></dt>
-<dd><p>Suggest hyperparameters from optuna_params, sampling coeff_width/layers
-only if coeff_network == True, converting any “True”/”False” strings into bool,
-and mapping any activation names into nn.Modules.</p>
-<dl class="field-list simple">
+<dd><dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span></p>
 </dd>
 </dl>
+<dl class="simple">
+<dt>Suggest hyperparameters from optuna_params, sampling conditional parameters:</dt><dd><ul class="simple">
+<li><p>coeff_width / coeff_layers only if coeff_network is True</p></li>
+<li><p>momentum only if optimizer == “sgd”</p></li>
+<li><p>eta_min only if scheduler == “cosine”</p></li>
+<li><p>poly_power only if scheduler == “poly”</p></li>
+</ul>
+</dd>
+</dl>
+<p>Also converts “True”/”False” strings to bool and maps activation names.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -731,14 +739,21 @@ Required for Optuna to suggest activation functions.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.make_optuna_params">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">make_optuna_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optuna_params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.make_optuna_params" title="Link to this definition">#</a></dt>
-<dd><p>Suggest hyperparameters from optuna_params, sampling coeff_width/layers
-only if coeff_network == True, converting any “True”/”False” strings into bool,
-and mapping any activation names into nn.Modules.</p>
-<dl class="field-list simple">
+<dd><dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span></p>
 </dd>
 </dl>
+<dl class="simple">
+<dt>Suggest hyperparameters from optuna_params, sampling conditional parameters:</dt><dd><ul class="simple">
+<li><p>coeff_width / coeff_layers only if coeff_network is True</p></li>
+<li><p>momentum only if optimizer == “sgd”</p></li>
+<li><p>eta_min only if scheduler == “cosine”</p></li>
+<li><p>poly_power only if scheduler == “poly”</p></li>
+</ul>
+</dd>
+</dl>
+<p>Also converts “True”/”False” strings to bool and maps activation names.</p>
 </dd></dl>
 
 <dl class="py function">

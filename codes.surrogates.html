@@ -183,7 +183,8 @@
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="docs/source/codes.surrogates.html">codes.surrogates</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="docs/source/codes.surrogates.AbstractSurrogate.html">codes.surrogates.AbstractSurrogate</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l3"><a class="reference internal" href="docs/source/codes.surrogates.AbstractSurrogate.surrogates.html">codes.surrogates.AbstractSurrogate.surrogates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/source/codes.surrogates.AbstractSurrogate.abstract_config.html">codes.surrogates.AbstractSurrogate.abstract_config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docs/source/codes.surrogates.AbstractSurrogate.abstract_surrogate.html">codes.surrogates.AbstractSurrogate.abstract_surrogate</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.surrogates.surrogate_classes.html">codes.surrogates.surrogate_classes</a></li>
@@ -366,6 +367,7 @@
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.config"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.config</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.checkpoint"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.checkpoint()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.denormalize"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.denormalize()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.denormalize_old"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.denormalize_old()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.fit"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.fit()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.forward"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.get_checkpoint"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.get_checkpoint()</span></code></a></li>
@@ -376,6 +378,7 @@
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.register"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.register()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.save"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.save()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.setup_checkpoint"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.setup_checkpoint()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.setup_optimizer_and_scheduler"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.setup_optimizer_and_scheduler()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.setup_progress_bar"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.setup_progress_bar()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.time_pruning"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.time_pruning()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.validate"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.validate()</span></code></a></li>
@@ -400,7 +403,6 @@
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FullyConnected.fit"><code class="docutils literal notranslate"><span class="pre">FullyConnected.fit()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FullyConnected.forward"><code class="docutils literal notranslate"><span class="pre">FullyConnected.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FullyConnected.prepare_data"><code class="docutils literal notranslate"><span class="pre">FullyConnected.prepare_data()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FullyConnected.setup_optimizer_and_scheduler"><code class="docutils literal notranslate"><span class="pre">FullyConnected.setup_optimizer_and_scheduler()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FullyConnectedNet"><code class="docutils literal notranslate"><span class="pre">FullyConnectedNet</span></code></a><ul class="nav section-nav flex-column">
@@ -409,7 +411,6 @@
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.fit"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.fit()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.fit_profile"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.fit_profile()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.forward"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.prepare_data"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.prepare_data()</span></code></a></li>
 </ul>
@@ -441,11 +442,9 @@
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.epoch"><code class="docutils literal notranslate"><span class="pre">MultiONet.epoch()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.epoch_profile"><code class="docutils literal notranslate"><span class="pre">MultiONet.epoch_profile()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.fit"><code class="docutils literal notranslate"><span class="pre">MultiONet.fit()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.fit_profile"><code class="docutils literal notranslate"><span class="pre">MultiONet.fit_profile()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.forward"><code class="docutils literal notranslate"><span class="pre">MultiONet.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.prepare_data"><code class="docutils literal notranslate"><span class="pre">MultiONet.prepare_data()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.setup_criterion"><code class="docutils literal notranslate"><span class="pre">MultiONet.setup_criterion()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.setup_optimizer_and_scheduler"><code class="docutils literal notranslate"><span class="pre">MultiONet.setup_optimizer_and_scheduler()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ODE"><code class="docutils literal notranslate"><span class="pre">ODE</span></code></a><ul class="nav section-nav flex-column">
@@ -716,7 +715,27 @@ overwrite the single-file checkpoint on disk and update best_test_loss/epoch.</p
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogateModel.denormalize">
-<span class="sig-name descname"><span class="pre">denormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.denormalize" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">denormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.denormalize" title="Link to this definition">#</a></dt>
+<dd><p>Denormalize the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>np.ndarray</em>) – The data to denormalize.</p></li>
+<li><p><strong>leave_log</strong> (<em>bool</em>) – If True, do not exponentiate the data even if log10_transform is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The denormalized data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogateModel.denormalize_old">
+<span class="sig-name descname"><span class="pre">denormalize_old</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.denormalize_old" title="Link to this definition">#</a></dt>
 <dd><p>Denormalize the data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -733,7 +752,7 @@ overwrite the single-file checkpoint on disk and update best_test_loss/epoch.</p
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogateModel.fit">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.fit" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_objective</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.fit" title="Link to this definition">#</a></dt>
 <dd><p>Perform the training of the model. Sets the train_loss and test_loss attributes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -743,6 +762,7 @@ overwrite the single-file checkpoint on disk and update best_test_loss/epoch.</p
 <li><p><strong>epochs</strong> (<em>int</em>) – The number of epochs to train the model for.</p></li>
 <li><p><strong>position</strong> (<em>int</em>) – The position of the progress bar.</p></li>
 <li><p><strong>description</strong> (<em>str</em>) – The description of the progress bar.</p></li>
+<li><p><strong>multi_objective</strong> (<em>bool</em>) – Whether the training is multi-objective.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -820,12 +840,15 @@ If the final model is better, keep it; otherwise load the saved best checkpoint.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogateModel.predict">
-<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.predict" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">denormalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.predict" title="Link to this definition">#</a></dt>
 <dd><p>Evaluate the model on the given dataloader.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the data the
-model is evaluated on.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the data the
+model is evaluated on.</p></li>
+<li><p><strong>denormalize</strong> (<em>bool</em>) – Whether to denormalize the predictions and targets.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The predictions and targets.</p>
@@ -899,6 +922,32 @@ Must be called before any call to <cite>self.checkpoint(…)</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogateModel.setup_optimizer_and_scheduler">
+<span class="sig-name descname"><span class="pre">setup_optimizer_and_scheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.setup_optimizer_and_scheduler" title="Link to this definition">#</a></dt>
+<dd><p>Set up optimizer and scheduler based on self.config.scheduler and self.config.optimizer.
+Supports “adamw”, “sgd” optimizers and “schedulefree”, “cosine”, “poly” schedulers.
+Patches standard optimizers so that .train() and .eval() exist as no-ops.
+Patches ScheduleFree optimizers to have a no-op scheduler.step().
+For ScheduleFree optimizers, use lr warmup for the first 1% of epochs.
+For Poly scheduler, use a power decay based on self.config.poly_power.
+For Cosine scheduler, use a minimum learning rate defined by self.config.eta_min.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>epochs</strong> (<em>int</em>) – The number of epochs the training will run for.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The optimizer and scheduler instances.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If an unknown optimizer or scheduler is specified in the config.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1062,7 +1111,7 @@ registered hooks while the latter silently ignores them.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="codes.surrogates.FullyConnected">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">FullyConnected</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.FullyConnected" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel" title="codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractSurrogateModel</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel" title="codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractSurrogateModel</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.FullyConnected.create_dataloader">
 <span class="sig-name descname"><span class="pre">create_dataloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.FullyConnected.create_dataloader" title="Link to this definition">#</a></dt>
@@ -1166,17 +1215,6 @@ If True, trial.report is not used (not supported by Optuna).</p></li>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="codes.surrogates.FullyConnected.setup_optimizer_and_scheduler">
-<span class="sig-name descname"><span class="pre">setup_optimizer_and_scheduler</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.FullyConnected.setup_optimizer_and_scheduler" title="Link to this definition">#</a></dt>
-<dd><p>Utility function to set up the optimizer and (optionally) scheduler.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Optimizer</span></code></span></p>
-</dd>
-</dl>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -1203,7 +1241,7 @@ registered hooks while the latter silently ignores them.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="codes.surrogates.LatentNeuralODE">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">LatentNeuralODE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentNeuralODE" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel" title="codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractSurrogateModel</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel" title="codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractSurrogateModel</span></code></a></p>
 <p>LatentNeuralODE represents a latent neural ODE model.
 It includes an encoder, decoder, and neural ODE. Fixed parameters can be injected either
 into the encoder or later into the ODE network, controlled by config.encode_params.</p>
@@ -1221,39 +1259,21 @@ into the encoder or later into the ODE network, controlled by config.encode_para
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.LatentNeuralODE.fit">
 <span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Training</span> <span class="pre">LatentNeuralODE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_objective</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentNeuralODE.fit" title="Link to this definition">#</a></dt>
-<dd><p>Fits the model to the training data. Sets the train_loss and test_loss attributes.
-After 10 epochs, the loss weights are renormalized to scale the individual loss terms.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="codes.surrogates.LatentNeuralODE.fit_profile">
-<span class="sig-name descname"><span class="pre">fit_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Training</span> <span class="pre">LatentNeuralODE</span> <span class="pre">with</span> <span class="pre">Profiling'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile_enabled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile_save_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'chrome_trace_profile.json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile_batches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile_epoch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentNeuralODE.fit_profile" title="Link to this definition">#</a></dt>
-<dd><p>Fits the model to the training data with optional profiling for a limited scope.
-Only used if renamed to fit in the main code (and renamed the original fit to something else).</p>
+<dd><p>Train the LatentNeuralODE model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>train_loader</strong> (<em>DataLoader</em>) – The data loader for the training data.</p></li>
-<li><p><strong>test_loader</strong> (<em>DataLoader</em><em> | </em><em>None</em>) – The data loader for the test data.</p></li>
-<li><p><strong>epochs</strong> (<em>int</em>) – The number of epochs to train the model.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The data loader for the test data.</p></li>
+<li><p><strong>epochs</strong> (<em>int</em><em> | </em><em>None</em>) – The number of epochs to train the model. If None, uses the value from the config.</p></li>
 <li><p><strong>position</strong> (<em>int</em>) – The position of the progress bar.</p></li>
 <li><p><strong>description</strong> (<em>str</em>) – The description for the progress bar.</p></li>
-<li><p><strong>profile_enabled</strong> (<em>bool</em>) – Whether to enable PyTorch profiling.</p></li>
-<li><p><strong>profile_save_path</strong> (<em>str</em>) – Path to save the profiling data.</p></li>
-<li><p><strong>profile_batches</strong> (<em>int</em>) – Number of batches to profile in the specified epoch.</p></li>
-<li><p><strong>profile_epoch</strong> (<em>int</em>) – The epoch at which profiling is performed.</p></li>
+<li><p><strong>multi_objective</strong> (<em>bool</em>) – Whether multi-objective optimization is used.
+If True, trial.report is not used (not supported by Optuna).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None. The training loss, test loss, and MAE are stored in the model.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1282,7 +1302,7 @@ If fixed parameters are provided, they are passed along with each sample.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="codes.surrogates.LatentPoly">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">LatentPoly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentPoly" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel" title="codes.surrogates.AbstractSurrogate.surrogates.AbstractSurrogateModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractSurrogateModel</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel" title="codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractSurrogateModel</span></code></a></p>
 <p>LatentPoly class for training a polynomial model on latent space trajectories.</p>
 <p>This model includes an encoder, decoder, and a learnable polynomial applied on the latent space.
 The architecture is chosen based on the version flag in the configuration.</p>
@@ -1322,7 +1342,7 @@ The architecture is chosen based on the version flag in the configuration.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.LatentPoly.fit">
 <span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Training</span> <span class="pre">LatentPoly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_objective</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentPoly.fit" title="Link to this definition">#</a></dt>
-<dd><p>Fit the model to the training data.</p>
+<dd><p>Train the LatentPoly model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1703,32 +1723,6 @@ If True, trial.report is not used (not supported by Optuna).</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="codes.surrogates.MultiONet.fit_profile">
-<span class="sig-name descname"><span class="pre">fit_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Training</span> <span class="pre">DeepONet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile_enabled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile_save_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'chrome_trace_profile.json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile_batches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.MultiONet.fit_profile" title="Link to this definition">#</a></dt>
-<dd><p>Train the MultiONet model with optional profiling for a limited scope.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>train_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the training data.</p></li>
-<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
-<li><p><strong>epochs</strong> (<em>int</em>) – The number of epochs to train the model.</p></li>
-<li><p><strong>position</strong> (<em>int</em>) – The position of the progress bar.</p></li>
-<li><p><strong>description</strong> (<em>str</em>) – The description for the progress bar.</p></li>
-<li><p><strong>profile_enabled</strong> (<em>bool</em>) – Whether to enable PyTorch profiling.</p></li>
-<li><p><strong>profile_save_path</strong> (<em>str</em>) – Path to save the profiling data.</p></li>
-<li><p><strong>profile_batches</strong> (<em>int</em>) – Number of batches to profile in the second epoch.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None. The training loss, test loss, and MAE are stored in the model.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.MultiONet.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.MultiONet.forward" title="Link to this definition">#</a></dt>
 <dd><p>Forward pass for the MultiONet model.</p>
@@ -1784,23 +1778,6 @@ Note: All datasets must have shape (n_samples, n_timesteps, n_quantities).</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>callable</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="codes.surrogates.MultiONet.setup_optimizer_and_scheduler">
-<span class="sig-name descname"><span class="pre">setup_optimizer_and_scheduler</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.MultiONet.setup_optimizer_and_scheduler" title="Link to this definition">#</a></dt>
-<dd><p>Utility function to set up the optimizer and scheduler for training.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>epochs</strong> (<em>int</em>) – The number of epochs to train the model.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The optimizer and scheduler.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1975,6 +1952,7 @@ registered hooks while the latter silently ignores them.</p>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.config"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.config</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.checkpoint"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.checkpoint()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.denormalize"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.denormalize()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.denormalize_old"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.denormalize_old()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.fit"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.fit()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.forward"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.get_checkpoint"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.get_checkpoint()</span></code></a></li>
@@ -1985,6 +1963,7 @@ registered hooks while the latter silently ignores them.</p>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.register"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.register()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.save"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.save()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.setup_checkpoint"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.setup_checkpoint()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.setup_optimizer_and_scheduler"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.setup_optimizer_and_scheduler()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.setup_progress_bar"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.setup_progress_bar()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.time_pruning"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.time_pruning()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.AbstractSurrogateModel.validate"><code class="docutils literal notranslate"><span class="pre">AbstractSurrogateModel.validate()</span></code></a></li>
@@ -2009,7 +1988,6 @@ registered hooks while the latter silently ignores them.</p>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FullyConnected.fit"><code class="docutils literal notranslate"><span class="pre">FullyConnected.fit()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FullyConnected.forward"><code class="docutils literal notranslate"><span class="pre">FullyConnected.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FullyConnected.prepare_data"><code class="docutils literal notranslate"><span class="pre">FullyConnected.prepare_data()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FullyConnected.setup_optimizer_and_scheduler"><code class="docutils literal notranslate"><span class="pre">FullyConnected.setup_optimizer_and_scheduler()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FullyConnectedNet"><code class="docutils literal notranslate"><span class="pre">FullyConnectedNet</span></code></a><ul class="nav section-nav flex-column">
@@ -2018,7 +1996,6 @@ registered hooks while the latter silently ignores them.</p>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.fit"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.fit()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.fit_profile"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.fit_profile()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.forward"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.prepare_data"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.prepare_data()</span></code></a></li>
 </ul>
@@ -2050,11 +2027,9 @@ registered hooks while the latter silently ignores them.</p>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.epoch"><code class="docutils literal notranslate"><span class="pre">MultiONet.epoch()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.epoch_profile"><code class="docutils literal notranslate"><span class="pre">MultiONet.epoch_profile()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.fit"><code class="docutils literal notranslate"><span class="pre">MultiONet.fit()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.fit_profile"><code class="docutils literal notranslate"><span class="pre">MultiONet.fit_profile()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.forward"><code class="docutils literal notranslate"><span class="pre">MultiONet.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.prepare_data"><code class="docutils literal notranslate"><span class="pre">MultiONet.prepare_data()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.setup_criterion"><code class="docutils literal notranslate"><span class="pre">MultiONet.setup_criterion()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.setup_optimizer_and_scheduler"><code class="docutils literal notranslate"><span class="pre">MultiONet.setup_optimizer_and_scheduler()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ODE"><code class="docutils literal notranslate"><span class="pre">ODE</span></code></a><ul class="nav section-nav flex-column">

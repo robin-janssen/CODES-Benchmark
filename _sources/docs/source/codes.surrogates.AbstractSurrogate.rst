@@ -10,4 +10,5 @@ codes.surrogates.AbstractSurrogate
    :toctree:
    :recursive:
 
-   surrogates
+   abstract_config
+   abstract_surrogate
