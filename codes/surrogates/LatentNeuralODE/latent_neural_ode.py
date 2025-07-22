@@ -3,6 +3,7 @@ from typing import Optional
 import numpy as np
 import torch
 import torchode as to
+from torch import nn
 from torch.utils.data import DataLoader
 
 from codes.surrogates.AbstractSurrogate import AbstractSurrogateModel
@@ -183,7 +184,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
                                     If True, trial.report is not used (not supported by Optuna).
         """
         optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
-        criterion = torch.nn.MSELoss()
+        criterion = self.config.loss_function
 
         loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
         self.train_loss, self.test_loss, self.MAE = [
@@ -206,7 +207,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
                 x_pred, _ = self.forward((x_true, t_range, params))
 
                 # total loss now takes params into account for identity term
-                loss = self.model.total_loss(x_true, x_pred, params)
+                loss = self.model.total_loss(x_true, x_pred, params, criterion)
                 loss.backward()
                 optimizer.step()
 
@@ -339,7 +340,9 @@ class ModelWrapper(torch.nn.Module):
         # decode
         return self.decoder(latent_traj)
 
-    def renormalize_loss_weights(self, x_true, x_pred, params):
+    def renormalize_loss_weights(
+        self, x_true, x_pred, params, criterion: nn.Module = nn.MSELoss
+    ):
         """
         Renormalize the loss weights based on the current loss values so that they are accurately
         weighted based on the provided weights. To be used once after a short burn in phase.
@@ -347,20 +350,26 @@ class ModelWrapper(torch.nn.Module):
         Args:
             x_true (torch.Tensor): The true trajectory.
             x_pred (torch.Tensor): The predicted trajectory
+            params (torch.Tensor): Fixed parameters (batch, n_parameters).
+            criterion (nn.Module): Loss function to use for calculating the losses.
         """
-        self.loss_weights[0] = 1 / self.l2_loss(x_true, x_pred).item() * 100
+        self.loss_weights[0] = 1 / criterion(x_pred, x_true).item() * 100
         self.loss_weights[1] = 1 / self.identity_loss(x_true, params).item()
         self.loss_weights[2] = 1 / self.deriv_loss(x_true, x_pred).item()
         self.loss_weights[3] = 1 / self.deriv2_loss(x_true, x_pred).item()
 
     def total_loss(
-        self, x_true: torch.Tensor, x_pred: torch.Tensor, params: torch.Tensor = None
+        self,
+        x_true: torch.Tensor,
+        x_pred: torch.Tensor,
+        params: torch.Tensor = None,
+        criterion: nn.Module = nn.MSELoss(),
     ):
         """
         Calculate the total loss based on the loss weights, including params for identity.
         """
         return (
-            self.loss_weights[0] * self.l2_loss(x_true, x_pred)
+            self.loss_weights[0] * criterion(x_pred, x_true).item()
             + self.loss_weights[1] * self.identity_loss(x_true, params)
             + self.loss_weights[2] * self.deriv_loss(x_true, x_pred)
             + self.loss_weights[3] * self.deriv2_loss(x_true, x_pred)

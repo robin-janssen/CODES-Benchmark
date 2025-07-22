@@ -398,27 +398,36 @@ class PolynomialModelWrapper(nn.Module):
         z_pred = poly_out + z0.unsqueeze(1)
         return self.decoder(z_pred)
 
-    def renormalize_loss_weights(self, x_true, x_pred, params=None):
+    def renormalize_loss_weights(
+        self, x_true, x_pred, params, criterion: nn.Module = nn.MSELoss
+    ):
         """
-        Renormalize loss weights based on current loss values.
+        Renormalize the loss weights based on the current loss values so that they are accurately
+        weighted based on the provided weights. To be used once after a short burn in phase.
 
         Args:
-            x_true (torch.Tensor): Ground truth.
-            x_pred (torch.Tensor): Model predictions.
+            x_true (torch.Tensor): The true trajectory.
+            x_pred (torch.Tensor): The predicted trajectory
+            params (torch.Tensor): Fixed parameters (batch, n_parameters).
+            criterion (nn.Module): Loss function to use for calculating the losses.
         """
-        self.loss_weights[0] = 1 / self.l2_loss(x_true, x_pred).item() * 100
+        self.loss_weights[0] = 1 / criterion(x_pred, x_true).item() * 100
         self.loss_weights[1] = 1 / self.identity_loss(x_true, params).item()
         self.loss_weights[2] = 1 / self.deriv_loss(x_true, x_pred).item()
         self.loss_weights[3] = 1 / self.deriv2_loss(x_true, x_pred).item()
 
     def total_loss(
-        self, x_true: torch.Tensor, x_pred: torch.Tensor, params: torch.Tensor = None
+        self,
+        x_true: torch.Tensor,
+        x_pred: torch.Tensor,
+        params: torch.Tensor = None,
+        criterion: nn.Module = nn.MSELoss(),
     ):
         """
-        Compute the total loss, passing params into identity term.
+        Calculate the total loss based on the loss weights, including params for identity.
         """
         return (
-            self.loss_weights[0] * self.l2_loss(x_true, x_pred)
+            self.loss_weights[0] * criterion(x_pred, x_true)
             + self.loss_weights[1] * self.identity_loss(x_true, params)
             + self.loss_weights[2] * self.deriv_loss(x_true, x_pred)
             + self.loss_weights[3] * self.deriv2_loss(x_true, x_pred)

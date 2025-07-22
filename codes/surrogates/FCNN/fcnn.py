@@ -212,7 +212,7 @@ class FullyConnected(AbstractSurrogateModel):
         """
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
         # criterion = nn.MSELoss(reduction="sum")
-        criterion = nn.MSELoss()
+        criterion = self.config.loss_function
         optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
 
         loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
