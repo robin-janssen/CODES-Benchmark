@@ -258,7 +258,9 @@ def training_run(
         (preds - targets).abs().flatten(), float(config["target_percentile"])
     ).item()
     # loss = criterion(preds, targets).item()
-    sname, _ = study_name.split("_")
+    # Extract the study name without the timestamp/suffix part
+    parts = study_name.split("_")
+    sname = "_".join(parts[:-1]) if len(parts) > 1 else study_name
 
     savepath = os.path.join("tuned", sname, "models")
     os.makedirs(savepath, exist_ok=True)

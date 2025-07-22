@@ -10,6 +10,14 @@ from .optuna_fcts import (
     make_optuna_params,
     training_run,
 )
+from .postgres_fcts import _make_db_url, initialize_optuna_database
+from .tune_utils import (
+    build_study_names,
+    copy_config,
+    delete_studies_if_requested,
+    prepare_workspace,
+    yes_no,
+)
 
 __all__ = [
     "create_objective",
@@ -20,4 +28,11 @@ __all__ = [
     "moving_average",
     "plot_test_losses",
     "load_model_test_losses",
+    "build_study_names",
+    "copy_config",
+    "delete_studies_if_requested",
+    "prepare_workspace",
+    "yes_no",
+    "_make_db_url",
+    "initialize_optuna_database",
 ]
