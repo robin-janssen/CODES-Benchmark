@@ -359,6 +359,7 @@ def run_all_studies(config: dict, main_study_name: str, db_url: str):
                 "use_optimal_params": config.get("use_optimal_params", False),
                 "multi_objective": config.get("multi_objective", False),
                 "population_size": config.get("population_size", 50),
+                "target_percentile": config.get("target_percentile", 0.95),
             }
 
             run_single_study(sub_config, study_name, db_url)
@@ -412,7 +413,7 @@ def parse_arguments():
     parser.add_argument(
         "--study_name",
         type=str,
-        default="cloudparams2",
+        default="cloudtest",
         help="Study identifier.",
     )
     return parser.parse_args()

@@ -6,7 +6,6 @@ from .evaluate_study import (
 )
 from .optuna_fcts import (
     create_objective,
-    get_activation_function,
     load_yaml_config,
     make_optuna_params,
     training_run,
@@ -14,7 +13,6 @@ from .optuna_fcts import (
 
 __all__ = [
     "create_objective",
-    "get_activation_function",
     "load_yaml_config",
     "make_optuna_params",
     "training_run",

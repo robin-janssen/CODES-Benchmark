@@ -215,7 +215,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         pass
 
     def predict(
-        self, data_loader: DataLoader, denormalize: bool = True
+        self, data_loader: DataLoader, leave_log: bool = False
     ) -> tuple[Tensor, Tensor]:
         """
         Evaluate the model on the given dataloader.
@@ -223,7 +223,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         Args:
             data_loader (DataLoader): The DataLoader object containing the data the
                 model is evaluated on.
-            denormalize (bool): Whether to denormalize the predictions and targets.
+            leave_log (bool): If True, do not exponentiate the data even if log10_transform is True.
 
         Returns:
             tuple[Tensor, Tensor]: The predictions and targets.
@@ -261,9 +261,8 @@ class AbstractSurrogateModel(ABC, nn.Module):
         predictions = predictions[:processed_samples, ...]
         targets = targets[:processed_samples, ...]
 
-        if denormalize:
-            predictions = self.denormalize(predictions)
-            targets = self.denormalize(targets)
+        predictions = self.denormalize(predictions, leave_log=leave_log)
+        targets = self.denormalize(targets, leave_log=leave_log)
 
         predictions = predictions.reshape(-1, self.n_timesteps, self.n_quantities)
         targets = targets.reshape(-1, self.n_timesteps, self.n_quantities)
