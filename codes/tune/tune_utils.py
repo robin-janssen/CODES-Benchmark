@@ -62,7 +62,7 @@ def delete_studies_if_requested(config: dict, main_study_name: str, db_url: str)
     names = build_study_names(config, main_study_name)
     for name in names:
         try:
-            optuna.delete_study(name=name, storage=db_url)
+            optuna.delete_study(study_name=name, storage=db_url)
             print(f"Deleted existing study '{name}'.")
         except KeyError or TypeError:
             # study didn't exist

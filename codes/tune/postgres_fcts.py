@@ -1,3 +1,4 @@
+import getpass
 import os
 import subprocess
 import sys
@@ -147,11 +148,18 @@ def _initialize_postgres_remote(config: dict, study_folder_name: str) -> str:
     host = db_config["host"]
     port = db_config.get("port", 5432)
     user = db_config.get("user", "optuna_user")
-    pwd = os.getenv("PGPASSWORD", db_config.get("password", ""))
+    # look first in env, then in config
+    pwd = os.getenv("PGPASSWORD", None) or db_config.get("password", None)
     db_name = db_config.get("db_name", "optuna_global")
     sslmode = db_config.get("sslmode")
 
-    _check_remote_reachable(db_config)
+    # if still no password, ask interactively
+    if not pwd:
+        prompt = f"Password for {user}@{host}:{port}/{db_name}: "
+        pwd = getpass.getpass(prompt)
+
+    # quick reachability check using the supplied credentials
+    _check_remote_reachable({**db_config, "password": pwd})
 
     extra = f"?sslmode={sslmode}" if sslmode else ""
     return _make_db_url(user, pwd, host, port, db_name, extra)
