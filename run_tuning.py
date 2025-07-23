@@ -58,8 +58,8 @@ def run_single_study(config: dict, study_name: str, db_url: str):
         )
 
     device_queue = queue.Queue()
-    for dev in config["devices"]:
-        device_queue.put(dev)
+    for slot_id, dev in enumerate(config["devices"]):
+        device_queue.put((dev, slot_id))
 
     objective_fn = create_objective(config, study_name, device_queue)
     n_trials = config["n_trials"]
@@ -169,11 +169,6 @@ def run_all_studies(config: dict, main_study_name: str, db_url: str):
             run_single_study(sub_config, study_name, db_url)
             arch_pbar.update(1)
             arch_pbar.set_postfix({"done": study_name})
-
-
-# ---------------------------------------------------------------------
-#  Workspace prep & CLI
-# ---------------------------------------------------------------------
 
 
 def parse_arguments():

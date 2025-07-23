@@ -130,10 +130,10 @@ def create_objective(
     """
 
     def objective(trial):
-        device = device_queue.get()
+        device, slot_id = device_queue.get()
         try:
             try:
-                return training_run(trial, device, config, study_name)
+                return training_run(trial, device, slot_id, config, study_name)
             except torch.cuda.OutOfMemoryError as e:
                 torch.cuda.empty_cache()
                 msg = repr(e).strip()
@@ -155,13 +155,13 @@ def create_objective(
                 trial.set_user_attr("exception", msg)
                 raise optuna.TrialPruned(f"Error in trial {trial.number}: {msg}")
         finally:
-            device_queue.put(device)
+            device_queue.put((device, slot_id))
 
     return objective
 
 
 def training_run(
-    trial: optuna.Trial, device: str, config: dict, study_name: str
+    trial: optuna.Trial, device: str, slot_id: int, config: dict, study_name: str
 ) -> float | tuple[float, float]:
     """
     Run the training for a single Optuna trial and return the loss.
@@ -170,6 +170,7 @@ def training_run(
     Args:
         trial (optuna.Trial): Optuna trial object.
         device (str): Device to run the training on.
+        slot_id (int): Slot ID for the position of the progress bar.
         config (dict): Configuration dictionary.
         study_name (str): Name of the study.
 
@@ -225,6 +226,7 @@ def training_run(
         n_parameters=n_params,
         config=model_config,
     )
+    model.to(device)
     model.normalisation = data_info
     model.optuna_trial = trial
     model.trial_update_epochs = 10
@@ -242,12 +244,11 @@ def training_run(
     )
 
     description = make_description("Optuna", device, str(trial.number), surr_name)
-    pos = config["devices"].index(device) + 2
     model.fit(
         train_loader=train_loader,
         test_loader=test_loader,
         epochs=config["epochs"],
-        position=pos,
+        position=slot_id + 2,
         description=description,
         multi_objective=config["multi_objective"],
     )

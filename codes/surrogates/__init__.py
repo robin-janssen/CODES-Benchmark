@@ -8,7 +8,7 @@ from .LatentNeuralODE.latent_neural_ode import (
     LatentNeuralODE,
     ModelWrapper,
 )
-from .LatentNeuralODE.utilities import ChemDataset
+from .LatentNeuralODE.utilities import ChemDataset, FlatSeqBatchIterable
 from .LatentPolynomial.latent_poly import LatentPoly, Polynomial
 from .surrogate_classes import surrogate_classes
 
@@ -27,6 +27,7 @@ __all__ = [
     "Encoder",
     "Decoder",
     "ChemDataset",
+    "FlatSeqBatchIterable",
     "LatentPoly",
     "Polynomial",
 ]
