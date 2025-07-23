@@ -8,6 +8,7 @@ from .optuna_fcts import (
     create_objective,
     load_yaml_config,
     make_optuna_params,
+    maybe_set_runtime_threshold,
     training_run,
 )
 from .postgres_fcts import _make_db_url, initialize_optuna_database
@@ -23,6 +24,7 @@ __all__ = [
     "create_objective",
     "load_yaml_config",
     "make_optuna_params",
+    "maybe_set_runtime_threshold",
     "training_run",
     "load_study_config",
     "moving_average",

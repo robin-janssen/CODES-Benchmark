@@ -1,5 +1,7 @@
+import math
 import os
 import queue
+from datetime import datetime
 from distutils.util import strtobool
 
 import numpy as np
@@ -7,6 +9,8 @@ import optuna
 import torch
 import torch.nn as nn
 import yaml
+from optuna.trial import TrialState
+from tqdm import tqdm
 
 from codes.benchmark.bench_utils import (
     get_model_config,
@@ -279,3 +283,53 @@ def training_run(
         return p99_dex, np.mean(inference_times)
     else:
         return p99_dex
+
+
+def _trial_duration_seconds(t: optuna.trial.FrozenTrial) -> float | None:
+    if not t.datetime_start:
+        return None
+    end = t.datetime_complete or datetime.utcnow()
+    return (end - t.datetime_start).total_seconds()
+
+
+def maybe_set_runtime_threshold(
+    study: optuna.Study, warmup_target: int, include_pruned: bool = False
+) -> None:
+    # already done?
+    if "runtime_threshold" in study.user_attrs:
+        return
+
+    wanted_states = (TrialState.COMPLETE,)
+    if include_pruned:
+        wanted_states += (TrialState.PRUNED,)
+
+    trials = study.get_trials(deepcopy=False)
+    trials_sorted = sorted(trials, key=lambda tr: tr.number)
+
+    durs = []
+    for tr in trials_sorted:
+        if len(durs) >= warmup_target:
+            break
+        if tr.state in wanted_states:
+            dur = _trial_duration_seconds(tr)
+            if dur is not None:
+                durs.append(dur)
+
+    if len(durs) < warmup_target:
+        # Not enough qualifying trials yet — do nothing
+        return
+
+    mean_ = sum(durs) / len(durs)
+    var = sum((d - mean_) ** 2 for d in durs) / len(durs)
+    std_ = math.sqrt(var)
+    threshold = mean_ + 2 * std_
+
+    study.set_user_attr("runtime_threshold", float(threshold))
+    study.set_user_attr("warmup_mean", float(mean_))
+    study.set_user_attr("warmup_std", float(std_))
+    study.set_user_attr("warmup_target", warmup_target)
+
+    tqdm.write(
+        f"\n[Study] Warmup complete. Runtime threshold set to {threshold:.1f}s "
+        f"(mean = {mean_: .1f}s, std = {std_: .1f}s) over {warmup_target} trials."
+    )

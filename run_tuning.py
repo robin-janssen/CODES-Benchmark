@@ -1,5 +1,4 @@
 import argparse
-import math
 import queue
 import sys
 import time
@@ -15,6 +14,7 @@ from codes.tune import (
     delete_studies_if_requested,
     initialize_optuna_database,
     load_yaml_config,
+    maybe_set_runtime_threshold,
     prepare_workspace,
 )
 from codes.utils import download_data, nice_print
@@ -64,41 +64,27 @@ def run_single_study(config: dict, study_name: str, db_url: str):
     objective_fn = create_objective(config, study_name, device_queue)
     n_trials = config["n_trials"]
     n_jobs = len(config["devices"])
+    warmup_target = max(5, int(n_trials * 0.10))
 
-    warmup_trials = max(5, int(n_trials * 0.10))
     all_durations: list[float] = []
-    init_durations: list[float] = []
 
     def trial_complete_callback(study_: optuna.Study, trial_: optuna.trial.FrozenTrial):
+        # progress bar update
         if trial_.state in (TrialState.COMPLETE, TrialState.PRUNED):
             trial_pbar.update(1)
-        if trial_.state != TrialState.COMPLETE or not trial_.datetime_start:
-            return
-        duration = time.time() - trial_.datetime_start.timestamp()
-        all_durations.append(duration)
-        avg_duration = sum(all_durations) / len(all_durations)
-        eta = (avg_duration * (n_trials - len(all_durations))) / n_jobs
-        trial_pbar.set_postfix_str(
-            f"ETA: {eta / 60:.1f}m, Avg: {avg_duration:.1f}s, Last: {duration:.1f}s"
-        )
 
-        if trial_.number < warmup_trials:
-            init_durations.append(duration)
-            if (
-                len(init_durations) == warmup_trials
-                and "runtime_threshold" not in study_.user_attrs
-            ):
-                mean_init = sum(init_durations) / len(init_durations)
-                var = sum((d - mean_init) ** 2 for d in init_durations) / len(
-                    init_durations
-                )
-                std_init = math.sqrt(var)
-                threshold = mean_init + 2 * std_init
-                study_.set_user_attr("runtime_threshold", threshold)
-                tqdm.write(
-                    f"\n[Study] Warmup complete. Runtime threshold set to {threshold:.1f}s "
-                    f"(mean = {mean_init:.1f}s, std = {std_init:.1f}s) over {warmup_trials} trials."
-                )
+        # duration/eta
+        if trial_.datetime_start:
+            dur = time.time() - trial_.datetime_start.timestamp()
+            all_durations.append(dur)
+            avg = sum(all_durations) / len(all_durations)
+            eta = (avg * (n_trials - len(all_durations))) / n_jobs
+            trial_pbar.set_postfix_str(
+                f"ETA: {eta / 60:.1f}m, Avg: {avg:.1f}s, Last: {dur:.1f}s"
+            )
+
+        # try to set threshold (no-op if not enough data or already set)
+        maybe_set_runtime_threshold(study_, warmup_target, include_pruned=True)
 
     download_data(config["dataset"]["name"])
 

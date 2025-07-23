@@ -1,15 +1,15 @@
-tuning_id: tuningtest_01
+tuning_id: cloud_tuning_timetest
 
 seed: 42
 dataset:
   name: cloud
   log10_transform: True
   normalise: minmax
-  subset_factor: 1
+  subset_factor: 4
   tolerance: 1e-25
   normalise_per_species: True
   log_timesteps: True
-devices: ["cuda:0"]
+devices: ["cuda:1", "cuda:2", "cuda:3", "cuda:4", "cuda:5", "cuda:6", "cuda:8", "cuda:9"]
 optuna_logs: False
 prune: True
 verbose: False
@@ -17,10 +17,10 @@ multi_objective: True
 population_size: 100
 target_percentile: 0.99
 postgres_config:
-  mode: "remote"                # "local" or "remote"
+  mode: "local"                # "local" or "remote"
   port: 5432
   user: "optuna_user"
-  host: "csg-pgsql01.ziti.uni-heidelberg.de" # "localhost" for local use
+  host: "localhost" # "localhost" for local use
   database_folder: "/export/home/rjanssen/postgres/" # only for local use
   db_name: "optuna_cloud"       # remote mode: single DB for all runs
   sslmode: "require"            # if needed
@@ -29,150 +29,155 @@ postgres_config:
 global_optuna_params:
   learning_rate:
     type: float
-    low: 1.0e-4
-    high: 1.0e-3
+    low: 1.0e-6
+    high: 1.0e-2
     log: true
-  # regularization_factor:
-  #   type: float
-  #   low: 1.0e-6
-  #   high: 1.0
-  #   log: true
-  # optimizer:
-  #   type: categorical
-  #   choices: ["AdamW", "SGD"]
-  # momentum:
-  #   type: float
-  #   low: 0.0
-  #   high: 0.99
-  #   step: 0.01
-  # scheduler:
-  #   type: categorical
-  #   choices: ["cosine", "poly", "schedulefree"]
-  # poly_power:
-  #   type: float
-  #   low: 0.5
-  #   high: 2.0
-  #   step: 0.1
-  # eta_min:
-  #   type: float
-  #   low: 1.0e-3
-  #   high: 1.0
-  #   log: true
-  # activation:
-  #   type: categorical
-  #   choices: ["ReLU", "LeakyReLU", "PReLU", "Tanh", "GELU", "Mish", "SiLU", "ELU"]
-  # loss_function:
-  #   type: categorical
-  #   choices: ["mse", "smoothl1"]
-  # beta:
-  #   type: float
-  #   low: 0.1
-  #   high: 10.0
-  #   log: true
+  regularization_factor:
+    type: float
+    low: 1.0e-6
+    high: 1.0
+    log: true
+  optimizer:
+    type: categorical
+    choices: ["AdamW", "SGD"]
+  momentum:
+    type: float
+    low: 0.0
+    high: 0.99
+    step: 0.01
+  scheduler:
+    type: categorical
+    choices: ["cosine", "poly", "schedulefree"]
+  poly_power:
+    type: float
+    low: 0.5
+    high: 2.0
+    step: 0.1
+  eta_min:
+    type: float
+    low: 1.0e-3
+    high: 1.0
+    log: true
+  activation:
+    type: categorical
+    choices: ["ReLU", "LeakyReLU", "PReLU", "Tanh", "GELU", "Mish", "SiLU", "ELU"]
+  loss_function:
+    type: categorical
+    choices: ["mse", "smoothl1"]
+  beta:
+    type: float
+    low: 0.1
+    high: 10.0
+    log: true
 
 surrogates:
-  # - name: MultiONet
-  #   batch_size: 65536
-  #   epochs: 20
-  #   trials: 1
-  #   optuna_params:
-      # branch_hidden_layers:
-      #   type: int
-      #   low: 1
-      #   high: 10
-      # hidden_size:
-      #   type: int
-      #   low: 500 # 10
-      #   high: 510
-      # output_factor:
-      #   type: int
-      #   low: 1
-      #   high: 200
-      # trunk_hidden_layers:
-      #   type: int
-      #   low: 1
-      #   high: 10
+  - name: MultiONet
+    batch_size: 65536
+    epochs: 200
+    trials: 200
+    optuna_params:
+      branch_hidden_layers:
+        type: int
+        low: 1
+        high: 10
+      hidden_size:
+        type: int
+        low: 10
+        high: 1000
+        step: 10
+      output_factor:
+        type: int
+        low: 1
+        high: 200
+      trunk_hidden_layers:
+        type: int
+        low: 1
+        high: 10
       # params_branch:
       #   type: categorical
       #   choices: ["True", "False"]
       
 
-  # - name: FullyConnected
-    # batch_size: 65536
-    # epochs: 20
-    # trials: 1
-    # optuna_params:
-    #   hidden_size:
-    #     type: int
-    #     low: 2500
-    #     high: 2510
-  #     num_hidden_layers:
-  #       type: int
-  #       low: 1
-  #       high: 10
+  - name: FullyConnected
+    batch_size: 65536
+    epochs: 30
+    trials: 200
+    optuna_params:
+      hidden_size:
+        type: int
+        low: 10
+        high: 1000
+        step: 10
+      num_hidden_layers:
+        type: int
+        low: 1
+        high: 10
 
   - name: LatentPoly
     batch_size: 512
-    epochs: 20
-    trials: 1
+    epochs: 200
+    trials: 200
     optuna_params:
-  #     degree:
-  #       type: int
-  #       low: 1
-  #       high: 10
-  #     latent_features:
-  #       type: int
-  #       low: 1
-  #       high: 10
-  #     coder_layers:
-  #       type: int
-  #       low: 1
-  #       high: 10
+      degree:
+        type: int
+        low: 1
+        high: 10
+      latent_features:
+        type: int
+        low: 1
+        high: 10
+      coder_layers:
+        type: int
+        low: 1
+        high: 10
       coder_width:
         type: int
-        low: 1500
-        high: 1510
-  #     coeff_network:
-  #       type: categorical
-  #       choices: ["True", "False"]
-  #     coeff_width:
-  #       type: int
-  #       low: 8
-  #       high: 256
-  #       step: 8
-  #     coeff_layers:
-  #       type: int
-  #       low: 1
-  #       high: 5
+        low: 10
+        high: 1000
+        step: 10
+      # coeff_network:
+      #   type: categorical
+      #   choices: ["True", "False"]
+      # coeff_width:
+      #   type: int
+      #   low: 10
+      #   high: 1000
+      #   step: 10
+      # coeff_layers:
+      #   type: int
+      #   low: 1
+      #   high: 5
 
   - name: LatentNeuralODE
     batch_size: 1024
-    epochs: 20
-    trials: 1
+    epochs: 200
+    trials: 200
     optuna_params:
-  #     latent_features:
-  #       type: int
-  #       low: 1
-  #       high: 10
-  #     coder_layers:
-  #       type: int
-  #       low: 1
-  #       high: 10
+      latent_features:
+        type: int
+        low: 1
+        high: 10
+      coder_layers:
+        type: int
+        low: 1
+        high: 10
       coder_width:
         type: int
-        low: 300
-        high: 310
-  #     ode_tanh_reg:
-  #       type: categorical
-  #       choices: ["True", "False"]
-  #     ode_width:
-  #       type: int
-  #       low: 300
-  #       high: 310
-  #     ode_layers:
-  #       type: int
-  #       low: 1
-  #       high: 10
-  #     encode_params:
-  #       type: categorical
-  #       choices: ["True", "False"]
+        low: 10
+        high: 1000
+        step: 10
+      ode_tanh_reg:
+        type: categorical
+        choices: ["True", "False"]
+      ode_width:
+        type: int
+        low: 10
+        high: 1000
+        step: 10
+      ode_layers:
+        type: int
+        low: 1
+        high: 10
+      # encode_params:
+      #   type: categorical
+      #   choices: ["True", "False"]

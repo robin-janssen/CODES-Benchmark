@@ -301,7 +301,6 @@ class MultiONet(OperatorNetwork):
                 epoch=epoch,
                 train_loader=train_loader,
                 test_loader=test_loader,
-                criterion=criterion,
                 optimizer=optimizer,
                 progress_bar=progress_bar,
                 total_epochs=epochs,
@@ -364,7 +363,6 @@ class MultiONet(OperatorNetwork):
         pin_memory: bool = True,
     ):
         n_samples, n_timesteps, n_quantities = data.shape
-        total = n_samples * n_timesteps
 
         branch = np.repeat(data[:, 0, :], n_timesteps, axis=0)  # (total, n_q)
         trunk = np.tile(timesteps.reshape(1, -1), (n_samples, 1)).reshape(

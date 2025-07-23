@@ -264,7 +264,6 @@ class FullyConnected(AbstractSurrogateModel):
                 epoch=epoch,
                 train_loader=train_loader,
                 test_loader=test_loader,
-                criterion=criterion,
                 optimizer=optimizer,
                 progress_bar=progress_bar,
                 total_epochs=epochs,

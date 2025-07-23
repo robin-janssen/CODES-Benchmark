@@ -122,18 +122,18 @@ class LatentNeuralODE(AbstractSurrogateModel):
 
     def create_dataloader(
         self,
-        data: np.ndarray, 
-        timesteps: np.ndarray, 
+        data: np.ndarray,
+        timesteps: np.ndarray,
         batch_size: int,
         shuffle: bool,
         dataset_params: np.ndarray | None,
         num_workers: int = 0,
         pin_memory: bool = True,
     ):
-        data_t = torch.from_numpy(data).float() 
-        t_t = torch.from_numpy(timesteps).float()  
+        data_t = torch.from_numpy(data).float()
+        t_t = torch.from_numpy(timesteps).float()
         if dataset_params is not None:
-            params_t = torch.from_numpy(dataset_params).float()  
+            params_t = torch.from_numpy(dataset_params).float()
         else:
             params_t = None
 
@@ -142,7 +142,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         return DataLoader(
             ds,
             batch_size=None,
-            num_workers=num_workers, 
+            num_workers=num_workers,
             pin_memory=pin_memory,
             persistent_workers=False,
         )
@@ -218,7 +218,6 @@ class LatentNeuralODE(AbstractSurrogateModel):
                 epoch=epoch,
                 train_loader=train_loader,
                 test_loader=test_loader,
-                criterion=criterion,
                 optimizer=optimizer,
                 progress_bar=progress_bar,
                 total_epochs=epochs,

@@ -502,7 +502,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             optuna.TrialPruned: If the projected runtime exceeds the threshold.
         """
         # Define warmup period based on 10% of total epochs.
-        warmup_epochs = max(50, int(total_epochs * 0.02))
+        warmup_epochs = max(10, int(total_epochs * 0.02))
         if current_epoch < warmup_epochs:
             # Do not attempt to prune before the warmup period is complete.
             # print(
@@ -648,7 +648,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
         epoch: int,
         train_loader: DataLoader,
         test_loader: DataLoader,
-        criterion: nn.Module,
         optimizer: torch.optim.Optimizer,
         progress_bar: tqdm,
         total_epochs: int,
@@ -668,6 +667,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
           - self.checkpoint(test_loss, epoch)
 
         Only runs if (epoch % self.update_epochs) == 0.
+        Main reporting metric is MAE in log10-space (i.e., Δdex). Additionally, MAE in linear space is computed.
         """
 
         # If it's not time to check yet, do nothing.
@@ -682,10 +682,11 @@ class AbstractSurrogateModel(ABC, nn.Module):
             optimizer.eval() if hasattr(optimizer, "eval") else None
 
             # Compute losses
-            preds, targets = self.predict(train_loader)
-            self.train_loss[index] = criterion(preds, targets).item()
+            preds, targets = self.predict(train_loader, leave_log=True)
+            self.train_loss[index] = self.L1(preds, targets).item()
+            preds, targets = self.predict(test_loader, leave_log=True)
+            self.test_loss[index] = self.L1(preds, targets).item()
             preds, targets = self.predict(test_loader)
-            self.test_loss[index] = criterion(preds, targets).item()
             self.MAE[index] = self.L1(preds, targets).item()
 
             progress_bar.set_postfix(
@@ -702,6 +703,12 @@ class AbstractSurrogateModel(ABC, nn.Module):
                     self.optuna_trial.report(self.test_loss[index], step=epoch)
                     if self.optuna_trial.should_prune():
                         raise optuna.TrialPruned()
+                    elif np.isinf(self.test_loss[index]) or np.isnan(
+                        self.test_loss[index]
+                    ):
+                        raise optuna.TrialPruned(
+                            "Test loss is NaN or Inf, pruning trial."
+                        )
 
             self.checkpoint(self.test_loss[index], epoch)
 
