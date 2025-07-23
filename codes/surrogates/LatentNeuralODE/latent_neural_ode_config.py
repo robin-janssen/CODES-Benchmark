@@ -14,7 +14,7 @@ class LatentNeuralODEBaseConfig(AbstractSurrogateBaseConfig):
 
     Attributes:
         model_version (str): Indicates model architecture style.
-            - "v1": Fixed structure (e.g., 4–2–1 layout scaled by factor).
+            - "v1": Fixed structure (e.g., 4-2-1 layout scaled by factor).
             - "v2": Fully connected architecture with flexible depth/width.
         latent_features (int): Size of the latent space (z-dimension).
         layers_factor (int): Scaling factor for the number of neurons in the encoder/decoder.

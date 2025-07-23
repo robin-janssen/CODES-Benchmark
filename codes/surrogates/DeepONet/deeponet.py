@@ -3,13 +3,13 @@ from typing import TypeVar
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 
 from codes.surrogates.AbstractSurrogate import AbstractSurrogateModel
-from codes.utils import time_execution, worker_init_fn
+from codes.utils import time_execution
 
 from .deeponet_config import MultiONetBaseConfig
-from .don_utils import PreBatchedDataset, mass_conservation_loss
+from .don_utils import FlatBatchIterable, mass_conservation_loss
 
 
 class BranchNet(nn.Module):
@@ -233,6 +233,10 @@ class MultiONet(OperatorNetwork):
         Returns:
             tuple: The model outputs and the targets.
         """
+        inputs = tuple(
+            x.to(self.device, non_blocking=True) if isinstance(x, torch.Tensor) else x
+            for x in inputs
+        )
         branch_input, trunk_input, targets = inputs
         branch_output = self.branch_net(branch_input)
         trunk_output = self.trunk_net(trunk_input)
@@ -247,74 +251,6 @@ class MultiONet(OperatorNetwork):
             result.append(torch.sum(b_split * t_split, dim=1, keepdim=True))
 
         return torch.cat(result, dim=1), targets
-
-    def prepare_data(
-        self,
-        dataset_train: np.ndarray,
-        dataset_test: np.ndarray,
-        dataset_val: np.ndarray | None,
-        timesteps: np.ndarray,
-        batch_size: int,
-        shuffle: bool = True,
-        dummy_timesteps: bool = True,
-        dataset_train_params: np.ndarray | None = None,
-        dataset_test_params: np.ndarray | None = None,
-        dataset_val_params: np.ndarray | None = None,
-    ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
-        """
-        Prepare the data for the predict or fit methods.
-        Note: All datasets must have shape (n_samples, n_timesteps, n_quantities).
-
-        Args:
-            dataset_train (np.ndarray): The training data.
-            dataset_test (np.ndarray): The test data.
-            dataset_val (np.ndarray, optional): The validation data.
-            timesteps (np.ndarray): The timesteps.
-            batch_size (int): The batch size.
-            shuffle (bool, optional): Whether to shuffle the data.
-            dummy_timesteps (bool, optional): Whether to create a dummy timestep array.
-            dataset_train_params (np.ndarray | None): Fixed parameters for training samples.
-            dataset_test_params (np.ndarray | None): Fixed parameters for testing samples.
-            dataset_val_params (np.ndarray | None): Fixed parameters for validation samples.
-
-        Returns:
-            tuple: The training, test, and validation DataLoaders.
-        """
-        dataloaders = []
-
-        if dummy_timesteps:
-            timesteps = np.linspace(0, 1, dataset_train.shape[1])
-
-        # Create the train dataloader
-        dataloader_train = self.create_dataloader(
-            data=dataset_train,
-            timesteps=timesteps,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            dataset_params=dataset_train_params,
-            params_in_branch=self.config.params_branch,
-        )
-        dataloaders.append(dataloader_train)
-
-        # Create the test and validation dataloaders
-        for dataset, params in [
-            (dataset_test, dataset_test_params),
-            (dataset_val, dataset_val_params),
-        ]:
-            if dataset is not None:
-                dataloader = self.create_dataloader(
-                    data=dataset,
-                    timesteps=timesteps,
-                    batch_size=batch_size,
-                    shuffle=False,
-                    dataset_params=params,
-                    params_in_branch=self.config.params_branch,
-                )
-                dataloaders.append(dataloader)
-            else:
-                dataloaders.append(None)
-
-        return dataloaders[0], dataloaders[1], dataloaders[2]
 
     @time_execution
     def fit(
@@ -410,232 +346,110 @@ class MultiONet(OperatorNetwork):
         """
         for batch in data_loader:
             branch_input, trunk_input, targets = batch
-            branch_input, trunk_input, targets = (
-                branch_input.to(self.device),
-                trunk_input.to(self.device),
-                targets.to(self.device),
-            )
             optimizer.zero_grad()
             outputs, targets = self((branch_input, trunk_input, targets))
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
-
-    def create_dataloader_n(
-        self,
-        data: np.ndarray,
-        timesteps: np.ndarray,
-        batch_size: int,
-        shuffle: bool = False,
-    ):
-        """
-        Create a DataLoader for the given data.
-
-        Args:
-            data (np.ndarray): The data to load. Must have shape (n_samples, n_timesteps, n_quantities).
-            timesteps (np.ndarray): The timesteps.
-            batch_size (int, optional): The batch size.
-            shuffle (bool, optional): Whether to shuffle the data.
-        """
-        # Initialize lists to store the inputs and targets
-        branch_inputs = []
-        trunk_inputs = []
-        targets = []
-
-        # Iterate through the grid to select the samples
-        for i in range(data.shape[0]):
-            for j in range(data.shape[1]):
-                branch_inputs.append(data[i, 0, :])
-                trunk_inputs.append([timesteps[j]])
-                targets.append(data[i, j, :])
-
-        # Convert to PyTorch tensors
-        branch_inputs_tensor = torch.tensor(
-            np.array(branch_inputs), dtype=torch.float32
-        )
-        trunk_inputs_tensor = torch.tensor(np.array(trunk_inputs), dtype=torch.float32)
-        targets_tensor = torch.tensor(np.array(targets), dtype=torch.float32)
-
-        # Create a TensorDataset and DataLoader
-        branch_inputs_tensor = branch_inputs_tensor.to(self.device)
-        trunk_inputs_tensor = trunk_inputs_tensor.to(self.device)
-        targets_tensor = targets_tensor.to(self.device)
-        dataset = TensorDataset(
-            branch_inputs_tensor, trunk_inputs_tensor, targets_tensor
-        )
-
-        return DataLoader(
-            dataset,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            worker_init_fn=worker_init_fn,
-        )
 
     def create_dataloader(
         self,
         data: np.ndarray,
         timesteps: np.ndarray,
         batch_size: int,
-        shuffle: bool = False,
-        dataset_params: np.ndarray | None = None,
-        params_in_branch: bool = True,
+        shuffle: bool,
+        dataset_params: np.ndarray | None,
+        params_in_branch: bool,
+        num_workers: int = 0,  # will usually stay 0 here
+        pin_memory: bool = True,
     ):
-        """
-        Create a DataLoader with optimized memory-safe shuffling using pre-allocated buffers and direct slicing.
-
-        Args:
-            data (np.ndarray): The data to load. Must have shape (n_samples, n_timesteps, n_quantities).
-            timesteps (np.ndarray): The timesteps. Shape: (n_timesteps,).
-            batch_size (int): The batch size.
-            shuffle (bool, optional): Whether to shuffle the data.
-            dataset_params (np.ndarray | None): Fixed parameters for each sample (shape: [n_samples, n_parameters]).
-            params_in_branch (bool, optional): If True, parameters are concatenated with branch inputs;
-                if False, with trunk inputs.
-
-        Returns:
-            DataLoader: A DataLoader with precomputed batches.
-        """
-        device = self.device
         n_samples, n_timesteps, n_quantities = data.shape
-        total_samples = n_samples * n_timesteps
+        total = n_samples * n_timesteps
 
-        # Pre-allocate arrays for branch and trunk inputs, and targets.
-        # Branch Inputs: Repeat the initial state for each sample.
-        branch_inputs = np.repeat(
-            data[:, 0, :], n_timesteps, axis=0
-        )  # shape: (total_samples, n_quantities)
-        # Trunk Inputs: Tile the timesteps for each sample.
-        trunk_inputs = np.tile(timesteps.reshape(1, -1), (n_samples, 1)).reshape(
+        branch = np.repeat(data[:, 0, :], n_timesteps, axis=0)  # (total, n_q)
+        trunk = np.tile(timesteps.reshape(1, -1), (n_samples, 1)).reshape(
             -1, 1
-        )  # shape: (total_samples, 1)
+        )  # (total, 1)
 
-        # If parameters are provided, repeat them along the time dimension.
         if dataset_params is not None:
             rep_params = np.repeat(dataset_params, n_timesteps, axis=0)
             if params_in_branch:
-                branch_inputs = np.concatenate([branch_inputs, rep_params], axis=1)
+                branch = np.concatenate([branch, rep_params], axis=1)
             else:
-                trunk_inputs = np.concatenate([trunk_inputs, rep_params], axis=1)
+                trunk = np.concatenate([trunk, rep_params], axis=1)
 
-        # Targets: Flatten the data across samples and timesteps.
-        targets = data.reshape(-1, n_quantities)
+        target = data.reshape(-1, n_quantities)
 
-        if shuffle:
-            permutation = np.random.permutation(total_samples)
-            branch_inputs = branch_inputs[permutation]
-            trunk_inputs = trunk_inputs[permutation]
-            targets = targets[permutation]
+        # one-time NumPy -> Torch (CPU)
+        branch_t = torch.from_numpy(branch).float()
+        trunk_t = torch.from_numpy(trunk).float()
+        target_t = torch.from_numpy(target).float()
 
-        num_full_batches = total_samples // batch_size
-        remainder = total_samples % batch_size
-
-        batched_branch_inputs = []
-        batched_trunk_inputs = []
-        batched_targets = []
-
-        for batch_idx in range(num_full_batches):
-            start = batch_idx * batch_size
-            end = start + batch_size
-            batch_branch = torch.from_numpy(branch_inputs[start:end]).float().to(device)
-            batch_trunk = torch.from_numpy(trunk_inputs[start:end]).float().to(device)
-            batch_target = torch.from_numpy(targets[start:end]).float().to(device)
-            batched_branch_inputs.append(batch_branch)
-            batched_trunk_inputs.append(batch_trunk)
-            batched_targets.append(batch_target)
-
-        if remainder > 0:
-            start = num_full_batches * batch_size
-            batch_branch = torch.from_numpy(branch_inputs[start:]).float().to(device)
-            batch_trunk = torch.from_numpy(trunk_inputs[start:]).float().to(device)
-            batch_target = torch.from_numpy(targets[start:]).float().to(device)
-            batched_branch_inputs.append(batch_branch)
-            batched_trunk_inputs.append(batch_trunk)
-            batched_targets.append(batch_target)
-
-        dataset_prebatched = PreBatchedDataset(
-            batched_branch_inputs,
-            batched_trunk_inputs,
-            batched_targets,
+        iterable_ds = FlatBatchIterable(
+            branch_t, trunk_t, target_t, batch_size, shuffle
         )
 
-        return DataLoader(
-            dataset_prebatched,
-            batch_size=1,  # Each "batch" is now a precomputed batch.
-            shuffle=False,
-            num_workers=0,
-            collate_fn=custom_collate_fn,
-            worker_init_fn=worker_init_fn,
+        # batch_size=None because dataset is already batching
+        loader = DataLoader(
+            iterable_ds,
+            batch_size=None,
+            num_workers=num_workers,  # 0 is fine; workers add little here
+            pin_memory=pin_memory,
+            persistent_workers=False,
         )
+        return loader
 
-    def epoch_profile(
+    def prepare_data(
         self,
-        data_loader: DataLoader,
-        criterion: nn.Module,
-        optimizer: torch.optim.Optimizer,
-        profiler: torch.profiler.profile = None,
-        profile_batches: int = 0,
-    ) -> float:
-        """
-        Perform one training epoch, with optional profiling for a limited number of batches.
+        dataset_train: np.ndarray,
+        dataset_test: np.ndarray,
+        dataset_val: np.ndarray | None,
+        timesteps: np.ndarray,
+        batch_size: int,
+        shuffle: bool = True,
+        dummy_timesteps: bool = True,
+        dataset_train_params: np.ndarray | None = None,
+        dataset_test_params: np.ndarray | None = None,
+        dataset_val_params: np.ndarray | None = None,
+    ):
+        if dummy_timesteps:
+            timesteps = np.linspace(0, 1, dataset_train.shape[1])
 
-        Args:
-            data_loader (DataLoader): The DataLoader object containing the training data.
-            criterion (nn.Module): The loss function.
-            optimizer (torch.optim.Optimizer): The optimizer.
-            profiler (torch.profiler.profile, optional): The profiler to use for profiling.
-            profile_batches (int, optional): Number of batches to profile in this epoch.
+        nw = getattr(self.config, "num_workers", 0)
 
-        Returns:
-            float: The total loss for the training step.
-        """
-        self.train()
-        optimizer.train()
-        total_loss = 0
-        dataset_size = len(data_loader.dataset)
+        train_loader = self.create_dataloader(
+            dataset_train,
+            timesteps,
+            batch_size,
+            True,
+            dataset_params=dataset_train_params,
+            params_in_branch=self.config.params_branch,
+            num_workers=nw,
+        )
 
-        for batch_idx, batch in enumerate(data_loader):
-            branch_input, trunk_input, targets = batch
-            branch_input, trunk_input, targets = (
-                branch_input.to(self.device),
-                trunk_input.to(self.device),
-                targets.to(self.device),
+        test_loader = self.create_dataloader(
+            dataset_test,
+            timesteps,
+            batch_size,
+            False,
+            dataset_params=dataset_test_params,
+            params_in_branch=self.config.params_branch,
+            num_workers=nw,
+        )
+
+        val_loader = None
+        if dataset_val is not None:
+            val_loader = self.create_dataloader(
+                dataset_val,
+                timesteps,
+                batch_size,
+                False,
+                dataset_params=dataset_val_params,
+                params_in_branch=self.config.params_branch,
+                num_workers=nw,
             )
-            optimizer.zero_grad()
 
-            # Start and stop the profiler for the specified number of batches
-            if profiler and batch_idx == 0:
-                profiler.start()
-            if profiler and batch_idx == profile_batches:
-                profiler.stop()
-
-            outputs, targets = self((branch_input, trunk_input, targets))
-            loss = criterion(outputs, targets)
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-
-        total_loss /= dataset_size * self.N
-        return total_loss
-
-
-def custom_collate_fn(batch):
-    """
-    Custom collate function to ensure tensors are returned in the correct shape.
-    Args:
-        batch: A list of tuples from the dataset, where each tuple contains
-               (branch_input, trunk_input, targets).
-
-    Returns:
-        A tuple of tensors with correct shapes:
-        - branch_input: [batch_size, feature_size]
-        - trunk_input: [batch_size, feature_size]
-        - targets: [batch_size, feature_size]
-    """
-    # Unpack and stack items manually, removing any extra dimensions
-    branch_inputs = torch.stack([item[0] for item in batch]).squeeze(0)
-    trunk_inputs = torch.stack([item[1] for item in batch]).squeeze(0)
-    targets = torch.stack([item[2] for item in batch]).squeeze(0)
-    return branch_inputs, trunk_inputs, targets
+        return train_loader, test_loader, val_loader
 
 
 AbstractSurrogateModel.register(MultiONet)

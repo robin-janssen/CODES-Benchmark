@@ -3,14 +3,14 @@ from typing import Optional
 import numpy as np
 import torch
 import torchode as to
-from torch import nn
+from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
 from codes.surrogates.AbstractSurrogate import AbstractSurrogateModel
-from codes.utils import time_execution, worker_init_fn
+from codes.utils import time_execution
 
 from .latent_neural_ode_config import LatentNeuralODEBaseConfig
-from .utilities import ChemDataset
+from .utilities import FlatSeqBatchIterable
 
 
 class LatentNeuralODE(AbstractSurrogateModel):
@@ -55,14 +55,15 @@ class LatentNeuralODE(AbstractSurrogateModel):
         Forward pass through the model.
         Expects inputs to be either (data, timesteps) or (data, timesteps, params).
         """
-        # if len(inputs) == 3:
+        inputs = tuple(
+            (
+                x.to(self.device, dtype=torch.float64, non_blocking=True)
+                if isinstance(x, Tensor)
+                else x
+            )
+            for x in inputs
+        )
         x, t_range, params = inputs
-        # else:
-        #     x, t_range = inputs
-        #     params = None
-
-        # x has shape (batch, timesteps, n_quantities)
-        # Use the first timestep as the initial condition.
         x0 = x[:, 0, :]
         latent_prediction = self.model(x0, t_range, params)
         return latent_prediction, x
@@ -80,86 +81,71 @@ class LatentNeuralODE(AbstractSurrogateModel):
         dataset_test_params: np.ndarray | None = None,
         dataset_val_params: np.ndarray | None = None,
     ) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
-        """
-        Prepares data by creating DataLoader objects.
-        If fixed parameters are provided, they are passed along with each sample.
-        """
-        if shuffle:
-            shuffled_indices = np.random.permutation(len(dataset_train))
-            dataset_train = dataset_train[shuffled_indices]
-            if dataset_train_params is not None:
-                dataset_train_params = dataset_train_params[shuffled_indices]
 
         if dummy_timesteps:
             timesteps = np.linspace(0, 1, dataset_train.shape[1])
 
-        dset_train = ChemDataset(
+        nw = getattr(self.config, "num_workers", 0)
+
+        train_loader = self.create_dataloader(
             dataset_train,
             timesteps,
-            device=self.device,
-            parameters=dataset_train_params,
-        )
-        dataloader_train = DataLoader(
-            dset_train,
-            batch_size=batch_size,
-            shuffle=False,
-            worker_init_fn=worker_init_fn,
-            collate_fn=lambda x: (
-                torch.stack([item[0] for item in x], dim=0),
-                x[0][1],  # timesteps (assumed identical)
-                torch.stack([item[2] for item in x], dim=0) if len(x[0]) == 3 else None,
-            ),
+            batch_size,
+            shuffle=shuffle,
+            dataset_params=dataset_train_params,
+            num_workers=nw,
         )
 
-        dataloader_test = None
+        test_loader = None
         if dataset_test is not None:
-            dset_test = ChemDataset(
+            test_loader = self.create_dataloader(
                 dataset_test,
                 timesteps,
-                device=self.device,
-                parameters=dataset_test_params,
-            )
-            dataloader_test = DataLoader(
-                dset_test,
-                batch_size=batch_size,
+                batch_size,
                 shuffle=False,
-                worker_init_fn=worker_init_fn,
-                collate_fn=lambda x: (
-                    torch.stack([item[0] for item in x], dim=0),
-                    x[0][1],
-                    (
-                        torch.stack([item[2] for item in x], dim=0)
-                        if len(x[0]) == 3
-                        else None
-                    ),
-                ),
+                dataset_params=dataset_test_params,
+                num_workers=nw,
             )
 
-        dataloader_val = None
+        val_loader = None
         if dataset_val is not None:
-            dset_val = ChemDataset(
+            val_loader = self.create_dataloader(
                 dataset_val,
                 timesteps,
-                device=self.device,
-                parameters=dataset_val_params,
-            )
-            dataloader_val = DataLoader(
-                dset_val,
-                batch_size=batch_size,
+                batch_size,
                 shuffle=False,
-                worker_init_fn=worker_init_fn,
-                collate_fn=lambda x: (
-                    torch.stack([item[0] for item in x], dim=0),
-                    x[0][1],
-                    (
-                        torch.stack([item[2] for item in x], dim=0)
-                        if len(x[0]) == 3
-                        else None
-                    ),
-                ),
+                dataset_params=dataset_val_params,
+                num_workers=nw,
             )
 
-        return dataloader_train, dataloader_test, dataloader_val
+        return train_loader, test_loader, val_loader
+
+    def create_dataloader(
+        self,
+        data: np.ndarray, 
+        timesteps: np.ndarray, 
+        batch_size: int,
+        shuffle: bool,
+        dataset_params: np.ndarray | None,
+        num_workers: int = 0,
+        pin_memory: bool = True,
+    ):
+        data_t = torch.from_numpy(data).float() 
+        t_t = torch.from_numpy(timesteps).float()  
+        if dataset_params is not None:
+            params_t = torch.from_numpy(dataset_params).float()  
+        else:
+            params_t = None
+
+        ds = FlatSeqBatchIterable(data_t, t_t, params_t, batch_size, shuffle)
+
+        return DataLoader(
+            ds,
+            batch_size=None,
+            num_workers=num_workers, 
+            pin_memory=pin_memory,
+            persistent_workers=False,
+        )
 
     @time_execution
     def fit(
@@ -200,11 +186,19 @@ class LatentNeuralODE(AbstractSurrogateModel):
 
         for epoch in progress_bar:
             for i, batch in enumerate(train_loader):
+                batch = tuple(
+                    (
+                        x.to(device=self.device, non_blocking=True)
+                        if isinstance(x, Tensor)
+                        else x
+                    )
+                    for x in batch
+                )
                 x_true, t_range, params = batch
                 optimizer.zero_grad()
 
                 # forward pass
-                x_pred, _ = self.forward((x_true, t_range, params))
+                x_pred, x_true = self((x_true, t_range, params))
 
                 # total loss now takes params into account for identity term
                 loss = self.model.total_loss(x_true, x_pred, params, criterion)
@@ -214,7 +208,9 @@ class LatentNeuralODE(AbstractSurrogateModel):
                 # renormalize once after 10 epochs
                 if epoch == 10 and i == 0:
                     with torch.no_grad():
-                        self.model.renormalize_loss_weights(x_true, x_pred, params)
+                        self.model.renormalize_loss_weights(
+                            x_true, x_pred, params, criterion
+                        )
 
             scheduler.step()
 
@@ -234,7 +230,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         self.get_checkpoint(test_loader, criterion)
 
 
-class ModelWrapper(torch.nn.Module):
+class ModelWrapper(nn.Module):
     """
     Wraps the encoder, decoder, and neural ODE in three distinct modes:
 
@@ -316,9 +312,7 @@ class ModelWrapper(torch.nn.Module):
             activation=config.activation,
         )
 
-    def forward(
-        self, x0: torch.Tensor, t_range: torch.Tensor, params: torch.Tensor = None
-    ):
+    def forward(self, x0: Tensor, t_range: Tensor, params: Tensor = None):
         # encode initial state
         if self.n_parameters > 0 and self.config.encode_params:
             assert params is not None
@@ -341,16 +335,16 @@ class ModelWrapper(torch.nn.Module):
         return self.decoder(latent_traj)
 
     def renormalize_loss_weights(
-        self, x_true, x_pred, params, criterion: nn.Module = nn.MSELoss
+        self, x_true, x_pred, params, criterion: nn.Module = nn.MSELoss()
     ):
         """
         Renormalize the loss weights based on the current loss values so that they are accurately
         weighted based on the provided weights. To be used once after a short burn in phase.
 
         Args:
-            x_true (torch.Tensor): The true trajectory.
-            x_pred (torch.Tensor): The predicted trajectory
-            params (torch.Tensor): Fixed parameters (batch, n_parameters).
+            x_true (Tensor): The true trajectory.
+            x_pred (Tensor): The predicted trajectory
+            params (Tensor): Fixed parameters (batch, n_parameters).
             criterion (nn.Module): Loss function to use for calculating the losses.
         """
         self.loss_weights[0] = 1 / criterion(x_pred, x_true).item() * 100
@@ -360,9 +354,9 @@ class ModelWrapper(torch.nn.Module):
 
     def total_loss(
         self,
-        x_true: torch.Tensor,
-        x_pred: torch.Tensor,
-        params: torch.Tensor = None,
+        x_true: Tensor,
+        x_pred: Tensor,
+        params: Tensor = None,
         criterion: nn.Module = nn.MSELoss(),
     ):
         """
@@ -375,15 +369,15 @@ class ModelWrapper(torch.nn.Module):
             + self.loss_weights[3] * self.deriv2_loss(x_true, x_pred)
         )
 
-    def identity_loss(self, x_true: torch.Tensor, params: torch.Tensor = None):
+    def identity_loss(self, x_true: Tensor, params: Tensor = None):
         """
         Calculate the identity loss (Encoder -> Decoder) on the initial state x0.
 
         Args:
-            x_true (torch.Tensor): The full trajectory (batch, timesteps, features).
-            params (torch.Tensor | None): Fixed parameters (batch, n_parameters).
+            x_true (Tensor): The full trajectory (batch, timesteps, features).
+            params (Tensor | None): Fixed parameters (batch, n_parameters).
         Returns:
-            torch.Tensor: The identity loss on x0.
+            Tensor: The identity loss on x0.
         """
         # only reconstruct the initial state
         x0 = x_true[:, 0, :]
@@ -398,16 +392,16 @@ class ModelWrapper(torch.nn.Module):
         return self.l2_loss(x0, x0_hat)
 
     @staticmethod
-    def l2_loss(x_true: torch.Tensor, x_pred: torch.Tensor):
+    def l2_loss(x_true: Tensor, x_pred: Tensor):
         """
         Calculate the L2 loss.
 
         Args:
-            x_true (torch.Tensor): The true trajectory.
-            x_pred (torch.Tensor): The predicted trajectory
+            x_true (Tensor): The true trajectory.
+            x_pred (Tensor): The predicted trajectory
 
         Returns:
-            torch.Tensor: The L2 loss.
+            Tensor: The L2 loss.
         """
         return torch.mean(torch.abs(x_true - x_pred) ** 2)
 
@@ -417,11 +411,11 @@ class ModelWrapper(torch.nn.Module):
         Difference between the slopes of the predicted and true trajectories.
 
         Args:
-            x_true (torch.Tensor): The true trajectory.
-            x_pred (torch.Tensor): The predicted trajectory
+            x_true (Tensor): The true trajectory.
+            x_pred (Tensor): The predicted trajectory
 
         Returns:
-            torch.Tensor: The derivative loss.
+            Tensor: The derivative loss.
         """
         return cls.l2_loss(cls.deriv(x_pred), cls.deriv(x_true))
 
@@ -431,11 +425,11 @@ class ModelWrapper(torch.nn.Module):
         Difference between the curvature of the predicted and true trajectories.
 
         Args:
-            x_true (torch.Tensor): The true trajectory.
-            x_pred (torch.Tensor): The predicted trajectory
+            x_true (Tensor): The true trajectory.
+            x_pred (Tensor): The predicted trajectory
 
         Returns:
-            torch.Tensor: The second derivative loss.
+            Tensor: The second derivative loss.
         """
         return cls.l2_loss(cls.deriv2(x_pred), cls.deriv2(x_true))
 
@@ -445,10 +439,10 @@ class ModelWrapper(torch.nn.Module):
         Calculate the numerical derivative.
 
         Args:
-            x (torch.Tensor): The input tensor.
+            x (Tensor): The input tensor.
 
         Returns:
-            torch.Tensor: The numerical derivative.
+            Tensor: The numerical derivative.
         """
         return torch.gradient(x, dim=1)[0].squeeze(0)
 
@@ -458,15 +452,15 @@ class ModelWrapper(torch.nn.Module):
         Calculate the numerical second derivative.
 
         Args:
-            x (torch.Tensor): The input tensor.
+            x (Tensor): The input tensor.
 
         Returns:
-            torch.Tensor: The numerical second derivative.
+            Tensor: The numerical second derivative.
         """
         return cls.deriv(cls.deriv(x))
 
 
-class ODE(torch.nn.Module):
+class ODE(nn.Module):
     """
     Neural ODE module defining the function for latent dynamics.
     """
@@ -475,23 +469,24 @@ class ODE(torch.nn.Module):
         self,
         input_shape: int,
         output_shape: int,
-        activation: torch.nn.Module,
+        activation: nn.Module,
         ode_layers: int,
         ode_width: int,
         tanh_reg: bool,
+        dtype=torch.float64,
     ):
         super().__init__()
         self.tanh_reg = tanh_reg
-        self.reg_factor = torch.nn.Parameter(torch.tensor(1.0))
+        self.reg_factor = nn.Parameter(torch.tensor(1.0))
         self.activation = activation
         layers = []
-        layers.append(torch.nn.Linear(input_shape, ode_width, dtype=torch.float64))
+        layers.append(nn.Linear(input_shape, ode_width, dtype=dtype))
         layers.append(activation)
         for _ in range(ode_layers):
-            layers.append(torch.nn.Linear(ode_width, ode_width, dtype=torch.float64))
+            layers.append(nn.Linear(ode_width, ode_width, dtype=dtype))
             layers.append(activation)
-        layers.append(torch.nn.Linear(ode_width, output_shape, dtype=torch.float64))
-        self.mlp = torch.nn.Sequential(*layers)
+        layers.append(nn.Linear(ode_width, output_shape, dtype=dtype))
+        self.mlp = nn.Sequential(*layers)
 
     def forward(self, t, x):
         output = self.mlp(x)
@@ -500,25 +495,25 @@ class ODE(torch.nn.Module):
         return output
 
 
-class ODEWithParams(torch.nn.Module):
+class ODEWithParams(nn.Module):
     """
     Wraps a base ODE module so that parameters are injected as a constant.
     The solver sees only the latent state y (dim = latent_dim),
     but ODEWithParams.forward will concatenate y with p to compute dy/dt.
     """
 
-    def __init__(self, base_ode: torch.nn.Module, n_parameters: int, latent_dim: int):
+    def __init__(self, base_ode: nn.Module, n_parameters: int, latent_dim: int):
         super().__init__()
         self.base_ode = base_ode
         self.latent_dim = latent_dim
         self.n_parameters = n_parameters
-        self.p_const: Optional[torch.Tensor] = None
+        self.p_const: Optional[Tensor] = None
 
-    def set_params(self, params: torch.Tensor):
+    def set_params(self, params: Tensor):
         # params: [batch, n_parameters]
         self.p_const = params
 
-    def forward(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def forward(self, t: Tensor, y: Tensor) -> Tensor:
         # y: [batch, latent_dim]
         assert self.p_const is not None, "Call set_params() before solving."
         # concat state with params
@@ -528,7 +523,7 @@ class ODEWithParams(torch.nn.Module):
         return dy
 
 
-class Encoder(torch.nn.Module):
+class Encoder(nn.Module):
     """
     Fully connected encoder that maps input features to a latent space.
     """
@@ -539,28 +534,25 @@ class Encoder(torch.nn.Module):
         latent_features: int = 5,
         coder_layers: int = 3,
         coder_width: int = 32,
-        activation: torch.nn.Module = torch.nn.ReLU(),
+        activation: nn.Module = nn.ReLU(),
+        dtype=torch.float64,
     ):
         super().__init__()
         layers = []
-        layers.append(torch.nn.Linear(in_features, coder_width, dtype=torch.float64))
+        layers.append(nn.Linear(in_features, coder_width, dtype=dtype))
         layers.append(activation)
         for _ in range(coder_layers - 1):
-            layers.append(
-                torch.nn.Linear(coder_width, coder_width, dtype=torch.float64)
-            )
+            layers.append(nn.Linear(coder_width, coder_width, dtype=dtype))
             layers.append(activation)
-        layers.append(
-            torch.nn.Linear(coder_width, latent_features, dtype=torch.float64)
-        )
-        layers.append(torch.nn.Tanh())
-        self.mlp = torch.nn.Sequential(*layers)
+        layers.append(nn.Linear(coder_width, latent_features, dtype=dtype))
+        layers.append(nn.Tanh())
+        self.mlp = nn.Sequential(*layers)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return self.mlp(x)
 
 
-class Decoder(torch.nn.Module):
+class Decoder(nn.Module):
     """
     Fully connected decoder that maps the latent space back to the output.
     """
@@ -571,28 +563,25 @@ class Decoder(torch.nn.Module):
         latent_features: int = 5,
         coder_layers: int = 3,
         coder_width: int = 32,
-        activation: torch.nn.Module = torch.nn.ReLU(),
+        activation: nn.Module = nn.ReLU(),
+        dtype=torch.float64,
     ):
         super().__init__()
         layers = []
-        layers.append(
-            torch.nn.Linear(latent_features, coder_width, dtype=torch.float64)
-        )
+        layers.append(nn.Linear(latent_features, coder_width, dtype=dtype))
         layers.append(activation)
         for _ in range(coder_layers - 1):
-            layers.append(
-                torch.nn.Linear(coder_width, coder_width, dtype=torch.float64)
-            )
+            layers.append(nn.Linear(coder_width, coder_width, dtype=dtype))
             layers.append(activation)
-        layers.append(torch.nn.Linear(coder_width, out_features, dtype=torch.float64))
-        layers.append(torch.nn.Tanh())
-        self.mlp = torch.nn.Sequential(*layers)
+        layers.append(nn.Linear(coder_width, out_features, dtype=dtype))
+        layers.append(nn.Tanh())
+        self.mlp = nn.Sequential(*layers)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return self.mlp(x)
 
 
-class OldEncoder(torch.nn.Module):
+class OldEncoder(nn.Module):
     """
     Old encoder using a fixed 4-2-1 structure.
     """
@@ -602,35 +591,27 @@ class OldEncoder(torch.nn.Module):
         in_features: int,
         latent_features: int = 5,
         layers_factor: int = 8,
-        activation: torch.nn.Module = torch.nn.ReLU(),
+        activation: nn.Module = nn.ReLU(),
     ):
         super().__init__()
         # Example: coder_layers = [4, 2, 1] scaled by layers_factor.
         coder_layers = [4 * layers_factor, 2 * layers_factor, 1 * layers_factor]
         layers = []
-        layers.append(
-            torch.nn.Linear(in_features, coder_layers[0], dtype=torch.float64)
-        )
+        layers.append(nn.Linear(in_features, coder_layers[0], dtype=torch.float64))
         layers.append(activation)
-        layers.append(
-            torch.nn.Linear(coder_layers[0], coder_layers[1], dtype=torch.float64)
-        )
+        layers.append(nn.Linear(coder_layers[0], coder_layers[1], dtype=torch.float64))
         layers.append(activation)
-        layers.append(
-            torch.nn.Linear(coder_layers[1], coder_layers[2], dtype=torch.float64)
-        )
+        layers.append(nn.Linear(coder_layers[1], coder_layers[2], dtype=torch.float64))
         layers.append(activation)
-        layers.append(
-            torch.nn.Linear(coder_layers[2], latent_features, dtype=torch.float64)
-        )
-        layers.append(torch.nn.Tanh())
-        self.mlp = torch.nn.Sequential(*layers)
+        layers.append(nn.Linear(coder_layers[2], latent_features, dtype=torch.float64))
+        layers.append(nn.Tanh())
+        self.mlp = nn.Sequential(*layers)
 
     def forward(self, x):
         return self.mlp(x)
 
 
-class OldDecoder(torch.nn.Module):
+class OldDecoder(nn.Module):
     """
     Old decoder corresponding to the old encoder.
     """
@@ -640,30 +621,22 @@ class OldDecoder(torch.nn.Module):
         out_features: int,
         latent_features: int = 5,
         layers_factor: int = 8,
-        activation: torch.nn.Module = torch.nn.ReLU(),
+        activation: nn.Module = nn.ReLU(),
     ):
         super().__init__()
         coder_layers = [4 * layers_factor, 2 * layers_factor, 1 * layers_factor]
         # Reverse the order for the decoder.
         coder_layers.reverse()
         layers = []
-        layers.append(
-            torch.nn.Linear(latent_features, coder_layers[0], dtype=torch.float64)
-        )
+        layers.append(nn.Linear(latent_features, coder_layers[0], dtype=torch.float64))
         layers.append(activation)
-        layers.append(
-            torch.nn.Linear(coder_layers[0], coder_layers[1], dtype=torch.float64)
-        )
+        layers.append(nn.Linear(coder_layers[0], coder_layers[1], dtype=torch.float64))
         layers.append(activation)
-        layers.append(
-            torch.nn.Linear(coder_layers[1], coder_layers[2], dtype=torch.float64)
-        )
+        layers.append(nn.Linear(coder_layers[1], coder_layers[2], dtype=torch.float64))
         layers.append(activation)
-        layers.append(
-            torch.nn.Linear(coder_layers[2], out_features, dtype=torch.float64)
-        )
-        layers.append(torch.nn.Tanh())
-        self.mlp = torch.nn.Sequential(*layers)
+        layers.append(nn.Linear(coder_layers[2], out_features, dtype=torch.float64))
+        layers.append(nn.Tanh())
+        self.mlp = nn.Sequential(*layers)
 
     def forward(self, x):
         return self.mlp(x)

@@ -231,7 +231,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         # infer output size
         with torch.inference_mode():
             dummy_inputs = next(iter(data_loader))
-            dummy_outputs, _ = self.forward(dummy_inputs)
+            dummy_outputs, _ = self(dummy_inputs)
             batch_size, out_shape = (
                 dummy_outputs.shape[0],
                 dummy_outputs.shape[-(dummy_outputs.ndim - 1) :],
@@ -247,7 +247,11 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
         with torch.inference_mode():
             for inputs in data_loader:
-                preds, targs = self.forward(inputs)
+                inputs = [
+                    x.to(self.device, non_blocking=True) if isinstance(x, Tensor) else x
+                    for x in inputs
+                ]
+                preds, targs = self(inputs)
                 current_batch_size = preds.shape[0]  # get actual batch size
                 predictions[
                     processed_samples : processed_samples + current_batch_size, ...
