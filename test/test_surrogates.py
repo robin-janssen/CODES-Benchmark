@@ -56,15 +56,20 @@ def test_dataloader(instance, dataloaders):
         dataloader_val, torch.utils.data.DataLoader
     ), "dataloader_val is not a DataLoader"
 
+    # Get a batch from each dataloader and check its size
+    train_batch = next(iter(dataloader_train))
+    test_batch = next(iter(dataloader_test))
+    val_batch = next(iter(dataloader_val))
+
     assert (
-        dataloader_train.batch_size == BATCH_SIZE
-    ), f"dataloader_train has wrong batch size: {dataloader_train.batch_size} != {BATCH_SIZE}"
+        train_batch[0].size(0) == BATCH_SIZE
+    ), f"train batch has wrong size: {train_batch[0].size(0)} != {BATCH_SIZE}"
     assert (
-        dataloader_test.batch_size == BATCH_SIZE
-    ), f"dataloader_test has wrong batch size: {dataloader_test.batch_size} != {BATCH_SIZE}"
+        test_batch[0].size(0) == BATCH_SIZE
+    ), f"test batch has wrong size: {test_batch[0].size(0)} != {BATCH_SIZE}"
     assert (
-        dataloader_val.batch_size == BATCH_SIZE
-    ), f"dataloader_val has wrong batch size: {dataloader_val.batch_size} != {BATCH_SIZE}"
+        val_batch[0].size(0) == BATCH_SIZE
+    ), f"validation batch has wrong size: {val_batch[0].size(0)} != {BATCH_SIZE}"
 
 
 def test_predict(instance, dataloaders):
