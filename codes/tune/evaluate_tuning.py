@@ -138,7 +138,9 @@ def get_best_trials(study: optuna.Study, top_n: int) -> list[int]:
     return selected
 
 
-def evaluate_tuning(study_prefix: str, top_n: int = 10) -> None:
+def evaluate_tuning(
+    study_prefix: str, top_n: int = 10, storage_name: str = "optuna_db"
+) -> None:
     """
     For all surrogate studies named '<study_prefix>_<surrogate>',
     plot the top_n test-loss trajectories.
@@ -189,7 +191,7 @@ def evaluate_tuning(study_prefix: str, top_n: int = 10) -> None:
 
     # Build storage URL (hard-coded prefix)
     db_prefix = "postgresql://optuna_user:your_password@localhost:5432/"
-    storage_url = f"{db_prefix}{study_prefix}"
+    storage_url = f"{db_prefix}{storage_name}"
 
     # Discover all studies with this prefix
     from optuna.study import get_all_study_summaries
@@ -283,7 +285,13 @@ def parse_args():
     p.add_argument(
         "--study_name",
         type=str,
-        default="cloudparams",
+        default="cloud_tuning_rough",
+        help="Main study prefix (e.g. lvparams5)",
+    )
+    p.add_argument(
+        "--storage_name",
+        type=str,
+        default="optuna_cloud",
         help="Main study prefix (e.g. lvparams5)",
     )
     p.add_argument(
@@ -297,7 +305,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    evaluate_tuning(args.study_name, args.top_n)
+    evaluate_tuning(args.study_name, args.top_n, args.storage_name)
 
 
 if __name__ == "__main__":

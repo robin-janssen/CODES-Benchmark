@@ -215,7 +215,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         pass
 
     def predict(
-        self, data_loader: DataLoader, denormalize: bool = True
+        self, data_loader: DataLoader, leave_log: bool = False
     ) -> tuple[Tensor, Tensor]:
         """
         Evaluate the model on the given dataloader.
@@ -223,7 +223,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         Args:
             data_loader (DataLoader): The DataLoader object containing the data the
                 model is evaluated on.
-            denormalize (bool): Whether to denormalize the predictions and targets.
+            leave_log (bool): If True, do not exponentiate the data even if log10_transform is True.
 
         Returns:
             tuple[Tensor, Tensor]: The predictions and targets.
@@ -231,7 +231,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         # infer output size
         with torch.inference_mode():
             dummy_inputs = next(iter(data_loader))
-            dummy_outputs, _ = self.forward(dummy_inputs)
+            dummy_outputs, _ = self(dummy_inputs)
             batch_size, out_shape = (
                 dummy_outputs.shape[0],
                 dummy_outputs.shape[-(dummy_outputs.ndim - 1) :],
@@ -247,7 +247,11 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
         with torch.inference_mode():
             for inputs in data_loader:
-                preds, targs = self.forward(inputs)
+                inputs = [
+                    x.to(self.device, non_blocking=True) if isinstance(x, Tensor) else x
+                    for x in inputs
+                ]
+                preds, targs = self(inputs)
                 current_batch_size = preds.shape[0]  # get actual batch size
                 predictions[
                     processed_samples : processed_samples + current_batch_size, ...
@@ -261,9 +265,8 @@ class AbstractSurrogateModel(ABC, nn.Module):
         predictions = predictions[:processed_samples, ...]
         targets = targets[:processed_samples, ...]
 
-        if denormalize:
-            predictions = self.denormalize(predictions)
-            targets = self.denormalize(targets)
+        predictions = self.denormalize(predictions, leave_log=leave_log)
+        targets = self.denormalize(targets, leave_log=leave_log)
 
         predictions = predictions.reshape(-1, self.n_timesteps, self.n_quantities)
         targets = targets.reshape(-1, self.n_timesteps, self.n_quantities)
@@ -499,7 +502,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             optuna.TrialPruned: If the projected runtime exceeds the threshold.
         """
         # Define warmup period based on 10% of total epochs.
-        warmup_epochs = max(50, int(total_epochs * 0.02))
+        warmup_epochs = max(10, int(total_epochs * 0.02))
         if current_epoch < warmup_epochs:
             # Do not attempt to prune before the warmup period is complete.
             # print(
@@ -645,7 +648,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
         epoch: int,
         train_loader: DataLoader,
         test_loader: DataLoader,
-        criterion: nn.Module,
         optimizer: torch.optim.Optimizer,
         progress_bar: tqdm,
         total_epochs: int,
@@ -665,6 +667,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
           - self.checkpoint(test_loss, epoch)
 
         Only runs if (epoch % self.update_epochs) == 0.
+        Main reporting metric is MAE in log10-space (i.e., Δdex). Additionally, MAE in linear space is computed.
         """
 
         # If it's not time to check yet, do nothing.
@@ -679,10 +682,11 @@ class AbstractSurrogateModel(ABC, nn.Module):
             optimizer.eval() if hasattr(optimizer, "eval") else None
 
             # Compute losses
-            preds, targets = self.predict(train_loader)
-            self.train_loss[index] = criterion(preds, targets).item()
+            preds, targets = self.predict(train_loader, leave_log=True)
+            self.train_loss[index] = self.L1(preds, targets).item()
+            preds, targets = self.predict(test_loader, leave_log=True)
+            self.test_loss[index] = self.L1(preds, targets).item()
             preds, targets = self.predict(test_loader)
-            self.test_loss[index] = criterion(preds, targets).item()
             self.MAE[index] = self.L1(preds, targets).item()
 
             progress_bar.set_postfix(
@@ -699,6 +703,12 @@ class AbstractSurrogateModel(ABC, nn.Module):
                     self.optuna_trial.report(self.test_loss[index], step=epoch)
                     if self.optuna_trial.should_prune():
                         raise optuna.TrialPruned()
+                    elif np.isinf(self.test_loss[index]) or np.isnan(
+                        self.test_loss[index]
+                    ):
+                        raise optuna.TrialPruned(
+                            "Test loss is NaN or Inf, pruning trial."
+                        )
 
             self.checkpoint(self.test_loss[index], epoch)
 

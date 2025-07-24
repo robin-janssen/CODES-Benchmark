@@ -316,11 +316,11 @@ def normalize_data(
             data_min = np.min(train_data, axis=(0, 1))
             data_max = np.max(train_data, axis=(0, 1))
             # Warn if the min and max are close for some species.
-            print("max-min per species: ", data_max - data_min)
             if np.any(np.isclose(data_max, data_min, atol=0.1)):
                 print(
                     "Warning: Some species have very close min and max values. \n Using per-species normalization may emphasize noise."
                 )
+                print("max-min per species: ", data_max - data_min)
 
         else:
             data_min = np.min(train_data)
@@ -753,7 +753,7 @@ def download_data(dataset_name: str, path: str | None = None, verbose: bool = Tr
 def print_data_info(data_path):
     with h5py.File(data_path, "r") as f:
         print("Dataset Info:")
-        n_quantities = f.attrs["n_quantities"]
+        n_quantities = 10  # f.attrs["n_quantities"]
         train_samples = f.attrs["n_train_samples"]
         test_samples = f.attrs["n_test_samples"]
         val_samples = f.attrs["n_val_samples"]

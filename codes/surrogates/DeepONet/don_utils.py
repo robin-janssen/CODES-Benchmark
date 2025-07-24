@@ -7,9 +7,29 @@ from datetime import datetime
 import torch
 import yaml
 from torch import nn
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, IterableDataset
 
 # TODO complete type hints
+
+
+def custom_collate_fn(batch):
+    """
+    Custom collate function to ensure tensors are returned in the correct shape.
+    Args:
+        batch: A list of tuples from the dataset, where each tuple contains
+               (branch_input, trunk_input, targets).
+
+    Returns:
+        A tuple of tensors with correct shapes:
+        - branch_input: [batch_size, feature_size]
+        - trunk_input: [batch_size, feature_size]
+        - targets: [batch_size, feature_size]
+    """
+    # Unpack and stack items manually, removing any extra dimensions
+    branch_inputs = torch.stack([item[0] for item in batch]).squeeze(0)
+    trunk_inputs = torch.stack([item[1] for item in batch]).squeeze(0)
+    targets = torch.stack([item[2] for item in batch]).squeeze(0)
+    return branch_inputs, trunk_inputs, targets
 
 
 class PreBatchedDataset(Dataset):
@@ -34,6 +54,37 @@ class PreBatchedDataset(Dataset):
     def __len__(self):
         # Return the number of precomputed batches
         return len(self.branch_inputs)
+
+
+class FlatBatchIterable(IterableDataset):
+    def __init__(
+        self,
+        branch_t: torch.Tensor,
+        trunk_t: torch.Tensor,
+        target_t: torch.Tensor,
+        batch_size: int,
+        shuffle: bool,
+    ):
+        self.branch = branch_t
+        self.trunk = trunk_t
+        self.target = target_t
+        self.N = branch_t.size(0)
+        self.bs = batch_size
+        self.shuffle = shuffle
+
+    def __iter__(self):
+        # new permutation (or sequential) each epoch/iterator
+        if self.shuffle:
+            perm = torch.randperm(self.N)
+        else:
+            perm = torch.arange(self.N)
+
+        for start in range(0, self.N, self.bs):
+            idxs = perm[start : start + self.bs]
+            yield (self.branch[idxs], self.trunk[idxs], self.target[idxs])
+
+    def __len__(self):
+        return (self.N + self.bs - 1) // self.bs
 
 
 def read_yaml_config(model_path):
