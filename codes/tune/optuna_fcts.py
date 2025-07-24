@@ -53,16 +53,16 @@ def load_yaml_config(config_path: str) -> dict:
 
 
 def _suggest_param(trial: optuna.Trial, name: str, opts: dict):
-    """Suggest a single parameter, handling int, float, categorical and boolean conversion."""
-    param_type = opts.get("type", "categorical")
-    if param_type == "int":
+    t = opts.get("type", "categorical")
+    if t == "int":
         return trial.suggest_int(
             name, opts["low"], opts["high"], step=opts.get("step", 1)
         )
-    if param_type == "float":
+    if t == "float":
         return trial.suggest_float(
             name, opts["low"], opts["high"], log=opts.get("log", False)
         )
+    # categorical or bool
     raw = trial.suggest_categorical(name, opts.get("choices", []))
     if isinstance(raw, str) and raw.lower() in ("true", "false"):
         return bool(strtobool(raw))
@@ -70,50 +70,79 @@ def _suggest_param(trial: optuna.Trial, name: str, opts: dict):
 
 
 def make_optuna_params(trial: optuna.Trial, optuna_params: dict) -> dict:
-    suggested = {}
+    suggested: dict[str, any] = {}
 
-    # helper to sample switch and its children
-    def _handle_switch(switch, children=()):
+    # Sample switch parameters
+    for switch in ("scheduler", "optimizer", "coeff_network", "loss_function"):
         if switch not in optuna_params:
-            return
+            continue
         suggested[switch] = _suggest_param(trial, switch, optuna_params[switch])
-        if suggested.get(switch) and children:
-            for child in children:
-                if child in optuna_params:
-                    suggested[child] = _suggest_param(
-                        trial, child, optuna_params[child]
-                    )
 
-    # sample independent params
-    skip = set(optuna_params) & {
-        "coeff_network",
-        "optimizer",
+    # Sample conditional parameters
+    # scheduler - poly_power or eta_min
+    sched = suggested.get("scheduler")
+    if sched == "poly":
+        suggested["poly_power"] = _suggest_param(
+            trial, "poly_power", optuna_params["poly_power"]
+        )
+    elif sched == "cosine":
+        suggested["eta_min"] = _suggest_param(
+            trial, "eta_min", optuna_params["eta_min"]
+        )
+
+    # optimizer - momentum if SGD
+    optm = suggested.get("optimizer")
+    if isinstance(optm, str) and optm.lower() == "sgd":
+        suggested["momentum"] = _suggest_param(
+            trial, "momentum", optuna_params["momentum"]
+        )
+
+    # coeff_network - coeff_width, coeff_layers
+    coeff_net = suggested.get("coeff_network")
+    if bool(coeff_net):
+        suggested["coeff_width"] = _suggest_param(
+            trial, "coeff_width", optuna_params["coeff_width"]
+        )
+        suggested["coeff_layers"] = _suggest_param(
+            trial, "coeff_layers", optuna_params["coeff_layers"]
+        )
+
+    # loss_function - beta if smoothl1
+    lf = suggested.get("loss_function")
+    if isinstance(lf, str) and lf.lower() == "smoothl1":
+        suggested["beta"] = _suggest_param(trial, "beta", optuna_params["beta"])
+
+    # Sample independent parameters
+    excluded = {
         "scheduler",
+        "poly_power",
+        "eta_min",
+        "optimizer",
+        "momentum",
+        "coeff_network",
+        "coeff_width",
+        "coeff_layers",
         "loss_function",
+        "beta",
     }
-    skip |= {"coeff_width", "coeff_layers", "momentum", "eta_min", "poly_power", "beta"}
+
     for name, opts in optuna_params.items():
-        if name in skip:
+        if name in excluded:
             continue
         suggested[name] = _suggest_param(trial, name, opts)
 
-    _handle_switch("coeff_network", ("coeff_width", "coeff_layers"))
-    _handle_switch("optimizer", ("momentum",))
-    _handle_switch("scheduler", ("eta_min", "poly_power"))
-    _handle_switch("loss_function", ("beta",))
-
-    # map activations and loss functions
+    # map activation and loss_function to actual callables
     for name, val in list(suggested.items()):
         if "activation" in name.lower():
-            if val.lower() in MODULE_REGISTRY:
-                suggested[name] = MODULE_REGISTRY[val.lower()]()
-            else:
-                raise ValueError(f"Unknown activation function: {val}")
+            cls = MODULE_REGISTRY.get(val.lower())
+            if cls is None:
+                raise ValueError(f"Unknown activation: {val}")
+            suggested[name] = cls()
         elif name == "loss_function":
-            if val.lower() in MODULE_REGISTRY:
-                suggested[name] = MODULE_REGISTRY[val.lower()]()
-            else:
+            cls = MODULE_REGISTRY.get(val.lower())
+            if cls is None:
                 raise ValueError(f"Unknown loss function: {val}")
+            suggested[name] = cls()
 
     return suggested
 

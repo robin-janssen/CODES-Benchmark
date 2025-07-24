@@ -35,6 +35,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         n_parameters: int = 0,
         training_id: str | None = None,
         config: dict | None = None,
+        dtype: torch.dtype = torch.float64,
     ):
         super().__init__(
             device=device,
@@ -49,6 +50,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         self.model = ModelWrapper(
             config=self.config, n_quantities=n_quantities, n_parameters=n_parameters
         ).to(device)
+        self.to(dtype=dtype)
 
     def forward(self, inputs):
         """
