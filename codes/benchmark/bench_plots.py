@@ -503,6 +503,98 @@ def plot_example_mode_predictions(
     plt.close()
 
 
+def plot_example_iterative_predictions(
+    surr_name: str,
+    conf: dict,
+    preds: np.ndarray,
+    targets: np.ndarray,
+    timesteps: np.ndarray,
+    iter_interval: int,
+    example_idx: int | None = None,
+    num_quantities: int = 100,
+    labels: list[str] | None = None,
+    save: bool = False,
+    show_title: bool = True,
+) -> None:
+    """
+    Plot one sample's full iterative trajectory:
+    ground truth vs. chained predictions, with retrigger lines.
+    """
+    # choose example if not given
+    if example_idx is None:
+        errors = np.mean(np.abs(preds - targets), axis=(1, 2))
+        example_idx = int(np.argsort(np.abs(errors - np.median(errors)))[0])
+
+    n_q = min(preds.shape[2], num_quantities)
+    per_plot = 10
+    n_plots = int(np.ceil(n_q / per_plot))
+    colors = plt.cm.viridis(np.linspace(0, 1, n_q))
+
+    fig = plt.figure(figsize=(6, 4 * n_plots))
+    gs = GridSpec(n_plots, 1, figure=fig)
+
+    for pi in range(n_plots):
+        ax = fig.add_subplot(gs[pi])
+        start, end = pi * per_plot, min((pi + 1) * per_plot, n_q)
+        for qi in range(start, end):
+            c = colors[qi]
+            gt = targets[example_idx, :, qi]
+            pr = preds[example_idx, :, qi]
+            ax.plot(timesteps, gt, "--", color=c)
+            ax.plot(timesteps, pr, "-", color=c)
+        # retrigger lines
+        for t in timesteps[::iter_interval]:
+            ax.axvline(x=t, linestyle=":", linewidth=0.8, alpha=0.7)
+        if conf.get("dataset", {}).get("log10_transform", False):
+            ax.set_yscale("log")
+        ax.set_xlim(timesteps.min(), timesteps.max())
+        if conf["dataset"].get("log_timesteps", False):
+            ax.set_xscale("log")
+        ax.set_ylabel("Abundance")
+        if labels is not None:
+            legend_lines = [
+                plt.Line2D([0], [0], color=colors[i]) for i in range(start, end)
+            ]
+            ax.legend(
+                legend_lines,
+                labels[start:end],
+                loc="center left",
+                bbox_to_anchor=(1, 0.5),
+            )
+
+    fig.text(0.5, 0.04, "Time", ha="center", va="center", fontsize=12)
+
+    handles = [
+        plt.Line2D([0], [0], color="black", linestyle="--", label="Ground Truth"),
+        plt.Line2D([0], [0], color="black", linestyle="-", label="Prediction"),
+    ]
+    pos = 0.95 - (0.06 / n_plots)
+    fig.legend(
+        handles,
+        ["Ground Truth", "Prediction"],
+        loc="upper center",
+        bbox_to_anchor=(0.5, pos),
+        ncol=2,
+        fontsize="small",
+    )
+    fig.align_ylabels()
+
+    if show_title:
+        title = (
+            f"Iterative Prediction Example ({surr_name})\n"
+            f"Sample {example_idx}, Interval {iter_interval}"
+        )
+        plt.suptitle(title, y=0.97)
+
+    plt.tight_layout(rect=[0.05, 0.03, 0.95, 0.92])
+
+    if save and conf:
+        fname = f"iterative_example_{surr_name}.png"
+        save_plot(plt, fname, conf, surr_name)
+
+    plt.close()
+
+
 def plot_example_predictions_with_uncertainty(
     surr_name: str,
     conf: dict,

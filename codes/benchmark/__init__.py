@@ -35,6 +35,7 @@ from .bench_plots import (
     plot_error_correlation_heatmap,
     plot_error_distribution_comparative,
     plot_error_distribution_per_quantity,
+    plot_example_iterative_predictions,
     plot_example_mode_predictions,
     plot_example_predictions_with_uncertainty,
     plot_generalization_error_comparison,
@@ -69,11 +70,11 @@ from .bench_utils import (
     get_surrogate,
     load_model,
     make_comparison_csv,
+    measure_inference_time,
     measure_memory_footprint,
     read_yaml_config,
     save_table_csv,
     write_metrics_to_yaml,
-    measure_inference_time,
 )
 
 __all__ = [

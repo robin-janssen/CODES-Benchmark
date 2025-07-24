@@ -186,8 +186,9 @@ class FullyConnected(AbstractSurrogateModel):
             num_workers=nw,
         )
 
-        test_loader = (
-            self.create_dataloader(
+        test_loader = None
+        if dataset_test is not None:
+            test_loader = self.create_dataloader(
                 dataset_test,
                 timesteps,
                 batch_size,
@@ -195,12 +196,10 @@ class FullyConnected(AbstractSurrogateModel):
                 dataset_params=dataset_test_params,
                 num_workers=nw,
             )
-            if dataset_test is not None
-            else None
-        )
 
-        val_loader = (
-            self.create_dataloader(
+        val_loader = None
+        if dataset_val is not None:
+            val_loader = self.create_dataloader(
                 dataset_val,
                 timesteps,
                 batch_size,
@@ -208,9 +207,6 @@ class FullyConnected(AbstractSurrogateModel):
                 dataset_params=dataset_val_params,
                 num_workers=nw,
             )
-            if dataset_val is not None
-            else None
-        )
 
         return train_loader, test_loader, val_loader
 

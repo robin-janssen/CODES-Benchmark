@@ -419,21 +419,23 @@ class MultiONet(OperatorNetwork):
             dataset_train,
             timesteps,
             batch_size,
-            True,
+            shuffle=shuffle,
             dataset_params=dataset_train_params,
             params_in_branch=self.config.params_branch,
             num_workers=nw,
         )
 
-        test_loader = self.create_dataloader(
-            dataset_test,
-            timesteps,
-            batch_size,
-            False,
-            dataset_params=dataset_test_params,
-            params_in_branch=self.config.params_branch,
-            num_workers=nw,
-        )
+        test_loader = None
+        if dataset_test is not None:
+            test_loader = self.create_dataloader(
+                dataset_test,
+                timesteps,
+                batch_size,
+                False,
+                dataset_params=dataset_test_params,
+                params_in_branch=self.config.params_branch,
+                num_workers=nw,
+            )
 
         val_loader = None
         if dataset_val is not None:

@@ -20,6 +20,7 @@ from .bench_plots import (  # plot_generalization_errors,; rel_errors_and_uq,
     plot_error_correlation_heatmap,
     plot_error_distribution_comparative,
     plot_error_distribution_per_quantity,
+    plot_example_iterative_predictions,
     plot_example_mode_predictions,
     plot_example_predictions_with_uncertainty,
     plot_generalization_error_comparison,
@@ -136,6 +137,13 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     metrics["accuracy"] = evaluate_accuracy(
         model, surr_name, timesteps, val_loader, conf, labels
     )
+
+    if conf["iterative"]:
+        # Iterative training benchmark
+        print("Running iterative training benchmark...")
+        metrics["iterative"] = iterative_training_benchmark(
+            model, surr_name, timesteps, val_loader, conf, labels
+        )
 
     # Gradients benchmark
     if conf["gradients"]:
@@ -279,6 +287,113 @@ def evaluate_accuracy(
     }
 
     return accuracy_metrics
+
+
+def iterative_training_benchmark(
+    model,
+    surr_name: str,
+    timesteps: np.ndarray,
+    val_loader: DataLoader,
+    conf: dict,
+    labels: list | None = None,
+) -> dict[str, Any]:
+    """
+    Benchmark error accumulation when running the model iteratively in chunks.
+
+    Returns the same set of error metrics as evaluate_accuracy, but over the
+    full trajectory built by re-feeding the last prediction as the next initial state.
+    """
+    # load trained model
+    training_id = conf["training_id"]
+    model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
+
+    # get full ground truth (targets) and ignore one-shot preds
+    _, targets = model.predict(data_loader=val_loader)
+    n_samples, n_timesteps, n_quantities = targets.shape
+
+    # how many timesteps per chunk
+    iter_interval = 10  # conf["iterative"]["interval"]
+    # batch size same as in run_benchmark
+    surr_idx = conf["surrogates"].index(surr_name)
+    if isinstance(conf["batch_size"], list):
+        batch_size = conf["batch_size"][surr_idx]
+    else:
+        batch_size = conf["batch_size"]
+
+    # container for the piecewise predictions
+    preds_all = np.zeros_like(targets)
+
+    # number of chunks
+    n_chunks = (n_timesteps + iter_interval - 1) // iter_interval
+
+    for i in range(n_chunks):
+        start = i * iter_interval
+        end = min(start + iter_interval, n_timesteps)
+
+        # choose initial state
+        if i == 0:
+            init_state = targets[:, 0, :]
+        else:
+            init_state = preds_all[:, start - 1, :]
+
+        # build dummy dataset: only first slice matters for prepare_data
+        ds = np.zeros((n_samples, iter_interval, n_quantities))
+        ds[:, 0, :] = init_state
+
+        # only need the "train" loader for prediction
+        dt = timesteps[:iter_interval]
+        train_loader, _, _ = model.prepare_data(
+            dataset_train=ds,
+            dataset_test=None,
+            dataset_val=None,
+            timesteps=dt,
+            batch_size=batch_size,
+            shuffle=False,
+            dataset_train_params=None,
+            dataset_test_params=None,
+            dataset_val_params=None,
+            dummy_timesteps=True,
+        )
+
+        # predict this chunk and insert into the global array
+        preds_chunk, _ = model.predict(data_loader=train_loader)
+        preds_all[:, start:end, :] = preds_chunk[:, : end - start, :]
+
+    # compute error metrics
+    errors = preds_all - targets
+    abs_errors = np.abs(errors)
+    mse = float(np.mean(errors**2))
+    mae = float(np.mean(abs_errors))
+
+    thresh = float(conf.get("relative_error_threshold", 0.0))
+    rel_errors = abs_errors / np.maximum(np.abs(targets), thresh)
+
+    errors = np.mean(np.abs(preds_all - targets), axis=(1, 2))
+    example_idx = int(np.argsort(np.abs(errors - np.median(errors)))[0])
+
+    plot_example_iterative_predictions(
+        surr_name,
+        conf,
+        preds_all,
+        targets,
+        timesteps,
+        conf["iterative"]["interval"],
+        example_idx=example_idx,
+        labels=labels,
+        save=True,
+        show_title=TITLE,
+    )
+
+    return {
+        "mean_squared_error": mse,
+        "mean_absolute_error": mae,
+        "mean_relative_error": float(np.mean(rel_errors)),
+        "median_relative_error": float(np.median(rel_errors)),
+        "max_relative_error": float(np.max(rel_errors)),
+        "min_relative_error": float(np.min(rel_errors)),
+        "absolute_errors": abs_errors,
+        "relative_errors": rel_errors,
+    }
 
 
 def evaluate_dynamic_accuracy(
