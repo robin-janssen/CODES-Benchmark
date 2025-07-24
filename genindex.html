@@ -199,6 +199,8 @@
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.evaluate_study.html">codes.tune.evaluate_study</a></li>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.evaluate_tuning.html">codes.tune.evaluate_tuning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.optuna_fcts.html">codes.tune.optuna_fcts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.postgres_fcts.html">codes.tune.postgres_fcts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.tune_utils.html">codes.tune.tune_utils</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="docs/source/codes.utils.html">codes.utils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -328,6 +330,7 @@
  | <a href="#U"><strong>U</strong></a>
  | <a href="#V"><strong>V</strong></a>
  | <a href="#W"><strong>W</strong></a>
+ | <a href="#Y"><strong>Y</strong></a>
  
 </div>
 <h2 id="A">A</h2>
@@ -354,7 +357,7 @@
       <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.activation">activation (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id0">[1]</a>
 
       <ul>
-        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.activation">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id8">[1]</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.activation">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id9">[1]</a>
 </li>
       </ul></li>
   </ul></td>
@@ -369,10 +372,22 @@
         <li><a href="codes.utils.html#codes.utils.utils.batch_factor_to_float">(in module codes.utils.utils)</a>
 </li>
       </ul></li>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.beta">beta (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig attribute)</a>
+
+      <ul>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.beta">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="codes.surrogates.html#codes.surrogates.BranchNet">BranchNet (class in codes.surrogates)</a>
 </li>
+      <li><a href="codes.tune.html#codes.tune.build_study_names">build_study_names() (in module codes.tune)</a>
+
+      <ul>
+        <li><a href="codes.tune.html#codes.tune.tune_utils.build_study_names">(in module codes.tune.tune_utils)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -532,6 +547,20 @@
 </li>
       </ul></li>
       <li>
+    codes.tune.postgres_fcts
+
+      <ul>
+        <li><a href="codes.tune.html#module-codes.tune.postgres_fcts">module</a>, <a href="docs/source/codes.tune.postgres_fcts.html#module-codes.tune.postgres_fcts">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    codes.tune.tune_utils
+
+      <ul>
+        <li><a href="codes.tune.html#module-codes.tune.tune_utils">module</a>, <a href="docs/source/codes.tune.tune_utils.html#module-codes.tune.tune_utils">[1]</a>
+</li>
+      </ul></li>
+      <li>
     codes.utils
 
       <ul>
@@ -638,6 +667,12 @@
         <li><a href="codes.benchmark.html#codes.benchmark.bench_utils.convert_to_standard_types">(in module codes.benchmark.bench_utils)</a>
 </li>
       </ul></li>
+      <li><a href="codes.tune.html#codes.tune.copy_config">copy_config() (in module codes.tune)</a>
+
+      <ul>
+        <li><a href="codes.tune.html#codes.tune.tune_utils.copy_config">(in module codes.tune.tune_utils)</a>
+</li>
+      </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.count_trainable_parameters">count_trainable_parameters() (in module codes.benchmark)</a>
 
       <ul>
@@ -647,11 +682,13 @@
       <li><a href="codes.surrogates.html#codes.surrogates.FullyConnected.create_dataloader">create_dataloader() (codes.surrogates.FullyConnected method)</a>
 
       <ul>
+        <li><a href="codes.surrogates.html#codes.surrogates.LatentNeuralODE.create_dataloader">(codes.surrogates.LatentNeuralODE method)</a>
+</li>
+        <li><a href="codes.surrogates.html#codes.surrogates.LatentPoly.create_dataloader">(codes.surrogates.LatentPoly method)</a>
+</li>
         <li><a href="codes.surrogates.html#codes.surrogates.MultiONet.create_dataloader">(codes.surrogates.MultiONet method)</a>
 </li>
       </ul></li>
-      <li><a href="codes.surrogates.html#codes.surrogates.MultiONet.create_dataloader_n">create_dataloader_n() (codes.surrogates.MultiONet method)</a>
-</li>
       <li><a href="codes.utils.html#codes.utils.create_dataset">create_dataset() (in module codes.utils)</a>
 
       <ul>
@@ -694,6 +731,12 @@
 </li>
       <li><a href="codes.surrogates.html#codes.surrogates.Polynomial.degree">degree (codes.surrogates.Polynomial attribute)</a>
 </li>
+      <li><a href="codes.tune.html#codes.tune.delete_studies_if_requested">delete_studies_if_requested() (in module codes.tune)</a>
+
+      <ul>
+        <li><a href="codes.tune.html#codes.tune.tune_utils.delete_studies_if_requested">(in module codes.tune.tune_utils)</a>
+</li>
+      </ul></li>
       <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel.denormalize">denormalize() (codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel method)</a>
 
       <ul>
@@ -716,10 +759,10 @@
 </li>
       <li><a href="codes.surrogates.html#codes.surrogates.ModelWrapper.deriv2_loss">deriv2_loss() (codes.surrogates.ModelWrapper class method)</a>
 </li>
-      <li><a href="codes.surrogates.html#codes.surrogates.ModelWrapper.deriv_loss">deriv_loss() (codes.surrogates.ModelWrapper class method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="codes.surrogates.html#codes.surrogates.ModelWrapper.deriv_loss">deriv_loss() (codes.surrogates.ModelWrapper class method)</a>
+</li>
       <li><a href="codes.utils.html#codes.utils.determine_batch_size">determine_batch_size() (in module codes.utils)</a>
 
       <ul>
@@ -768,12 +811,10 @@
         <li><a href="codes.surrogates.html#codes.surrogates.MultiONet.epoch">(codes.surrogates.MultiONet method)</a>
 </li>
       </ul></li>
-      <li><a href="codes.surrogates.html#codes.surrogates.MultiONet.epoch_profile">epoch_profile() (codes.surrogates.MultiONet method)</a>
-</li>
       <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.eta_min">eta_min (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id1">[1]</a>
 
       <ul>
-        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.eta_min">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id9">[1]</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.eta_min">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id10">[1]</a>
 </li>
       </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.evaluate_accuracy">evaluate_accuracy() (in module codes.benchmark)</a>
@@ -850,6 +891,8 @@
         <li><a href="codes.surrogates.html#codes.surrogates.MultiONet.fit">(codes.surrogates.MultiONet method)</a>
 </li>
       </ul></li>
+      <li><a href="codes.surrogates.html#codes.surrogates.FlatSeqBatchIterable">FlatSeqBatchIterable (class in codes.surrogates)</a>
+</li>
       <li><a href="codes.benchmark.html#codes.benchmark.flatten_dict">flatten_dict() (in module codes.benchmark)</a>
 
       <ul>
@@ -912,12 +955,6 @@
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="codes.tune.html#codes.tune.get_activation_function">get_activation_function() (in module codes.tune)</a>
-
-      <ul>
-        <li><a href="codes.tune.html#codes.tune.optuna_fcts.get_activation_function">(in module codes.tune.optuna_fcts)</a>
-</li>
-      </ul></li>
       <li><a href="codes.tune.html#codes.tune.evaluate_tuning.get_best_trials">get_best_trials() (in module codes.tune.evaluate_tuning)</a>
 </li>
       <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel.get_checkpoint">get_checkpoint() (codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel method)</a>
@@ -940,14 +977,14 @@
         <li><a href="codes.utils.html#codes.utils.data_utils.get_data_subset">(in module codes.utils.data_utils)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="codes.benchmark.html#codes.benchmark.get_model_config">get_model_config() (in module codes.benchmark)</a>
 
       <ul>
         <li><a href="codes.benchmark.html#codes.benchmark.bench_utils.get_model_config">(in module codes.benchmark.bench_utils)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="codes.utils.html#codes.utils.get_progress_bar">get_progress_bar() (in module codes.utils)</a>
 
       <ul>
@@ -990,6 +1027,12 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="codes.tune.html#codes.tune.initialize_optuna_database">initialize_optuna_database() (in module codes.tune)</a>
+
+      <ul>
+        <li><a href="codes.tune.html#codes.tune.postgres_fcts.initialize_optuna_database">(in module codes.tune.postgres_fcts)</a>
+</li>
+      </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.int_ext_sparse">int_ext_sparse() (in module codes.benchmark)</a>
 
       <ul>
@@ -1019,7 +1062,7 @@
       <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.learning_rate">learning_rate (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id2">[1]</a>
 
       <ul>
-        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.learning_rate">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id10">[1]</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.learning_rate">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id11">[1]</a>
 </li>
       </ul></li>
       <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel.load">load() (codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel method)</a>
@@ -1036,8 +1079,6 @@
         <li><a href="codes.utils.html#codes.utils.utils.load_and_save_config">(in module codes.utils.utils)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="codes.tune.html#codes.tune.evaluate_tuning.load_loss_history">load_loss_history() (in module codes.tune.evaluate_tuning)</a>
 </li>
       <li><a href="codes.benchmark.html#codes.benchmark.load_model">load_model() (in module codes.benchmark)</a>
@@ -1046,6 +1087,8 @@
         <li><a href="codes.benchmark.html#codes.benchmark.bench_utils.load_model">(in module codes.benchmark.bench_utils)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="codes.tune.html#codes.tune.load_model_test_losses">load_model_test_losses() (in module codes.tune)</a>
 
       <ul>
@@ -1068,6 +1111,24 @@
 
       <ul>
         <li><a href="codes.tune.html#codes.tune.optuna_fcts.load_yaml_config">(in module codes.tune.optuna_fcts)</a>
+</li>
+      </ul></li>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.loss">loss (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig property)</a>
+
+      <ul>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.loss">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig property)</a>
+</li>
+      </ul></li>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.loss_function">loss_function (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id3">[1]</a>
+
+      <ul>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.loss_function">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id12">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.loss_kwargs">loss_kwargs (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig attribute)</a>
+
+      <ul>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.loss_kwargs">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -1106,6 +1167,12 @@
 
       <ul>
         <li><a href="codes.tune.html#codes.tune.optuna_fcts.make_optuna_params">(in module codes.tune.optuna_fcts)</a>
+</li>
+      </ul></li>
+      <li><a href="codes.tune.html#codes.tune.maybe_set_runtime_threshold">maybe_set_runtime_threshold() (in module codes.tune)</a>
+
+      <ul>
+        <li><a href="codes.tune.html#codes.tune.optuna_fcts.maybe_set_runtime_threshold">(in module codes.tune.optuna_fcts)</a>
 </li>
       </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.measure_inference_time">measure_inference_time() (in module codes.benchmark)</a>
@@ -1160,6 +1227,10 @@
 </li>
         <li><a href="codes.tune.html#module-codes.tune.optuna_fcts">codes.tune.optuna_fcts</a>, <a href="docs/source/codes.tune.optuna_fcts.html#module-codes.tune.optuna_fcts">[1]</a>
 </li>
+        <li><a href="codes.tune.html#module-codes.tune.postgres_fcts">codes.tune.postgres_fcts</a>, <a href="docs/source/codes.tune.postgres_fcts.html#module-codes.tune.postgres_fcts">[1]</a>
+</li>
+        <li><a href="codes.tune.html#module-codes.tune.tune_utils">codes.tune.tune_utils</a>, <a href="docs/source/codes.tune.tune_utils.html#module-codes.tune.tune_utils">[1]</a>
+</li>
         <li><a href="codes.utils.html#module-codes.utils">codes.utils</a>, <a href="docs/source/codes.utils.html#module-codes.utils">[1]</a>
 </li>
         <li><a href="codes.utils.html#module-codes.utils.data_utils">codes.utils.data_utils</a>, <a href="docs/source/codes.utils.data_utils.html#module-codes.utils.data_utils">[1]</a>
@@ -1169,10 +1240,10 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.momentum">momentum (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id3">[1]</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.momentum">momentum (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id4">[1]</a>
 
       <ul>
-        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.momentum">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id11">[1]</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.momentum">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id13">[1]</a>
 </li>
       </ul></li>
       <li><a href="codes.tune.html#codes.tune.moving_average">moving_average() (in module codes.tune)</a>
@@ -1239,10 +1310,10 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.optimizer">optimizer (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id4">[1]</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.optimizer">optimizer (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id5">[1]</a>
 
       <ul>
-        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.optimizer">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id12">[1]</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.optimizer">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id14">[1]</a>
 </li>
       </ul></li>
   </ul></td>
@@ -1357,10 +1428,10 @@
         <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_loss_comparison">(in module codes.benchmark.bench_plots)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_loss_comparison_equal">plot_loss_comparison_equal() (in module codes.benchmark.bench_plots)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="codes.benchmark.html#codes.benchmark.plot_loss_comparison_train_duration">plot_loss_comparison_train_duration() (in module codes.benchmark)</a>
 
       <ul>
@@ -1425,10 +1496,10 @@
         <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_uncertainty_vs_errors">(in module codes.benchmark.bench_plots)</a>
 </li>
       </ul></li>
-      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.poly_power">poly_power (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id5">[1]</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.poly_power">poly_power (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id6">[1]</a>
 
       <ul>
-        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.poly_power">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id13">[1]</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.poly_power">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id15">[1]</a>
 </li>
       </ul></li>
       <li><a href="codes.surrogates.html#codes.surrogates.Polynomial">Polynomial (class in codes.surrogates)</a>
@@ -1457,6 +1528,12 @@
         <li><a href="codes.surrogates.html#codes.surrogates.MultiONet.prepare_data">(codes.surrogates.MultiONet method)</a>
 </li>
       </ul></li>
+      <li><a href="codes.tune.html#codes.tune.prepare_workspace">prepare_workspace() (in module codes.tune)</a>
+
+      <ul>
+        <li><a href="codes.tune.html#codes.tune.tune_utils.prepare_workspace">(in module codes.tune.tune_utils)</a>
+</li>
+      </ul></li>
       <li><a href="codes.utils.html#codes.utils.data_utils.print_data_info">print_data_info() (in module codes.utils.data_utils)</a>
 </li>
   </ul></td>
@@ -1481,10 +1558,10 @@
         <li><a href="codes.surrogates.html#codes.surrogates.AbstractSurrogateModel.register">(codes.surrogates.AbstractSurrogateModel class method)</a>
 </li>
       </ul></li>
-      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.regularization_factor">regularization_factor (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id6">[1]</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.regularization_factor">regularization_factor (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id7">[1]</a>
 
       <ul>
-        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.regularization_factor">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id14">[1]</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.regularization_factor">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id16">[1]</a>
 </li>
       </ul></li>
   </ul></td>
@@ -1543,10 +1620,10 @@
         <li><a href="codes.utils.html#codes.utils.utils.save_task_list">(in module codes.utils.utils)</a>
 </li>
       </ul></li>
-      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.scheduler">scheduler (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id7">[1]</a>
+      <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig.scheduler">scheduler (codes.surrogates.AbstractSurrogate.abstract_config.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id8">[1]</a>
 
       <ul>
-        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.scheduler">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id15">[1]</a>
+        <li><a href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig.scheduler">(codes.surrogates.AbstractSurrogate.AbstractSurrogateBaseConfig attribute)</a>, <a href="codes.surrogates.AbstractSurrogate.html#id17">[1]</a>
 </li>
       </ul></li>
       <li><a href="codes.train.html#codes.train.sequential_training">sequential_training() (in module codes.train)</a>
@@ -1713,6 +1790,18 @@
 
       <ul>
         <li><a href="codes.benchmark.html#codes.benchmark.bench_utils.write_metrics_to_yaml">(in module codes.benchmark.bench_utils)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Y">Y</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="codes.tune.html#codes.tune.yes_no">yes_no() (in module codes.tune)</a>
+
+      <ul>
+        <li><a href="codes.tune.html#codes.tune.tune_utils.yes_no">(in module codes.tune.tune_utils)</a>
 </li>
       </ul></li>
   </ul></td>

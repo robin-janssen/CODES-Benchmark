@@ -9,8 +9,8 @@ codes.tune.optuna\_fcts
    .. autosummary::
    
       create_objective
-      get_activation_function
       load_yaml_config
       make_optuna_params
+      maybe_set_runtime_threshold
       training_run
    

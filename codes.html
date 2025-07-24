@@ -198,6 +198,8 @@
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.evaluate_study.html">codes.tune.evaluate_study</a></li>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.evaluate_tuning.html">codes.tune.evaluate_tuning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.optuna_fcts.html">codes.tune.optuna_fcts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.postgres_fcts.html">codes.tune.postgres_fcts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.tune_utils.html">codes.tune.tune_utils</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="docs/source/codes.utils.html">codes.utils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -578,6 +580,7 @@
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.Encoder.forward"><code class="docutils literal notranslate"><span class="pre">Encoder.forward()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.FlatSeqBatchIterable"><code class="docutils literal notranslate"><span class="pre">FlatSeqBatchIterable</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.FullyConnected"><code class="docutils literal notranslate"><span class="pre">FullyConnected</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.FullyConnected.create_dataloader"><code class="docutils literal notranslate"><span class="pre">FullyConnected.create_dataloader()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.FullyConnected.epoch"><code class="docutils literal notranslate"><span class="pre">FullyConnected.epoch()</span></code></a></li>
@@ -591,6 +594,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.LatentNeuralODE"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.LatentNeuralODE.create_dataloader"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.create_dataloader()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.LatentNeuralODE.fit"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.fit()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.LatentNeuralODE.forward"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.forward()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.LatentNeuralODE.prepare_data"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.prepare_data()</span></code></a></li>
@@ -600,6 +604,7 @@
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.LatentPoly.config"><code class="docutils literal notranslate"><span class="pre">LatentPoly.config</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.LatentPoly.model"><code class="docutils literal notranslate"><span class="pre">LatentPoly.model</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.LatentPoly.device"><code class="docutils literal notranslate"><span class="pre">LatentPoly.device</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.LatentPoly.create_dataloader"><code class="docutils literal notranslate"><span class="pre">LatentPoly.create_dataloader()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.LatentPoly.fit"><code class="docutils literal notranslate"><span class="pre">LatentPoly.fit()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.LatentPoly.forward"><code class="docutils literal notranslate"><span class="pre">LatentPoly.forward()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.LatentPoly.prepare_data"><code class="docutils literal notranslate"><span class="pre">LatentPoly.prepare_data()</span></code></a></li>
@@ -619,9 +624,7 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.MultiONet"><code class="docutils literal notranslate"><span class="pre">MultiONet</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.MultiONet.create_dataloader"><code class="docutils literal notranslate"><span class="pre">MultiONet.create_dataloader()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.MultiONet.create_dataloader_n"><code class="docutils literal notranslate"><span class="pre">MultiONet.create_dataloader_n()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.MultiONet.epoch"><code class="docutils literal notranslate"><span class="pre">MultiONet.epoch()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.MultiONet.epoch_profile"><code class="docutils literal notranslate"><span class="pre">MultiONet.epoch_profile()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.MultiONet.fit"><code class="docutils literal notranslate"><span class="pre">MultiONet.fit()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.MultiONet.forward"><code class="docutils literal notranslate"><span class="pre">MultiONet.forward()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="codes.surrogates.html#codes.surrogates.MultiONet.prepare_data"><code class="docutils literal notranslate"><span class="pre">MultiONet.prepare_data()</span></code></a></li>
@@ -695,22 +698,40 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="codes.tune.html#module-codes.tune.optuna_fcts">codes.tune.optuna_fcts module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.optuna_fcts.create_objective"><code class="docutils literal notranslate"><span class="pre">create_objective()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.optuna_fcts.get_activation_function"><code class="docutils literal notranslate"><span class="pre">get_activation_function()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.optuna_fcts.load_yaml_config"><code class="docutils literal notranslate"><span class="pre">load_yaml_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.optuna_fcts.make_optuna_params"><code class="docutils literal notranslate"><span class="pre">make_optuna_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.optuna_fcts.maybe_set_runtime_threshold"><code class="docutils literal notranslate"><span class="pre">maybe_set_runtime_threshold()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.optuna_fcts.training_run"><code class="docutils literal notranslate"><span class="pre">training_run()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="codes.tune.html#module-codes.tune.postgres_fcts">codes.tune.postgres_fcts module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.postgres_fcts.initialize_optuna_database"><code class="docutils literal notranslate"><span class="pre">initialize_optuna_database()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="codes.tune.html#module-codes.tune.tune_utils">codes.tune.tune_utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.tune_utils.build_study_names"><code class="docutils literal notranslate"><span class="pre">build_study_names()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.tune_utils.copy_config"><code class="docutils literal notranslate"><span class="pre">copy_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.tune_utils.delete_studies_if_requested"><code class="docutils literal notranslate"><span class="pre">delete_studies_if_requested()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.tune_utils.prepare_workspace"><code class="docutils literal notranslate"><span class="pre">prepare_workspace()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.tune_utils.yes_no"><code class="docutils literal notranslate"><span class="pre">yes_no()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="codes.tune.html#module-codes.tune">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.build_study_names"><code class="docutils literal notranslate"><span class="pre">build_study_names()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.copy_config"><code class="docutils literal notranslate"><span class="pre">copy_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.create_objective"><code class="docutils literal notranslate"><span class="pre">create_objective()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.get_activation_function"><code class="docutils literal notranslate"><span class="pre">get_activation_function()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.delete_studies_if_requested"><code class="docutils literal notranslate"><span class="pre">delete_studies_if_requested()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.initialize_optuna_database"><code class="docutils literal notranslate"><span class="pre">initialize_optuna_database()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.load_model_test_losses"><code class="docutils literal notranslate"><span class="pre">load_model_test_losses()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.load_study_config"><code class="docutils literal notranslate"><span class="pre">load_study_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.load_yaml_config"><code class="docutils literal notranslate"><span class="pre">load_yaml_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.make_optuna_params"><code class="docutils literal notranslate"><span class="pre">make_optuna_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.maybe_set_runtime_threshold"><code class="docutils literal notranslate"><span class="pre">maybe_set_runtime_threshold()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.moving_average"><code class="docutils literal notranslate"><span class="pre">moving_average()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.plot_test_losses"><code class="docutils literal notranslate"><span class="pre">plot_test_losses()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.prepare_workspace"><code class="docutils literal notranslate"><span class="pre">prepare_workspace()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.training_run"><code class="docutils literal notranslate"><span class="pre">training_run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.yes_no"><code class="docutils literal notranslate"><span class="pre">yes_no()</span></code></a></li>
 </ul>
 </li>
 </ul>

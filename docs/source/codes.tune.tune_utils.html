@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>codes.surrogates.AbstractSurrogate &#8212; CODES  documentation</title>
+    <title>codes.tune.tune_utils &#8212; CODES  documentation</title>
   
   
   
@@ -43,12 +43,12 @@
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'docs/source/codes.surrogates.AbstractSurrogate';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'docs/source/codes.tune.tune_utils';</script>
     <link rel="icon" href="../../_static/favicon-96x96.png"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="codes.surrogates.AbstractSurrogate.abstract_config" href="codes.surrogates.AbstractSurrogate.abstract_config.html" />
-    <link rel="prev" title="codes.surrogates" href="codes.surrogates.html" />
+    <link rel="next" title="codes.utils" href="codes.utils.html" />
+    <link rel="prev" title="codes.tune.postgres_fcts" href="codes.tune.postgres_fcts.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -183,8 +183,8 @@
 <li class="toctree-l2"><a class="reference internal" href="codes.benchmark.bench_utils.html">codes.benchmark.bench_utils</a></li>
 </ul>
 </details></li>
-<li class="toctree-l1 current active has-children"><a class="reference internal" href="codes.surrogates.html">codes.surrogates</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
-<li class="toctree-l2 current active has-children"><a class="current reference internal" href="#">codes.surrogates.AbstractSurrogate</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="codes.surrogates.html">codes.surrogates</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="codes.surrogates.AbstractSurrogate.html">codes.surrogates.AbstractSurrogate</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3"><a class="reference internal" href="codes.surrogates.AbstractSurrogate.abstract_config.html">codes.surrogates.AbstractSurrogate.abstract_config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.surrogates.AbstractSurrogate.abstract_surrogate.html">codes.surrogates.AbstractSurrogate.abstract_surrogate</a></li>
 </ul>
@@ -196,12 +196,12 @@
 <li class="toctree-l2"><a class="reference internal" href="codes.train.train_fcts.html">codes.train.train_fcts</a></li>
 </ul>
 </details></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="codes.tune.html">codes.tune</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="codes.tune.html">codes.tune</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="codes.tune.evaluate_study.html">codes.tune.evaluate_study</a></li>
 <li class="toctree-l2"><a class="reference internal" href="codes.tune.evaluate_tuning.html">codes.tune.evaluate_tuning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="codes.tune.optuna_fcts.html">codes.tune.optuna_fcts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="codes.tune.postgres_fcts.html">codes.tune.postgres_fcts</a></li>
-<li class="toctree-l2"><a class="reference internal" href="codes.tune.tune_utils.html">codes.tune.tune_utils</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">codes.tune.tune_utils</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="codes.utils.html">codes.utils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -268,7 +268,7 @@
       
       
       
-      <li><a href="../../_sources/docs/source/codes.surrogates.AbstractSurrogate.rst" target="_blank"
+      <li><a href="../../_sources/docs/source/codes.tune.tune_utils.rst" target="_blank"
    class="btn btn-sm btn-download-source-button dropdown-item"
    title="Download source file"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -342,7 +342,7 @@
               
 
 <div id="jb-print-docs-body" class="onlyprint">
-    <h1>codes.surrogates.AbstractSurrogate</h1>
+    <h1>codes.tune.tune_utils</h1>
     <!-- Table of contents -->
     <div id="print-main-content">
         <div id="jb-print-toc">
@@ -356,16 +356,25 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-codes.surrogates.AbstractSurrogate">
-<span id="codes-surrogates-abstractsurrogate"></span><h1>codes.surrogates.AbstractSurrogate<a class="headerlink" href="#module-codes.surrogates.AbstractSurrogate" title="Link to this heading">#</a></h1>
-<p class="rubric">Modules</p>
+  <section id="module-codes.tune.tune_utils">
+<span id="codes-tune-tune-utils"></span><h1>codes.tune.tune_utils<a class="headerlink" href="#module-codes.tune.tune_utils" title="Link to this heading">#</a></h1>
+<p class="rubric">Functions</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="codes.surrogates.AbstractSurrogate.abstract_config.html#module-codes.surrogates.AbstractSurrogate.abstract_config" title="codes.surrogates.AbstractSurrogate.abstract_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">abstract_config</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.tune_utils.build_study_names" title="codes.tune.tune_utils.build_study_names"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_study_names</span></code></a>(config, main_study_name)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="codes.surrogates.AbstractSurrogate.abstract_surrogate.html#module-codes.surrogates.AbstractSurrogate.abstract_surrogate" title="codes.surrogates.AbstractSurrogate.abstract_surrogate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">abstract_surrogate</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.tune_utils.copy_config" title="codes.tune.tune_utils.copy_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy_config</span></code></a>(src, dst_folder)</p></td>
 <td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.tune_utils.delete_studies_if_requested" title="codes.tune.tune_utils.delete_studies_if_requested"><code class="xref py py-obj docutils literal notranslate"><span class="pre">delete_studies_if_requested</span></code></a>(config, ...)</p></td>
+<td><p>Delete studies if user overwrote run folder.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.tune_utils.prepare_workspace" title="codes.tune.tune_utils.prepare_workspace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_workspace</span></code></a>(master_cfg_path, config)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.tune_utils.yes_no" title="codes.tune.tune_utils.yes_no"><code class="xref py py-obj docutils literal notranslate"><span class="pre">yes_no</span></code></a>(prompt[, default])</p></td>
+<td><p>Simple Y/N prompt.</p></td>
 </tr>
 </tbody>
 </table>
@@ -384,20 +393,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="codes.surrogates.html"
+       href="codes.tune.postgres_fcts.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">codes.surrogates</p>
+        <p class="prev-next-title">codes.tune.postgres_fcts</p>
       </div>
     </a>
     <a class="right-next"
-       href="codes.surrogates.AbstractSurrogate.abstract_config.html"
+       href="codes.utils.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">codes.surrogates.AbstractSurrogate.abstract_config</p>
+        <p class="prev-next-title">codes.utils</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

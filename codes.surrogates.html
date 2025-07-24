@@ -198,6 +198,8 @@
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.evaluate_study.html">codes.tune.evaluate_study</a></li>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.evaluate_tuning.html">codes.tune.evaluate_tuning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.optuna_fcts.html">codes.tune.optuna_fcts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.postgres_fcts.html">codes.tune.postgres_fcts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.tune_utils.html">codes.tune.tune_utils</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="docs/source/codes.utils.html">codes.utils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -397,6 +399,7 @@
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.Encoder.forward"><code class="docutils literal notranslate"><span class="pre">Encoder.forward()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FlatSeqBatchIterable"><code class="docutils literal notranslate"><span class="pre">FlatSeqBatchIterable</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FullyConnected"><code class="docutils literal notranslate"><span class="pre">FullyConnected</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FullyConnected.create_dataloader"><code class="docutils literal notranslate"><span class="pre">FullyConnected.create_dataloader()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FullyConnected.epoch"><code class="docutils literal notranslate"><span class="pre">FullyConnected.epoch()</span></code></a></li>
@@ -410,6 +413,7 @@
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.create_dataloader"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.create_dataloader()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.fit"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.fit()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.forward"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.prepare_data"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.prepare_data()</span></code></a></li>
@@ -419,6 +423,7 @@
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentPoly.config"><code class="docutils literal notranslate"><span class="pre">LatentPoly.config</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentPoly.model"><code class="docutils literal notranslate"><span class="pre">LatentPoly.model</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentPoly.device"><code class="docutils literal notranslate"><span class="pre">LatentPoly.device</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentPoly.create_dataloader"><code class="docutils literal notranslate"><span class="pre">LatentPoly.create_dataloader()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentPoly.fit"><code class="docutils literal notranslate"><span class="pre">LatentPoly.fit()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentPoly.forward"><code class="docutils literal notranslate"><span class="pre">LatentPoly.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentPoly.prepare_data"><code class="docutils literal notranslate"><span class="pre">LatentPoly.prepare_data()</span></code></a></li>
@@ -438,9 +443,7 @@
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet"><code class="docutils literal notranslate"><span class="pre">MultiONet</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.create_dataloader"><code class="docutils literal notranslate"><span class="pre">MultiONet.create_dataloader()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.create_dataloader_n"><code class="docutils literal notranslate"><span class="pre">MultiONet.create_dataloader_n()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.epoch"><code class="docutils literal notranslate"><span class="pre">MultiONet.epoch()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.epoch_profile"><code class="docutils literal notranslate"><span class="pre">MultiONet.epoch_profile()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.fit"><code class="docutils literal notranslate"><span class="pre">MultiONet.fit()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.forward"><code class="docutils literal notranslate"><span class="pre">MultiONet.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.prepare_data"><code class="docutils literal notranslate"><span class="pre">MultiONet.prepare_data()</span></code></a></li>
@@ -840,14 +843,14 @@ If the final model is better, keep it; otherwise load the saved best checkpoint.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogateModel.predict">
-<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">denormalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.predict" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.predict" title="Link to this definition">#</a></dt>
 <dd><p>Evaluate the model on the given dataloader.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the data the
 model is evaluated on.</p></li>
-<li><p><strong>denormalize</strong> (<em>bool</em>) – Whether to denormalize the predictions and targets.</p></li>
+<li><p><strong>leave_log</strong> (<em>bool</em>) – If True, do not exponentiate the data even if log10_transform is True.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1000,7 +1003,7 @@ If the projected runtime exceeds the threshold, raise an optuna.TrialPruned exce
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogateModel.validate">
-<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">criterion</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_objective</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.validate" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_objective</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.validate" title="Link to this definition">#</a></dt>
 <dd><p>Shared “validation + checkpoint” logic, to be called once per epoch in each fit().</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -1020,7 +1023,8 @@ If the projected runtime exceeds the threshold, raise an optuna.TrialPruned exce
 </ul>
 </dd>
 </dl>
-<p>Only runs if (epoch % self.update_epochs) == 0.</p>
+<p>Only runs if (epoch % self.update_epochs) == 0.
+Main reporting metric is MAE in log10-space (i.e., Δdex). Additionally, MAE in linear space is computed.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1066,7 +1070,7 @@ Returns each sample along with its timesteps and (optionally) fixed parameters.<
 
 <dl class="py class">
 <dt class="sig sig-object py" id="codes.surrogates.Decoder">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">Decoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latent_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coder_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coder_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">ReLU()</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.Decoder" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">Decoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latent_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coder_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coder_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">ReLU()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">torch.float64</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.Decoder" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
 <p>Fully connected decoder that maps the latent space back to the output.</p>
 <dl class="py method">
@@ -1088,7 +1092,7 @@ registered hooks while the latter silently ignores them.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="codes.surrogates.Encoder">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">Encoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latent_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coder_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coder_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">ReLU()</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.Encoder" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">Encoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latent_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coder_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coder_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">ReLU()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">torch.float64</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.Encoder" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
 <p>Fully connected encoder that maps input features to a latent space.</p>
 <dl class="py method">
@@ -1109,30 +1113,22 @@ registered hooks while the latter silently ignores them.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="codes.surrogates.FlatSeqBatchIterable">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">FlatSeqBatchIterable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.FlatSeqBatchIterable" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">IterableDataset</span></code></p>
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="codes.surrogates.FullyConnected">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">FullyConnected</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.FullyConnected" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel" title="codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractSurrogateModel</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.FullyConnected.create_dataloader">
-<span class="sig-name descname"><span class="pre">create_dataloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.FullyConnected.create_dataloader" title="Link to this definition">#</a></dt>
-<dd><p>Create a DataLoader with optimized memory-safe shuffling and batching.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dataset</strong> (<em>np.ndarray</em>) – The data to load. Shape: (n_samples, n_timesteps, n_quantities).</p></li>
-<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps. Shape: (n_timesteps,).</p></li>
-<li><p><strong>batch_size</strong> (<em>int</em>) – The batch size.</p></li>
-<li><p><strong>shuffle</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to shuffle the data. Defaults to False.</p></li>
-<li><p><strong>dataset_params</strong> (<em>np.ndarray</em><em> | </em><em>None</em>) – Fixed parameters for each sample (shape: (n_samples, n_parameters)).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A DataLoader with precomputed batches.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>DataLoader</p>
-</dd>
-</dl>
+<span class="sig-name descname"><span class="pre">create_dataloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pin_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.FullyConnected.create_dataloader" title="Link to this definition">#</a></dt>
+<dd><p>Build CPU tensors once and yield shuffled batches each epoch.
+data: (n_samples, n_timesteps, n_quantities)
+inputs = [initial_state, time, (params?)]
+targets = state_at_time</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1190,27 +1186,29 @@ If True, trial.report is not used (not supported by Optuna).</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.FullyConnected.prepare_data">
 <span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_train_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.FullyConnected.prepare_data" title="Link to this definition">#</a></dt>
-<dd><p>Prepare the data for the predict or fit methods.</p>
+<dd><p>Prepare the data for training, testing, and validation. This method should
+return the DataLoader objects for the training, testing, and validation data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dataset_train</strong> (<em>np.ndarray</em>) – Training data.</p></li>
-<li><p><strong>dataset_test</strong> (<em>np.ndarray</em><em> | </em><em>None</em>) – Test data (optional).</p></li>
-<li><p><strong>dataset_val</strong> (<em>np.ndarray</em><em> | </em><em>None</em>) – Validation data (optional).</p></li>
-<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – Timesteps.</p></li>
-<li><p><strong>batch_size</strong> (<em>int</em>) – Batch size.</p></li>
-<li><p><strong>shuffle</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to shuffle the data. Defaults to True.</p></li>
-<li><p><strong>dummy_timesteps</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to use dummy timesteps. Defaults to True.</p></li>
-<li><p><strong>dataset_train_params</strong> (<em>np.ndarray</em><em> | </em><em>None</em>) – Training parameters of shape (n_samples, n_parameters).</p></li>
-<li><p><strong>dataset_test_params</strong> (<em>np.ndarray</em><em> | </em><em>None</em>) – Testing parameters of shape (n_samples, n_parameters).</p></li>
-<li><p><strong>dataset_val_params</strong> (<em>np.ndarray</em><em> | </em><em>None</em>) – Validation parameters of shape (n_samples, n_parameters).</p></li>
+<li><p><strong>dataset_train</strong> (<em>np.ndarray</em>) – The training dataset.</p></li>
+<li><p><strong>dataset_test</strong> (<em>np.ndarray</em>) – The testing dataset.</p></li>
+<li><p><strong>dataset_val</strong> (<em>np.ndarray</em>) – The validation dataset.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) – The batch size.</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em>) – Whether to shuffle the data.</p></li>
+<li><p><strong>dummy_timesteps</strong> (<em>bool</em>) – Whether to use dummy timesteps. Defaults to True.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>DataLoader for training, test, and validation data.</p>
+<dd class="field-even"><p><dl class="simple">
+<dt>The DataLoader objects for the</dt><dd><p>training, testing, and validation data.</p>
+</dd>
+</dl>
+</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[DataLoader, DataLoader | None, DataLoader | None]</p>
+<dd class="field-odd"><p>tuple[DataLoader, DataLoader, DataLoader]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1240,7 +1238,7 @@ registered hooks while the latter silently ignores them.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="codes.surrogates.LatentNeuralODE">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">LatentNeuralODE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentNeuralODE" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">LatentNeuralODE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">torch.float64</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentNeuralODE" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel" title="codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractSurrogateModel</span></code></a></p>
 <p>LatentNeuralODE represents a latent neural ODE model.
 It includes an encoder, decoder, and neural ODE. Fixed parameters can be injected either
@@ -1256,6 +1254,11 @@ into the encoder or later into the ODE network, controlled by config.encode_para
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="codes.surrogates.LatentNeuralODE.create_dataloader">
+<span class="sig-name descname"><span class="pre">create_dataloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pin_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentNeuralODE.create_dataloader" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.LatentNeuralODE.fit">
 <span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Training</span> <span class="pre">LatentNeuralODE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_objective</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentNeuralODE.fit" title="Link to this definition">#</a></dt>
@@ -1288,11 +1291,29 @@ Expects inputs to be either (data, timesteps) or (data, timesteps, params).</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.LatentNeuralODE.prepare_data">
 <span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_train_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentNeuralODE.prepare_data" title="Link to this definition">#</a></dt>
-<dd><p>Prepares data by creating DataLoader objects.
-If fixed parameters are provided, they are passed along with each sample.</p>
+<dd><p>Prepare the data for training, testing, and validation. This method should
+return the DataLoader objects for the training, testing, and validation data.</p>
 <dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset_train</strong> (<em>np.ndarray</em>) – The training dataset.</p></li>
+<li><p><strong>dataset_test</strong> (<em>np.ndarray</em>) – The testing dataset.</p></li>
+<li><p><strong>dataset_val</strong> (<em>np.ndarray</em>) – The validation dataset.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) – The batch size.</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em>) – Whether to shuffle the data.</p></li>
+<li><p><strong>dummy_timesteps</strong> (<em>bool</em>) – Whether to use dummy timesteps. Defaults to True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The DataLoader objects for the</dt><dd><p>training, testing, and validation data.</p>
+</dd>
+</dl>
+</p>
+</dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]</span></p>
+<dd class="field-odd"><p>tuple[DataLoader, DataLoader, DataLoader]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1340,6 +1361,11 @@ The architecture is chosen based on the version flag in the configuration.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="codes.surrogates.LatentPoly.create_dataloader">
+<span class="sig-name descname"><span class="pre">create_dataloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pin_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentPoly.create_dataloader" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.LatentPoly.fit">
 <span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Training</span> <span class="pre">LatentPoly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_objective</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentPoly.fit" title="Link to this definition">#</a></dt>
 <dd><p>Train the LatentPoly model.</p>
@@ -1374,7 +1400,7 @@ If fixed parameters are provided, the tuple is (data, timesteps, params).</p>
 <dd class="field-even"><p>(Predictions, Targets)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[torch.Tensor, torch.Tensor]</p>
+<dd class="field-odd"><p>tuple[Tensor, Tensor]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1382,25 +1408,29 @@ If fixed parameters are provided, the tuple is (data, timesteps, params).</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.LatentPoly.prepare_data">
 <span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_train_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentPoly.prepare_data" title="Link to this definition">#</a></dt>
-<dd><p>Prepare DataLoaders for training, testing, and validation.</p>
+<dd><p>Prepare the data for training, testing, and validation. This method should
+return the DataLoader objects for the training, testing, and validation data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dataset_train</strong> (<em>np.ndarray</em>) – Training dataset.</p></li>
-<li><p><strong>dataset_test</strong> (<em>np.ndarray</em><em> | </em><em>None</em>) – Test dataset.</p></li>
-<li><p><strong>dataset_val</strong> (<em>np.ndarray</em><em> | </em><em>None</em>) – Validation dataset.</p></li>
-<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – Array of timesteps.</p></li>
-<li><p><strong>batch_size</strong> (<em>int</em>) – Batch size.</p></li>
-<li><p><strong>shuffle</strong> (<em>bool</em>) – Whether to shuffle training data.</p></li>
-<li><p><strong>dummy_timesteps</strong> (<em>bool</em>) – Whether to use dummy timesteps.</p></li>
-<li><p><strong>dataset_*_params</strong> (<em>np.ndarray</em><em> | </em><em>None</em>) – Fixed parameters for each split.</p></li>
+<li><p><strong>dataset_train</strong> (<em>np.ndarray</em>) – The training dataset.</p></li>
+<li><p><strong>dataset_test</strong> (<em>np.ndarray</em>) – The testing dataset.</p></li>
+<li><p><strong>dataset_val</strong> (<em>np.ndarray</em>) – The validation dataset.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) – The batch size.</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em>) – Whether to shuffle the data.</p></li>
+<li><p><strong>dummy_timesteps</strong> (<em>bool</em>) – Whether to use dummy timesteps. Defaults to True.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>DataLoaders for training, test, and validation datasets.</p>
+<dd class="field-even"><p><dl class="simple">
+<dt>The DataLoader objects for the</dt><dd><p>training, testing, and validation data.</p>
+</dd>
+</dl>
+</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple</p>
+<dd class="field-odd"><p>tuple[DataLoader, DataLoader, DataLoader]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1433,13 +1463,13 @@ If fixed parameters are provided, the tuple is (data, timesteps, params).</p>
 <dd><p>Calculate the numerical derivative.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – The input tensor.</p>
+<dd class="field-odd"><p><strong>x</strong> (<em>Tensor</em>) – The input tensor.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The numerical derivative.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p>Tensor</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1450,13 +1480,13 @@ If fixed parameters are provided, the tuple is (data, timesteps, params).</p>
 <dd><p>Calculate the numerical second derivative.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – The input tensor.</p>
+<dd class="field-odd"><p><strong>x</strong> (<em>Tensor</em>) – The input tensor.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The numerical second derivative.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p>Tensor</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1468,15 +1498,15 @@ If fixed parameters are provided, the tuple is (data, timesteps, params).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x_true</strong> (<em>torch.Tensor</em>) – The true trajectory.</p></li>
-<li><p><strong>x_pred</strong> (<em>torch.Tensor</em>) – The predicted trajectory</p></li>
+<li><p><strong>x_true</strong> (<em>Tensor</em>) – The true trajectory.</p></li>
+<li><p><strong>x_pred</strong> (<em>Tensor</em>) – The predicted trajectory</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The second derivative loss.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p>Tensor</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1488,15 +1518,15 @@ If fixed parameters are provided, the tuple is (data, timesteps, params).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x_true</strong> (<em>torch.Tensor</em>) – The true trajectory.</p></li>
-<li><p><strong>x_pred</strong> (<em>torch.Tensor</em>) – The predicted trajectory</p></li>
+<li><p><strong>x_true</strong> (<em>Tensor</em>) – The true trajectory.</p></li>
+<li><p><strong>x_pred</strong> (<em>Tensor</em>) – The predicted trajectory</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The derivative loss.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p>Tensor</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1522,15 +1552,15 @@ registered hooks while the latter silently ignores them.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x_true</strong> (<em>torch.Tensor</em>) – The full trajectory (batch, timesteps, features).</p></li>
-<li><p><strong>params</strong> (<em>torch.Tensor</em><em> | </em><em>None</em>) – Fixed parameters (batch, n_parameters).</p></li>
+<li><p><strong>x_true</strong> (<em>Tensor</em>) – The full trajectory (batch, timesteps, features).</p></li>
+<li><p><strong>params</strong> (<em>Tensor</em><em> | </em><em>None</em>) – Fixed parameters (batch, n_parameters).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The identity loss on x0.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p>Tensor</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1542,29 +1572,31 @@ registered hooks while the latter silently ignores them.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x_true</strong> (<em>torch.Tensor</em>) – The true trajectory.</p></li>
-<li><p><strong>x_pred</strong> (<em>torch.Tensor</em>) – The predicted trajectory</p></li>
+<li><p><strong>x_true</strong> (<em>Tensor</em>) – The true trajectory.</p></li>
+<li><p><strong>x_pred</strong> (<em>Tensor</em>) – The predicted trajectory</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The L2 loss.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p>Tensor</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.ModelWrapper.renormalize_loss_weights">
-<span class="sig-name descname"><span class="pre">renormalize_loss_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ModelWrapper.renormalize_loss_weights" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">renormalize_loss_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">criterion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">MSELoss()</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ModelWrapper.renormalize_loss_weights" title="Link to this definition">#</a></dt>
 <dd><p>Renormalize the loss weights based on the current loss values so that they are accurately
 weighted based on the provided weights. To be used once after a short burn in phase.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x_true</strong> (<em>torch.Tensor</em>) – The true trajectory.</p></li>
-<li><p><strong>x_pred</strong> (<em>torch.Tensor</em>) – The predicted trajectory</p></li>
+<li><p><strong>x_true</strong> (<em>Tensor</em>) – The true trajectory.</p></li>
+<li><p><strong>x_pred</strong> (<em>Tensor</em>) – The predicted trajectory</p></li>
+<li><p><strong>params</strong> (<em>Tensor</em>) – Fixed parameters (batch, n_parameters).</p></li>
+<li><p><strong>criterion</strong> (<em>nn.Module</em>) – Loss function to use for calculating the losses.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1572,7 +1604,7 @@ weighted based on the provided weights. To be used once after a short burn in ph
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.ModelWrapper.total_loss">
-<span class="sig-name descname"><span class="pre">total_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ModelWrapper.total_loss" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">total_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">criterion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">MSELoss()</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ModelWrapper.total_loss" title="Link to this definition">#</a></dt>
 <dd><p>Calculate the total loss based on the loss weights, including params for identity.</p>
 </dd></dl>
 
@@ -1614,44 +1646,8 @@ if False, to the trunk net.</p></li>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.MultiONet.create_dataloader">
-<span class="sig-name descname"><span class="pre">create_dataloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params_in_branch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.MultiONet.create_dataloader" title="Link to this definition">#</a></dt>
-<dd><p>Create a DataLoader with optimized memory-safe shuffling using pre-allocated buffers and direct slicing.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>np.ndarray</em>) – The data to load. Must have shape (n_samples, n_timesteps, n_quantities).</p></li>
-<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps. Shape: (n_timesteps,).</p></li>
-<li><p><strong>batch_size</strong> (<em>int</em>) – The batch size.</p></li>
-<li><p><strong>shuffle</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to shuffle the data.</p></li>
-<li><p><strong>dataset_params</strong> (<em>np.ndarray</em><em> | </em><em>None</em>) – Fixed parameters for each sample (shape: [n_samples, n_parameters]).</p></li>
-<li><p><strong>params_in_branch</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, parameters are concatenated with branch inputs;
-if False, with trunk inputs.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A DataLoader with precomputed batches.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>DataLoader</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="codes.surrogates.MultiONet.create_dataloader_n">
-<span class="sig-name descname"><span class="pre">create_dataloader_n</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.MultiONet.create_dataloader_n" title="Link to this definition">#</a></dt>
-<dd><p>Create a DataLoader for the given data.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>np.ndarray</em>) – The data to load. Must have shape (n_samples, n_timesteps, n_quantities).</p></li>
-<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps.</p></li>
-<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The batch size.</p></li>
-<li><p><strong>shuffle</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to shuffle the data.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">create_dataloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params_in_branch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pin_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.MultiONet.create_dataloader" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.MultiONet.epoch">
@@ -1663,29 +1659,6 @@ if False, with trunk inputs.</p></li>
 <li><p><strong>data_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the training data.</p></li>
 <li><p><strong>criterion</strong> (<em>nn.Module</em>) – The loss function.</p></li>
 <li><p><strong>optimizer</strong> (<em>torch.optim.Optimizer</em>) – The optimizer.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The total loss for the training step.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="codes.surrogates.MultiONet.epoch_profile">
-<span class="sig-name descname"><span class="pre">epoch_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">criterion</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profiler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile_batches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.MultiONet.epoch_profile" title="Link to this definition">#</a></dt>
-<dd><p>Perform one training epoch, with optional profiling for a limited number of batches.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the training data.</p></li>
-<li><p><strong>criterion</strong> (<em>nn.Module</em>) – The loss function.</p></li>
-<li><p><strong>optimizer</strong> (<em>torch.optim.Optimizer</em>) – The optimizer.</p></li>
-<li><p><strong>profiler</strong> (<em>torch.profiler.profile</em><em>, </em><em>optional</em>) – The profiler to use for profiling.</p></li>
-<li><p><strong>profile_batches</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of batches to profile in this epoch.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1742,28 +1715,29 @@ If True, trial.report is not used (not supported by Optuna).</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.MultiONet.prepare_data">
 <span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_train_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_test_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_val_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.MultiONet.prepare_data" title="Link to this definition">#</a></dt>
-<dd><p>Prepare the data for the predict or fit methods.
-Note: All datasets must have shape (n_samples, n_timesteps, n_quantities).</p>
+<dd><p>Prepare the data for training, testing, and validation. This method should
+return the DataLoader objects for the training, testing, and validation data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dataset_train</strong> (<em>np.ndarray</em>) – The training data.</p></li>
-<li><p><strong>dataset_test</strong> (<em>np.ndarray</em>) – The test data.</p></li>
-<li><p><strong>dataset_val</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – The validation data.</p></li>
+<li><p><strong>dataset_train</strong> (<em>np.ndarray</em>) – The training dataset.</p></li>
+<li><p><strong>dataset_test</strong> (<em>np.ndarray</em>) – The testing dataset.</p></li>
+<li><p><strong>dataset_val</strong> (<em>np.ndarray</em>) – The validation dataset.</p></li>
 <li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps.</p></li>
 <li><p><strong>batch_size</strong> (<em>int</em>) – The batch size.</p></li>
-<li><p><strong>shuffle</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to shuffle the data.</p></li>
-<li><p><strong>dummy_timesteps</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to create a dummy timestep array.</p></li>
-<li><p><strong>dataset_train_params</strong> (<em>np.ndarray</em><em> | </em><em>None</em>) – Fixed parameters for training samples.</p></li>
-<li><p><strong>dataset_test_params</strong> (<em>np.ndarray</em><em> | </em><em>None</em>) – Fixed parameters for testing samples.</p></li>
-<li><p><strong>dataset_val_params</strong> (<em>np.ndarray</em><em> | </em><em>None</em>) – Fixed parameters for validation samples.</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em>) – Whether to shuffle the data.</p></li>
+<li><p><strong>dummy_timesteps</strong> (<em>bool</em>) – Whether to use dummy timesteps. Defaults to True.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The training, test, and validation DataLoaders.</p>
+<dd class="field-even"><p><dl class="simple">
+<dt>The DataLoader objects for the</dt><dd><p>training, testing, and validation data.</p>
+</dd>
+</dl>
+</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple</p>
+<dd class="field-odd"><p>tuple[DataLoader, DataLoader, DataLoader]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1786,7 +1760,7 @@ Note: All datasets must have shape (n_samples, n_timesteps, n_quantities).</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="codes.surrogates.ODE">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">ODE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ode_layers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ode_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tanh_reg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ODE" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">ODE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ode_layers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ode_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tanh_reg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">torch.float64</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ODE" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
 <p>Neural ODE module defining the function for latent dynamics.</p>
 <dl class="py method">
@@ -1849,7 +1823,7 @@ registered hooks while the latter silently ignores them.</p>
 <dd><p>Time matrix for polynomial evaluation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p>Tensor</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1860,13 +1834,13 @@ registered hooks while the latter silently ignores them.</p>
 <dd><p>Evaluate the polynomial at given timesteps.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>t</strong> (<em>torch.Tensor</em>) – Time tensor.</p>
+<dd class="field-odd"><p><strong>t</strong> (<em>Tensor</em>) – Time tensor.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Evaluated polynomial.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p>Tensor</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1982,6 +1956,7 @@ registered hooks while the latter silently ignores them.</p>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.Encoder.forward"><code class="docutils literal notranslate"><span class="pre">Encoder.forward()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FlatSeqBatchIterable"><code class="docutils literal notranslate"><span class="pre">FlatSeqBatchIterable</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FullyConnected"><code class="docutils literal notranslate"><span class="pre">FullyConnected</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FullyConnected.create_dataloader"><code class="docutils literal notranslate"><span class="pre">FullyConnected.create_dataloader()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.FullyConnected.epoch"><code class="docutils literal notranslate"><span class="pre">FullyConnected.epoch()</span></code></a></li>
@@ -1995,6 +1970,7 @@ registered hooks while the latter silently ignores them.</p>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.create_dataloader"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.create_dataloader()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.fit"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.fit()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.forward"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.prepare_data"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.prepare_data()</span></code></a></li>
@@ -2004,6 +1980,7 @@ registered hooks while the latter silently ignores them.</p>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentPoly.config"><code class="docutils literal notranslate"><span class="pre">LatentPoly.config</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentPoly.model"><code class="docutils literal notranslate"><span class="pre">LatentPoly.model</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentPoly.device"><code class="docutils literal notranslate"><span class="pre">LatentPoly.device</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentPoly.create_dataloader"><code class="docutils literal notranslate"><span class="pre">LatentPoly.create_dataloader()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentPoly.fit"><code class="docutils literal notranslate"><span class="pre">LatentPoly.fit()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentPoly.forward"><code class="docutils literal notranslate"><span class="pre">LatentPoly.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentPoly.prepare_data"><code class="docutils literal notranslate"><span class="pre">LatentPoly.prepare_data()</span></code></a></li>
@@ -2023,9 +2000,7 @@ registered hooks while the latter silently ignores them.</p>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet"><code class="docutils literal notranslate"><span class="pre">MultiONet</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.create_dataloader"><code class="docutils literal notranslate"><span class="pre">MultiONet.create_dataloader()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.create_dataloader_n"><code class="docutils literal notranslate"><span class="pre">MultiONet.create_dataloader_n()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.epoch"><code class="docutils literal notranslate"><span class="pre">MultiONet.epoch()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.epoch_profile"><code class="docutils literal notranslate"><span class="pre">MultiONet.epoch_profile()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.fit"><code class="docutils literal notranslate"><span class="pre">MultiONet.fit()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.forward"><code class="docutils literal notranslate"><span class="pre">MultiONet.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.MultiONet.prepare_data"><code class="docutils literal notranslate"><span class="pre">MultiONet.prepare_data()</span></code></a></li>

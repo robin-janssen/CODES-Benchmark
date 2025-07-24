@@ -28,6 +28,22 @@ codes.tune.optuna\_fcts module
    :undoc-members:
    :show-inheritance:
 
+codes.tune.postgres\_fcts module
+--------------------------------
+
+.. automodule:: codes.tune.postgres_fcts
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+codes.tune.tune\_utils module
+-----------------------------
+
+.. automodule:: codes.tune.tune_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

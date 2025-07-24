@@ -13,3 +13,5 @@
    evaluate_study
    evaluate_tuning
    optuna_fcts
+   postgres_fcts
+   tune_utils

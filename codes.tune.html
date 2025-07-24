@@ -198,6 +198,8 @@
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.evaluate_study.html">codes.tune.evaluate_study</a></li>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.evaluate_tuning.html">codes.tune.evaluate_tuning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.optuna_fcts.html">codes.tune.optuna_fcts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.postgres_fcts.html">codes.tune.postgres_fcts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs/source/codes.tune.tune_utils.html">codes.tune.tune_utils</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="docs/source/codes.utils.html">codes.utils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -371,22 +373,40 @@
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.optuna_fcts">codes.tune.optuna_fcts module</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.create_objective"><code class="docutils literal notranslate"><span class="pre">create_objective()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.get_activation_function"><code class="docutils literal notranslate"><span class="pre">get_activation_function()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.load_yaml_config"><code class="docutils literal notranslate"><span class="pre">load_yaml_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.make_optuna_params"><code class="docutils literal notranslate"><span class="pre">make_optuna_params()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.maybe_set_runtime_threshold"><code class="docutils literal notranslate"><span class="pre">maybe_set_runtime_threshold()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.training_run"><code class="docutils literal notranslate"><span class="pre">training_run()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.postgres_fcts">codes.tune.postgres_fcts module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.postgres_fcts.initialize_optuna_database"><code class="docutils literal notranslate"><span class="pre">initialize_optuna_database()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.tune_utils">codes.tune.tune_utils module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.tune_utils.build_study_names"><code class="docutils literal notranslate"><span class="pre">build_study_names()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.tune_utils.copy_config"><code class="docutils literal notranslate"><span class="pre">copy_config()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.tune_utils.delete_studies_if_requested"><code class="docutils literal notranslate"><span class="pre">delete_studies_if_requested()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.tune_utils.prepare_workspace"><code class="docutils literal notranslate"><span class="pre">prepare_workspace()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.tune_utils.yes_no"><code class="docutils literal notranslate"><span class="pre">yes_no()</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune">Module contents</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.build_study_names"><code class="docutils literal notranslate"><span class="pre">build_study_names()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.copy_config"><code class="docutils literal notranslate"><span class="pre">copy_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.create_objective"><code class="docutils literal notranslate"><span class="pre">create_objective()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.get_activation_function"><code class="docutils literal notranslate"><span class="pre">get_activation_function()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.delete_studies_if_requested"><code class="docutils literal notranslate"><span class="pre">delete_studies_if_requested()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.initialize_optuna_database"><code class="docutils literal notranslate"><span class="pre">initialize_optuna_database()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.load_model_test_losses"><code class="docutils literal notranslate"><span class="pre">load_model_test_losses()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.load_study_config"><code class="docutils literal notranslate"><span class="pre">load_study_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.load_yaml_config"><code class="docutils literal notranslate"><span class="pre">load_yaml_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.make_optuna_params"><code class="docutils literal notranslate"><span class="pre">make_optuna_params()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.maybe_set_runtime_threshold"><code class="docutils literal notranslate"><span class="pre">maybe_set_runtime_threshold()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.moving_average"><code class="docutils literal notranslate"><span class="pre">moving_average()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.plot_test_losses"><code class="docutils literal notranslate"><span class="pre">plot_test_losses()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.prepare_workspace"><code class="docutils literal notranslate"><span class="pre">prepare_workspace()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.training_run"><code class="docutils literal notranslate"><span class="pre">training_run()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.yes_no"><code class="docutils literal notranslate"><span class="pre">yes_no()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -495,7 +515,7 @@ Usually, viewing the study database with Optuna Dashboard is more informative.</
 <span id="codes-tune-evaluate-tuning-module"></span><h2>codes.tune.evaluate_tuning module<a class="headerlink" href="#module-codes.tune.evaluate_tuning" title="Link to this heading">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.evaluate_tuning.evaluate_tuning">
-<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">evaluate_tuning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">study_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.evaluate_tuning" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">evaluate_tuning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">study_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'optuna_db'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.evaluate_tuning" title="Link to this definition">#</a></dt>
 <dd><p>For all surrogate studies named ‘&lt;study_prefix&gt;_&lt;surrogate&gt;’,
 plot the top_n test-loss trajectories.</p>
 <dl class="field-list simple">
@@ -571,24 +591,6 @@ Returns (train_loss, test_loss, n_epochs).</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="codes.tune.optuna_fcts.get_activation_function">
-<span class="sig-prename descclassname"><span class="pre">codes.tune.optuna_fcts.</span></span><span class="sig-name descname"><span class="pre">get_activation_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.optuna_fcts.get_activation_function" title="Link to this definition">#</a></dt>
-<dd><p>Get the activation function module from its name.
-Required for Optuna to suggest activation functions.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – Name of the activation function.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Activation function module.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>nn.Module</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.optuna_fcts.load_yaml_config">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.optuna_fcts.</span></span><span class="sig-name descname"><span class="pre">load_yaml_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.optuna_fcts.load_yaml_config" title="Link to this definition">#</a></dt>
 <dd><p>Load a YAML configuration file.</p>
@@ -613,21 +615,21 @@ Required for Optuna to suggest activation functions.</p>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span></p>
 </dd>
 </dl>
-<dl class="simple">
-<dt>Suggest hyperparameters from optuna_params, sampling conditional parameters:</dt><dd><ul class="simple">
-<li><p>coeff_width / coeff_layers only if coeff_network is True</p></li>
-<li><p>momentum only if optimizer == “sgd”</p></li>
-<li><p>eta_min only if scheduler == “cosine”</p></li>
-<li><p>poly_power only if scheduler == “poly”</p></li>
-</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.optuna_fcts.maybe_set_runtime_threshold">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.optuna_fcts.</span></span><span class="sig-name descname"><span class="pre">maybe_set_runtime_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">study</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">warmup_target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_pruned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.optuna_fcts.maybe_set_runtime_threshold" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
 </dd>
 </dl>
-<p>Also converts “True”/”False” strings to bool and maps activation names.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.optuna_fcts.training_run">
-<span class="sig-prename descclassname"><span class="pre">codes.tune.optuna_fcts.</span></span><span class="sig-name descname"><span class="pre">training_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.optuna_fcts.training_run" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">codes.tune.optuna_fcts.</span></span><span class="sig-name descname"><span class="pre">training_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slot_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.optuna_fcts.training_run" title="Link to this definition">#</a></dt>
 <dd><p>Run the training for a single Optuna trial and return the loss.
 In multi-objective mode, also returns the mean inference time.</p>
 <dl class="field-list simple">
@@ -635,6 +637,7 @@ In multi-objective mode, also returns the mean inference time.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>trial</strong> (<em>optuna.Trial</em>) – Optuna trial object.</p></li>
 <li><p><strong>device</strong> (<em>str</em>) – Device to run the training on.</p></li>
+<li><p><strong>slot_id</strong> (<em>int</em>) – Slot ID for the position of the progress bar.</p></li>
 <li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
 <li><p><strong>study_name</strong> (<em>str</em>) – Name of the study.</p></li>
 </ul>
@@ -650,8 +653,91 @@ tuple[float, float]: (loss, mean_inference_time) in multi objective mode.</p>
 </dd></dl>
 
 </section>
+<section id="module-codes.tune.postgres_fcts">
+<span id="codes-tune-postgres-fcts-module"></span><h2>codes.tune.postgres_fcts module<a class="headerlink" href="#module-codes.tune.postgres_fcts" title="Link to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.postgres_fcts.initialize_optuna_database">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.postgres_fcts.</span></span><span class="sig-name descname"><span class="pre">initialize_optuna_database</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_folder_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.postgres_fcts.initialize_optuna_database" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-codes.tune.tune_utils">
+<span id="codes-tune-tune-utils-module"></span><h2>codes.tune.tune_utils module<a class="headerlink" href="#module-codes.tune.tune_utils" title="Link to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.tune_utils.build_study_names">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.tune_utils.</span></span><span class="sig-name descname"><span class="pre">build_study_names</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_study_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.tune_utils.build_study_names" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.tune_utils.copy_config">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.tune_utils.</span></span><span class="sig-name descname"><span class="pre">copy_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst_folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.tune_utils.copy_config" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.tune_utils.delete_studies_if_requested">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.tune_utils.</span></span><span class="sig-name descname"><span class="pre">delete_studies_if_requested</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_study_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db_url</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.tune_utils.delete_studies_if_requested" title="Link to this definition">#</a></dt>
+<dd><p>Delete studies if user overwrote run folder.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.tune_utils.prepare_workspace">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.tune_utils.</span></span><span class="sig-name descname"><span class="pre">prepare_workspace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">master_cfg_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.tune_utils.prepare_workspace" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.tune_utils.yes_no">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.tune_utils.</span></span><span class="sig-name descname"><span class="pre">yes_no</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prompt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.tune_utils.yes_no" title="Link to this definition">#</a></dt>
+<dd><p>Simple Y/N prompt. default=False -&gt; [y/N], True -&gt; [Y/n].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
 <section id="module-codes.tune">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-codes.tune" title="Link to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.build_study_names">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">build_study_names</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_study_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.build_study_names" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.copy_config">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">copy_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst_folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.copy_config" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.create_objective">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">create_objective</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_queue</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.create_objective" title="Link to this definition">#</a></dt>
@@ -674,19 +760,17 @@ tuple[float, float]: (loss, mean_inference_time) in multi objective mode.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="codes.tune.get_activation_function">
-<span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">get_activation_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.get_activation_function" title="Link to this definition">#</a></dt>
-<dd><p>Get the activation function module from its name.
-Required for Optuna to suggest activation functions.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – Name of the activation function.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Activation function module.</p>
-</dd>
+<dt class="sig sig-object py" id="codes.tune.delete_studies_if_requested">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">delete_studies_if_requested</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_study_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db_url</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.delete_studies_if_requested" title="Link to this definition">#</a></dt>
+<dd><p>Delete studies if user overwrote run folder.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.initialize_optuna_database">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">initialize_optuna_database</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_folder_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.initialize_optuna_database" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>nn.Module</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -744,16 +828,16 @@ Required for Optuna to suggest activation functions.</p>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span></p>
 </dd>
 </dl>
-<dl class="simple">
-<dt>Suggest hyperparameters from optuna_params, sampling conditional parameters:</dt><dd><ul class="simple">
-<li><p>coeff_width / coeff_layers only if coeff_network is True</p></li>
-<li><p>momentum only if optimizer == “sgd”</p></li>
-<li><p>eta_min only if scheduler == “cosine”</p></li>
-<li><p>poly_power only if scheduler == “poly”</p></li>
-</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.maybe_set_runtime_threshold">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">maybe_set_runtime_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">study</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">warmup_target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_pruned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.maybe_set_runtime_threshold" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
 </dd>
 </dl>
-<p>Also converts “True”/”False” strings to bool and maps activation names.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -799,8 +883,18 @@ Required for Optuna to suggest activation functions.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.prepare_workspace">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">prepare_workspace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">master_cfg_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.prepare_workspace" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.training_run">
-<span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">training_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.training_run" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">training_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slot_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.training_run" title="Link to this definition">#</a></dt>
 <dd><p>Run the training for a single Optuna trial and return the loss.
 In multi-objective mode, also returns the mean inference time.</p>
 <dl class="field-list simple">
@@ -808,6 +902,7 @@ In multi-objective mode, also returns the mean inference time.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>trial</strong> (<em>optuna.Trial</em>) – Optuna trial object.</p></li>
 <li><p><strong>device</strong> (<em>str</em>) – Device to run the training on.</p></li>
+<li><p><strong>slot_id</strong> (<em>int</em>) – Slot ID for the position of the progress bar.</p></li>
 <li><p><strong>config</strong> (<em>dict</em>) – Configuration dictionary.</p></li>
 <li><p><strong>study_name</strong> (<em>str</em>) – Name of the study.</p></li>
 </ul>
@@ -818,6 +913,17 @@ tuple[float, float]: (loss, mean_inference_time) in multi objective mode.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.yes_no">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">yes_no</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prompt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.yes_no" title="Link to this definition">#</a></dt>
+<dd><p>Simple Y/N prompt. default=False -&gt; [y/N], True -&gt; [Y/n].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -874,22 +980,40 @@ tuple[float, float]: (loss, mean_inference_time) in multi objective mode.</p>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.optuna_fcts">codes.tune.optuna_fcts module</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.create_objective"><code class="docutils literal notranslate"><span class="pre">create_objective()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.get_activation_function"><code class="docutils literal notranslate"><span class="pre">get_activation_function()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.load_yaml_config"><code class="docutils literal notranslate"><span class="pre">load_yaml_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.make_optuna_params"><code class="docutils literal notranslate"><span class="pre">make_optuna_params()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.maybe_set_runtime_threshold"><code class="docutils literal notranslate"><span class="pre">maybe_set_runtime_threshold()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.training_run"><code class="docutils literal notranslate"><span class="pre">training_run()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.postgres_fcts">codes.tune.postgres_fcts module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.postgres_fcts.initialize_optuna_database"><code class="docutils literal notranslate"><span class="pre">initialize_optuna_database()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.tune_utils">codes.tune.tune_utils module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.tune_utils.build_study_names"><code class="docutils literal notranslate"><span class="pre">build_study_names()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.tune_utils.copy_config"><code class="docutils literal notranslate"><span class="pre">copy_config()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.tune_utils.delete_studies_if_requested"><code class="docutils literal notranslate"><span class="pre">delete_studies_if_requested()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.tune_utils.prepare_workspace"><code class="docutils literal notranslate"><span class="pre">prepare_workspace()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.tune_utils.yes_no"><code class="docutils literal notranslate"><span class="pre">yes_no()</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune">Module contents</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.build_study_names"><code class="docutils literal notranslate"><span class="pre">build_study_names()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.copy_config"><code class="docutils literal notranslate"><span class="pre">copy_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.create_objective"><code class="docutils literal notranslate"><span class="pre">create_objective()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.get_activation_function"><code class="docutils literal notranslate"><span class="pre">get_activation_function()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.delete_studies_if_requested"><code class="docutils literal notranslate"><span class="pre">delete_studies_if_requested()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.initialize_optuna_database"><code class="docutils literal notranslate"><span class="pre">initialize_optuna_database()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.load_model_test_losses"><code class="docutils literal notranslate"><span class="pre">load_model_test_losses()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.load_study_config"><code class="docutils literal notranslate"><span class="pre">load_study_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.load_yaml_config"><code class="docutils literal notranslate"><span class="pre">load_yaml_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.make_optuna_params"><code class="docutils literal notranslate"><span class="pre">make_optuna_params()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.maybe_set_runtime_threshold"><code class="docutils literal notranslate"><span class="pre">maybe_set_runtime_threshold()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.moving_average"><code class="docutils literal notranslate"><span class="pre">moving_average()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.plot_test_losses"><code class="docutils literal notranslate"><span class="pre">plot_test_losses()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.prepare_workspace"><code class="docutils literal notranslate"><span class="pre">prepare_workspace()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.training_run"><code class="docutils literal notranslate"><span class="pre">training_run()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.yes_no"><code class="docutils literal notranslate"><span class="pre">yes_no()</span></code></a></li>
 </ul>
 </li>
 </ul>

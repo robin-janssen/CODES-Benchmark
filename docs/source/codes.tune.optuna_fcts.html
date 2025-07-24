@@ -47,7 +47,7 @@
     <link rel="icon" href="../../_static/favicon-96x96.png"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="codes.utils" href="codes.utils.html" />
+    <link rel="next" title="codes.tune.postgres_fcts" href="codes.tune.postgres_fcts.html" />
     <link rel="prev" title="codes.tune.evaluate_tuning" href="codes.tune.evaluate_tuning.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -200,6 +200,8 @@
 <li class="toctree-l2"><a class="reference internal" href="codes.tune.evaluate_study.html">codes.tune.evaluate_study</a></li>
 <li class="toctree-l2"><a class="reference internal" href="codes.tune.evaluate_tuning.html">codes.tune.evaluate_tuning</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">codes.tune.optuna_fcts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="codes.tune.postgres_fcts.html">codes.tune.postgres_fcts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="codes.tune.tune_utils.html">codes.tune.tune_utils</a></li>
 </ul>
 </details></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="codes.utils.html">codes.utils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -362,16 +364,16 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.optuna_fcts.create_objective" title="codes.tune.optuna_fcts.create_objective"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_objective</span></code></a>(config, study_name, ...)</p></td>
 <td><p>Create the objective function for Optuna.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.optuna_fcts.get_activation_function" title="codes.tune.optuna_fcts.get_activation_function"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_activation_function</span></code></a>(name)</p></td>
-<td><p>Get the activation function module from its name.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.optuna_fcts.load_yaml_config" title="codes.tune.optuna_fcts.load_yaml_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_yaml_config</span></code></a>(config_path)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.optuna_fcts.load_yaml_config" title="codes.tune.optuna_fcts.load_yaml_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_yaml_config</span></code></a>(config_path)</p></td>
 <td><p>Load a YAML configuration file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.optuna_fcts.make_optuna_params" title="codes.tune.optuna_fcts.make_optuna_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_optuna_params</span></code></a>(trial, optuna_params)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.optuna_fcts.make_optuna_params" title="codes.tune.optuna_fcts.make_optuna_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_optuna_params</span></code></a>(trial, optuna_params)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.optuna_fcts.training_run" title="codes.tune.optuna_fcts.training_run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">training_run</span></code></a>(trial, device, config, study_name)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.optuna_fcts.maybe_set_runtime_threshold" title="codes.tune.optuna_fcts.maybe_set_runtime_threshold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">maybe_set_runtime_threshold</span></code></a>(study, warmup_target)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.tune.html#codes.tune.optuna_fcts.training_run" title="codes.tune.optuna_fcts.training_run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">training_run</span></code></a>(trial, device, slot_id, config, ...)</p></td>
 <td><p>Run the training for a single Optuna trial and return the loss.</p></td>
 </tr>
 </tbody>
@@ -400,11 +402,11 @@
       </div>
     </a>
     <a class="right-next"
-       href="codes.utils.html"
+       href="codes.tune.postgres_fcts.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">codes.utils</p>
+        <p class="prev-next-title">codes.tune.postgres_fcts</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
