@@ -21,13 +21,13 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.10']
+        python-version: ["3.10"]
 
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history to support dependency checks
+          fetch-depth: 0 # Fetch all history to support dependency checks
           ref: ${{ github.head_ref || github.ref }}
 
       - name: Set up Python
@@ -35,18 +35,16 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Poetry
+      - name: Install uv
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-      - name: Install Poetry Plugin for Export
+      - name: Setup Python environment with uv
         run: |
-          poetry self add poetry-plugin-export
-
-      - name: Install project with dev dependencies
-        run: |
-          poetry install --with dev
+          uv venv
+          source .venv/bin/activate
+          uv pip install -e ".[dev]"
 
       - name: Check for dependency changes
         id: deps
@@ -66,8 +64,8 @@ jobs:
 
           echo "Changed files: $CHANGED_FILES"
 
-          # Check if pyproject.toml or poetry.lock has changed
-          if echo "$CHANGED_FILES" | grep -qE '(^|/)pyproject\.toml$|(^|/)poetry\.lock$'; then
+          # Check if pyproject.toml has changed
+          if echo "$CHANGED_FILES" | grep -qE '(^|/)pyproject\.toml$'; then
             echo "dependencies-changed=true" >> $GITHUB_ENV
           else
             echo "dependencies-changed=false" >> $GITHUB_ENV
@@ -76,7 +74,8 @@ jobs:
       - name: Generate requirements.txt
         if: env.dependencies-changed == 'true'
         run: |
-          poetry export -f requirements.txt --output requirements.txt --without-hashes
+          source .venv/bin/activate
+          uv pip freeze > requirements.txt
 
       - name: Commit and push updated requirements.txt
         if: |
@@ -92,22 +91,25 @@ jobs:
 
       - name: Run Black (auto-reformat)
         run: |
-          poetry run black .
+          source .venv/bin/activate
+          black .
 
       - name: Run isort (auto-reformat)
         run: |
-          poetry run isort .
+          source .venv/bin/activate
+          isort .
 
       - name: Run pytest and generate coverage report
         run: |
-          poetry run pytest --cov-report=term-missing:skip-covered --cov=codes test/ --cov-report=xml:coverage.xml
+          source .venv/bin/activate
+          pytest --cov-report=term-missing:skip-covered --cov=codes test/ --cov-report=xml:coverage.xml
 
       - name: Upload results to Codecov
         uses: codecov/codecov-action@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}  
-          files: ./coverage.xml  # Path to the coverage XML file, adjust if necessary
-          fail_ci_if_error: true  # Optional, ensures the CI fails if Codecov upload fails
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml # Path to the coverage XML file, adjust if necessary
+          fail_ci_if_error: true # Optional, ensures the CI fails if Codecov upload fails
 
   docs:
     if: github.ref == 'refs/heads/main' || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main')
@@ -115,35 +117,39 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.10']
+        python-version: ["3.10"]
 
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history if necessary
+          fetch-depth: 0 # Fetch all history if necessary
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Poetry
+      - name: Install uv
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-      - name: Install project with dev dependencies
+      - name: Setup Python environment with uv
         run: |
-          poetry install --with dev
+          uv venv
+          source .venv/bin/activate
+          uv pip install -e ".[dev]"
 
       - name: Generate API Documentation with Sphinx
         run: |
-          poetry run sphinx-apidoc -o docs/ codes
+          source .venv/bin/activate
+          sphinx-apidoc -o docs/ codes
 
       - name: Build HTML with Sphinx
         run: |
-          poetry run sphinx-build -b html docs/ docs/_build
+          source .venv/bin/activate
+          sphinx-build -b html docs/ docs/_build
 
       - name: Deploy Sphinx API docs to gh-pages
         uses: peaceiris/actions-gh-pages@v4
