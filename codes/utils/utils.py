@@ -5,6 +5,7 @@ import random
 import shutil
 import sys
 import time
+from fractions import Fraction
 
 import numpy as np
 import torch
@@ -358,4 +359,35 @@ def determine_batch_size(config, surr_idx, mode, metric):
     else:
         batch_size = batch_size_config
 
-    return metric if mode == "batch_size" else batch_size
+    if mode == "batchsize":
+        # The metric is the batch size factor, so we multiply the base batch size by the metric
+        batch_size = int(batch_size * metric)
+
+    return batch_size
+
+
+def batch_factor_to_float(batch_factor: str | int | float) -> float:
+    """
+    Convert a batch factor to a float value.
+
+    Args:
+        batch_factor (str | int | float): The batch factor to convert.
+
+    Returns:
+        float: The converted batch factor as a float.
+    """
+    try:
+        if isinstance(batch_factor, float):
+            return batch_factor
+        elif isinstance(batch_factor, int):
+            return float(batch_factor)
+        elif isinstance(batch_factor, str):
+            # This should mean that the user specified a fraction like "1/2"
+            if "/" in batch_factor:
+                return float(Fraction(batch_factor))
+            else:
+                return float(batch_factor)
+    except ValueError as e:
+        raise ValueError(
+            f"Invalid batch factor: {batch_factor}. Must be a float, int, or a valid fraction string."
+        ) from e

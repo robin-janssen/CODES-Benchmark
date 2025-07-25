@@ -102,6 +102,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         n_quantities: int = 29,
         n_timesteps: int = 100,
         n_parameters: int = 0,
+        training_id: str | None = None,
         config: dict | None = None,
     ):
         super().__init__()
@@ -119,6 +120,13 @@ class AbstractSurrogateModel(ABC, nn.Module):
         self.optuna_trial = None
         self.update_epochs = 10
         self.n_epochs = 0
+        self.training_id = training_id
+
+        # Checkpointing attributes
+        self.checkpointing: bool = False
+        self.best_test_loss: float | None = None
+        self.best_epoch: int | None = None
+        self._checkpoint_path: str | None = None
 
     @classmethod
     def register(cls, surrogate: type["AbstractSurrogateModel"]):
@@ -191,6 +199,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         epochs: int,
         position: int,
         description: str,
+        multi_objective: bool,
     ) -> None:
         """
         Perform the training of the model. Sets the train_loss and test_loss attributes.
@@ -201,16 +210,20 @@ class AbstractSurrogateModel(ABC, nn.Module):
             epochs (int): The number of epochs to train the model for.
             position (int): The position of the progress bar.
             description (str): The description of the progress bar.
+            multi_objective (bool): Whether the training is multi-objective.
         """
         pass
 
-    def predict(self, data_loader: DataLoader) -> tuple[Tensor, Tensor]:
+    def predict(
+        self, data_loader: DataLoader, leave_log: bool = False
+    ) -> tuple[Tensor, Tensor]:
         """
         Evaluate the model on the given dataloader.
 
         Args:
             data_loader (DataLoader): The DataLoader object containing the data the
                 model is evaluated on.
+            leave_log (bool): If True, do not exponentiate the data even if log10_transform is True.
 
         Returns:
             tuple[Tensor, Tensor]: The predictions and targets.
@@ -218,7 +231,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         # infer output size
         with torch.inference_mode():
             dummy_inputs = next(iter(data_loader))
-            dummy_outputs, _ = self.forward(dummy_inputs)
+            dummy_outputs, _ = self(dummy_inputs)
             batch_size, out_shape = (
                 dummy_outputs.shape[0],
                 dummy_outputs.shape[-(dummy_outputs.ndim - 1) :],
@@ -234,7 +247,11 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
         with torch.inference_mode():
             for inputs in data_loader:
-                preds, targs = self.forward(inputs)
+                inputs = [
+                    x.to(self.device, non_blocking=True) if isinstance(x, Tensor) else x
+                    for x in inputs
+                ]
+                preds, targs = self(inputs)
                 current_batch_size = preds.shape[0]  # get actual batch size
                 predictions[
                     processed_samples : processed_samples + current_batch_size, ...
@@ -248,8 +265,8 @@ class AbstractSurrogateModel(ABC, nn.Module):
         predictions = predictions[:processed_samples, ...]
         targets = targets[:processed_samples, ...]
 
-        predictions = self.denormalize(predictions)
-        targets = self.denormalize(targets)
+        predictions = self.denormalize(predictions, leave_log=leave_log)
+        targets = self.denormalize(targets, leave_log=leave_log)
 
         predictions = predictions.reshape(-1, self.n_timesteps, self.n_quantities)
         targets = targets.reshape(-1, self.n_timesteps, self.n_quantities)
@@ -411,7 +428,36 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
         return progress_bar
 
-    def denormalize(self, data: Tensor) -> Tensor:
+    def denormalize(self, data: Tensor, leave_log: bool = False) -> Tensor:
+        """
+        Denormalize the data.
+
+        Args:
+            data (np.ndarray): The data to denormalize.
+            leave_log (bool): If True, do not exponentiate the data even if log10_transform is True.
+
+        Returns:
+            np.ndarray: The denormalized data.
+        """
+        if self.normalisation is not None:
+            if self.normalisation["mode"] == "disabled":
+                ...
+            elif self.normalisation["mode"] == "minmax":
+                dmax = self.normalisation["max"]
+                dmin = self.normalisation["min"]
+                data = data.to("cpu")
+                data = (data + 1) * (dmax - dmin) / 2 + dmin
+            elif self.normalisation["mode"] == "standardize":
+                mean = self.normalisation["mean"]
+                std = self.normalisation["std"]
+                data = data * std + mean
+
+            if self.normalisation["log10_transform"] and not leave_log:
+                data = 10**data
+
+        return data
+
+    def denormalize_old(self, data: Tensor) -> Tensor:
         """
         Denormalize the data.
 
@@ -456,7 +502,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             optuna.TrialPruned: If the projected runtime exceeds the threshold.
         """
         # Define warmup period based on 10% of total epochs.
-        warmup_epochs = max(50, int(total_epochs * 0.02))
+        warmup_epochs = max(10, int(total_epochs * 0.02))
         if current_epoch < warmup_epochs:
             # Do not attempt to prune before the warmup period is complete.
             # print(
@@ -496,6 +542,294 @@ class AbstractSurrogateModel(ABC, nn.Module):
                 raise optuna.TrialPruned(
                     f"Projected total time {projected_total_time:.1f}s exceeds threshold {threshold:.1f}s"
                 )
+
+    def setup_checkpoint(self) -> None:
+        """
+        Prepare everything needed to save the single 'best' checkpoint.
+        Must be called before any call to `self.checkpoint(...)`.
+        """
+        if not self.checkpointing:
+            return
+
+        self.best_test_loss = float("inf")
+        self.best_epoch = -1
+
+        # Build a small folder under `trained/<training_id>/<ModelClass>/`.
+        training_id = self.training_id
+        if training_id is None:
+            raise RuntimeError(
+                "Cannot call setup_checkpoint(): Attribute `self.training_id` is missing."
+            )
+
+        model_dir = os.path.join(
+            os.getcwd(),
+            "trained",
+            training_id,
+            self.__class__.__name__,
+        )
+        os.makedirs(model_dir, exist_ok=True)
+
+        # We’ll store exactly one file called "best_checkpoint.pth"
+        self._checkpoint_path = os.path.join(model_dir, "best_checkpoint.pth")
+
+    def checkpoint(self, test_loss: float, epoch: int) -> None:
+        """
+        If save_best is True and test_loss < self.best_test_loss,
+        overwrite the single-file checkpoint on disk and update best_test_loss/epoch.
+        """
+        if not self.checkpointing:
+            return
+
+        if self.best_test_loss is None:
+            raise RuntimeError(
+                "You must call setup_checkpoint() before calling checkpoint()."
+            )
+
+        # If this epoch is strictly better than anything before, overwrite:
+        if test_loss < self.best_test_loss:
+            self.best_test_loss = test_loss
+            self.best_epoch = epoch
+            torch.save(self.state_dict(), self._checkpoint_path)
+
+    def get_checkpoint(
+        self,
+        test_loader: torch.utils.data.DataLoader,
+        criterion: nn.Module,
+    ) -> None:
+        """
+        After training, compare the current model’s test loss to the best recorded loss.
+        If the final model is better, keep it; otherwise load the saved best checkpoint.
+
+        Args:
+            test_loader (DataLoader): DataLoader for computing final test loss.
+            criterion (nn.Module): Loss function used for evaluation.
+        """
+        if not self.checkpointing:
+            return
+
+        if self.best_epoch is None or self.best_epoch < 0:
+            return
+
+        if self._checkpoint_path is None or not os.path.isfile(self._checkpoint_path):
+            print(
+                f"Warning: no checkpoint file found at {self._checkpoint_path}. "
+                "Skipping load of best weights."
+            )
+            self.best_epoch = -1
+            self.best_test_loss = None
+            return
+
+        self.eval()
+        with torch.inference_mode():
+            preds, targets = self.predict(test_loader)
+            final_loss = criterion(preds, targets).item()
+
+        if final_loss < self.best_test_loss:
+            try:
+                os.remove(self._checkpoint_path)
+            except Exception:
+                pass
+            self.best_epoch = self.n_epochs - 1
+            self.best_test_loss = final_loss
+            return
+
+        checkpoint_state = torch.load(
+            self._checkpoint_path, map_location=self.device, weights_only=True
+        )
+        self.load_state_dict(checkpoint_state)
+
+        try:
+            os.remove(self._checkpoint_path)
+        except Exception:
+            pass
+
+    def validate(
+        self,
+        epoch: int,
+        train_loader: DataLoader,
+        test_loader: DataLoader,
+        optimizer: torch.optim.Optimizer,
+        progress_bar: tqdm,
+        total_epochs: int,
+        multi_objective: bool,
+    ) -> None:
+        """
+        Shared “validation + checkpoint” logic, to be called once per epoch in each fit().
+
+        Relies on:
+          - self.update_epochs (int)
+          - self.train_loss  (np.ndarray)
+          - self.test_loss   (np.ndarray)
+          - self.MAE         (np.ndarray)
+          - self.optuna_trial
+          - self.L1 (nn.L1Loss)
+          - self.predict(...)
+          - self.checkpoint(test_loss, epoch)
+
+        Only runs if (epoch % self.update_epochs) == 0.
+        Main reporting metric is MAE in log10-space (i.e., Δdex). Additionally, MAE in linear space is computed.
+        """
+
+        # If it's not time to check yet, do nothing.
+        if epoch % self.update_epochs != 0:
+            return
+
+        index = epoch // self.update_epochs
+
+        # Switch into inference/eval mode and compute losses
+        with torch.inference_mode():
+            self.eval()
+            optimizer.eval() if hasattr(optimizer, "eval") else None
+
+            # Compute losses
+            preds, targets = self.predict(train_loader, leave_log=True)
+            self.train_loss[index] = self.L1(preds, targets).item()
+            preds, targets = self.predict(test_loader, leave_log=True)
+            self.test_loss[index] = self.L1(preds, targets).item()
+            preds, targets = self.predict(test_loader)
+            self.MAE[index] = self.L1(preds, targets).item()
+
+            progress_bar.set_postfix(
+                {
+                    "train_loss": f"{self.train_loss[index]:.2e}",
+                    "test_loss": f"{self.test_loss[index]:.2e}",
+                }
+            )
+
+            if self.optuna_trial is not None:
+                if multi_objective:
+                    self.time_pruning(current_epoch=epoch, total_epochs=total_epochs)
+                else:
+                    self.optuna_trial.report(self.test_loss[index], step=epoch)
+                    if self.optuna_trial.should_prune():
+                        raise optuna.TrialPruned()
+                    elif np.isinf(self.test_loss[index]) or np.isnan(
+                        self.test_loss[index]
+                    ):
+                        raise optuna.TrialPruned(
+                            "Test loss is NaN or Inf, pruning trial."
+                        )
+
+            self.checkpoint(self.test_loss[index], epoch)
+
+            self.train()
+            optimizer.train() if hasattr(optimizer, "train") else None
+
+    def setup_optimizer_and_scheduler(
+        self,
+        epochs: int,
+    ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
+        """
+        Set up optimizer and scheduler based on self.config.scheduler and self.config.optimizer.
+        Supports "adamw", "sgd" optimizers and "schedulefree", "cosine", "poly" schedulers.
+        Patches standard optimizers so that .train() and .eval() exist as no-ops.
+        Patches ScheduleFree optimizers to have a no-op scheduler.step().
+        For ScheduleFree optimizers, use lr warmup for the first 1% of epochs.
+        For Poly scheduler, use a power decay based on self.config.poly_power.
+        For Cosine scheduler, use a minimum learning rate defined by self.config.eta_min.
+
+        Args:
+            epochs (int): The number of epochs the training will run for.
+
+        Returns:
+            tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
+                The optimizer and scheduler instances.
+        Raises:
+            ValueError: If an unknown optimizer or scheduler is specified in the config.
+        """
+        scheduler_name = self.config.scheduler.lower()
+        optimizer_name = self.config.optimizer.lower()
+
+        class DummyScheduler:
+            def step(self, *args, **kwargs):
+                pass
+
+            def state_dict(self):
+                return {}
+
+            def load_state_dict(self, state_dict):
+                pass
+
+        # create optimizer
+        if optimizer_name == "adamw":
+            if scheduler_name == "schedulefree":
+                from schedulefree import AdamWScheduleFree
+
+                optimizer = AdamWScheduleFree(
+                    self.parameters(),
+                    lr=self.config.learning_rate,
+                    weight_decay=self.config.regularization_factor,
+                    warmup_steps=max(1, epochs // 100),
+                )
+            else:
+                from torch.optim import AdamW
+
+                optimizer = AdamW(
+                    self.parameters(),
+                    lr=self.config.learning_rate,
+                    weight_decay=self.config.regularization_factor,
+                )
+        elif optimizer_name == "sgd":
+            momentum = self.config.momentum
+            if scheduler_name == "schedulefree":
+                from schedulefree import SGDScheduleFree
+
+                optimizer = SGDScheduleFree(
+                    self.parameters(),
+                    lr=self.config.learning_rate,
+                    weight_decay=self.config.regularization_factor,
+                    momentum=momentum,
+                    warmup_steps=max(1, epochs // 100),
+                )
+            else:
+                from torch.optim import SGD
+
+                optimizer = SGD(
+                    self.parameters(),
+                    lr=self.config.learning_rate,
+                    weight_decay=self.config.regularization_factor,
+                    momentum=momentum,
+                )
+        else:
+            raise ValueError(f"Unknown optimizer '{self.config.optimizer}'")
+
+        # Patch optimizer to have no-op train() and eval(), if not present
+        if not hasattr(optimizer, "train"):
+
+            def _opt_train():
+                pass
+
+            optimizer.train = _opt_train
+        if not hasattr(optimizer, "eval"):
+
+            def _opt_eval():
+                pass
+
+            optimizer.eval = _opt_eval
+
+        # create scheduler
+        if scheduler_name == "schedulefree":
+            scheduler = DummyScheduler()
+        elif scheduler_name == "cosine":
+            from torch.optim.lr_scheduler import CosineAnnealingLR
+
+            eta_min = self.config.eta_min
+            scheduler = CosineAnnealingLR(
+                optimizer,
+                T_max=epochs,
+                eta_min=eta_min,
+            )
+        elif scheduler_name == "poly":
+            from torch.optim.lr_scheduler import LambdaLR
+
+            power = self.config.poly_power
+            scheduler = LambdaLR(
+                optimizer, lr_lambda=lambda epoch: (1 - epoch / float(epochs)) ** power
+            )
+        else:
+            raise ValueError(f"Unknown scheduler '{self.config.scheduler}'")
+
+        return optimizer, scheduler
 
 
 SurrogateModel = TypeVar("SurrogateModel", bound=AbstractSurrogateModel)

@@ -1,18 +1,15 @@
 from typing import TypeVar
 
 import numpy as np
-import optuna
 import torch
 import torch.nn as nn
-from schedulefree import AdamWScheduleFree
-from torch.profiler import ProfilerActivity, profile, record_function
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 
-from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
-from codes.utils import time_execution, worker_init_fn
+from codes.surrogates.AbstractSurrogate import AbstractSurrogateModel
+from codes.utils import time_execution
 
 from .deeponet_config import MultiONetBaseConfig
-from .don_utils import PreBatchedDataset, mass_conservation_loss
+from .don_utils import FlatBatchIterable, mass_conservation_loss
 
 
 class BranchNet(nn.Module):
@@ -107,12 +104,14 @@ class OperatorNetwork(AbstractSurrogateModel):
         device: str | None = None,
         n_quantities: int = 29,
         n_timesteps: int = 100,
+        training_id: str | None = None,
         config: dict | None = None,
     ):
         super().__init__(
             device=device,
             n_quantities=n_quantities,
             n_timesteps=n_timesteps,
+            training_id=training_id,
             config=config,
         )
 
@@ -179,12 +178,14 @@ class MultiONet(OperatorNetwork):
         n_quantities: int = 29,
         n_timesteps: int = 100,
         n_parameters: int = 0,
+        training_id: str | None = None,
         config: dict | None = None,
     ):
         super().__init__(
             device=device,
             n_quantities=n_quantities,
             n_timesteps=n_timesteps,
+            training_id=training_id,
             config=config,
         )
         self.config = MultiONetBaseConfig(**self.config)
@@ -232,6 +233,10 @@ class MultiONet(OperatorNetwork):
         Returns:
             tuple: The model outputs and the targets.
         """
+        inputs = tuple(
+            x.to(self.device, non_blocking=True) if isinstance(x, torch.Tensor) else x
+            for x in inputs
+        )
         branch_input, trunk_input, targets = inputs
         branch_output = self.branch_net(branch_input)
         trunk_output = self.trunk_net(trunk_input)
@@ -246,74 +251,6 @@ class MultiONet(OperatorNetwork):
             result.append(torch.sum(b_split * t_split, dim=1, keepdim=True))
 
         return torch.cat(result, dim=1), targets
-
-    def prepare_data(
-        self,
-        dataset_train: np.ndarray,
-        dataset_test: np.ndarray,
-        dataset_val: np.ndarray | None,
-        timesteps: np.ndarray,
-        batch_size: int,
-        shuffle: bool = True,
-        dummy_timesteps: bool = True,
-        dataset_train_params: np.ndarray | None = None,
-        dataset_test_params: np.ndarray | None = None,
-        dataset_val_params: np.ndarray | None = None,
-    ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
-        """
-        Prepare the data for the predict or fit methods.
-        Note: All datasets must have shape (n_samples, n_timesteps, n_quantities).
-
-        Args:
-            dataset_train (np.ndarray): The training data.
-            dataset_test (np.ndarray): The test data.
-            dataset_val (np.ndarray, optional): The validation data.
-            timesteps (np.ndarray): The timesteps.
-            batch_size (int): The batch size.
-            shuffle (bool, optional): Whether to shuffle the data.
-            dummy_timesteps (bool, optional): Whether to create a dummy timestep array.
-            dataset_train_params (np.ndarray | None): Fixed parameters for training samples.
-            dataset_test_params (np.ndarray | None): Fixed parameters for testing samples.
-            dataset_val_params (np.ndarray | None): Fixed parameters for validation samples.
-
-        Returns:
-            tuple: The training, test, and validation DataLoaders.
-        """
-        dataloaders = []
-
-        if dummy_timesteps:
-            timesteps = np.linspace(0, 1, dataset_train.shape[1])
-
-        # Create the train dataloader
-        dataloader_train = self.create_dataloader(
-            data=dataset_train,
-            timesteps=timesteps,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            dataset_params=dataset_train_params,
-            params_in_branch=self.config.params_branch,
-        )
-        dataloaders.append(dataloader_train)
-
-        # Create the test and validation dataloaders
-        for dataset, params in [
-            (dataset_test, dataset_test_params),
-            (dataset_val, dataset_val_params),
-        ]:
-            if dataset is not None:
-                dataloader = self.create_dataloader(
-                    data=dataset,
-                    timesteps=timesteps,
-                    batch_size=batch_size,
-                    shuffle=False,
-                    dataset_params=params,
-                    params_in_branch=self.config.params_branch,
-                )
-                dataloaders.append(dataloader)
-            else:
-                dataloaders.append(None)
-
-        return dataloaders[0], dataloaders[1], dataloaders[2]
 
     @time_execution
     def fit(
@@ -342,57 +279,37 @@ class MultiONet(OperatorNetwork):
         """
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
 
-        criterion = nn.MSELoss()
-        optimizer = self.setup_optimizer_and_scheduler()
+        criterion = self.config.loss_function
+        optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
 
         loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
-        train_losses, test_losses, MAEs = [np.zeros(loss_length) for _ in range(3)]
+        self.train_loss, self.test_loss, self.MAE = [
+            np.zeros(loss_length) for _ in range(3)
+        ]
         progress_bar = self.setup_progress_bar(epochs, position, description)
         self.train()
         optimizer.train()
 
+        self.setup_checkpoint()
+
         for epoch in progress_bar:
             self.epoch(train_loader, criterion, optimizer)
 
-            if epoch % self.update_epochs == 0:
-                index = epoch // self.update_epochs
-                # Set model and optimizer to evaluation mode
-                self.eval()
-                optimizer.eval()
+            scheduler.step()
 
-                # Calculate losses and MAE
-                preds, targets = self.predict(train_loader)
-                train_losses[index] = criterion(preds, targets).item()
-                preds, targets = self.predict(test_loader)
-                test_losses[index] = criterion(preds, targets).item()
-                MAEs[index] = self.L1(preds, targets).item()
-
-                # Update progress bar postfix
-                postfix = {
-                    "train_loss": f"{train_losses[index]:.2e}",
-                    "test_loss": f"{test_losses[index]:.2e}",
-                }
-                progress_bar.set_postfix(postfix)
-
-                # Report the loss to Optuna and check for pruning
-                if self.optuna_trial is not None:
-                    if multi_objective:
-                        self.time_pruning(current_epoch=epoch, total_epochs=epochs)
-                    else:
-                        self.optuna_trial.report(test_losses[index], epoch)
-                        if self.optuna_trial.should_prune():
-                            raise optuna.TrialPruned()
-
-                # Set model and optimizer back to training mode
-                self.train()
-                optimizer.train()
+            self.validate(
+                epoch=epoch,
+                train_loader=train_loader,
+                test_loader=test_loader,
+                optimizer=optimizer,
+                progress_bar=progress_bar,
+                total_epochs=epochs,
+                multi_objective=multi_objective,
+            )
 
         progress_bar.close()
-
         self.n_epochs = epoch + 1
-        self.train_loss = train_losses
-        self.test_loss = test_losses
-        self.MAE = MAEs
+        self.get_checkpoint(test_loader, criterion)
 
     def setup_criterion(self) -> callable:
         """
@@ -408,37 +325,6 @@ class MultiONet(OperatorNetwork):
                 self.config.masses, crit, weights, self.device
             )
         return crit
-
-    def setup_optimizer_and_scheduler(
-        self,
-        # epochs: int,
-        # ) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
-    ) -> torch.optim.Optimizer:
-        """
-        Utility function to set up the optimizer and scheduler for training.
-
-        Args:
-            epochs (int): The number of epochs to train the model.
-
-        Returns:
-            tuple (torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler): The optimizer and scheduler.
-        """
-        # optimizer = torch.optim.Adam(
-        #     self.parameters(),
-        #     lr=self.config.learning_rate,
-        #     weight_decay=self.config.regularization_factor,
-        # )
-        # if self.config.schedule:
-        #     scheduler = torch.optim.lr_scheduler.LinearLR(
-        #         optimizer, start_factor=1, end_factor=0.3, total_iters=epochs
-        #     )
-        # else:
-        #     scheduler = torch.optim.lr_scheduler.LinearLR(
-        #         optimizer, start_factor=1, end_factor=1, total_iters=epochs
-        #     )
-        # return optimizer, scheduler
-        optimizer = AdamWScheduleFree(self.parameters(), lr=self.config.learning_rate)
-        return optimizer
 
     def epoch(
         self,
@@ -459,336 +345,109 @@ class MultiONet(OperatorNetwork):
         """
         for batch in data_loader:
             branch_input, trunk_input, targets = batch
-            branch_input, trunk_input, targets = (
-                branch_input.to(self.device),
-                trunk_input.to(self.device),
-                targets.to(self.device),
-            )
             optimizer.zero_grad()
             outputs, targets = self((branch_input, trunk_input, targets))
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
-
-    def create_dataloader_n(
-        self,
-        data: np.ndarray,
-        timesteps: np.ndarray,
-        batch_size: int,
-        shuffle: bool = False,
-    ):
-        """
-        Create a DataLoader for the given data.
-
-        Args:
-            data (np.ndarray): The data to load. Must have shape (n_samples, n_timesteps, n_quantities).
-            timesteps (np.ndarray): The timesteps.
-            batch_size (int, optional): The batch size.
-            shuffle (bool, optional): Whether to shuffle the data.
-        """
-        # Initialize lists to store the inputs and targets
-        branch_inputs = []
-        trunk_inputs = []
-        targets = []
-
-        # Iterate through the grid to select the samples
-        for i in range(data.shape[0]):
-            for j in range(data.shape[1]):
-                branch_inputs.append(data[i, 0, :])
-                trunk_inputs.append([timesteps[j]])
-                targets.append(data[i, j, :])
-
-        # Convert to PyTorch tensors
-        branch_inputs_tensor = torch.tensor(
-            np.array(branch_inputs), dtype=torch.float32
-        )
-        trunk_inputs_tensor = torch.tensor(np.array(trunk_inputs), dtype=torch.float32)
-        targets_tensor = torch.tensor(np.array(targets), dtype=torch.float32)
-
-        # Create a TensorDataset and DataLoader
-        branch_inputs_tensor = branch_inputs_tensor.to(self.device)
-        trunk_inputs_tensor = trunk_inputs_tensor.to(self.device)
-        targets_tensor = targets_tensor.to(self.device)
-        dataset = TensorDataset(
-            branch_inputs_tensor, trunk_inputs_tensor, targets_tensor
-        )
-
-        return DataLoader(
-            dataset,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            worker_init_fn=worker_init_fn,
-        )
 
     def create_dataloader(
         self,
         data: np.ndarray,
         timesteps: np.ndarray,
         batch_size: int,
-        shuffle: bool = False,
-        dataset_params: np.ndarray | None = None,
-        params_in_branch: bool = True,
+        shuffle: bool,
+        dataset_params: np.ndarray | None,
+        params_in_branch: bool,
+        num_workers: int = 0,  # will usually stay 0 here
+        pin_memory: bool = True,
     ):
-        """
-        Create a DataLoader with optimized memory-safe shuffling using pre-allocated buffers and direct slicing.
-
-        Args:
-            data (np.ndarray): The data to load. Must have shape (n_samples, n_timesteps, n_quantities).
-            timesteps (np.ndarray): The timesteps. Shape: (n_timesteps,).
-            batch_size (int): The batch size.
-            shuffle (bool, optional): Whether to shuffle the data.
-            dataset_params (np.ndarray | None): Fixed parameters for each sample (shape: [n_samples, n_parameters]).
-            params_in_branch (bool, optional): If True, parameters are concatenated with branch inputs;
-                if False, with trunk inputs.
-
-        Returns:
-            DataLoader: A DataLoader with precomputed batches.
-        """
-        device = self.device
         n_samples, n_timesteps, n_quantities = data.shape
-        total_samples = n_samples * n_timesteps
 
-        # Pre-allocate arrays for branch and trunk inputs, and targets.
-        # Branch Inputs: Repeat the initial state for each sample.
-        branch_inputs = np.repeat(
-            data[:, 0, :], n_timesteps, axis=0
-        )  # shape: (total_samples, n_quantities)
-        # Trunk Inputs: Tile the timesteps for each sample.
-        trunk_inputs = np.tile(timesteps.reshape(1, -1), (n_samples, 1)).reshape(
+        branch = np.repeat(data[:, 0, :], n_timesteps, axis=0)  # (total, n_q)
+        trunk = np.tile(timesteps.reshape(1, -1), (n_samples, 1)).reshape(
             -1, 1
-        )  # shape: (total_samples, 1)
+        )  # (total, 1)
 
-        # If parameters are provided, repeat them along the time dimension.
         if dataset_params is not None:
             rep_params = np.repeat(dataset_params, n_timesteps, axis=0)
             if params_in_branch:
-                branch_inputs = np.concatenate([branch_inputs, rep_params], axis=1)
+                branch = np.concatenate([branch, rep_params], axis=1)
             else:
-                trunk_inputs = np.concatenate([trunk_inputs, rep_params], axis=1)
+                trunk = np.concatenate([trunk, rep_params], axis=1)
 
-        # Targets: Flatten the data across samples and timesteps.
-        targets = data.reshape(-1, n_quantities)
+        target = data.reshape(-1, n_quantities)
 
-        if shuffle:
-            permutation = np.random.permutation(total_samples)
-            branch_inputs = branch_inputs[permutation]
-            trunk_inputs = trunk_inputs[permutation]
-            targets = targets[permutation]
+        # one-time NumPy -> Torch (CPU)
+        branch_t = torch.from_numpy(branch).float()
+        trunk_t = torch.from_numpy(trunk).float()
+        target_t = torch.from_numpy(target).float()
 
-        num_full_batches = total_samples // batch_size
-        remainder = total_samples % batch_size
-
-        batched_branch_inputs = []
-        batched_trunk_inputs = []
-        batched_targets = []
-
-        for batch_idx in range(num_full_batches):
-            start = batch_idx * batch_size
-            end = start + batch_size
-            batch_branch = torch.from_numpy(branch_inputs[start:end]).float().to(device)
-            batch_trunk = torch.from_numpy(trunk_inputs[start:end]).float().to(device)
-            batch_target = torch.from_numpy(targets[start:end]).float().to(device)
-            batched_branch_inputs.append(batch_branch)
-            batched_trunk_inputs.append(batch_trunk)
-            batched_targets.append(batch_target)
-
-        if remainder > 0:
-            start = num_full_batches * batch_size
-            batch_branch = torch.from_numpy(branch_inputs[start:]).float().to(device)
-            batch_trunk = torch.from_numpy(trunk_inputs[start:]).float().to(device)
-            batch_target = torch.from_numpy(targets[start:]).float().to(device)
-            batched_branch_inputs.append(batch_branch)
-            batched_trunk_inputs.append(batch_trunk)
-            batched_targets.append(batch_target)
-
-        dataset_prebatched = PreBatchedDataset(
-            batched_branch_inputs,
-            batched_trunk_inputs,
-            batched_targets,
+        iterable_ds = FlatBatchIterable(
+            branch_t, trunk_t, target_t, batch_size, shuffle
         )
 
-        return DataLoader(
-            dataset_prebatched,
-            batch_size=1,  # Each "batch" is now a precomputed batch.
-            shuffle=False,
-            num_workers=0,
-            collate_fn=custom_collate_fn,
-            worker_init_fn=worker_init_fn,
+        # batch_size=None because dataset is already batching
+        loader = DataLoader(
+            iterable_ds,
+            batch_size=None,
+            num_workers=num_workers,  # 0 is fine; workers add little here
+            pin_memory=pin_memory,
+            persistent_workers=False,
+        )
+        return loader
+
+    def prepare_data(
+        self,
+        dataset_train: np.ndarray,
+        dataset_test: np.ndarray,
+        dataset_val: np.ndarray | None,
+        timesteps: np.ndarray,
+        batch_size: int,
+        shuffle: bool = True,
+        dummy_timesteps: bool = True,
+        dataset_train_params: np.ndarray | None = None,
+        dataset_test_params: np.ndarray | None = None,
+        dataset_val_params: np.ndarray | None = None,
+    ):
+        if dummy_timesteps:
+            timesteps = np.linspace(0, 1, dataset_train.shape[1])
+
+        nw = getattr(self.config, "num_workers", 0)
+
+        train_loader = self.create_dataloader(
+            dataset_train,
+            timesteps,
+            batch_size,
+            True,
+            dataset_params=dataset_train_params,
+            params_in_branch=self.config.params_branch,
+            num_workers=nw,
         )
 
-    @time_execution
-    def fit_profile(
-        self,
-        train_loader: DataLoader,
-        test_loader: DataLoader,
-        epochs: int,
-        position: int = 0,
-        description: str = "Training DeepONet",
-        profile_enabled: bool = True,  # Flag to enable/disable profiling
-        profile_save_path: str = "chrome_trace_profile.json",  # Path to save Chrome trace
-        profile_batches: int = 10,  # Number of batches to profile
-    ) -> None:
-        """
-        Train the MultiONet model with optional profiling for a limited scope.
+        test_loader = self.create_dataloader(
+            dataset_test,
+            timesteps,
+            batch_size,
+            False,
+            dataset_params=dataset_test_params,
+            params_in_branch=self.config.params_branch,
+            num_workers=nw,
+        )
 
-        Args:
-            train_loader (DataLoader): The DataLoader object containing the training data.
-            test_loader (DataLoader): The DataLoader object containing the test data.
-            epochs (int): The number of epochs to train the model.
-            position (int): The position of the progress bar.
-            description (str): The description for the progress bar.
-            profile_enabled (bool): Whether to enable PyTorch profiling.
-            profile_save_path (str): Path to save the profiling data.
-            profile_batches (int): Number of batches to profile in the second epoch.
-
-        Returns:
-            None. The training loss, test loss, and MAE are stored in the model.
-        """
-        self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
-
-        criterion = self.setup_criterion()
-        optimizer = self.setup_optimizer_and_scheduler()
-
-        train_losses, test_losses, MAEs = [np.zeros(epochs) for _ in range(3)]
-
-        progress_bar = self.setup_progress_bar(epochs, position, description)
-
-        profiler = None
-        if profile_enabled:
-            profiler = profile(
-                activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-                record_shapes=True,
-                profile_memory=True,
-                with_stack=True,
+        val_loader = None
+        if dataset_val is not None:
+            val_loader = self.create_dataloader(
+                dataset_val,
+                timesteps,
+                batch_size,
+                False,
+                dataset_params=dataset_val_params,
+                params_in_branch=self.config.params_branch,
+                num_workers=nw,
             )
 
-        for epoch in progress_bar:
-            with record_function("train_epoch"):
-                if profile_enabled and epoch == 1:
-                    # Pass the profiler and number of batches to the epoch method
-                    train_losses[epoch] = self.epoch(
-                        train_loader, criterion, optimizer, profiler, profile_batches
-                    )
-                    # Print profiling summaries
-                    print("\n### Profiling Summary ###\n")
-                    print("\n### Key Averages (sorted by CUDA total time) ###\n")
-                    print(
-                        profiler.key_averages().table(
-                            sort_by="cuda_time_total", row_limit=10
-                        )
-                    )
-                    print("\n### Key Averages (sorted by CPU total time) ###\n")
-                    print(
-                        profiler.key_averages().table(
-                            sort_by="cpu_time_total", row_limit=10
-                        )
-                    )
-                    print("\n### Memory Usage Summary ###\n")
-                    print(
-                        profiler.key_averages().table(
-                            sort_by="self_cuda_memory_usage", row_limit=10
-                        )
-                    )
-                    profiler.export_chrome_trace(profile_save_path)
-                    print(f"Chrome trace saved to '{profile_save_path}'")
-                else:
-                    # Normal training for all other epochs
-                    train_losses[epoch] = self.epoch(train_loader, criterion, optimizer)
-
-                clr = optimizer.param_groups[0]["lr"]
-                print_loss = f"{train_losses[epoch].item():.2e}"
-                progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
-                # scheduler.step()
-
-            if test_loader is not None:
-                with record_function("eval_epoch"):
-                    self.eval()
-                    optimizer.eval()
-                    preds, targets = self.predict(test_loader)
-                    loss = criterion(preds, targets).item() / torch.numel(targets)
-                    test_losses[epoch] = loss
-                    MAEs[epoch] = self.L1(preds, targets).item()
-
-                    if self.optuna_trial is not None:
-                        self.optuna_trial.report(loss, step=epoch)
-                        if self.optuna_trial.should_prune():
-                            raise optuna.TrialPruned()
-
-        progress_bar.close()
-
-        self.train_loss = train_losses
-        self.test_loss = test_losses
-        self.MAE = MAEs
-
-    def epoch_profile(
-        self,
-        data_loader: DataLoader,
-        criterion: nn.Module,
-        optimizer: torch.optim.Optimizer,
-        profiler: torch.profiler.profile = None,
-        profile_batches: int = 0,
-    ) -> float:
-        """
-        Perform one training epoch, with optional profiling for a limited number of batches.
-
-        Args:
-            data_loader (DataLoader): The DataLoader object containing the training data.
-            criterion (nn.Module): The loss function.
-            optimizer (torch.optim.Optimizer): The optimizer.
-            profiler (torch.profiler.profile, optional): The profiler to use for profiling.
-            profile_batches (int, optional): Number of batches to profile in this epoch.
-
-        Returns:
-            float: The total loss for the training step.
-        """
-        self.train()
-        optimizer.train()
-        total_loss = 0
-        dataset_size = len(data_loader.dataset)
-
-        for batch_idx, batch in enumerate(data_loader):
-            branch_input, trunk_input, targets = batch
-            branch_input, trunk_input, targets = (
-                branch_input.to(self.device),
-                trunk_input.to(self.device),
-                targets.to(self.device),
-            )
-            optimizer.zero_grad()
-
-            # Start and stop the profiler for the specified number of batches
-            if profiler and batch_idx == 0:
-                profiler.start()
-            if profiler and batch_idx == profile_batches:
-                profiler.stop()
-
-            outputs, targets = self((branch_input, trunk_input, targets))
-            loss = criterion(outputs, targets)
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-
-        total_loss /= dataset_size * self.N
-        return total_loss
-
-
-def custom_collate_fn(batch):
-    """
-    Custom collate function to ensure tensors are returned in the correct shape.
-    Args:
-        batch: A list of tuples from the dataset, where each tuple contains
-               (branch_input, trunk_input, targets).
-
-    Returns:
-        A tuple of tensors with correct shapes:
-        - branch_input: [batch_size, feature_size]
-        - trunk_input: [batch_size, feature_size]
-        - targets: [batch_size, feature_size]
-    """
-    # Unpack and stack items manually, removing any extra dimensions
-    branch_inputs = torch.stack([item[0] for item in batch]).squeeze(0)
-    trunk_inputs = torch.stack([item[1] for item in batch]).squeeze(0)
-    targets = torch.stack([item[2] for item in batch]).squeeze(0)
-    return branch_inputs, trunk_inputs, targets
+        return train_loader, test_loader, val_loader
 
 
 AbstractSurrogateModel.register(MultiONet)

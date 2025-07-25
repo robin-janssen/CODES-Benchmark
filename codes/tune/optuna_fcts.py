@@ -1,5 +1,7 @@
+import math
 import os
 import queue
+from datetime import datetime
 from distutils.util import strtobool
 
 import numpy as np
@@ -7,6 +9,8 @@ import optuna
 import torch
 import torch.nn as nn
 import yaml
+from optuna.trial import TrialState
+from tqdm import tqdm
 
 from codes.benchmark.bench_utils import (
     get_model_config,
@@ -15,6 +19,22 @@ from codes.benchmark.bench_utils import (
 )
 from codes.utils import check_and_load_data, make_description, set_random_seeds
 from codes.utils.data_utils import download_data, get_data_subset
+
+MODULE_REGISTRY: dict[str, type[nn.Module]] = {
+    "relu": nn.ReLU,
+    "leakyrelu": nn.LeakyReLU,
+    "tanh": nn.Tanh,
+    "gelu": nn.GELU,
+    "softplus": nn.Softplus,
+    "sigmoid": nn.Sigmoid,
+    "identity": nn.Identity,
+    "elu": nn.ELU,
+    "prelu": nn.PReLU,
+    "mish": nn.Mish,
+    "silu": nn.SiLU,
+    "mse": nn.MSELoss,
+    "smoothl1": nn.SmoothL1Loss,
+}
 
 
 def load_yaml_config(config_path: str) -> dict:
@@ -32,90 +52,97 @@ def load_yaml_config(config_path: str) -> dict:
         return yaml.safe_load(file)
 
 
-def get_activation_function(name: str) -> nn.Module:
-    """
-    Get the activation function module from its name.
-    Required for Optuna to suggest activation functions.
-
-    Args:
-        name (str): Name of the activation function.
-
-    Returns:
-        nn.Module: Activation function module.
-    """
-
-    activation_functions = {
-        "relu": nn.ReLU(),
-        "leakyrelu": nn.LeakyReLU(),
-        "tanh": nn.Tanh(),
-        "gelu": nn.GELU(),
-        "softplus": nn.Softplus(),
-        "sigmoid": nn.Sigmoid(),
-        "identity": nn.Identity(),
-        "elu": nn.ELU(),
-    }
-    return activation_functions[name.lower()]
+def _suggest_param(trial: optuna.Trial, name: str, opts: dict):
+    t = opts.get("type", "categorical")
+    if t == "int":
+        return trial.suggest_int(
+            name, opts["low"], opts["high"], step=opts.get("step", 1)
+        )
+    if t == "float":
+        return trial.suggest_float(
+            name, opts["low"], opts["high"], log=opts.get("log", False)
+        )
+    # categorical or bool
+    raw = trial.suggest_categorical(name, opts.get("choices", []))
+    if isinstance(raw, str) and raw.lower() in ("true", "false"):
+        return bool(strtobool(raw))
+    return raw
 
 
 def make_optuna_params(trial: optuna.Trial, optuna_params: dict) -> dict:
-    """
-    Suggest hyperparameters from optuna_params, sampling coeff_width/layers
-    only if coeff_network == True, converting any "True"/"False" strings into bool,
-    and mapping any activation names into nn.Modules.
-    """
-    suggested = {}
+    suggested: dict[str, any] = {}
 
-    switch_key = "coeff_network"
-    children = {"coeff_width", "coeff_layers"}
-
-    # 1) Sample all independent params (skip switch & its children)
-    skip = children | {switch_key}
-    for name, opts in optuna_params.items():
-        if name in skip:
+    # Sample switch parameters
+    for switch in ("scheduler", "optimizer", "coeff_network", "loss_function"):
+        if switch not in optuna_params:
             continue
-        if opts["type"] == "int":
-            suggested[name] = trial.suggest_int(name, opts["low"], opts["high"])
-        elif opts["type"] == "float":
-            suggested[name] = trial.suggest_float(
-                name, opts["low"], opts["high"], log=opts.get("log", False)
-            )
-        else:  # categorical
-            suggested[name] = trial.suggest_categorical(name, opts["choices"])
+        suggested[switch] = _suggest_param(trial, switch, optuna_params[switch])
 
-    # 2) Sample the coeff_network switch
-    if switch_key in optuna_params:
-        opts = optuna_params[switch_key]
-        raw = trial.suggest_categorical(switch_key, opts["choices"])
-        # convert string → bool if needed
-        if isinstance(raw, str) and raw.lower() in ("true", "false"):
-            suggested[switch_key] = bool(strtobool(raw))
-        else:
-            suggested[switch_key] = raw
+    # Sample conditional parameters
+    # scheduler - poly_power or eta_min
+    sched = suggested.get("scheduler")
+    if sched == "poly":
+        suggested["poly_power"] = _suggest_param(
+            trial, "poly_power", optuna_params["poly_power"]
+        )
+    elif sched == "cosine":
+        suggested["eta_min"] = _suggest_param(
+            trial, "eta_min", optuna_params["eta_min"]
+        )
 
-    # 3) Conditionally sample coeff_width & coeff_layers
-    if suggested.get(switch_key, False):
-        for child in children:
-            if child in optuna_params:
-                opts = optuna_params[child]
-                if opts["type"] == "int":
-                    suggested[child] = trial.suggest_int(
-                        child, opts["low"], opts["high"]
-                    )
-                elif opts["type"] == "float":
-                    suggested[child] = trial.suggest_float(
-                        child, opts["low"], opts["high"], log=opts.get("log", False)
-                    )
-                else:
-                    suggested[child] = trial.suggest_categorical(child, opts["choices"])
+    # optimizer - momentum if SGD
+    optm = suggested.get("optimizer")
+    if isinstance(optm, str) and optm.lower() == "sgd":
+        suggested["momentum"] = _suggest_param(
+            trial, "momentum", optuna_params["momentum"]
+        )
 
-    # 4) Post‐process all values: booleans and activation modules
+    # coeff_network - coeff_width, coeff_layers
+    coeff_net = suggested.get("coeff_network")
+    if bool(coeff_net):
+        suggested["coeff_width"] = _suggest_param(
+            trial, "coeff_width", optuna_params["coeff_width"]
+        )
+        suggested["coeff_layers"] = _suggest_param(
+            trial, "coeff_layers", optuna_params["coeff_layers"]
+        )
+
+    # loss_function - beta if smoothl1
+    lf = suggested.get("loss_function")
+    if isinstance(lf, str) and lf.lower() == "smoothl1":
+        suggested["beta"] = _suggest_param(trial, "beta", optuna_params["beta"])
+
+    # Sample independent parameters
+    excluded = {
+        "scheduler",
+        "poly_power",
+        "eta_min",
+        "optimizer",
+        "momentum",
+        "coeff_network",
+        "coeff_width",
+        "coeff_layers",
+        "loss_function",
+        "beta",
+    }
+
+    for name, opts in optuna_params.items():
+        if name in excluded:
+            continue
+        suggested[name] = _suggest_param(trial, name, opts)
+
+    # map activation and loss_function to actual callables
     for name, val in list(suggested.items()):
-        # a) convert any remaining "True"/"False" strings into bool
-        if isinstance(val, str) and val.lower() in ("true", "false"):
-            suggested[name] = bool(strtobool(val))
-        # b) map activation names to nn.Modules
-        if "activation" in name:
-            suggested[name] = get_activation_function(suggested[name])
+        if "activation" in name.lower():
+            cls = MODULE_REGISTRY.get(val.lower())
+            if cls is None:
+                raise ValueError(f"Unknown activation: {val}")
+            suggested[name] = cls()
+        elif name == "loss_function":
+            cls = MODULE_REGISTRY.get(val.lower())
+            if cls is None:
+                raise ValueError(f"Unknown loss function: {val}")
+            suggested[name] = cls()
 
     return suggested
 
@@ -136,10 +163,10 @@ def create_objective(
     """
 
     def objective(trial):
-        device = device_queue.get()
+        device, slot_id = device_queue.get()
         try:
             try:
-                return training_run(trial, device, config, study_name)
+                return training_run(trial, device, slot_id, config, study_name)
             except torch.cuda.OutOfMemoryError as e:
                 torch.cuda.empty_cache()
                 msg = repr(e).strip()
@@ -161,13 +188,13 @@ def create_objective(
                 trial.set_user_attr("exception", msg)
                 raise optuna.TrialPruned(f"Error in trial {trial.number}: {msg}")
         finally:
-            device_queue.put(device)
+            device_queue.put((device, slot_id))
 
     return objective
 
 
 def training_run(
-    trial: optuna.Trial, device: str, config: dict, study_name: str
+    trial: optuna.Trial, device: str, slot_id: int, config: dict, study_name: str
 ) -> float | tuple[float, float]:
     """
     Run the training for a single Optuna trial and return the loss.
@@ -176,6 +203,7 @@ def training_run(
     Args:
         trial (optuna.Trial): Optuna trial object.
         device (str): Device to run the training on.
+        slot_id (int): Slot ID for the position of the progress bar.
         config (dict): Configuration dictionary.
         study_name (str): Name of the study.
 
@@ -201,6 +229,7 @@ def training_run(
         log_params=config.get("log10_transform_params", False),
         normalisation_mode=config["dataset"]["normalise"],
         tolerance=config["dataset"]["tolerance"],
+        per_species=config["dataset"].get("normalise_per_species", False),
     )
 
     subset_factor = config["dataset"].get("subset_factor", 1)
@@ -223,7 +252,14 @@ def training_run(
     surrogate_class = get_surrogate(surr_name)
     model_config = get_model_config(surr_name, config)
     model_config.update(suggested_params)
-    model = surrogate_class(device, n_quantities, n_timesteps, n_params, model_config)
+    model = surrogate_class(
+        device=device,
+        n_quantities=n_quantities,
+        n_timesteps=n_timesteps,
+        n_parameters=n_params,
+        config=model_config,
+    )
+    model.to(device)
     model.normalisation = data_info
     model.optuna_trial = trial
     model.trial_update_epochs = 10
@@ -241,20 +277,24 @@ def training_run(
     )
 
     description = make_description("Optuna", device, str(trial.number), surr_name)
-    pos = config["devices"].index(device) + 2
     model.fit(
         train_loader=train_loader,
         test_loader=test_loader,
         epochs=config["epochs"],
-        position=pos,
+        position=slot_id + 2,
         description=description,
         multi_objective=config["multi_objective"],
     )
 
-    criterion = torch.nn.MSELoss()
-    preds, targets = model.predict(test_loader)
-    loss = criterion(preds, targets).item()
-    sname, _ = study_name.split("_")
+    # criterion = torch.nn.MSELoss()
+    preds, targets = model.predict(test_loader, leave_log=True)
+    p99_dex = torch.quantile(
+        (preds - targets).abs().flatten(), float(config["target_percentile"])
+    ).item()
+    # loss = criterion(preds, targets).item()
+    # Extract the study name without the timestamp/suffix part
+    parts = study_name.split("_")
+    sname = "_".join(parts[:-1]) if len(parts) > 1 else study_name
 
     savepath = os.path.join("tuned", sname, "models")
     os.makedirs(savepath, exist_ok=True)
@@ -269,6 +309,56 @@ def training_run(
     if config["multi_objective"]:
         # Measure inference time
         inference_times = measure_inference_time(model, test_loader)
-        return loss, np.mean(inference_times)
+        return p99_dex, np.mean(inference_times)
     else:
-        return loss
+        return p99_dex
+
+
+def _trial_duration_seconds(t: optuna.trial.FrozenTrial) -> float | None:
+    if not t.datetime_start:
+        return None
+    end = t.datetime_complete or datetime.utcnow()
+    return (end - t.datetime_start).total_seconds()
+
+
+def maybe_set_runtime_threshold(
+    study: optuna.Study, warmup_target: int, include_pruned: bool = False
+) -> None:
+    # already done?
+    if "runtime_threshold" in study.user_attrs:
+        return
+
+    wanted_states = (TrialState.COMPLETE,)
+    if include_pruned:
+        wanted_states += (TrialState.PRUNED,)
+
+    trials = study.get_trials(deepcopy=False)
+    trials_sorted = sorted(trials, key=lambda tr: tr.number)
+
+    durs = []
+    for tr in trials_sorted:
+        if len(durs) >= warmup_target:
+            break
+        if tr.state in wanted_states:
+            dur = _trial_duration_seconds(tr)
+            if dur is not None:
+                durs.append(dur)
+
+    if len(durs) < warmup_target:
+        # Not enough qualifying trials yet — do nothing
+        return
+
+    mean_ = sum(durs) / len(durs)
+    var = sum((d - mean_) ** 2 for d in durs) / len(durs)
+    std_ = math.sqrt(var)
+    threshold = mean_ + 2 * std_
+
+    study.set_user_attr("runtime_threshold", float(threshold))
+    study.set_user_attr("warmup_mean", float(mean_))
+    study.set_user_attr("warmup_std", float(std_))
+    study.set_user_attr("warmup_target", warmup_target)
+
+    tqdm.write(
+        f"\n[Study] Warmup complete. Runtime threshold set to {threshold:.1f}s "
+        f"(mean = {mean_: .1f}s, std = {std_: .1f}s) over {warmup_target} trials."
+    )

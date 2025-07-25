@@ -21,6 +21,7 @@ def plot_example_trajectories(
     save: bool = False,
     sample_idx: int = 0,
     log: bool = False,
+    log_time: bool = False,
     quantities_per_plot: int = 6,
     show_title: bool = True,
 ) -> None:
@@ -61,6 +62,8 @@ def plot_example_trajectories(
             borderaxespad=0.0,
             fontsize="small",
         )
+        if log_time:
+            ax.set_xscale("log")
 
     for ax in axes[num_plots:]:
         ax.set_visible(False)
@@ -633,7 +636,7 @@ def plot_all_trajectories_and_gradients(
                 else f"Quantity {i + 1}"
             )
 
-            # Trajectories Plot (without noise)
+            # Trajectories Plot
             for sample_idx in range(train_data.shape[0]):
                 axes_traj[plot_idx].plot(
                     time,
@@ -646,7 +649,7 @@ def plot_all_trajectories_and_gradients(
                 time, avg_trajectories[:, i], label=label_name, color=color, linewidth=1
             )
 
-            # Gradients Plot (without noise)
+            # Gradients Plot
             for sample_idx in range(train_data.shape[0]):
                 axes_grad[plot_idx].plot(
                     time,

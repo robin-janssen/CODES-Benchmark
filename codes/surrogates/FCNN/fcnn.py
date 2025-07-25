@@ -1,13 +1,38 @@
+import math
+
 import numpy as np
-import optuna
 import torch
 import torch.nn as nn
-from schedulefree import AdamWScheduleFree
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, IterableDataset
 
-from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
-from codes.surrogates.FCNN.fcnn_config import FCNNBaseConfig
-from codes.utils import time_execution, worker_init_fn
+from codes.surrogates.AbstractSurrogate import AbstractSurrogateModel
+from codes.utils import time_execution
+
+from .fcnn_config import FCNNBaseConfig
+
+
+class FCFlatBatchIterable(IterableDataset):
+    def __init__(
+        self,
+        inputs_t: torch.Tensor,
+        targets_t: torch.Tensor,
+        batch_size: int,
+        shuffle: bool,
+    ):
+        self.inputs = inputs_t
+        self.targets = targets_t
+        self.N = inputs_t.size(0)
+        self.bs = batch_size
+        self.shuffle = shuffle
+
+    def __iter__(self):
+        perm = torch.randperm(self.N) if self.shuffle else torch.arange(self.N)
+        for start in range(0, self.N, self.bs):
+            idx = perm[start : start + self.bs]
+            yield self.inputs[idx], self.targets[idx]
+
+    def __len__(self):
+        return math.ceil(self.N / self.bs)  # number of batches
 
 
 def fc_collate_fn(batch):
@@ -79,7 +104,8 @@ class FullyConnected(AbstractSurrogateModel):
         device: str | None = None,
         n_quantities: int = 29,
         n_timesteps: int = 100,
-        n_parameters: int = 0,  # New argument; set to 0 if no parameters are used.
+        n_parameters: int = 0,
+        training_id: str | None = None,
         config: dict | None = None,
     ):
         """
@@ -97,6 +123,7 @@ class FullyConnected(AbstractSurrogateModel):
             device=device,
             n_quantities=n_quantities,
             n_timesteps=n_timesteps,
+            training_id=training_id,
             config=config,
         )
         self.config = FCNNBaseConfig(**self.config)
@@ -125,6 +152,10 @@ class FullyConnected(AbstractSurrogateModel):
         Returns:
             (outputs, targets)
         """
+        inputs = tuple(
+            x.to(self.device, non_blocking=True) if isinstance(x, torch.Tensor) else x
+            for x in inputs
+        )
         x, targets = inputs
         return self.model(x), targets
 
@@ -140,49 +171,48 @@ class FullyConnected(AbstractSurrogateModel):
         dataset_train_params: np.ndarray | None = None,
         dataset_test_params: np.ndarray | None = None,
         dataset_val_params: np.ndarray | None = None,
-    ) -> tuple[DataLoader, DataLoader, DataLoader | None]:
-        """
-        Prepare the data for the predict or fit methods.
-
-        Args:
-            dataset_train (np.ndarray): Training data.
-            dataset_test (np.ndarray | None): Test data (optional).
-            dataset_val (np.ndarray | None): Validation data (optional).
-            timesteps (np.ndarray): Timesteps.
-            batch_size (int): Batch size.
-            shuffle (bool, optional): Whether to shuffle the data. Defaults to True.
-            dummy_timesteps (bool, optional): Whether to use dummy timesteps. Defaults to True.
-            dataset_train_params (np.ndarray | None): Training parameters of shape (n_samples, n_parameters).
-            dataset_test_params (np.ndarray | None): Testing parameters of shape (n_samples, n_parameters).
-            dataset_val_params (np.ndarray | None): Validation parameters of shape (n_samples, n_parameters).
-
-        Returns:
-            tuple[DataLoader, DataLoader | None, DataLoader | None]:
-                DataLoader for training, test, and validation data.
-        """
-        dataloaders = []
+    ):
         if dummy_timesteps:
             timesteps = np.linspace(0, 1, dataset_train.shape[1])
-        loader = self.create_dataloader(
+
+        nw = getattr(self.config, "num_workers", 0)
+
+        train_loader = self.create_dataloader(
             dataset_train,
             timesteps,
             batch_size,
-            shuffle,
+            shuffle=shuffle,
             dataset_params=dataset_train_params,
+            num_workers=nw,
         )
-        dataloaders.append(loader)
-        for dataset, params in [
-            (dataset_test, dataset_test_params),
-            (dataset_val, dataset_val_params),
-        ]:
-            if dataset is not None:
-                loader = self.create_dataloader(
-                    dataset, timesteps, batch_size, shuffle=False, dataset_params=params
-                )
-                dataloaders.append(loader)
-            else:
-                dataloaders.append(None)
-        return dataloaders[0], dataloaders[1], dataloaders[2]
+
+        test_loader = (
+            self.create_dataloader(
+                dataset_test,
+                timesteps,
+                batch_size,
+                shuffle=False,
+                dataset_params=dataset_test_params,
+                num_workers=nw,
+            )
+            if dataset_test is not None
+            else None
+        )
+
+        val_loader = (
+            self.create_dataloader(
+                dataset_val,
+                timesteps,
+                batch_size,
+                shuffle=False,
+                dataset_params=dataset_val_params,
+                num_workers=nw,
+            )
+            if dataset_val is not None
+            else None
+        )
+
+        return train_loader, test_loader, val_loader
 
     @time_execution
     def fit(
@@ -211,66 +241,38 @@ class FullyConnected(AbstractSurrogateModel):
         """
         self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
         # criterion = nn.MSELoss(reduction="sum")
-        criterion = nn.MSELoss()
-        optimizer = self.setup_optimizer_and_scheduler()
+        criterion = self.config.loss_function
+        optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
 
         loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
-        train_losses, test_losses, MAEs = [np.zeros(loss_length) for _ in range(3)]
+        self.train_loss, self.test_loss, self.MAE = [
+            np.zeros(loss_length) for _ in range(3)
+        ]
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
         self.train()
         optimizer.train()
 
+        self.setup_checkpoint()
+
         for epoch in progress_bar:
             self.epoch(train_loader, criterion, optimizer)
 
-            if epoch % self.update_epochs == 0:
-                index = epoch // self.update_epochs
-                # Set model and optimizer to eval mode for evaluation
-                self.eval()
-                optimizer.eval()
+            scheduler.step()
 
-                # Calculate losses and MAE
-                preds, targets = self.predict(train_loader)
-                train_losses[index] = criterion(preds, targets).item()
-                preds, targets = self.predict(test_loader)
-                test_losses[index] = criterion(preds, targets).item()
-                MAEs[index] = self.L1(preds, targets).item()
-
-                # Update progress bar postfix
-                postfix = {
-                    "train_loss": f"{train_losses[index]:.2e}",
-                    "test_loss": f"{test_losses[index]:.2e}",
-                }
-                progress_bar.set_postfix(postfix)
-
-                # Report the test loss to Optuna
-                if self.optuna_trial is not None:
-                    if multi_objective:
-                        self.time_pruning(current_epoch=epoch, total_epochs=epochs)
-                    else:
-                        self.optuna_trial.report(test_losses[index], step=epoch)
-                        if self.optuna_trial.should_prune():
-                            raise optuna.TrialPruned()
-
-                self.train()
-                optimizer.train()
+            self.validate(
+                epoch=epoch,
+                train_loader=train_loader,
+                test_loader=test_loader,
+                optimizer=optimizer,
+                progress_bar=progress_bar,
+                total_epochs=epochs,
+                multi_objective=multi_objective,
+            )
 
         progress_bar.close()
         self.n_epochs = epoch + 1
-        self.train_loss = train_losses
-        self.test_loss = test_losses
-        self.MAE = MAEs
-
-    def setup_optimizer_and_scheduler(self) -> torch.optim.Optimizer:
-        """
-        Utility function to set up the optimizer and (optionally) scheduler.
-        """
-        optimizer = AdamWScheduleFree(
-            self.parameters(),
-            lr=self.config.learning_rate,
-        )
-        return optimizer
+        self.get_checkpoint(test_loader, criterion)
 
     def epoch(
         self,
@@ -282,107 +284,61 @@ class FullyConnected(AbstractSurrogateModel):
 
         for batch in data_loader:
             inputs, targets = batch
-            inputs, targets = inputs.to(self.device), targets.to(self.device)
 
             optimizer.zero_grad()
-            outputs, targets = self.forward((inputs, targets))
+            outputs, targets = self((inputs, targets))
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
 
     def create_dataloader(
         self,
-        dataset: np.ndarray,
+        data: np.ndarray,
         timesteps: np.ndarray,
         batch_size: int,
-        shuffle: bool = False,
-        dataset_params: np.ndarray | None = None,
-    ) -> DataLoader:
+        shuffle: bool,
+        dataset_params: np.ndarray | None,
+        num_workers: int = 0,
+        pin_memory: bool = True,
+    ):
         """
-        Create a DataLoader with optimized memory-safe shuffling and batching.
-
-        Args:
-            dataset (np.ndarray): The data to load. Shape: (n_samples, n_timesteps, n_quantities).
-            timesteps (np.ndarray): The timesteps. Shape: (n_timesteps,).
-            batch_size (int): The batch size.
-            shuffle (bool, optional): Whether to shuffle the data. Defaults to False.
-            dataset_params (np.ndarray | None): Fixed parameters for each sample (shape: (n_samples, n_parameters)).
-
-        Returns:
-            DataLoader: A DataLoader with precomputed batches.
+        Build CPU tensors once and yield shuffled batches each epoch.
+        data: (n_samples, n_timesteps, n_quantities)
+        inputs = [initial_state, time, (params?)]
+        targets = state_at_time
         """
-        device = self.device
-        n_samples, n_timesteps, n_quantities = dataset.shape
-        total_samples = n_samples * n_timesteps
+        n_samples, n_timesteps, n_quantities = data.shape
+        total = n_samples * n_timesteps
 
-        # For each sample, use the initial state (at time t=0) paired with the current time.
-        initial_states = dataset[:, 0, :]  # shape: (n_samples, n_quantities)
-        rep_initial = np.repeat(
-            initial_states[:, np.newaxis, :], n_timesteps, axis=1
+        init_states = data[:, 0, :]  # (n_samples, n_quantities)
+        rep_init = np.repeat(
+            init_states[:, None, :], n_timesteps, 1
         )  # (n_samples, n_timesteps, n_quantities)
-        time_feature = np.tile(
+        time_feat = np.tile(
             timesteps.reshape(1, n_timesteps, 1), (n_samples, 1, 1)
         )  # (n_samples, n_timesteps, 1)
 
-        # If parameters are provided, repeat them along the time dimension.
         if dataset_params is not None:
-            rep_params = np.tile(
-                dataset_params[:, np.newaxis, :], (1, n_timesteps, 1)
-            )  # (n_samples, n_timesteps, n_parameters)
-            # Concatenate initial state, time feature, and parameters.
-            inputs = np.concatenate([rep_initial, time_feature, rep_params], axis=2)
+            rep_params = np.tile(dataset_params[:, None, :], (1, n_timesteps, 1))
+            inputs = np.concatenate([rep_init, time_feat, rep_params], axis=2)
         else:
-            # Without parameters, input is just [initial_state, time].
-            inputs = np.concatenate([rep_initial, time_feature], axis=2)
+            inputs = np.concatenate([rep_init, time_feat], axis=2)
 
-        # Target remains the state at time t.
-        targets = dataset  # shape: (n_samples, n_timesteps, n_quantities)
+        targets = data  # (n_samples, n_timesteps, n_quantities)
 
-        # Flatten inputs and targets for batching.
-        flattened_inputs = inputs.reshape(-1, inputs.shape[2])
-        flattened_targets = targets.reshape(-1, n_quantities)
+        flat_inputs = inputs.reshape(total, inputs.shape[2])
+        flat_targets = targets.reshape(total, n_quantities)
 
-        if shuffle:
-            permutation = np.random.permutation(total_samples)
-            flattened_inputs = flattened_inputs[permutation]
-            flattened_targets = flattened_targets[permutation]
+        inputs_t = torch.from_numpy(flat_inputs).float()
+        targets_t = torch.from_numpy(flat_targets).float()
 
-        num_full_batches = total_samples // batch_size
-        remainder = total_samples % batch_size
-
-        batched_inputs = []
-        batched_targets = []
-
-        for batch_idx in range(num_full_batches):
-            start = batch_idx * batch_size
-            end = start + batch_size
-            batch_input = (
-                torch.from_numpy(flattened_inputs[start:end]).float().to(device)
-            )
-            batch_target = (
-                torch.from_numpy(flattened_targets[start:end]).float().to(device)
-            )
-            batched_inputs.append(batch_input)
-            batched_targets.append(batch_target)
-
-        if remainder > 0:
-            start = num_full_batches * batch_size
-            batch_input = torch.from_numpy(flattened_inputs[start:]).float().to(device)
-            batch_target = (
-                torch.from_numpy(flattened_targets[start:]).float().to(device)
-            )
-            batched_inputs.append(batch_input)
-            batched_targets.append(batch_target)
-
-        dataset_prebatched = FCPrebatchedDataset(batched_inputs, batched_targets)
-
+        ds = FCFlatBatchIterable(inputs_t, targets_t, batch_size, shuffle)
         return DataLoader(
-            dataset_prebatched,
-            batch_size=1,  # Each precomputed batch is treated as one batch.
-            shuffle=False,  # Shuffle the order of batches each epoch.
-            num_workers=0,
-            collate_fn=fc_collate_fn,
-            worker_init_fn=worker_init_fn,
+            ds,
+            batch_size=None,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
+            persistent_workers=False,
         )
 
 

@@ -7,8 +7,10 @@ from .data_utils import (
     normalize_data,
 )
 from .utils import (
+    batch_factor_to_float,
     check_training_status,
     create_model_dir,
+    determine_batch_size,
     get_progress_bar,
     load_and_save_config,
     load_task_list,
@@ -19,7 +21,6 @@ from .utils import (
     set_random_seeds,
     time_execution,
     worker_init_fn,
-    determine_batch_size,
 )
 
 __all__ = [
@@ -42,4 +43,5 @@ __all__ = [
     "load_task_list",
     "check_training_status",
     "determine_batch_size",
+    "batch_factor_to_float",
 ]

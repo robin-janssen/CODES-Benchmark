@@ -34,7 +34,7 @@ def main(args):
     """
     torch.use_deterministic_algorithms(True)
     config = load_and_save_config(config_path=args.config, save=False)
-    download_data(config["dataset"]["name"])
+    download_data(config["dataset"]["name"], verbose=config.get("verbose", False))
     task_list_filepath, copy_config = check_training_status(config)
     if copy_config:
         config = load_and_save_config(config_path=args.config, save=True)

@@ -1,19 +1,16 @@
 from typing import Optional
 
 import numpy as np
-import optuna
 import torch
 import torchode as to
-from schedulefree import AdamWScheduleFree
-from torch.profiler import ProfilerActivity, profile, record_function
+from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
-from codes.surrogates.AbstractSurrogate.surrogates import AbstractSurrogateModel
-from codes.surrogates.LatentNeuralODE.latent_neural_ode_config import (
-    LatentNeuralODEBaseConfig,
-)
-from codes.surrogates.LatentNeuralODE.utilities import ChemDataset
-from codes.utils import time_execution, worker_init_fn
+from codes.surrogates.AbstractSurrogate import AbstractSurrogateModel
+from codes.utils import time_execution
+
+from .latent_neural_ode_config import LatentNeuralODEBaseConfig
+from .utilities import FlatSeqBatchIterable
 
 
 class LatentNeuralODE(AbstractSurrogateModel):
@@ -27,7 +24,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         n_quantities (int): Number of quantities.
         n_timesteps (int): Number of timesteps.
         n_parameters (int): Number of fixed parameters (default 0).
-        model_config (dict | None): Configuration for the model.
+        config (dict | None): Configuration for the model.
     """
 
     def __init__(
@@ -36,13 +33,16 @@ class LatentNeuralODE(AbstractSurrogateModel):
         n_quantities: int = 29,
         n_timesteps: int = 100,
         n_parameters: int = 0,
-        model_config: dict | None = None,
+        training_id: str | None = None,
+        config: dict | None = None,
+        dtype: torch.dtype = torch.float64,
     ):
         super().__init__(
             device=device,
             n_quantities=n_quantities,
             n_timesteps=n_timesteps,
-            config=model_config,
+            training_id=training_id,
+            config=config,
         )
         self.config = LatentNeuralODEBaseConfig(**self.config)
         self.n_parameters = n_parameters
@@ -50,20 +50,22 @@ class LatentNeuralODE(AbstractSurrogateModel):
         self.model = ModelWrapper(
             config=self.config, n_quantities=n_quantities, n_parameters=n_parameters
         ).to(device)
+        self.to(dtype=dtype)
 
     def forward(self, inputs):
         """
         Forward pass through the model.
         Expects inputs to be either (data, timesteps) or (data, timesteps, params).
         """
-        # if len(inputs) == 3:
+        inputs = tuple(
+            (
+                x.to(self.device, dtype=torch.float64, non_blocking=True)
+                if isinstance(x, Tensor)
+                else x
+            )
+            for x in inputs
+        )
         x, t_range, params = inputs
-        # else:
-        #     x, t_range = inputs
-        #     params = None
-
-        # x has shape (batch, timesteps, n_quantities)
-        # Use the first timestep as the initial condition.
         x0 = x[:, 0, :]
         latent_prediction = self.model(x0, t_range, params)
         return latent_prediction, x
@@ -81,86 +83,71 @@ class LatentNeuralODE(AbstractSurrogateModel):
         dataset_test_params: np.ndarray | None = None,
         dataset_val_params: np.ndarray | None = None,
     ) -> tuple[DataLoader, DataLoader | None, DataLoader | None]:
-        """
-        Prepares data by creating DataLoader objects.
-        If fixed parameters are provided, they are passed along with each sample.
-        """
-        if shuffle:
-            shuffled_indices = np.random.permutation(len(dataset_train))
-            dataset_train = dataset_train[shuffled_indices]
-            if dataset_train_params is not None:
-                dataset_train_params = dataset_train_params[shuffled_indices]
 
         if dummy_timesteps:
             timesteps = np.linspace(0, 1, dataset_train.shape[1])
 
-        dset_train = ChemDataset(
+        nw = getattr(self.config, "num_workers", 0)
+
+        train_loader = self.create_dataloader(
             dataset_train,
             timesteps,
-            device=self.device,
-            parameters=dataset_train_params,
-        )
-        dataloader_train = DataLoader(
-            dset_train,
-            batch_size=batch_size,
-            shuffle=False,
-            worker_init_fn=worker_init_fn,
-            collate_fn=lambda x: (
-                torch.stack([item[0] for item in x], dim=0),
-                x[0][1],  # timesteps (assumed identical)
-                torch.stack([item[2] for item in x], dim=0) if len(x[0]) == 3 else None,
-            ),
+            batch_size,
+            shuffle=shuffle,
+            dataset_params=dataset_train_params,
+            num_workers=nw,
         )
 
-        dataloader_test = None
+        test_loader = None
         if dataset_test is not None:
-            dset_test = ChemDataset(
+            test_loader = self.create_dataloader(
                 dataset_test,
                 timesteps,
-                device=self.device,
-                parameters=dataset_test_params,
-            )
-            dataloader_test = DataLoader(
-                dset_test,
-                batch_size=batch_size,
+                batch_size,
                 shuffle=False,
-                worker_init_fn=worker_init_fn,
-                collate_fn=lambda x: (
-                    torch.stack([item[0] for item in x], dim=0),
-                    x[0][1],
-                    (
-                        torch.stack([item[2] for item in x], dim=0)
-                        if len(x[0]) == 3
-                        else None
-                    ),
-                ),
+                dataset_params=dataset_test_params,
+                num_workers=nw,
             )
 
-        dataloader_val = None
+        val_loader = None
         if dataset_val is not None:
-            dset_val = ChemDataset(
+            val_loader = self.create_dataloader(
                 dataset_val,
                 timesteps,
-                device=self.device,
-                parameters=dataset_val_params,
-            )
-            dataloader_val = DataLoader(
-                dset_val,
-                batch_size=batch_size,
+                batch_size,
                 shuffle=False,
-                worker_init_fn=worker_init_fn,
-                collate_fn=lambda x: (
-                    torch.stack([item[0] for item in x], dim=0),
-                    x[0][1],
-                    (
-                        torch.stack([item[2] for item in x], dim=0)
-                        if len(x[0]) == 3
-                        else None
-                    ),
-                ),
+                dataset_params=dataset_val_params,
+                num_workers=nw,
             )
 
-        return dataloader_train, dataloader_test, dataloader_val
+        return train_loader, test_loader, val_loader
+
+    def create_dataloader(
+        self,
+        data: np.ndarray,
+        timesteps: np.ndarray,
+        batch_size: int,
+        shuffle: bool,
+        dataset_params: np.ndarray | None,
+        num_workers: int = 0,
+        pin_memory: bool = True,
+    ):
+        data_t = torch.from_numpy(data).float()
+        t_t = torch.from_numpy(timesteps).float()
+        if dataset_params is not None:
+            params_t = torch.from_numpy(dataset_params).float()
+        else:
+            params_t = None
+
+        ds = FlatSeqBatchIterable(data_t, t_t, params_t, batch_size, shuffle)
+
+        return DataLoader(
+            ds,
+            batch_size=None,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
+            persistent_workers=False,
+        )
 
     @time_execution
     def fit(
@@ -173,224 +160,78 @@ class LatentNeuralODE(AbstractSurrogateModel):
         multi_objective: bool = False,
     ) -> None:
         """
-        Fits the model to the training data. Sets the train_loss and test_loss attributes.
-        After 10 epochs, the loss weights are renormalized to scale the individual loss terms.
-        """
-        optimizer = AdamWScheduleFree(
-            self.model.parameters(),
-            lr=self.config.learning_rate,
-        )
-        criterion = torch.nn.MSELoss()
+        Train the LatentNeuralODE model.
 
-        scheduler = None
+        Args:
+            train_loader (DataLoader): The data loader for the training data.
+            test_loader (DataLoader): The data loader for the test data.
+            epochs (int | None): The number of epochs to train the model. If None, uses the value from the config.
+            position (int): The position of the progress bar.
+            description (str): The description for the progress bar.
+            multi_objective (bool): Whether multi-objective optimization is used.
+                                    If True, trial.report is not used (not supported by Optuna).
+        """
+        optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
+        criterion = self.config.loss_function
 
         loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
-        train_losses, test_losses, MAEs = [np.zeros(loss_length) for _ in range(3)]
+        self.train_loss, self.test_loss, self.MAE = [
+            np.zeros(loss_length) for _ in range(3)
+        ]
 
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
         self.model.train()
         optimizer.train()
 
+        self.setup_checkpoint()
+
         for epoch in progress_bar:
             for i, batch in enumerate(train_loader):
+                batch = tuple(
+                    (
+                        x.to(device=self.device, non_blocking=True)
+                        if isinstance(x, Tensor)
+                        else x
+                    )
+                    for x in batch
+                )
                 x_true, t_range, params = batch
                 optimizer.zero_grad()
 
                 # forward pass
-                x_pred, _ = self.forward((x_true, t_range, params))
+                x_pred, x_true = self((x_true, t_range, params))
 
                 # total loss now takes params into account for identity term
-                loss = self.model.total_loss(x_true, x_pred, params)
+                loss = self.model.total_loss(x_true, x_pred, params, criterion)
                 loss.backward()
                 optimizer.step()
 
                 # renormalize once after 10 epochs
                 if epoch == 10 and i == 0:
                     with torch.no_grad():
-                        self.model.renormalize_loss_weights(x_true, x_pred, params)
+                        self.model.renormalize_loss_weights(
+                            x_true, x_pred, params, criterion
+                        )
 
-            if scheduler is not None:
-                scheduler.step()
+            scheduler.step()
 
-            if epoch % self.update_epochs == 0:
-                index = epoch // self.update_epochs
-                with torch.inference_mode():
-                    self.model.eval()
-                    optimizer.eval()
-
-                    preds, targets = self.predict(train_loader)
-                    train_losses[index] = criterion(preds, targets).item()
-                    preds, targets = self.predict(test_loader)
-                    test_losses[index] = criterion(preds, targets).item()
-                    MAEs[index] = self.L1(preds, targets).item()
-
-                    progress_bar.set_postfix(
-                        {
-                            "train_loss": f"{train_losses[index]:.2e}",
-                            "test_loss": f"{test_losses[index]:.2e}",
-                        }
-                    )
-
-                    if self.optuna_trial is not None:
-                        if multi_objective:
-                            self.time_pruning(current_epoch=epoch, total_epochs=epochs)
-                        else:
-                            self.optuna_trial.report(test_losses[index], step=epoch)
-                            if self.optuna_trial.should_prune():
-                                raise optuna.TrialPruned()
-
-                    self.model.train()
-                    optimizer.train()
+            self.validate(
+                epoch=epoch,
+                train_loader=train_loader,
+                test_loader=test_loader,
+                optimizer=optimizer,
+                progress_bar=progress_bar,
+                total_epochs=epochs,
+                multi_objective=multi_objective,
+            )
 
         progress_bar.close()
-
         self.n_epochs = epoch + 1
-        self.train_loss = train_losses
-        self.test_loss = test_losses
-        self.MAE = MAEs
-
-    @time_execution
-    def fit_profile(
-        self,
-        train_loader: DataLoader,
-        test_loader: Optional[DataLoader],
-        epochs: int,
-        position: int = 0,
-        description: str = "Training LatentNeuralODE with Profiling",
-        profile_enabled: bool = True,  # Flag to enable/disable profiling
-        profile_save_path: str = "chrome_trace_profile.json",  # Path to save Chrome trace
-        profile_batches: int = 2,  # Number of batches to profile
-        profile_epoch: int = 2,  # The epoch at which to perform profiling
-    ) -> None:
-        """
-        Fits the model to the training data with optional profiling for a limited scope.
-        Only used if renamed to fit in the main code (and renamed the original fit to something else).
-
-        Args:
-            train_loader (DataLoader): The data loader for the training data.
-            test_loader (DataLoader | None): The data loader for the test data.
-            epochs (int): The number of epochs to train the model.
-            position (int): The position of the progress bar.
-            description (str): The description for the progress bar.
-            profile_enabled (bool): Whether to enable PyTorch profiling.
-            profile_save_path (str): Path to save the profiling data.
-            profile_batches (int): Number of batches to profile in the specified epoch.
-            profile_epoch (int): The epoch at which profiling is performed.
-
-        Returns:
-            None. The training loss, test loss, and MAE are stored in the model.
-        """
-        optimizer = AdamWScheduleFree(
-            self.model.parameters(),
-            lr=self.config.learning_rate,
-        )
-        optimizer.train()
-
-        scheduler = None
-
-        losses = torch.empty((epochs, len(train_loader)))
-        test_losses = torch.empty((epochs))
-        MAEs = torch.empty((epochs))
-
-        progress_bar = self.setup_progress_bar(epochs, position, description)
-
-        profiler = None
-        if profile_enabled:
-            profiler = profile(
-                activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-                record_shapes=True,
-                profile_memory=True,
-                with_stack=True,
-            )
-
-        for epoch in progress_bar:
-            with record_function("train_epoch"):
-                if profile_enabled and epoch == profile_epoch:
-                    profiler.start()
-                    for i, (x_true, timesteps) in enumerate(train_loader):
-                        if i >= profile_batches:
-                            break
-                        optimizer.zero_grad()
-                        x_pred = self.model.forward(x_true, timesteps)
-                        loss = self.model.total_loss(x_true, x_pred)
-                        loss.backward()
-                        optimizer.step()
-                        losses[epoch, i] = loss.item()
-                    profiler.stop()
-
-                    # Print profiling summaries
-                    print("\n### Profiling Summary ###\n")
-                    print("\n### Key Averages (sorted by CUDA total time) ###\n")
-                    print(
-                        profiler.key_averages().table(
-                            sort_by="cuda_time_total", row_limit=10
-                        )
-                    )
-                    print("\n### Key Averages (sorted by CPU total time) ###\n")
-                    print(
-                        profiler.key_averages().table(
-                            sort_by="cpu_time_total", row_limit=10
-                        )
-                    )
-                    print("\n### Memory Usage Summary ###\n")
-                    print(
-                        profiler.key_averages().table(
-                            sort_by="self_cuda_memory_usage", row_limit=10
-                        )
-                    )
-                    profiler.export_chrome_trace(profile_save_path)
-                    print(f"Chrome trace saved to '{profile_save_path}'")
-                else:
-                    # Normal training for all other epochs
-                    for i, (x_true, timesteps) in enumerate(train_loader):
-                        optimizer.zero_grad()
-                        x_pred = self.model.forward(x_true, timesteps)
-                        loss = self.model.total_loss(x_true, x_pred)
-                        loss.backward()
-                        optimizer.step()
-                        losses[epoch, i] = loss.item()
-
-                        if epoch == 10 and i == 0:
-                            with torch.no_grad():
-                                self.model.renormalize_loss_weights(x_true, x_pred)
-
-            clr = optimizer.param_groups[0]["lr"]
-            print_loss = (
-                f"{losses[epoch, -1].item():.2e}" if len(train_loader) > 0 else "N/A"
-            )
-            progress_bar.set_postfix({"loss": print_loss, "lr": f"{clr:.1e}"})
-
-            if scheduler is not None:
-                scheduler.step()
-
-            if test_loader is not None:
-                with torch.inference_mode():
-                    self.model.eval()
-                    optimizer.eval()
-                    preds, targets = self.predict(test_loader)
-                    self.model.train()
-                    optimizer.train()
-                    loss = self.model.total_loss(preds, targets)
-                    test_losses[epoch] = loss.item()
-                    MAEs[epoch] = self.L1(preds, targets).item()
-
-                    if self.optuna_trial is not None:
-                        self.optuna_trial.report(loss.item(), epoch)
-                        if self.optuna_trial.should_prune():
-                            raise optuna.TrialPruned()
-
-        if profiler is not None:
-            profiler.shutdown()
-
-        progress_bar.close()
-
-        self.train_loss = torch.mean(losses, dim=1)
-        self.test_loss = test_losses
-        self.MAE = MAEs
+        self.get_checkpoint(test_loader, criterion)
 
 
-class ModelWrapper(torch.nn.Module):
+class ModelWrapper(nn.Module):
     """
     Wraps the encoder, decoder, and neural ODE in three distinct modes:
 
@@ -472,9 +313,7 @@ class ModelWrapper(torch.nn.Module):
             activation=config.activation,
         )
 
-    def forward(
-        self, x0: torch.Tensor, t_range: torch.Tensor, params: torch.Tensor = None
-    ):
+    def forward(self, x0: Tensor, t_range: Tensor, params: Tensor = None):
         # encode initial state
         if self.n_parameters > 0 and self.config.encode_params:
             assert params is not None
@@ -496,42 +335,50 @@ class ModelWrapper(torch.nn.Module):
         # decode
         return self.decoder(latent_traj)
 
-    def renormalize_loss_weights(self, x_true, x_pred, params):
+    def renormalize_loss_weights(
+        self, x_true, x_pred, params, criterion: nn.Module = nn.MSELoss()
+    ):
         """
         Renormalize the loss weights based on the current loss values so that they are accurately
         weighted based on the provided weights. To be used once after a short burn in phase.
 
         Args:
-            x_true (torch.Tensor): The true trajectory.
-            x_pred (torch.Tensor): The predicted trajectory
+            x_true (Tensor): The true trajectory.
+            x_pred (Tensor): The predicted trajectory
+            params (Tensor): Fixed parameters (batch, n_parameters).
+            criterion (nn.Module): Loss function to use for calculating the losses.
         """
-        self.loss_weights[0] = 1 / self.l2_loss(x_true, x_pred).item() * 100
+        self.loss_weights[0] = 1 / criterion(x_pred, x_true).item() * 100
         self.loss_weights[1] = 1 / self.identity_loss(x_true, params).item()
         self.loss_weights[2] = 1 / self.deriv_loss(x_true, x_pred).item()
         self.loss_weights[3] = 1 / self.deriv2_loss(x_true, x_pred).item()
 
     def total_loss(
-        self, x_true: torch.Tensor, x_pred: torch.Tensor, params: torch.Tensor = None
+        self,
+        x_true: Tensor,
+        x_pred: Tensor,
+        params: Tensor = None,
+        criterion: nn.Module = nn.MSELoss(),
     ):
         """
         Calculate the total loss based on the loss weights, including params for identity.
         """
         return (
-            self.loss_weights[0] * self.l2_loss(x_true, x_pred)
+            self.loss_weights[0] * criterion(x_pred, x_true).item()
             + self.loss_weights[1] * self.identity_loss(x_true, params)
             + self.loss_weights[2] * self.deriv_loss(x_true, x_pred)
             + self.loss_weights[3] * self.deriv2_loss(x_true, x_pred)
         )
 
-    def identity_loss(self, x_true: torch.Tensor, params: torch.Tensor = None):
+    def identity_loss(self, x_true: Tensor, params: Tensor = None):
         """
         Calculate the identity loss (Encoder -> Decoder) on the initial state x0.
 
         Args:
-            x_true (torch.Tensor): The full trajectory (batch, timesteps, features).
-            params (torch.Tensor | None): Fixed parameters (batch, n_parameters).
+            x_true (Tensor): The full trajectory (batch, timesteps, features).
+            params (Tensor | None): Fixed parameters (batch, n_parameters).
         Returns:
-            torch.Tensor: The identity loss on x0.
+            Tensor: The identity loss on x0.
         """
         # only reconstruct the initial state
         x0 = x_true[:, 0, :]
@@ -546,16 +393,16 @@ class ModelWrapper(torch.nn.Module):
         return self.l2_loss(x0, x0_hat)
 
     @staticmethod
-    def l2_loss(x_true: torch.Tensor, x_pred: torch.Tensor):
+    def l2_loss(x_true: Tensor, x_pred: Tensor):
         """
         Calculate the L2 loss.
 
         Args:
-            x_true (torch.Tensor): The true trajectory.
-            x_pred (torch.Tensor): The predicted trajectory
+            x_true (Tensor): The true trajectory.
+            x_pred (Tensor): The predicted trajectory
 
         Returns:
-            torch.Tensor: The L2 loss.
+            Tensor: The L2 loss.
         """
         return torch.mean(torch.abs(x_true - x_pred) ** 2)
 
@@ -565,11 +412,11 @@ class ModelWrapper(torch.nn.Module):
         Difference between the slopes of the predicted and true trajectories.
 
         Args:
-            x_true (torch.Tensor): The true trajectory.
-            x_pred (torch.Tensor): The predicted trajectory
+            x_true (Tensor): The true trajectory.
+            x_pred (Tensor): The predicted trajectory
 
         Returns:
-            torch.Tensor: The derivative loss.
+            Tensor: The derivative loss.
         """
         return cls.l2_loss(cls.deriv(x_pred), cls.deriv(x_true))
 
@@ -579,11 +426,11 @@ class ModelWrapper(torch.nn.Module):
         Difference between the curvature of the predicted and true trajectories.
 
         Args:
-            x_true (torch.Tensor): The true trajectory.
-            x_pred (torch.Tensor): The predicted trajectory
+            x_true (Tensor): The true trajectory.
+            x_pred (Tensor): The predicted trajectory
 
         Returns:
-            torch.Tensor: The second derivative loss.
+            Tensor: The second derivative loss.
         """
         return cls.l2_loss(cls.deriv2(x_pred), cls.deriv2(x_true))
 
@@ -593,10 +440,10 @@ class ModelWrapper(torch.nn.Module):
         Calculate the numerical derivative.
 
         Args:
-            x (torch.Tensor): The input tensor.
+            x (Tensor): The input tensor.
 
         Returns:
-            torch.Tensor: The numerical derivative.
+            Tensor: The numerical derivative.
         """
         return torch.gradient(x, dim=1)[0].squeeze(0)
 
@@ -606,15 +453,15 @@ class ModelWrapper(torch.nn.Module):
         Calculate the numerical second derivative.
 
         Args:
-            x (torch.Tensor): The input tensor.
+            x (Tensor): The input tensor.
 
         Returns:
-            torch.Tensor: The numerical second derivative.
+            Tensor: The numerical second derivative.
         """
         return cls.deriv(cls.deriv(x))
 
 
-class ODE(torch.nn.Module):
+class ODE(nn.Module):
     """
     Neural ODE module defining the function for latent dynamics.
     """
@@ -623,23 +470,24 @@ class ODE(torch.nn.Module):
         self,
         input_shape: int,
         output_shape: int,
-        activation: torch.nn.Module,
+        activation: nn.Module,
         ode_layers: int,
         ode_width: int,
         tanh_reg: bool,
+        dtype=torch.float64,
     ):
         super().__init__()
         self.tanh_reg = tanh_reg
-        self.reg_factor = torch.nn.Parameter(torch.tensor(1.0))
+        self.reg_factor = nn.Parameter(torch.tensor(1.0))
         self.activation = activation
         layers = []
-        layers.append(torch.nn.Linear(input_shape, ode_width, dtype=torch.float64))
+        layers.append(nn.Linear(input_shape, ode_width, dtype=dtype))
         layers.append(activation)
         for _ in range(ode_layers):
-            layers.append(torch.nn.Linear(ode_width, ode_width, dtype=torch.float64))
+            layers.append(nn.Linear(ode_width, ode_width, dtype=dtype))
             layers.append(activation)
-        layers.append(torch.nn.Linear(ode_width, output_shape, dtype=torch.float64))
-        self.mlp = torch.nn.Sequential(*layers)
+        layers.append(nn.Linear(ode_width, output_shape, dtype=dtype))
+        self.mlp = nn.Sequential(*layers)
 
     def forward(self, t, x):
         output = self.mlp(x)
@@ -648,25 +496,25 @@ class ODE(torch.nn.Module):
         return output
 
 
-class ODEWithParams(torch.nn.Module):
+class ODEWithParams(nn.Module):
     """
     Wraps a base ODE module so that parameters are injected as a constant.
     The solver sees only the latent state y (dim = latent_dim),
     but ODEWithParams.forward will concatenate y with p to compute dy/dt.
     """
 
-    def __init__(self, base_ode: torch.nn.Module, n_parameters: int, latent_dim: int):
+    def __init__(self, base_ode: nn.Module, n_parameters: int, latent_dim: int):
         super().__init__()
         self.base_ode = base_ode
         self.latent_dim = latent_dim
         self.n_parameters = n_parameters
-        self.p_const: Optional[torch.Tensor] = None
+        self.p_const: Optional[Tensor] = None
 
-    def set_params(self, params: torch.Tensor):
+    def set_params(self, params: Tensor):
         # params: [batch, n_parameters]
         self.p_const = params
 
-    def forward(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def forward(self, t: Tensor, y: Tensor) -> Tensor:
         # y: [batch, latent_dim]
         assert self.p_const is not None, "Call set_params() before solving."
         # concat state with params
@@ -676,7 +524,7 @@ class ODEWithParams(torch.nn.Module):
         return dy
 
 
-class Encoder(torch.nn.Module):
+class Encoder(nn.Module):
     """
     Fully connected encoder that maps input features to a latent space.
     """
@@ -687,28 +535,25 @@ class Encoder(torch.nn.Module):
         latent_features: int = 5,
         coder_layers: int = 3,
         coder_width: int = 32,
-        activation: torch.nn.Module = torch.nn.ReLU(),
+        activation: nn.Module = nn.ReLU(),
+        dtype=torch.float64,
     ):
         super().__init__()
         layers = []
-        layers.append(torch.nn.Linear(in_features, coder_width, dtype=torch.float64))
+        layers.append(nn.Linear(in_features, coder_width, dtype=dtype))
         layers.append(activation)
         for _ in range(coder_layers - 1):
-            layers.append(
-                torch.nn.Linear(coder_width, coder_width, dtype=torch.float64)
-            )
+            layers.append(nn.Linear(coder_width, coder_width, dtype=dtype))
             layers.append(activation)
-        layers.append(
-            torch.nn.Linear(coder_width, latent_features, dtype=torch.float64)
-        )
-        layers.append(torch.nn.Tanh())
-        self.mlp = torch.nn.Sequential(*layers)
+        layers.append(nn.Linear(coder_width, latent_features, dtype=dtype))
+        layers.append(nn.Tanh())
+        self.mlp = nn.Sequential(*layers)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return self.mlp(x)
 
 
-class Decoder(torch.nn.Module):
+class Decoder(nn.Module):
     """
     Fully connected decoder that maps the latent space back to the output.
     """
@@ -719,28 +564,25 @@ class Decoder(torch.nn.Module):
         latent_features: int = 5,
         coder_layers: int = 3,
         coder_width: int = 32,
-        activation: torch.nn.Module = torch.nn.ReLU(),
+        activation: nn.Module = nn.ReLU(),
+        dtype=torch.float64,
     ):
         super().__init__()
         layers = []
-        layers.append(
-            torch.nn.Linear(latent_features, coder_width, dtype=torch.float64)
-        )
+        layers.append(nn.Linear(latent_features, coder_width, dtype=dtype))
         layers.append(activation)
         for _ in range(coder_layers - 1):
-            layers.append(
-                torch.nn.Linear(coder_width, coder_width, dtype=torch.float64)
-            )
+            layers.append(nn.Linear(coder_width, coder_width, dtype=dtype))
             layers.append(activation)
-        layers.append(torch.nn.Linear(coder_width, out_features, dtype=torch.float64))
-        layers.append(torch.nn.Tanh())
-        self.mlp = torch.nn.Sequential(*layers)
+        layers.append(nn.Linear(coder_width, out_features, dtype=dtype))
+        layers.append(nn.Tanh())
+        self.mlp = nn.Sequential(*layers)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return self.mlp(x)
 
 
-class OldEncoder(torch.nn.Module):
+class OldEncoder(nn.Module):
     """
     Old encoder using a fixed 4-2-1 structure.
     """
@@ -750,35 +592,27 @@ class OldEncoder(torch.nn.Module):
         in_features: int,
         latent_features: int = 5,
         layers_factor: int = 8,
-        activation: torch.nn.Module = torch.nn.ReLU(),
+        activation: nn.Module = nn.ReLU(),
     ):
         super().__init__()
         # Example: coder_layers = [4, 2, 1] scaled by layers_factor.
         coder_layers = [4 * layers_factor, 2 * layers_factor, 1 * layers_factor]
         layers = []
-        layers.append(
-            torch.nn.Linear(in_features, coder_layers[0], dtype=torch.float64)
-        )
+        layers.append(nn.Linear(in_features, coder_layers[0], dtype=torch.float64))
         layers.append(activation)
-        layers.append(
-            torch.nn.Linear(coder_layers[0], coder_layers[1], dtype=torch.float64)
-        )
+        layers.append(nn.Linear(coder_layers[0], coder_layers[1], dtype=torch.float64))
         layers.append(activation)
-        layers.append(
-            torch.nn.Linear(coder_layers[1], coder_layers[2], dtype=torch.float64)
-        )
+        layers.append(nn.Linear(coder_layers[1], coder_layers[2], dtype=torch.float64))
         layers.append(activation)
-        layers.append(
-            torch.nn.Linear(coder_layers[2], latent_features, dtype=torch.float64)
-        )
-        layers.append(torch.nn.Tanh())
-        self.mlp = torch.nn.Sequential(*layers)
+        layers.append(nn.Linear(coder_layers[2], latent_features, dtype=torch.float64))
+        layers.append(nn.Tanh())
+        self.mlp = nn.Sequential(*layers)
 
     def forward(self, x):
         return self.mlp(x)
 
 
-class OldDecoder(torch.nn.Module):
+class OldDecoder(nn.Module):
     """
     Old decoder corresponding to the old encoder.
     """
@@ -788,30 +622,22 @@ class OldDecoder(torch.nn.Module):
         out_features: int,
         latent_features: int = 5,
         layers_factor: int = 8,
-        activation: torch.nn.Module = torch.nn.ReLU(),
+        activation: nn.Module = nn.ReLU(),
     ):
         super().__init__()
         coder_layers = [4 * layers_factor, 2 * layers_factor, 1 * layers_factor]
         # Reverse the order for the decoder.
         coder_layers.reverse()
         layers = []
-        layers.append(
-            torch.nn.Linear(latent_features, coder_layers[0], dtype=torch.float64)
-        )
+        layers.append(nn.Linear(latent_features, coder_layers[0], dtype=torch.float64))
         layers.append(activation)
-        layers.append(
-            torch.nn.Linear(coder_layers[0], coder_layers[1], dtype=torch.float64)
-        )
+        layers.append(nn.Linear(coder_layers[0], coder_layers[1], dtype=torch.float64))
         layers.append(activation)
-        layers.append(
-            torch.nn.Linear(coder_layers[1], coder_layers[2], dtype=torch.float64)
-        )
+        layers.append(nn.Linear(coder_layers[1], coder_layers[2], dtype=torch.float64))
         layers.append(activation)
-        layers.append(
-            torch.nn.Linear(coder_layers[2], out_features, dtype=torch.float64)
-        )
-        layers.append(torch.nn.Tanh())
-        self.mlp = torch.nn.Sequential(*layers)
+        layers.append(nn.Linear(coder_layers[2], out_features, dtype=torch.float64))
+        layers.append(nn.Tanh())
+        self.mlp = nn.Sequential(*layers)
 
     def forward(self, x):
         return self.mlp(x)

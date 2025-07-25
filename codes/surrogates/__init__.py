@@ -1,17 +1,16 @@
-from .DeepONet.deeponet import MultiONet, TrunkNet, BranchNet
+from .AbstractSurrogate import AbstractSurrogateModel, SurrogateModel
+from .DeepONet.deeponet import BranchNet, MultiONet, TrunkNet
 from .FCNN.fcnn import FullyConnected, FullyConnectedNet
 from .LatentNeuralODE.latent_neural_ode import (
+    ODE,
+    Decoder,
+    Encoder,
     LatentNeuralODE,
     ModelWrapper,
-    ODE,
-    Encoder,
-    Decoder,
 )
-from .LatentNeuralODE.utilities import ChemDataset
+from .LatentNeuralODE.utilities import ChemDataset, FlatSeqBatchIterable
 from .LatentPolynomial.latent_poly import LatentPoly, Polynomial
-
 from .surrogate_classes import surrogate_classes
-from .AbstractSurrogate.surrogates import AbstractSurrogateModel, SurrogateModel
 
 __all__ = [
     "surrogate_classes",
@@ -28,6 +27,7 @@ __all__ = [
     "Encoder",
     "Decoder",
     "ChemDataset",
+    "FlatSeqBatchIterable",
     "LatentPoly",
     "Polynomial",
 ]
