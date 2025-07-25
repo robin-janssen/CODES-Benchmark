@@ -359,10 +359,14 @@ class MultiONet(OperatorNetwork):
         shuffle: bool,
         dataset_params: np.ndarray | None,
         params_in_branch: bool,
-        num_workers: int = 0,  # will usually stay 0 here
+        num_workers: int = 0,
         pin_memory: bool = True,
     ):
         n_samples, n_timesteps, n_quantities = data.shape
+
+        if pin_memory:
+            if "cuda" not in self.device:
+                pin_memory = False
 
         branch = np.repeat(data[:, 0, :], n_timesteps, axis=0)  # (total, n_q)
         trunk = np.tile(timesteps.reshape(1, -1), (n_samples, 1)).reshape(
@@ -419,21 +423,23 @@ class MultiONet(OperatorNetwork):
             dataset_train,
             timesteps,
             batch_size,
-            True,
+            shuffle=shuffle,
             dataset_params=dataset_train_params,
             params_in_branch=self.config.params_branch,
             num_workers=nw,
         )
 
-        test_loader = self.create_dataloader(
-            dataset_test,
-            timesteps,
-            batch_size,
-            False,
-            dataset_params=dataset_test_params,
-            params_in_branch=self.config.params_branch,
-            num_workers=nw,
-        )
+        test_loader = None
+        if dataset_test is not None:
+            test_loader = self.create_dataloader(
+                dataset_test,
+                timesteps,
+                batch_size,
+                False,
+                dataset_params=dataset_test_params,
+                params_in_branch=self.config.params_branch,
+                num_workers=nw,
+            )
 
         val_loader = None
         if dataset_val is not None:

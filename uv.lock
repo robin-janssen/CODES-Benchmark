@@ -200,7 +200,7 @@ wheels = [
 ]
 
 [[package]]
-name = "codes-benchmark"
+name = "codes"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
