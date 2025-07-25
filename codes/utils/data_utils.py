@@ -752,6 +752,9 @@ def download_data(dataset_name: str, path: str | None = None, verbose: bool = Tr
 
 def print_data_info(data_path):
     with h5py.File(data_path, "r") as f:
+        if f.attrs.get("n_quantities", None) is None:
+            print(f"Dataset '{data_path}' does not contain the required attributes.")
+            return
         print("Dataset Info:")
         n_quantities = 10  # f.attrs["n_quantities"]
         train_samples = f.attrs["n_train_samples"]

@@ -310,6 +310,10 @@ class FullyConnected(AbstractSurrogateModel):
         n_samples, n_timesteps, n_quantities = data.shape
         total = n_samples * n_timesteps
 
+        if pin_memory:
+            if "cuda" not in self.device:
+                pin_memory = False
+
         init_states = data[:, 0, :]  # (n_samples, n_quantities)
         rep_init = np.repeat(
             init_states[:, None, :], n_timesteps, 1
