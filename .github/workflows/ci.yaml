@@ -44,7 +44,8 @@ jobs:
         run: |
           uv venv
           source .venv/bin/activate
-          uv pip install -e ".[dev]"
+          uv pip install -e .
+          uv pip install --group dev
 
       - name: Check for dependency changes
         id: deps
@@ -139,7 +140,8 @@ jobs:
         run: |
           uv venv
           source .venv/bin/activate
-          uv pip install -e ".[dev]"
+          uv pip install -e .
+          uv pip install --group dev
 
       - name: Generate API Documentation with Sphinx
         run: |
