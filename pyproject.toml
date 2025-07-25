@@ -11,7 +11,6 @@ readme = "README.md"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
 ]
 requires-python = ">=3.10"
 dependencies = [
