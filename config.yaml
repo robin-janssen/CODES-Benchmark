@@ -1,5 +1,5 @@
 # Global settings for the benchmark
-training_id: "fcnn_so_mps"
+training_id: "fcnn_so_mps_2"
 surrogates: ["MultiONet"] # ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
 batch_size: [8192] # [8192, 8192, 512, 512]
 epochs: [7500] # [20000, 7500, 20000, 15000]
@@ -9,7 +9,7 @@ dataset:
   log10_transform_params: False
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
-  tolerance: 1e-25
+  tolerance: 1e-20
   subset_factor: 1
   log_timesteps: False
 devices: ["mps"]
@@ -27,11 +27,11 @@ sparse:
   enabled: False
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
-  enabled: True
+  enabled: False
   sizes: [1/16, 1/8, 1/4, 1/2]
-uncertainty: 
-  enabled: True
-  ensemble_size: 5  # Number of models for deep ensemble
+uncertainty:
+  enabled: False
+  ensemble_size: 5 # Number of models for deep ensemble
 
 # Evaluations during benchmark
 losses: True
