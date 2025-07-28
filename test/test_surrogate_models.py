@@ -1,8 +1,3 @@
-"""
-Comprehensive unit tests for surrogate models, testing the AbstractSurrogateModel interface
-and all registered surrogate model implementations.
-"""
-
 import tempfile
 from pathlib import Path
 
