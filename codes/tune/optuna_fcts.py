@@ -2,7 +2,6 @@ import math
 import os
 import queue
 from datetime import datetime
-from distutils.util import strtobool
 
 import numpy as np
 import optuna
@@ -65,7 +64,7 @@ def _suggest_param(trial: optuna.Trial, name: str, opts: dict):
     # categorical or bool
     raw = trial.suggest_categorical(name, opts.get("choices", []))
     if isinstance(raw, str) and raw.lower() in ("true", "false"):
-        return bool(strtobool(raw))
+        return raw.lower() == "true"
     return raw
 
 

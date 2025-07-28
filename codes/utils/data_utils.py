@@ -223,70 +223,6 @@ def check_and_load_data(
     )
 
 
-def normalize_data_old(
-    train_data: np.ndarray,
-    test_data: np.ndarray | None = None,
-    val_data: np.ndarray | None = None,
-    mode: str = "standardise",
-) -> tuple:
-    """
-    Normalize the data based on the training data statistics.
-
-    Args:
-        train_data (np.ndarray): Training data array.
-        test_data (np.ndarray, optional): Test data array.
-        val_data (np.ndarray, optional): Validation data array.
-        mode (str): Normalization mode, either "minmax" or "standardise".
-
-    Returns:
-        tuple: Normalized training data, test data, and validation data.
-    """
-    if mode not in ["minmax", "standardise"]:
-        raise ValueError("Mode must be either 'minmax' or 'standardise'")
-
-    if mode == "minmax":
-        # Compute min and max on the training data
-        data_min = np.min(train_data)
-        data_max = np.max(train_data)
-
-        data_info = {"min": float(data_min), "max": float(data_max), "mode": mode}
-
-        # Normalize the training data
-        train_data_norm = 2 * (train_data - data_min) / (data_max - data_min) - 1
-
-        if test_data is not None:
-            test_data_norm = 2 * (test_data - data_min) / (data_max - data_min) - 1
-        else:
-            test_data_norm = None
-
-        if val_data is not None:
-            val_data_norm = 2 * (val_data - data_min) / (data_max - data_min) - 1
-        else:
-            val_data_norm = None
-
-    elif mode == "standardise":
-        # Compute mean and std on the training data
-        mean = np.mean(train_data)
-        std = np.std(train_data)
-
-        data_info = {"mean": float(mean), "std": float(std), "mode": mode}
-
-        # Standardize the training data
-        train_data_norm = (train_data - mean) / std
-
-        if test_data is not None:
-            test_data_norm = (test_data - mean) / std
-        else:
-            test_data_norm = None
-
-        if val_data is not None:
-            val_data_norm = (val_data - mean) / std
-        else:
-            val_data_norm = None
-
-    return data_info, train_data_norm, test_data_norm, val_data_norm
-
-
 def normalize_data(
     train_data: np.ndarray,
     test_data: np.ndarray | None = None,
@@ -752,6 +688,9 @@ def download_data(dataset_name: str, path: str | None = None, verbose: bool = Tr
 
 def print_data_info(data_path):
     with h5py.File(data_path, "r") as f:
+        if f.attrs.get("n_quantities", None) is None:
+            print(f"Dataset '{data_path}' does not contain the required attributes.")
+            return
         print("Dataset Info:")
         n_quantities = 10  # f.attrs["n_quantities"]
         train_samples = f.attrs["n_train_samples"]

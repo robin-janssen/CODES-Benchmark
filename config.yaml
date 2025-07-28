@@ -1,41 +1,41 @@
 # Global settings for the benchmark
-training_id: "cloud_full"
-surrogates: ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"] 
-batch_size: [65536, 65536, 512, 512] 
-epochs: [20000, 20000, 11000, 20000] # [20000, 7500, 20000, 15000]
-dataset: 
-  name: "cloud"
+training_id: "fcnn_so_mps_2"
+surrogates: ["MultiONet"] # ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
+batch_size: [8192] # [8192, 8192, 512, 512]
+epochs: [7500] # [20000, 7500, 20000, 15000]
+dataset:
+  name: "simple_ode" #
   log10_transform: True
   log10_transform_params: False
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
-  tolerance: 1e-25
+  tolerance: 1e-20
   subset_factor: 1
-  log_timesteps: True
-devices: ["cuda:2", "cuda:3", "cuda:4", "cuda:5", "cuda:6", "cuda:7", "cuda:8", "cuda:9"] 
+  log_timesteps: False
+devices: ["mps"]
 seed: 42
 verbose: False
 
 # Models to train
-interpolation: 
-  enabled: True
+interpolation:
+  enabled: False
   intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
 extrapolation:
-  enabled: True
+  enabled: False
   cutoffs: [50, 60, 70, 80, 90]
-sparse: 
-  enabled: True
+sparse:
+  enabled: False
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
-  enabled: True
+  enabled: False
   sizes: [1/16, 1/8, 1/4, 1/2]
-uncertainty: 
-  enabled: True
-  ensemble_size: 5  # Number of models for deep ensemble
+uncertainty:
+  enabled: False
+  ensemble_size: 5 # Number of models for deep ensemble
 
 # Evaluations during benchmark
 losses: True
 gradients: True
 timing: True
-compute: True
+compute: False
 compare: True # Whether to compare the surrogates
