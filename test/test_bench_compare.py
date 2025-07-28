@@ -209,7 +209,7 @@ def test_compare_UQ_and_confidence(stub_plots_and_io, cfg, monkeypatch):
     assert base["M1"]["UQ"]["confidence_scores"] == 0.42
 
 
-def test_tabular_comparison_creates_files(tmp_path, stub_plots_and_io):
+def test_tabular_comparison_creates_files(tmp_path, stub_plots_and_io, monkeypatch):
     metrics = {
         "M1": {
             "accuracy": {
@@ -241,12 +241,11 @@ def test_tabular_comparison_creates_files(tmp_path, stub_plots_and_io):
         "extrapolation": {"enabled": False},
         "sparse": {"enabled": False},
         "batch_scaling": {"enabled": False},
-        "uncertainty": {"enabled": False},
         "verbose": False,
     }
 
     # run inside tmp_path
-    os.chdir(tmp_path)
+    monkeypatch.chdir(tmp_path)
     # manually create results/<study_id>
     os.makedirs(tmp_path / "results" / cfg["training_id"], exist_ok=True)
 
