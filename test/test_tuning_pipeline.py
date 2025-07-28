@@ -65,6 +65,7 @@ def basic_params():
         "batch_size": {"type": "int", "low": 10, "high": 20, "step": 5},
         "learning_rate": {"type": "float", "low": 0.001, "high": 0.01, "log": True},
         "activation": {"choices": ["relu", "tanh", "identity"]},
+        "loss_function": {"choices": ["mse", "smoothl1"]},
     }
 
 
@@ -86,6 +87,7 @@ def test_make_optuna_params_basic(basic_params):
             "batch_size": basic_params["batch_size"],
             "learning_rate": basic_params["learning_rate"],
             "activation": basic_params["activation"],
+            "loss_function": basic_params["loss_function"],
         },
     )
     # int param should equal low
@@ -95,6 +97,9 @@ def test_make_optuna_params_basic(basic_params):
     # activation returns first choice
     expected_cls = MODULE_REGISTRY[basic_params["activation"]["choices"][0]]
     assert isinstance(out["activation"], expected_cls)
+    # loss_function returns first choice
+    expected_cls = MODULE_REGISTRY[basic_params["loss_function"]["choices"][0]]
+    assert isinstance(out["loss_function"], expected_cls)
 
 
 def test_make_optuna_params_conditional(conditional_params):
@@ -293,7 +298,7 @@ def test_training_run_multi_objective(monkeypatch, tmp_path):
         "codes.tune.optuna_fcts.make_optuna_params", lambda trial, params: {}
     )
     monkeypatch.setattr(
-        "codes.tune.optuna_fcts.measure_inference_time", lambda m, l: [1.0, 2.0, 3.0]
+        "codes.tune.optuna_fcts.measure_inference_time", lambda m, dur: [1.0, 2.0, 3.0]
     )
     import torch
 
