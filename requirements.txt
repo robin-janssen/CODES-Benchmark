@@ -12,7 +12,7 @@ click==8.2.1
 -e file:///home/runner/work/CODES-Benchmark/CODES-Benchmark
 colorlog==6.9.0
 contourpy==1.3.2
-coverage==7.10.0
+coverage==7.10.1
 cycler==0.12.1
 distlib==0.4.0
 docutils==0.21.2
