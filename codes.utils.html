@@ -379,7 +379,6 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.data_utils.download_data"><code class="docutils literal notranslate"><span class="pre">download_data()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.data_utils.get_data_subset"><code class="docutils literal notranslate"><span class="pre">get_data_subset()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.data_utils.normalize_data"><code class="docutils literal notranslate"><span class="pre">normalize_data()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.data_utils.normalize_data_old"><code class="docutils literal notranslate"><span class="pre">normalize_data_old()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.data_utils.print_data_info"><code class="docutils literal notranslate"><span class="pre">print_data_info()</span></code></a></li>
 </ul>
 </li>
@@ -618,28 +617,6 @@ If it is a tuple of Nones, then params_subset will be that tuple of Nones.</p></
 <li><p><strong>val_data</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Validation data array.</p></li>
 <li><p><strong>mode</strong> (<em>str</em>) – Normalization mode, either “minmax” or “standardise”.</p></li>
 <li><p><strong>per_species</strong> (<em>bool</em>) – If True, normalize for each species separately.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Normalized training data, test data, and validation data.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="codes.utils.data_utils.normalize_data_old">
-<span class="sig-prename descclassname"><span class="pre">codes.utils.data_utils.</span></span><span class="sig-name descname"><span class="pre">normalize_data_old</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'standardise'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.utils.data_utils.normalize_data_old" title="Link to this definition">#</a></dt>
-<dd><p>Normalize the data based on the training data statistics.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>train_data</strong> (<em>np.ndarray</em>) – Training data array.</p></li>
-<li><p><strong>test_data</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Test data array.</p></li>
-<li><p><strong>val_data</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Validation data array.</p></li>
-<li><p><strong>mode</strong> (<em>str</em>) – Normalization mode, either “minmax” or “standardise”.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1356,7 +1333,6 @@ as an attribute of the function.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.data_utils.download_data"><code class="docutils literal notranslate"><span class="pre">download_data()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.data_utils.get_data_subset"><code class="docutils literal notranslate"><span class="pre">get_data_subset()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.data_utils.normalize_data"><code class="docutils literal notranslate"><span class="pre">normalize_data()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.data_utils.normalize_data_old"><code class="docutils literal notranslate"><span class="pre">normalize_data_old()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.data_utils.print_data_info"><code class="docutils literal notranslate"><span class="pre">print_data_info()</span></code></a></li>
 </ul>
 </li>

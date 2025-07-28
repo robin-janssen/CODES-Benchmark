@@ -14,7 +14,6 @@ codes.utils.data\_utils
       download_data
       get_data_subset
       normalize_data
-      normalize_data_old
       print_data_info
    
    .. rubric:: Classes
