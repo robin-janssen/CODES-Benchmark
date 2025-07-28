@@ -65,7 +65,7 @@ line_length = 88
 
 [tool.coverage.run]
 source = ["codes"]
-omit = ["*/tests/*", "*/test_*", "*/bench_plots.py", "*/__init__.py"]
+omit = ["*/tests/*", "*/test_*", "*/bench_plots.py", "*/__init__.py", "*/evaluate_study.py", "*/evaluate_tuning.py"]
 
 [tool.coverage.report]
 exclude_lines = [

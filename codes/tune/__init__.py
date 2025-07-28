@@ -11,7 +11,15 @@ from .optuna_fcts import (
     maybe_set_runtime_threshold,
     training_run,
 )
-from .postgres_fcts import _make_db_url, initialize_optuna_database
+from .postgres_fcts import (
+    _make_db_url,
+    initialize_optuna_database,
+    _check_postgres_running_local,
+    _start_postgres_server_local,
+    _check_remote_reachable,
+    _initialize_postgres_local,
+    _initialize_postgres_remote,
+)
 from .tune_utils import (
     build_study_names,
     copy_config,
@@ -37,4 +45,9 @@ __all__ = [
     "yes_no",
     "_make_db_url",
     "initialize_optuna_database",
+    "_check_postgres_running_local",
+    "_start_postgres_server_local",
+    "_check_remote_reachable",
+    "_initialize_postgres_local",
+    "_initialize_postgres_remote",
 ]
