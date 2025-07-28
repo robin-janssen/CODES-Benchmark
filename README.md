@@ -1,15 +1,14 @@
 # CODES Benchmark
 
-[![codecov](https://codecov.io/github/robin-janssen/CODES-Benchmark/branch/develop/graph/badge.svg?token=TNF9ISCAJK)](https://codecov.io/github/robin-janssen/CODES-Benchmark)
+[![codecov](https://codecov.io/github/robin-janssen/CODES-Benchmark/graph/badge.svg?token=TNF9ISCAJK)](https://codecov.io/github/robin-janssen/CODES-Benchmark)
 ![Static Badge](https://img.shields.io/badge/license-GPLv3-blue)
 ![Static Badge](https://img.shields.io/badge/NeurIPS-2024-green)
-
 
 🎉 CODES was accepted to the ML4PS workshop @ NeurIPS2024 🎉
 
 ## Benchmarking Coupled ODE Surrogates
 
-CODES is a benchmark for coupled ODE surrogate models. 
+CODES is a benchmark for coupled ODE surrogate models.
 
 <picture>
   <!-- Dark mode SVG -->
