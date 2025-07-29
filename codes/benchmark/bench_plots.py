@@ -394,7 +394,7 @@ def plot_example_mode_predictions(
 
     num_quantities = preds.shape[2]
     # Define the color palette for plotting quantities
-    colors = plt.cm.viridis(np.linspace(0, 1, num_quantities))
+    colors = plt.cm.viridis(np.linspace(0, 0.9, num_quantities))
 
     # Create the overall figure and subplots
     fig = plt.figure(figsize=(6, 4 * num_plots))
@@ -506,7 +506,8 @@ def plot_example_mode_predictions(
 def plot_example_iterative_predictions(
     surr_name: str,
     conf: dict,
-    preds: np.ndarray,
+    iterative_preds: np.ndarray,
+    full_preds: np.ndarray,
     targets: np.ndarray,
     timesteps: np.ndarray,
     iter_interval: int,
@@ -522,13 +523,13 @@ def plot_example_iterative_predictions(
     """
     # choose example if not given
     if example_idx is None:
-        errors = np.mean(np.abs(preds - targets), axis=(1, 2))
+        errors = np.mean(np.abs(iterative_preds - targets), axis=(1, 2))
         example_idx = int(np.argsort(np.abs(errors - np.median(errors)))[0])
 
-    n_q = min(preds.shape[2], num_quantities)
-    per_plot = 10
+    n_q = min(iterative_preds.shape[2], num_quantities)
+    per_plot = min(10, n_q)
     n_plots = int(np.ceil(n_q / per_plot))
-    colors = plt.cm.viridis(np.linspace(0, 1, n_q))
+    colors = plt.cm.viridis(np.linspace(0, 0.9, per_plot))
 
     fig = plt.figure(figsize=(6, 4 * n_plots))
     gs = GridSpec(n_plots, 1, figure=fig)
@@ -537,11 +538,13 @@ def plot_example_iterative_predictions(
         ax = fig.add_subplot(gs[pi])
         start, end = pi * per_plot, min((pi + 1) * per_plot, n_q)
         for qi in range(start, end):
-            c = colors[qi]
+            c = colors[qi % per_plot]
             gt = targets[example_idx, :, qi]
-            pr = preds[example_idx, :, qi]
+            pr = iterative_preds[example_idx, :, qi]
             ax.plot(timesteps, gt, "--", color=c)
             ax.plot(timesteps, pr, "-", color=c)
+            init_pr = full_preds[example_idx, :, qi]
+            ax.plot(timesteps, init_pr, ":", color=c)
         # retrigger lines
         for t in timesteps[::iter_interval]:
             ax.axvline(x=t, linestyle=":", linewidth=0.8, alpha=0.7)
@@ -553,7 +556,8 @@ def plot_example_iterative_predictions(
         ax.set_ylabel("Abundance")
         if labels is not None:
             legend_lines = [
-                plt.Line2D([0], [0], color=colors[i]) for i in range(start, end)
+                plt.Line2D([0], [0], color=colors[i % per_plot])
+                for i in range(start, end)
             ]
             ax.legend(
                 legend_lines,
@@ -566,12 +570,15 @@ def plot_example_iterative_predictions(
 
     handles = [
         plt.Line2D([0], [0], color="black", linestyle="--", label="Ground Truth"),
-        plt.Line2D([0], [0], color="black", linestyle="-", label="Prediction"),
+        plt.Line2D(
+            [0], [0], color="black", linestyle="-", label="Iterative Prediction"
+        ),
+        plt.Line2D([0], [0], color="black", linestyle=":", label="Full Prediction"),
     ]
     pos = 0.95 - (0.06 / n_plots)
     fig.legend(
         handles,
-        ["Ground Truth", "Prediction"],
+        ["Ground Truth", "Iterative Prediction", "Full Prediction"],
         loc="upper center",
         bbox_to_anchor=(0.5, pos),
         ncol=2,
@@ -589,7 +596,7 @@ def plot_example_iterative_predictions(
     plt.tight_layout(rect=[0.05, 0.03, 0.95, 0.92])
 
     if save and conf:
-        fname = f"iterative_example_{surr_name}.png"
+        fname = "iterative_example_preds.png"
         save_plot(plt, fname, conf, surr_name)
 
     plt.close()
@@ -632,7 +639,7 @@ def plot_example_predictions_with_uncertainty(
     num_plots = int(np.ceil(num_quantities / quantities_per_plot))
 
     # Define the color palette
-    colors = plt.cm.viridis(np.linspace(0, 1, quantities_per_plot))
+    colors = plt.cm.viridis(np.linspace(0, 0.9, quantities_per_plot))
 
     # Create subplots
     fig = plt.figure(figsize=(8, 4 * num_plots))

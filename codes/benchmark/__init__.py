@@ -107,6 +107,7 @@ __all__ = [
     "plot_average_errors_over_time",
     "plot_example_predictions_with_uncertainty",
     "plot_example_mode_predictions",
+    "plot_example_iterative_predictions",
     "plot_average_uncertainty_over_time",
     "plot_uncertainty_vs_errors",
     "plot_uncertainty_confidence",

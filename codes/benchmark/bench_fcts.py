@@ -141,7 +141,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     if conf["iterative"]:
         # Iterative training benchmark
         print("Running iterative training benchmark...")
-        metrics["iterative"] = iterative_training_benchmark(
+        metrics["iterative"] = evaluate_iterative_predictions(
             model, surr_name, timesteps, val_loader, conf, labels
         )
 
@@ -215,18 +215,18 @@ def evaluate_accuracy(
     labels: list | None = None,
 ) -> dict[str, Any]:
     """
-        Evaluate the accuracy of the surrogate model.
-    quantitiesquantities
-        Args:
-            model: Instance of the surrogate model class.
-            surr_name (str): The name of the surrogate model.
-            timesteps (np.ndarray): The timesteps array.
-            test_loader (DataLoader): The DataLoader object containing the test data.
-            conf (dict): The configuration dictionary.
-            labels (list, optional): The labels for the quantities.
+    Evaluate the accuracy of the surrogate model.
 
-        Returns:
-            dict: A dictionary containing accuracy metrics.
+    Args:
+        model: Instance of the surrogate model class.
+        surr_name (str): The name of the surrogate model.
+        timesteps (np.ndarray): The timesteps array.
+        test_loader (DataLoader): The DataLoader object containing the test data.
+        conf (dict): The configuration dictionary.
+        labels (list, optional): The labels for the quantities.
+
+    Returns:
+        dict: A dictionary containing accuracy metrics.
     """
     training_id = conf["training_id"]
 
@@ -289,7 +289,7 @@ def evaluate_accuracy(
     return accuracy_metrics
 
 
-def iterative_training_benchmark(
+def evaluate_iterative_predictions(
     model,
     surr_name: str,
     timesteps: np.ndarray,
@@ -298,7 +298,7 @@ def iterative_training_benchmark(
     labels: list | None = None,
 ) -> dict[str, Any]:
     """
-    Benchmark error accumulation when running the model iteratively in chunks.
+    Evaluate the iterative predictions of the surrogate model.
 
     Returns the same set of error metrics as evaluate_accuracy, but over the
     full trajectory built by re-feeding the last prediction as the next initial state.
@@ -308,8 +308,13 @@ def iterative_training_benchmark(
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
 
     # get full ground truth (targets) and ignore one-shot preds
-    _, targets = model.predict(data_loader=val_loader)
+    full_preds, targets = model.predict(
+        data_loader=val_loader, leave_log=True, leave_norm=True
+    )
+    targets = targets.detach().cpu().numpy()
     n_samples, n_timesteps, n_quantities = targets.shape
+
+    original_n_timesteps = model.n_timesteps
 
     # how many timesteps per chunk
     iter_interval = 10  # conf["iterative"]["interval"]
@@ -321,7 +326,7 @@ def iterative_training_benchmark(
         batch_size = conf["batch_size"]
 
     # container for the piecewise predictions
-    preds_all = np.zeros_like(targets)
+    iterative_preds = np.zeros_like(targets)
 
     # number of chunks
     n_chunks = (n_timesteps + iter_interval - 1) // iter_interval
@@ -329,19 +334,22 @@ def iterative_training_benchmark(
     for i in range(n_chunks):
         start = i * iter_interval
         end = min(start + iter_interval, n_timesteps)
+        model.n_timesteps = (
+            end - start + 1
+        )  # set the number of timesteps for this chunk
 
         # choose initial state
         if i == 0:
             init_state = targets[:, 0, :]
         else:
-            init_state = preds_all[:, start - 1, :]
+            init_state = iterative_preds[:, start - 1, :]
 
         # build dummy dataset: only first slice matters for prepare_data
-        ds = np.zeros((n_samples, iter_interval, n_quantities))
+        ds = np.zeros((n_samples, model.n_timesteps, n_quantities))
         ds[:, 0, :] = init_state
 
         # only need the "train" loader for prediction
-        dt = timesteps[:iter_interval]
+        dt = timesteps[: model.n_timesteps]
         train_loader, _, _ = model.prepare_data(
             dataset_train=ds,
             dataset_test=None,
@@ -356,11 +364,19 @@ def iterative_training_benchmark(
         )
 
         # predict this chunk and insert into the global array
-        preds_chunk, _ = model.predict(data_loader=train_loader)
-        preds_all[:, start:end, :] = preds_chunk[:, : end - start, :]
+        preds_chunk, _ = model.predict(
+            data_loader=train_loader, leave_log=True, leave_norm=True
+        )
+        iterative_preds[:, start:end, :] = (
+            preds_chunk[:, 1 : model.n_timesteps, :].detach().cpu().numpy()
+        )
+
+    iterative_preds = model.denormalize(iterative_preds)
+    full_preds = model.denormalize(full_preds.detach().cpu().numpy())
+    targets = model.denormalize(targets)
 
     # compute error metrics
-    errors = preds_all - targets
+    errors = iterative_preds - targets
     abs_errors = np.abs(errors)
     mse = float(np.mean(errors**2))
     mae = float(np.mean(abs_errors))
@@ -368,16 +384,20 @@ def iterative_training_benchmark(
     thresh = float(conf.get("relative_error_threshold", 0.0))
     rel_errors = abs_errors / np.maximum(np.abs(targets), thresh)
 
-    errors = np.mean(np.abs(preds_all - targets), axis=(1, 2))
+    errors = np.mean(np.abs(iterative_preds - targets), axis=(1, 2))
     example_idx = int(np.argsort(np.abs(errors - np.median(errors)))[0])
+
+    # Restore original number of timesteps
+    model.n_timesteps = original_n_timesteps
 
     plot_example_iterative_predictions(
         surr_name,
         conf,
-        preds_all,
+        iterative_preds,
+        full_preds,
         targets,
         timesteps,
-        conf["iterative"]["interval"],
+        iter_interval=iter_interval,
         example_idx=example_idx,
         labels=labels,
         save=True,
