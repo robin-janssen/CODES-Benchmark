@@ -1,12 +1,11 @@
-import pytest
 from types import SimpleNamespace
 from unittest.mock import patch
+
 import numpy as np
+import pytest
 
 import run_eval
-from codes.benchmark.bench_fcts import (
-    run_benchmark,
-)
+from codes.benchmark.bench_fcts import run_benchmark
 
 
 @pytest.fixture
@@ -26,6 +25,7 @@ def minimal_bench_config():
         "gradients": False,
         "timing": False,
         "compute": False,
+        "iterative": False,
         "interpolation": {"enabled": False},
         "extrapolation": {"enabled": False},
         "sparse": {"enabled": False},

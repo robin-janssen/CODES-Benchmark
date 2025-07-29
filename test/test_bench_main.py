@@ -1,6 +1,5 @@
-# test_test_bench_functions.py
-import pytest
 import numpy as np
+import pytest
 import torch
 
 import codes.benchmark.bench_fcts as bf
@@ -164,3 +163,76 @@ def test_evaluate_compute(monkeypatch):
     assert model.load_calls == [("TID", surr, f"{surr.lower()}_main")]
     assert out["num_trainable_parameters"] == 12345
     assert out["memory_footprint"] is fake_mem
+
+
+def test_evaluate_iterative_predictions(simple_conf, simple_loader, monkeypatch):
+    import numpy as np
+    import torch
+
+    import codes.benchmark.bench_fcts as bf
+
+    # stub out the final plot_example_iterative_predictions so it doesn't call save_plot
+    monkeypatch.setattr(
+        bf, "plot_example_iterative_predictions", lambda *args, **kwargs: None
+    )
+
+    # model with T=12 timesteps and Q=2 quantities
+    T, Q = 12, 2
+    timesteps = np.arange(1.0, T + 1.0)
+
+    class FakeIterModel:
+        def __init__(self, n_timesteps, n_quantities):
+            self.n_timesteps = n_timesteps
+            self.n_quantities = n_quantities
+            self.load_calls = []
+
+        def load(self, training_id, surr_name, model_identifier):
+            self.load_calls.append((training_id, surr_name, model_identifier))
+
+        def predict(self, *, data_loader, leave_log=None, leave_norm=None):
+            # preds == targets == ones
+            shape = (1, self.n_timesteps, self.n_quantities)
+            ones = torch.ones(shape, dtype=torch.float32)
+            return ones, ones
+
+        def prepare_data(self, **kwargs):
+            # only the returned loader is used by predict
+            return "train_loader", None, None
+
+        def denormalize(self, arr):
+            return arr
+
+    model = FakeIterModel(n_timesteps=T, n_quantities=Q)
+
+    surr = "SurrA"
+    simple_conf["surrogates"] = [surr]
+    simple_conf["batch_size"] = 4
+    simple_conf["relative_error_threshold"] = 0.0
+    simple_conf["training_id"] = "TID"  # ensure load uses this
+
+    metrics = bf.evaluate_iterative_predictions(
+        model=model,
+        surr_name=surr,
+        timesteps=timesteps,
+        val_loader="dummy_val_loader",
+        conf=simple_conf,
+        labels=["q1", "q2"],
+    )
+
+    # ensure we loaded the main model
+    assert model.load_calls == [("TID", surr, f"{surr.lower()}_main")]
+
+    # since preds == targets, all errors should be zero
+    for key in [
+        "mean_squared_error",
+        "mean_absolute_error",
+        "mean_relative_error",
+        "median_relative_error",
+        "max_relative_error",
+        "min_relative_error",
+    ]:
+        assert metrics[key] == pytest.approx(0.0)
+
+    # array shapes should be (1, T, Q)
+    assert metrics["absolute_errors"].shape == (1, T, Q)
+    assert metrics["relative_errors"].shape == (1, T, Q)
