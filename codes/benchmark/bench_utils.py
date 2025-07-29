@@ -78,7 +78,7 @@ def check_benchmark(conf: dict) -> None:
 
     training_conf = read_yaml_config(yaml_file)
 
-    # 1. Check Surrogates
+    # Check Surrogates
     training_surrogates = set(training_conf.get("surrogates", []))
     benchmark_surrogates = set(conf.get("surrogates", []))
     if not benchmark_surrogates.issubset(training_surrogates):
@@ -86,7 +86,7 @@ def check_benchmark(conf: dict) -> None:
             "Benchmark configuration includes surrogates that were not in the training configuration."
         )
 
-    # 2. Check Batch Size
+    # Check Batch Size
     if "batch_size" in conf:
         training_batch_size = training_conf.get("batch_size", [])
         benchmark_batch_size = conf.get("batch_size", [])
@@ -107,7 +107,7 @@ def check_benchmark(conf: dict) -> None:
                         print("Exiting...")
                         exit()
 
-    # 3. Check Dataset Settings
+    # Check Dataset Settings
     training_dataset = training_conf.get("dataset", {})
     benchmark_dataset = conf.get("dataset", {})
 
@@ -127,7 +127,7 @@ def check_benchmark(conf: dict) -> None:
                 f"Additional dataset setting '{key}' found in benchmark configuration that is not present in training configuration."
             )
 
-    # 4. Check Modalities (Interpolation, Extrapolation, Sparse, Batch Scaling, Uncertainty)
+    # Check Modalities (Interpolation, Extrapolation, Sparse, Batch Scaling, Uncertainty)
     modalities = [
         "interpolation",
         "extrapolation",

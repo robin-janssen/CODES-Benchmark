@@ -64,7 +64,7 @@ def _suggest_param(trial: optuna.Trial, name: str, opts: dict):
     # categorical or bool
     raw = trial.suggest_categorical(name, opts.get("choices", []))
     if isinstance(raw, str) and raw.lower() in ("true", "false"):
-        return raw == "true"
+        return raw.lower() == "true"
     return raw
 
 

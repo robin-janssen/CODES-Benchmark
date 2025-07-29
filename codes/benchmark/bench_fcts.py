@@ -1154,37 +1154,6 @@ def compare_main_losses(metrics: dict, config: dict) -> None:
     )
 
 
-# def compare_MAE(metrics: dict, config: dict) -> None:
-#     """
-#     Compare the MAE of different surrogate models over the course of training.
-
-#     Args:
-#         metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
-#         config (dict): Configuration dictionary.
-
-#     Returns:
-#         None
-#     """
-#     MAE = []
-#     labels = []
-#     train_durations = []
-#     device = config["devices"]
-#     device = device[0] if isinstance(device, list) else device
-
-#     for surr_name, _ in metrics.items():
-#         training_id = config["training_id"]
-#         surrogate_class = get_surrogate(surr_name)
-#         n_timesteps = metrics[surr_name]["timesteps"].shape[0]
-#         n_quantities = metrics[surr_name]["accuracy"]["absolute_errors"].shape[2]
-#         model_config = get_model_config(surr_name, config)
-#         model = surrogate_class(device, n_quantities, n_timesteps, model_config)
-#         model_identifier = f"{surr_name.lower()}_main"
-#         model.load(training_id, surr_name, model_identifier=model_identifier)
-#         MAE.append(model.MAE)
-#         labels.append(surr_name)
-#         train_durations.append(model.train_duration)
-
-
 def compare_relative_errors(metrics: dict[str, dict], config: dict) -> None:
     """
     Compare the relative errors over time for different surrogate models.

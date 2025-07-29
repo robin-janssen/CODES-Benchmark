@@ -136,6 +136,10 @@ class LatentNeuralODE(AbstractSurrogateModel):
         num_workers: int = 0,
         pin_memory: bool = True,
     ):
+        if pin_memory:
+            if "cuda" not in self.device:
+                pin_memory = False
+
         data_t = torch.from_numpy(data).float()
         t_t = torch.from_numpy(timesteps).float()
         if dataset_params is not None:
