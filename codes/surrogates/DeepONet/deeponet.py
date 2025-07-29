@@ -413,6 +413,10 @@ class MultiONet(OperatorNetwork):
         if dummy_timesteps:
             timesteps = np.linspace(0, 1, dataset_train.shape[1])
 
+        assert (
+            timesteps.shape[0] == dataset_train.shape[1]
+        ), "Number of timesteps in timesteps array and dataset must match."
+
         nw = getattr(self.config, "num_workers", 0)
 
         train_loader = self.create_dataloader(

@@ -87,6 +87,10 @@ class LatentNeuralODE(AbstractSurrogateModel):
         if dummy_timesteps:
             timesteps = np.linspace(0, 1, dataset_train.shape[1])
 
+        assert (
+            timesteps.shape[0] == dataset_train.shape[1]
+        ), "Number of timesteps in timesteps array and dataset must match."
+
         nw = getattr(self.config, "num_workers", 0)
 
         train_loader = self.create_dataloader(
@@ -266,13 +270,26 @@ class ModelWrapper(nn.Module):
             enc_in = n_quantities + n_parameters
         else:
             enc_in = n_quantities
-        self.encoder = Encoder(
-            in_features=enc_in,
-            latent_features=latent_dim,
-            coder_layers=config.coder_layers,
-            coder_width=config.coder_width,
-            activation=config.activation,
-        )
+        if self.config.model_version == "v1":
+            self.encoder = OldEncoder(
+                in_features=enc_in,
+                latent_features=latent_dim,
+                layers_factor=self.config.layers_factor,
+                activation=self.config.activation,
+            )
+        elif self.config.model_version == "v2":
+            self.encoder = Encoder(
+                in_features=enc_in,
+                latent_features=latent_dim,
+                coder_layers=config.coder_layers,
+                coder_width=config.coder_width,
+                activation=config.activation,
+            )
+        else:
+            raise ValueError(
+                f"Unknown model version {self.config.model_version}. "
+                "Supported versions: 'v1', 'v2'."
+            )
 
         # --- Build ODE ---
         if n_parameters == 0 or config.encode_params:
@@ -305,13 +322,21 @@ class ModelWrapper(nn.Module):
         self.solver = to.AutoDiffAdjoint(step, ctrl)
 
         # --- Build decoder ---
-        self.decoder = Decoder(
-            out_features=n_quantities,
-            latent_features=latent_dim,
-            coder_layers=config.coder_layers,
-            coder_width=config.coder_width,
-            activation=config.activation,
-        )
+        if self.config.model_version == "v1":
+            self.decoder = OldDecoder(
+                out_features=n_quantities,
+                latent_features=latent_dim,
+                layers_factor=self.config.layers_factor,
+                activation=self.config.activation,
+            )
+        elif self.config.model_version == "v2":
+            self.decoder = Decoder(
+                out_features=n_quantities,
+                latent_features=latent_dim,
+                coder_layers=config.coder_layers,
+                coder_width=config.coder_width,
+                activation=config.activation,
+            )
 
     def forward(self, x0: Tensor, t_range: Tensor, params: Tensor = None):
         # encode initial state
