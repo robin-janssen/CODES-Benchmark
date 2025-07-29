@@ -48,3 +48,4 @@ class LatentPolyConfig:
     learning_rate: float = 0.0004  # 0.001
     layers_factor: int = 84
     activation: nn.Module = nn.ReLU()
+    model_version: str = "v1"
