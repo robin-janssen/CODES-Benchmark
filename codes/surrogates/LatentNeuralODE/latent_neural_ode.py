@@ -35,7 +35,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         n_parameters: int = 0,
         training_id: str | None = None,
         config: dict | None = None,
-        dtype: torch.dtype = torch.float64,
+        dtype: torch.dtype = torch.float32,
     ):
         super().__init__(
             device=device,
@@ -48,9 +48,12 @@ class LatentNeuralODE(AbstractSurrogateModel):
         self.n_parameters = n_parameters
         # Instantiate the model wrapper with the additional n_parameters.
         self.model = ModelWrapper(
-            config=self.config, n_quantities=n_quantities, n_parameters=n_parameters
+            config=self.config,
+            n_quantities=n_quantities,
+            n_parameters=n_parameters,
+            dtype=dtype,
         ).to(device)
-        self.to(dtype=dtype)
+        self.dtype = dtype
 
     def forward(self, inputs):
         """
@@ -59,7 +62,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         """
         inputs = tuple(
             (
-                x.to(self.device, dtype=torch.float64, non_blocking=True)
+                x.to(self.device, dtype=self.dtype, non_blocking=True)
                 if isinstance(x, Tensor)
                 else x
             )
@@ -158,7 +161,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         )
 
     @time_execution
-    def fit(
+    def fit_normal(
         self,
         train_loader: DataLoader,
         test_loader: DataLoader,
@@ -238,6 +241,125 @@ class LatentNeuralODE(AbstractSurrogateModel):
         self.n_epochs = epoch + 1
         self.get_checkpoint(test_loader, criterion)
 
+    @time_execution
+    def fit(
+        self,
+        train_loader: DataLoader,
+        test_loader: DataLoader,
+        epochs: int,
+        position: int = 0,
+        description: str = "Training LatentNeuralODE",
+        multi_objective: bool = False,
+    ) -> None:
+        from torch.profiler import ProfilerActivity, profile, record_function
+
+        optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
+        criterion = self.config.loss_function
+
+        loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
+        self.train_loss, self.test_loss, self.MAE = [
+            np.zeros(loss_length) for _ in range(3)
+        ]
+
+        progress_bar = self.setup_progress_bar(epochs, position, description)
+
+        self.model.train()
+        # If optimizer.train() is a no-op or not needed, consider removing it;
+        # leave it only if it's a custom wrapper that actually requires it.
+        try:
+            optimizer.train()
+        except AttributeError:
+            pass  # standard PyTorch optimizers don't have .train()
+
+        self.setup_checkpoint()
+
+        profiled = False  # flag to do profiling only once
+        for epoch in progress_bar:
+            for i, batch in enumerate(train_loader):
+                batch = tuple(
+                    (
+                        x.to(device=self.device, non_blocking=True)
+                        if isinstance(x, Tensor)
+                        else x
+                    )
+                    for x in batch
+                )
+                x_true, t_range, params = batch
+
+                # Profile only the first batch of the first epoch
+                if not profiled and epoch == 2 and i == 1:
+                    with profile(
+                        activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+                        record_shapes=True,
+                        with_stack=True,  # optional: deeper stack traces
+                        profile_memory=True,  # track memory allocs
+                    ) as prof:
+                        with record_function("zero_grad"):
+                            optimizer.zero_grad()
+
+                        with record_function("model_forward"):
+                            x_pred, x_true = self((x_true, t_range, params))
+
+                        with record_function("loss_compute"):
+                            loss = self.model.total_loss(
+                                x_true, x_pred, params, criterion
+                            )
+
+                        with record_function("backward"):
+                            loss.backward()
+
+                        with record_function("optimizer_step"):
+                            optimizer.step()
+
+                    # Advance scheduler if your original logic expects it here
+                    scheduler.step()
+
+                    # Output profiling summary
+                    print("=== Profiler summary for epoch 0 batch 0 ===")
+                    print(
+                        prof.key_averages().table(
+                            sort_by="self_cuda_time_total", row_limit=60
+                        )
+                    )
+
+                    # Export trace for timeline inspection (e.g., chrome://tracing or TensorBoard)
+                    prof.export_chrome_trace(f"prof_trace_epoch{epoch}_batch{i}.json")
+
+                    profiled = True  # don't profile again
+
+                else:
+                    # Normal training step
+                    optimizer.zero_grad()
+                    x_pred, x_true = self((x_true, t_range, params))
+                    loss = self.model.total_loss(x_true, x_pred, params, criterion)
+                    loss.backward()
+                    optimizer.step()
+
+                # renormalize once after 10 epochs
+                if epoch == 10 and i == 0:
+                    with torch.no_grad():
+                        self.model.renormalize_loss_weights(
+                            x_true, x_pred, params, criterion
+                        )
+
+            if not (profiled and epoch == 0):
+                # Only step here if you didn't already step inside profiled block
+                scheduler.step()
+
+            self.validate(
+                epoch=epoch,
+                train_loader=train_loader,
+                test_loader=test_loader,
+                optimizer=optimizer,
+                progress_bar=progress_bar,
+                total_epochs=epochs,
+                multi_objective=multi_objective,
+            )
+
+        progress_bar.close()
+        self.n_epochs = epoch + 1
+        self.get_checkpoint(test_loader, criterion)
+
 
 class ModelWrapper(nn.Module):
     """
@@ -260,12 +382,19 @@ class ModelWrapper(nn.Module):
        - Decoder: latent_dim -> output dimensions
     """
 
-    def __init__(self, config, n_quantities: int, n_parameters: int = 0):
+    def __init__(
+        self,
+        config,
+        n_quantities: int,
+        n_parameters: int = 0,
+        dtype: torch.dtype = torch.float64,
+    ):
         super().__init__()
         self.config = config
         self.n_parameters = n_parameters
         latent_dim = config.latent_features
         self.loss_weights = getattr(config, "loss_weights", [100.0, 1.0, 1.0, 1.0])
+        self.dtype = dtype
 
         # --- Build encoder ---
         if n_parameters == 0:
@@ -288,6 +417,7 @@ class ModelWrapper(nn.Module):
                 coder_layers=config.coder_layers,
                 coder_width=config.coder_width,
                 activation=config.activation,
+                dtype=dtype,
             )
         else:
             raise ValueError(
@@ -305,6 +435,7 @@ class ModelWrapper(nn.Module):
                 ode_layers=config.ode_layers,
                 ode_width=config.ode_width,
                 tanh_reg=config.ode_tanh_reg,
+                dtype=dtype,
             )
             ode_module = ode_net
         else:
@@ -316,6 +447,7 @@ class ModelWrapper(nn.Module):
                 ode_layers=config.ode_layers,
                 ode_width=config.ode_width,
                 tanh_reg=config.ode_tanh_reg,
+                dtype=dtype,
             )
             ode_module = ODEWithParams(base_ode, n_parameters, latent_dim)
 
@@ -340,6 +472,7 @@ class ModelWrapper(nn.Module):
                 coder_layers=config.coder_layers,
                 coder_width=config.coder_width,
                 activation=config.activation,
+                dtype=dtype,
             )
 
     def forward(self, x0: Tensor, t_range: Tensor, params: Tensor = None):
@@ -349,7 +482,7 @@ class ModelWrapper(nn.Module):
             enc_in = torch.cat([x0, params], dim=1)
         else:
             enc_in = x0
-        z0 = self.encoder(enc_in)
+        z0 = self.encoder(enc_in)  # .to(torch.float64)
 
         # if using closure to inject params
         if self.n_parameters > 0 and not self.config.encode_params:
@@ -357,12 +490,12 @@ class ModelWrapper(nn.Module):
             self.ode.set_params(params)
 
         # solve dynamics
-        t_eval = t_range.repeat(x0.size(0), 1)
+        t_eval = t_range.repeat(x0.size(0), 1)  # .to(torch.float64)
         sol = self.solver.solve(to.InitialValueProblem(y0=z0, t_eval=t_eval))
         latent_traj = sol.ys  # [timesteps, batch, latent_dim]
 
         # decode
-        return self.decoder(latent_traj)
+        return self.decoder(latent_traj.to(self.dtype))
 
     def renormalize_loss_weights(
         self, x_true, x_pred, params, criterion: nn.Module = nn.MSELoss()
@@ -522,7 +655,7 @@ class ODE(nn.Module):
         output = self.mlp(x)
         if self.tanh_reg:
             return self.reg_factor * torch.tanh(output / self.reg_factor)
-        return output
+        return output.to(torch.float64)
 
 
 class ODEWithParams(nn.Module):
