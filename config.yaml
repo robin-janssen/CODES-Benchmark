@@ -1,17 +1,18 @@
 # Global settings for the benchmark
-training_id: "simple_reaction_final"
-surrogates: ["MultiONet", "FullyConnected", "LatentPoly", "LatentNeuralODE", ]
-batch_size: [4096, 4096, 256, 256]
-epochs: [12000, 10000, 10000, 7000]
+training_id: "profile_lnode32_improved"
+surrogates: ["LatentNeuralODE"] # ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
+batch_size: [716] # [8192, 8192, 512, 512]
+epochs: [50] # [20000, 7500, 20000, 15000]
 dataset: 
-  name: "simple_reaction"
-  log_timesteps: False
+  name: "primordial"
   log10_transform: True
+  log10_transform_params: False
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
-  tolerance: 1e-30
+  tolerance: 1e-20
   subset_factor: 1
-devices: ["cuda:1"]
+  log_timesteps: True
+devices: ["cuda:5"]
 seed: 42
 verbose: False
 
@@ -33,11 +34,8 @@ uncertainty:
   ensemble_size: 5  # Number of models for deep ensemble
 
 # Evaluations during benchmark
-iterative: True
 losses: False
 gradients: False
 timing: False
 compute: False
 compare: False # Whether to compare the surrogates
-
-

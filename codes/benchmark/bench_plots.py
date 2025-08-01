@@ -89,85 +89,84 @@ def save_plot_counter(
 # Per-surrogate model plots
 
 
-def plot_relative_errors_over_time(
+def plot_error_percentiles_over_time(
     surr_name: str,
     conf: dict,
-    relative_errors: np.ndarray,
+    errors: np.ndarray,
     timesteps: np.ndarray,
     title: str,
+    mode: str = "relative",  # "relative" or "deltadex"
     save: bool = False,
     show_title: bool = True,
 ) -> None:
     """
-    Plot the mean and median relative errors over time with shaded regions for
-    the 50th, 90th, and 99th percentiles.
-
-    Args:
-        surr_name (str): The name of the surrogate model.
-        conf (dict): The configuration dictionary.
-        relative_errors (np.ndarray): The relative errors of the model.
-        timesteps (np.ndarray): Array of timesteps.
-        title (str): The title of the plot.
-        save (bool): Whether to save the plot.
-        show_title (bool): Whether to show the title on the plot.
+    Plot mean, median, and percentiles (50th, 90th, 99th) over time.
+    mode="relative" treats `errors` as relative errors;
+    mode="deltadex" treats them as log-space absolute errors.
     """
-    # Calculate the mean, median, and percentiles across all samples and quantities
-    mean_errors = np.mean(relative_errors, axis=(0, 2))
-    mean = np.mean(mean_errors)
-    median_errors = np.median(relative_errors, axis=(0, 2))
-    median = np.median(median_errors)
-    p50_upper = np.percentile(relative_errors, 75, axis=(0, 2))
-    p50_lower = np.percentile(relative_errors, 25, axis=(0, 2))
-    p90_upper = np.percentile(relative_errors, 95, axis=(0, 2))
-    p90_lower = np.percentile(relative_errors, 5, axis=(0, 2))
-    p99_upper = np.percentile(relative_errors, 99.5, axis=(0, 2))
-    p99_lower = np.percentile(relative_errors, 0.5, axis=(0, 2))
+    # compute statistics across samples and quantities
+    mean_ts = np.mean(errors, axis=(0, 2))
+    median_ts = np.median(errors, axis=(0, 2))
+    stats = {
+        "50": (25, 75),
+        "90": (5, 95),
+        "99": (0.5, 99.5),
+    }
+    percentiles = {}
+    for p, (low, high) in stats.items():
+        percentiles[p] = (
+            np.percentile(errors, low, axis=(0, 2)),
+            np.percentile(errors, high, axis=(0, 2)),
+        )
+    # overall means for legend
+    mean_val = mean_ts.mean()
+    median_val = median_ts.mean()
 
     plt.figure(figsize=(6, 4))
-    mean_label = f"Mean Error\nMean={mean * 100:.2f}%"
-    plt.plot(timesteps, mean_errors, label=mean_label, color="blue")
-    median_label = f"Median Error\nMedian={median * 100:.2f}%"
-    plt.plot(timesteps, median_errors, label=median_label, color="red")
-
-    # Shading areas
-    plt.fill_between(
+    plt.plot(
         timesteps,
-        p50_lower,
-        p50_upper,
-        color="grey",
-        alpha=0.45,
-        label="50th Percentile",
+        mean_ts,
+        label=f"Mean Error\nMean={mean_val * 100:.2f}%",
+        color="blue",
     )
-    plt.fill_between(
+    plt.plot(
         timesteps,
-        p90_lower,
-        p90_upper,
-        color="grey",
-        alpha=0.4,
-        label="90th Percentile",
-    )
-    plt.fill_between(
-        timesteps,
-        p99_lower,
-        p99_upper,
-        color="grey",
-        alpha=0.15,
-        label="99th Percentile",
+        median_ts,
+        label=f"Median Error\nMedian={median_val * 100:.2f}%",
+        color="red",
     )
 
-    plt.yscale("log")
+    for p, (low_ts, high_ts) in percentiles.items():
+        alpha = {"50": 0.45, "90": 0.4, "99": 0.15}[p]
+        plt.fill_between(
+            timesteps,
+            low_ts,
+            high_ts,
+            color="grey",
+            alpha=alpha,
+            label=f"{p}th Percentile",
+        )
+
     plt.xlabel("Time")
-    plt.ylabel("Relative Error")
+    if mode == "relative":
+        plt.yscale("log")
+        plt.ylabel("Relative Error")
+        filename = "accuracy_rel_errors_time.pdf"
+    elif mode == "deltadex":
+        plt.ylabel(r"$\Delta dex$ (log-space absolute error)")
+        filename = "accuracy_delta_dex_time.pdf"
+    else:
+        raise ValueError(f"Unknown mode: {mode}")
+
     plt.xlim(timesteps[0], timesteps[-1])
-    plt.ylim(bottom=1e-8)
-    if conf["dataset"]["log_timesteps"]:
+    if conf.get("dataset", {}).get("log_timesteps"):
         plt.xscale("log")
     if show_title:
         plt.title(title)
     plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
-    if save and conf:
-        save_plot(plt, "accuracy_rel_errors_time.pdf", conf, surr_name)
+    if save:
+        save_plot(plt, filename, conf, surr_name)
 
     plt.close()
 

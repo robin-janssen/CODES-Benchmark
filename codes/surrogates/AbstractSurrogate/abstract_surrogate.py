@@ -453,11 +453,17 @@ class AbstractSurrogateModel(ABC, nn.Module):
                 elif self.normalisation["mode"] == "minmax":
                     dmax = self.normalisation["max"]
                     dmin = self.normalisation["min"]
+                    if isinstance(data, Tensor) and isinstance(dmax, np.ndarray):
+                        dmax = Tensor(dmax).to(data.device)
+                        dmin = Tensor(dmin).to(data.device)
                     # data = data.to("cpu")
                     data = (data + 1) * (dmax - dmin) / 2 + dmin
                 elif self.normalisation["mode"] == "standardize":
                     mean = self.normalisation["mean"]
                     std = self.normalisation["std"]
+                    if isinstance(data, Tensor) and isinstance(mean, np.ndarray):
+                        mean = Tensor(mean).to(data.device)
+                        std = Tensor(std).to(data.device)
                     data = data * std + mean
 
             if self.normalisation["log10_transform"] and not leave_log:

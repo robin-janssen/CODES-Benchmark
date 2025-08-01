@@ -17,7 +17,7 @@ from codes.benchmark.bench_utils import (
     measure_inference_time,
 )
 from codes.utils import check_and_load_data, make_description, set_random_seeds
-from codes.utils.data_utils import download_data, get_data_subset
+from codes.utils.data_utils import download_data
 
 MODULE_REGISTRY: dict[str, type[nn.Module]] = {
     "relu": nn.ReLU,
@@ -237,14 +237,10 @@ def training_run(
     )
 
     subset_factor = config["dataset"].get("subset_factor", 1)
-    # Get the appropriate data subset
-    (train_data, test_data), (train_params, test_params), timesteps = get_data_subset(
-        (train_data, test_data),
-        timesteps,
-        "sparse",
-        subset_factor,
-        (train_params, test_params),
-    )
+    # Get the appropriate subset of the training data
+    # We nevertheless use the full test data to measure performance.
+    train_data = train_data[::subset_factor]
+    train_params = train_params[::subset_factor] if train_params is not None else None
 
     set_random_seeds(config["seed"], device=device)
     surr_name = config["surrogate"]["name"]

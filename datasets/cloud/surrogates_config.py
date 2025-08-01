@@ -10,6 +10,15 @@ class MultiONetConfig:
     loss_function: nn.Module = nn.SmoothL1Loss()
     optimizer: str = "adamw"
     scheduler: str = "schedulefree"
+    # other params from cloud_tuning_fine, trial 81:
+    beta: float = 1.78
+    branch_hidden_layers: int = 6
+    hidden_size = 170
+    output_factor: int = 80
+    trunk_hidden_layers: int = 7
+    learning_rate: float = 8.3e-4
+    regularization_factor: float = 9.6e-06
+    activation: nn.Module = nn.Tanh()
 
 
 @dataclass
@@ -20,6 +29,15 @@ class LatentNeuralODEConfig:
     optimizer: str = "adamw"
     scheduler: str = "schedulefree"
     ode_tanh_reg: bool = False
+    # other params from cloud_tuning_fine, trial 35:
+    latent_features: int = 14
+    coder_layers: int = 4
+    coder_width: int = 70
+    ode_width: int = 30
+    ode_layers: int = 2
+    learning_rate: float = 7.1e-03
+    regularization_factor: float = 3.4e-03
+    activation: nn.Module = nn.Tanh()
 
 
 @dataclass
@@ -29,6 +47,13 @@ class FullyConnectedConfig:
     loss_function: nn.Module = nn.SmoothL1Loss()
     optimizer: str = "adamw"
     scheduler: str = "schedulefree"
+    # other params from cloud_tuning_fine, trial 77
+    beta = 0.817
+    hidden_size: int = 380
+    num_hidden_layers: int = 2
+    learning_rate: float = 6.8e-03
+    regularization_factor: float = 8.7e-06
+    activation: nn.Module = nn.ReLU()
 
 
 @dataclass
@@ -38,6 +63,13 @@ class LatentPolyConfig:
     loss_function: nn.Module = nn.MSELoss()
     optimizer: str = "adamw"
     scheduler: str = "schedulefree"
+    # other params from cloud_tuning_fine, trial 89:
+    degree: int = 3
+    latent_features: int = 9
+    coder_layers: int = 3
+    coder_width: int = 210
+    learning_rate: float = 2.2e-5
+    regularization_factor: float = 1.7e-03
 
 
 # @dataclass

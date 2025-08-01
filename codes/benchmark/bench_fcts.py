@@ -20,6 +20,7 @@ from .bench_plots import (  # plot_generalization_errors,; rel_errors_and_uq,
     plot_error_correlation_heatmap,
     plot_error_distribution_comparative,
     plot_error_distribution_per_quantity,
+    plot_error_percentiles_over_time,
     plot_example_iterative_predictions,
     plot_example_mode_predictions,
     plot_example_predictions_with_uncertainty,
@@ -28,7 +29,6 @@ from .bench_plots import (  # plot_generalization_errors,; rel_errors_and_uq,
     plot_loss_comparison_equal,
     plot_loss_comparison_train_duration,
     plot_relative_errors,
-    plot_relative_errors_over_time,
     plot_surr_losses,
     plot_uncertainty_confidence,
     plot_uncertainty_over_time_comparison,
@@ -224,11 +224,13 @@ def evaluate_accuracy(
         test_loader (DataLoader): The DataLoader object containing the test data.
         conf (dict): The configuration dictionary.
         labels (list, optional): The labels for the quantities.
+        percentile (int, optional): The percentile for error metrics.
 
     Returns:
         dict: A dictionary containing accuracy metrics.
     """
     training_id = conf["training_id"]
+    percentile = conf.get("error_percentile", 99)
 
     # Load the model
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
@@ -237,27 +239,56 @@ def evaluate_accuracy(
     model_index = conf["surrogates"].index(surr_name)
     n_epochs = conf["epochs"][model_index]
 
-    # Use the model's predict method
-    criterion = torch.nn.MSELoss()
-    preds, targets = model.predict(data_loader=test_loader)
-    mean_squared_error = criterion(preds, targets).item()  # / torch.numel(preds)
+    # Obtain log-space predictions and targets
+    preds, targets = model.predict(data_loader=test_loader, leave_log=True)
     preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
 
-    # Calculate relative errors
+    # Compute log-space error metrics
+    absolute_errors_log = np.abs(preds - targets)
+    root_mean_squared_error_log = np.sqrt(np.mean(absolute_errors_log**2))
+    median_absolute_error_log = np.median(absolute_errors_log)
+    mean_absolute_error_log = np.mean(absolute_errors_log)
+    percentile_absolute_error_log = np.percentile(absolute_errors_log, percentile)
+
+    # Obtain real-space predictions and targets
+    preds, targets = model.predict(data_loader=test_loader, leave_log=False)
+    preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
+
+    # Compute real-space error metrics
     absolute_errors = np.abs(preds - targets)
-    mean_absolute_error = np.mean(absolute_errors)
+    root_mean_squared_error_real = np.sqrt(np.mean(absolute_errors**2))
+    median_absolute_error_real = np.median(absolute_errors)
+    mean_absolute_error_real = np.mean(absolute_errors)
+    percentile_absolute_error_real = np.percentile(absolute_errors, percentile)
+
+    # Additional real-space errors: Relative error
     relative_error_threshold = float(conf.get("relative_error_threshold", 0.0))
     relative_errors = np.abs(
         absolute_errors / np.maximum(np.abs(targets), relative_error_threshold)
     )
+    median_relative_error = np.median(relative_errors)
+    mean_relative_error = np.mean(relative_errors)
+    percentile_relative_error = np.percentile(relative_errors, percentile)
 
-    # Plot relative errors over time
-    plot_relative_errors_over_time(
+    plot_error_percentiles_over_time(
         surr_name,
         conf,
         relative_errors,
         timesteps,
         title=f"Relative Errors over Time for {surr_name}",
+        mode="relative",
+        save=True,
+        show_title=TITLE,
+    )
+
+    plot_error_percentiles_over_time(
+        surr_name,
+        conf,
+        absolute_errors_log,
+        timesteps,
+        title=r"$\Delta dex$ (Absolute Log-Space) Errors over Time for "
+        + f"{surr_name}",
+        mode="deltadex",
         save=True,
         show_title=TITLE,
     )
@@ -274,14 +305,18 @@ def evaluate_accuracy(
 
     # Store metrics
     accuracy_metrics = {
-        "mean_squared_error": mean_squared_error,
-        "mean_absolute_error": mean_absolute_error,
-        "mean_relative_error": np.mean(relative_errors),
-        "median_relative_error": np.median(relative_errors),
-        "max_relative_error": np.max(relative_errors),
-        "min_relative_error": np.min(relative_errors),
-        "absolute_errors": absolute_errors,
-        "relative_errors": relative_errors,
+        "root_mean_squared_error_log": root_mean_squared_error_log,
+        "median_absolute_error_log": median_absolute_error_log,
+        "mean_absolute_error_log": mean_absolute_error_log,
+        "percentile_absolute_error_log": percentile_absolute_error_log,
+        "root_mean_squared_error_real": root_mean_squared_error_real,
+        "median_absolute_error_real": median_absolute_error_real,
+        "mean_absolute_error_real": mean_absolute_error_real,
+        "percentile_absolute_error_real": percentile_absolute_error_real,
+        "median_relative_error": median_relative_error,
+        "mean_relative_error": mean_relative_error,
+        "percentile_relative_error": percentile_relative_error,
+        "error_percentile": percentile,
         "main_model_training_time": train_time,
         "main_model_epochs": n_epochs,
     }
@@ -331,6 +366,9 @@ def evaluate_iterative_predictions(
     # number of chunks
     n_chunks = (n_timesteps + iter_interval - 1) // iter_interval
 
+    # create timesteps array for the iterative predictions
+    timesteps_full = np.linspace(0, 1, original_n_timesteps)
+
     for i in range(n_chunks):
         start = i * iter_interval
         end = min(start + iter_interval, n_timesteps)
@@ -349,7 +387,7 @@ def evaluate_iterative_predictions(
         ds[:, 0, :] = init_state
 
         # only need the "train" loader for prediction
-        dt = timesteps[: model.n_timesteps]
+        dt = timesteps_full[: model.n_timesteps]
         train_loader, _, _ = model.prepare_data(
             dataset_train=ds,
             dataset_test=None,
@@ -360,7 +398,7 @@ def evaluate_iterative_predictions(
             dataset_train_params=None,
             dataset_test_params=None,
             dataset_val_params=None,
-            dummy_timesteps=True,
+            dummy_timesteps=False,
         )
 
         # predict this chunk and insert into the global array
@@ -371,6 +409,8 @@ def evaluate_iterative_predictions(
             preds_chunk[:, 1 : model.n_timesteps, :].detach().cpu().numpy()
         )
 
+    iterative_preds_log = model.denormalize(iterative_preds, leave_log=True)
+    targets_log = model.denormalize(targets, leave_log=True)
     iterative_preds = model.denormalize(iterative_preds)
     full_preds = model.denormalize(full_preds.detach().cpu().numpy())
     targets = model.denormalize(targets)
@@ -381,8 +421,12 @@ def evaluate_iterative_predictions(
     mse = float(np.mean(errors**2))
     mae = float(np.mean(abs_errors))
 
-    thresh = float(conf.get("relative_error_threshold", 0.0))
-    rel_errors = abs_errors / np.maximum(np.abs(targets), thresh)
+    # compute log-space errors
+    abs_errors_log = np.abs(iterative_preds_log - targets_log)
+    rmse_log = float(np.mean(abs_errors_log**2))
+    mae_log = float(np.mean(abs_errors_log))
+    percentile = conf.get("error_percentile", 99)
+    percentile_abs_error_log = float(np.percentile(abs_errors_log, percentile))
 
     errors = np.mean(np.abs(iterative_preds - targets), axis=(1, 2))
     example_idx = int(np.argsort(np.abs(errors - np.median(errors)))[0])
@@ -405,14 +449,12 @@ def evaluate_iterative_predictions(
     )
 
     return {
+        "root_mean_squared_error_log": rmse_log,
+        "mean_absolute_error_log": mae_log,
+        "percentile_absolute_error_log": percentile_abs_error_log,
         "mean_squared_error": mse,
         "mean_absolute_error": mae,
-        "mean_relative_error": float(np.mean(rel_errors)),
-        "median_relative_error": float(np.median(rel_errors)),
-        "max_relative_error": float(np.max(rel_errors)),
-        "min_relative_error": float(np.min(rel_errors)),
         "absolute_errors": abs_errors,
-        "relative_errors": rel_errors,
     }
 
 
