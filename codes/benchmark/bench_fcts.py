@@ -319,6 +319,8 @@ def evaluate_accuracy(
         "error_percentile": percentile,
         "main_model_training_time": train_time,
         "main_model_epochs": n_epochs,
+        "absolute_errors": absolute_errors,
+        "relative_errors": relative_errors,
     }
 
     return accuracy_metrics

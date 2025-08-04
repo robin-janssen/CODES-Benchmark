@@ -14,7 +14,7 @@ class FakeModel:
     def load(self, training_id, surr_name, model_identifier):
         self.load_calls.append((training_id, surr_name, model_identifier))
 
-    def predict(self, *, data_loader):
+    def predict(self, *, data_loader, leave_log=None, leave_norm=None):
         """
         Return preds and targets of shape [1, 3, n_quantities] where
         preds are always 2x targets.
@@ -26,12 +26,16 @@ class FakeModel:
         preds = (targets * 2).expand(batch, T, Q)  # [[0,2,8], …]
         return preds, targets
 
+    def denormalize(self, arr, leave_log=None, leave_norm=None):
+        # return the array as is, no normalization
+        return arr
+
 
 @pytest.fixture(autouse=True)
 def no_plots(monkeypatch):
     # patch out all the plotting functions so they don't error or try to open displays
     for fn in [
-        "plot_relative_errors_over_time",
+        "plot_error_percentiles_over_time",
         "plot_error_distribution_per_quantity",
         "plot_dynamic_correlation_heatmap",
     ]:
@@ -85,10 +89,10 @@ def test_evaluate_accuracy(simple_conf, simple_loader):
     # check load called with main identifier
     assert model.load_calls == [("TID", surr, f"{surr.lower()}_main")]
     # mean squared error ≈ 98/3
-    assert metrics["mean_squared_error"] == pytest.approx(98 / 3)
+    assert metrics["root_mean_squared_error_real"] == pytest.approx(np.sqrt(98 / 3))
 
     # mean absolute error ≈ 14/3
-    assert metrics["mean_absolute_error"] == pytest.approx(14 / 3)
+    assert metrics["mean_absolute_error_real"] == pytest.approx(14 / 3)
     # relative errors: abs(1)/max(abs(0),0.0) -> 1/0 -> inf; but threshold=0 so yields 1.0
     assert metrics["mean_relative_error"] == pytest.approx(1.0)
     assert metrics["main_model_training_time"] == 3.14
@@ -199,7 +203,7 @@ def test_evaluate_iterative_predictions(simple_conf, simple_loader, monkeypatch)
             # only the returned loader is used by predict
             return "train_loader", None, None
 
-        def denormalize(self, arr):
+        def denormalize(self, arr, leave_log=None, leave_norm=None):
             return arr
 
     model = FakeIterModel(n_timesteps=T, n_quantities=Q)
@@ -224,15 +228,14 @@ def test_evaluate_iterative_predictions(simple_conf, simple_loader, monkeypatch)
 
     # since preds == targets, all errors should be zero
     for key in [
+        "root_mean_squared_error_log",
+        "mean_absolute_error_log",
+        "percentile_absolute_error_log",
         "mean_squared_error",
         "mean_absolute_error",
-        "mean_relative_error",
-        "median_relative_error",
-        "max_relative_error",
-        "min_relative_error",
+        "absolute_errors",
     ]:
         assert metrics[key] == pytest.approx(0.0)
 
     # array shapes should be (1, T, Q)
     assert metrics["absolute_errors"].shape == (1, T, Q)
-    assert metrics["relative_errors"].shape == (1, T, Q)
