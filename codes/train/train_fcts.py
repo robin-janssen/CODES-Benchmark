@@ -102,7 +102,7 @@ def train_and_save_model(
             training_id=config["training_id"],
         )
     model.normalisation = data_info
-    model.checkpointing = config.get("checkpointing", False)
+    model.checkpointing = config.get("checkpoint", False)
     surr_idx = config["surrogates"].index(surr_name)
 
     batch_size = determine_batch_size(config, surr_idx, mode, metric)

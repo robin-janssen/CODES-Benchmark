@@ -1,20 +1,22 @@
 # Global settings for the benchmark
-training_id: "profile_lnode32_improved"
-surrogates: ["LatentNeuralODE"] # ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
-batch_size: [716] # [8192, 8192, 512, 512]
-epochs: [50] # [20000, 7500, 20000, 15000]
+training_id: "primordial_new_main"
+surrogates: ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
+batch_size: [71650, 71650, 717, 717] # [65536, 65536, 512, 512]
+epochs: [10000, 10000, 10000, 10000] # [4096, 4096, 4096, 4096]
 dataset: 
   name: "primordial"
   log10_transform: True
   log10_transform_params: False
+  per_species: True
   normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
   use_optimal_params: True
-  tolerance: 1e-20
+  tolerance: 1e-15
   subset_factor: 1
   log_timesteps: True
-devices: ["cuda:5"]
+devices: ["cuda:0", "cuda:1", "cuda:2", "cuda:3"]
 seed: 42
 verbose: False
+checkpoint: True
 
 # Models to train
 interpolation: 

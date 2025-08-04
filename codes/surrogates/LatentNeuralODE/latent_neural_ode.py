@@ -51,6 +51,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
             config=self.config,
             n_quantities=n_quantities,
             n_parameters=n_parameters,
+            n_timesteps=self.n_timesteps,
             dtype=dtype,
         ).to(device)
         self.dtype = dtype
@@ -161,7 +162,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         )
 
     @time_execution
-    def fit_normal(
+    def fit(
         self,
         train_loader: DataLoader,
         test_loader: DataLoader,
@@ -218,12 +219,12 @@ class LatentNeuralODE(AbstractSurrogateModel):
                 loss.backward()
                 optimizer.step()
 
-                # renormalize once after 10 epochs
-                if epoch == 10 and i == 0:
-                    with torch.no_grad():
-                        self.model.renormalize_loss_weights(
-                            x_true, x_pred, params, criterion
-                        )
+                # # renormalize once after 10 epochs
+                # if epoch == 10 and i == 0:
+                #     with torch.no_grad():
+                #         self.model.renormalize_loss_weights(
+                #             x_true, x_pred, params, criterion
+                #         )
 
             scheduler.step()
 
@@ -242,7 +243,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         self.get_checkpoint(test_loader, criterion)
 
     @time_execution
-    def fit(
+    def fit_profile(
         self,
         train_loader: DataLoader,
         test_loader: DataLoader,
@@ -335,12 +336,12 @@ class LatentNeuralODE(AbstractSurrogateModel):
                     loss.backward()
                     optimizer.step()
 
-                # renormalize once after 10 epochs
-                if epoch == 10 and i == 0:
-                    with torch.no_grad():
-                        self.model.renormalize_loss_weights(
-                            x_true, x_pred, params, criterion
-                        )
+                # # renormalize once after 10 epochs
+                # if epoch == 10 and i == 0:
+                #     with torch.no_grad():
+                #         self.model.renormalize_loss_weights(
+                #             x_true, x_pred, params, criterion
+                #         )
 
             if not (profiled and epoch == 0):
                 # Only step here if you didn't already step inside profiled block
@@ -387,7 +388,10 @@ class ModelWrapper(nn.Module):
         config,
         n_quantities: int,
         n_parameters: int = 0,
+        n_timesteps: int = 101,
         dtype: torch.dtype = torch.float64,
+        use_pid: bool = False,  # switch from Integral to PID
+        adjoint_type: str = "autodiff",  # "autodiff" | "backsolve" | "joint_backsolve"
     ):
         super().__init__()
         self.config = config
@@ -395,6 +399,8 @@ class ModelWrapper(nn.Module):
         latent_dim = config.latent_features
         self.loss_weights = getattr(config, "loss_weights", [100.0, 1.0, 1.0, 1.0])
         self.dtype = dtype
+        self.n_timesteps = n_timesteps
+        self.l2 = nn.MSELoss()
 
         # --- Build encoder ---
         if n_parameters == 0:
@@ -451,11 +457,36 @@ class ModelWrapper(nn.Module):
             )
             ode_module = ODEWithParams(base_ode, n_parameters, latent_dim)
 
+        # --- ODE and solver setup ---
         self.ode = ode_module
         term = to.ODETerm(self.ode)
-        step = to.Tsit5(term=term)
-        ctrl = to.IntegralController(atol=config.atol, rtol=config.rtol, term=term)
-        self.solver = to.AutoDiffAdjoint(step, ctrl)
+        step = to.Tsit5(term=term)  # or expose choice of step method if desired
+
+        # choose controller
+        if use_pid:
+            # tune pcoeff/icoeff/dcoeff as hyperparams if needed
+            controller = to.PIDController(
+                atol=config.atol,
+                rtol=config.rtol,
+                pcoeff=getattr(config, "pid_pcoeff", 0.2),
+                icoeff=getattr(config, "pid_icoeff", 0.5),
+                dcoeff=getattr(config, "pid_dcoeff", 0.0),
+                term=term,
+            )
+        else:
+            controller = to.IntegralController(
+                atol=config.atol, rtol=config.rtol, term=term
+            )
+
+        # choose adjoint/backprop method
+        if adjoint_type == "autodiff":
+            self.solver = to.AutoDiffAdjoint(step, controller)
+        elif adjoint_type == "backsolve":
+            self.solver = to.BacksolveAdjoint(term, step, controller)
+        elif adjoint_type == "joint_backsolve":
+            self.solver = to.JointBacksolveAdjoint(term, step, controller)
+        else:
+            raise ValueError(f"Unknown adjoint_type {adjoint_type}")
 
         # --- Build decoder ---
         if self.config.model_version == "v1":
@@ -489,31 +520,18 @@ class ModelWrapper(nn.Module):
             assert params is not None
             self.ode.set_params(params)
 
-        # solve dynamics
-        t_eval = t_range.repeat(x0.size(0), 1)  # .to(torch.float64)
+        # use float64 for ODE solver
+        z0 = z0.to(torch.float64)  # solver state must be double
+        t_eval = t_range.repeat(x0.size(0), 1).to(torch.float64)
+        assert z0.dtype == torch.float64, f"z0 dtype {z0.dtype}"
+        assert t_eval.dtype == torch.float64, f"t_eval dtype {t_eval.dtype}"
+
         sol = self.solver.solve(to.InitialValueProblem(y0=z0, t_eval=t_eval))
+
         latent_traj = sol.ys  # [timesteps, batch, latent_dim]
 
         # decode
         return self.decoder(latent_traj.to(self.dtype))
-
-    def renormalize_loss_weights(
-        self, x_true, x_pred, params, criterion: nn.Module = nn.MSELoss()
-    ):
-        """
-        Renormalize the loss weights based on the current loss values so that they are accurately
-        weighted based on the provided weights. To be used once after a short burn in phase.
-
-        Args:
-            x_true (Tensor): The true trajectory.
-            x_pred (Tensor): The predicted trajectory
-            params (Tensor): Fixed parameters (batch, n_parameters).
-            criterion (nn.Module): Loss function to use for calculating the losses.
-        """
-        self.loss_weights[0] = 1 / criterion(x_pred, x_true).item() * 100
-        self.loss_weights[1] = 1 / self.identity_loss(x_true, params).item()
-        self.loss_weights[2] = 1 / self.deriv_loss(x_true, x_pred).item()
-        self.loss_weights[3] = 1 / self.deriv2_loss(x_true, x_pred).item()
 
     def total_loss(
         self,
@@ -523,14 +541,59 @@ class ModelWrapper(nn.Module):
         criterion: nn.Module = nn.MSELoss(),
     ):
         """
-        Calculate the total loss based on the loss weights, including params for identity.
+        Total loss: weighted sum of trajectory reconstruction, identity, first derivative,
+        and second derivative losses. All terms remain in the computation graph.
         """
-        return (
-            self.loss_weights[0] * criterion(x_pred, x_true).item()
-            + self.loss_weights[1] * self.identity_loss(x_true, params)
-            + self.loss_weights[2] * self.deriv_loss(x_true, x_pred)
-            + self.loss_weights[3] * self.deriv2_loss(x_true, x_pred)
-        )
+        w0, w1, w2, w3 = (
+            self.loss_weights
+        )  # assume these are set in config and are floats
+
+        # primary trajectory loss
+        traj_loss = criterion(x_pred, x_true)
+
+        # identity loss (reconstruct x0)
+        identity = self.identity_loss(x_true, params)
+
+        # derivative losses: compute once
+        d_pred = self.first_derivative(x_pred)
+        d_true = self.first_derivative(x_true)
+        deriv_loss = self.l2(d_pred, d_true)
+
+        d2_pred = self.second_derivative(x_pred)
+        d2_true = self.second_derivative(x_true)
+        deriv2_loss = self.l2(d2_pred, d2_true)
+
+        return w0 * traj_loss + w1 * identity + w2 * deriv_loss + w3 * deriv2_loss
+
+    def first_derivative(self, x: Tensor):
+        # x: [B, T, F]
+        h = 1.0 / self.n_timesteps
+        # central differences for interior
+        d_center = (x[:, 2:, :] - x[:, :-2, :]) / (2 * h)  # [B, T-2, F]
+        # forward/backward for boundaries
+        d_first = (x[:, 1:2, :] - x[:, :1, :]) / h  # [B,1,F]
+        d_last = (x[:, -1:, :] - x[:, -2:-1, :]) / h  # [B,1,F]
+        derivative = torch.cat([d_first, d_center, d_last], dim=1)  # [B,T,F]
+        return derivative
+
+    def second_derivative(self, x: Tensor):
+        # x: [B, T, F]
+        h = 1.0 / self.n_timesteps
+        # standard second derivative central
+        d2_center = (x[:, 2:, :] - 2 * x[:, 1:-1, :] + x[:, :-2, :]) / (
+            h * h
+        )  # [B, T-2, F]
+        # one-sided approximations at ends (second-order):
+        # at t0: f''(t0) ≈ (2 f0 - 5 f1 + 4 f2 - f3) / h^2
+        d2_first = (
+            2 * x[:, :1, :] - 5 * x[:, 1:2, :] + 4 * x[:, 2:3, :] - x[:, 3:4, :]
+        ) / (h * h)
+        # at t_{N-1}: symmetric formula
+        d2_last = (
+            2 * x[:, -1:, :] - 5 * x[:, -2:-1, :] + 4 * x[:, -3:-2, :] - x[:, -4:-3, :]
+        ) / (h * h)
+        d2 = torch.cat([d2_first, d2_center, d2_last], dim=1)  # [B,T,F]
+        return d2
 
     def identity_loss(self, x_true: Tensor, params: Tensor = None):
         """
@@ -552,75 +615,7 @@ class ModelWrapper(nn.Module):
         # encode-decode
         z0 = self.encoder(enc_input)
         x0_hat = self.decoder(z0)
-        return self.l2_loss(x0, x0_hat)
-
-    @staticmethod
-    def l2_loss(x_true: Tensor, x_pred: Tensor):
-        """
-        Calculate the L2 loss.
-
-        Args:
-            x_true (Tensor): The true trajectory.
-            x_pred (Tensor): The predicted trajectory
-
-        Returns:
-            Tensor: The L2 loss.
-        """
-        return torch.mean(torch.abs(x_true - x_pred) ** 2)
-
-    @classmethod
-    def deriv_loss(cls, x_true, x_pred):
-        """
-        Difference between the slopes of the predicted and true trajectories.
-
-        Args:
-            x_true (Tensor): The true trajectory.
-            x_pred (Tensor): The predicted trajectory
-
-        Returns:
-            Tensor: The derivative loss.
-        """
-        return cls.l2_loss(cls.deriv(x_pred), cls.deriv(x_true))
-
-    @classmethod
-    def deriv2_loss(cls, x_true, x_pred):
-        """
-        Difference between the curvature of the predicted and true trajectories.
-
-        Args:
-            x_true (Tensor): The true trajectory.
-            x_pred (Tensor): The predicted trajectory
-
-        Returns:
-            Tensor: The second derivative loss.
-        """
-        return cls.l2_loss(cls.deriv2(x_pred), cls.deriv2(x_true))
-
-    @staticmethod
-    def deriv(x):
-        """
-        Calculate the numerical derivative.
-
-        Args:
-            x (Tensor): The input tensor.
-
-        Returns:
-            Tensor: The numerical derivative.
-        """
-        return torch.gradient(x, dim=1)[0].squeeze(0)
-
-    @classmethod
-    def deriv2(cls, x):
-        """
-        Calculate the numerical second derivative.
-
-        Args:
-            x (Tensor): The input tensor.
-
-        Returns:
-            Tensor: The numerical second derivative.
-        """
-        return cls.deriv(cls.deriv(x))
+        return self.l2(x0, x0_hat)
 
 
 class ODE(nn.Module):
@@ -642,6 +637,7 @@ class ODE(nn.Module):
         self.tanh_reg = tanh_reg
         self.reg_factor = nn.Parameter(torch.tensor(1.0))
         self.activation = activation
+        self.dtype = dtype
         layers = []
         layers.append(nn.Linear(input_shape, ode_width, dtype=dtype))
         layers.append(activation)
@@ -652,10 +648,26 @@ class ODE(nn.Module):
         self.mlp = nn.Sequential(*layers)
 
     def forward(self, t, x):
-        output = self.mlp(x)
+        # Expect solver to always pass float64 state
+        if x.dtype != torch.float64:
+            raise RuntimeError(
+                f"ODE.forward expected float64 input state, got {x.dtype}"
+            )
+
+        # Downcast for MLP computation
+        x32 = x.to(torch.float32)
+        out32 = self.mlp(x32)  # float32
+
         if self.tanh_reg:
-            return self.reg_factor * torch.tanh(output / self.reg_factor)
-        return output.to(torch.float64)
+            reg32 = self.reg_factor.to(torch.float32)
+            activated32 = reg32 * torch.tanh(out32 / reg32)
+            out64 = activated32.to(torch.float64)
+            if out64.dtype != torch.float64:
+                raise RuntimeError("Output not float64 after upcast")
+            return out64
+
+        out64 = out32.to(torch.float64)
+        return out64
 
 
 class ODEWithParams(nn.Module):

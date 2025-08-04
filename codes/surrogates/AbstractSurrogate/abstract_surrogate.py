@@ -537,17 +537,11 @@ class AbstractSurrogateModel(ABC, nn.Module):
         else:
             threshold = None
 
-        # print(
-        #     f"[time_pruning] Epoch: {current_epoch}/{total_epochs} | "
-        #     f"Elapsed: {elapsed:.1f}s | Avg per epoch: {average_epoch_time:.1f}s | "
-        #     f"Projected total: {projected_total_time:.1f}s | Threshold: {threshold:.1f}s"
-        # )
-
         if threshold is not None:
             if projected_total_time > threshold:
                 if self.optuna_trial is not None:
                     tqdm.write(
-                        f"[time_pruning] Projected total time {projected_total_time:.1f}s exceeds threshold {threshold:.1f}s. Pruning trial."
+                        f"[time_pruning] Projected total time {projected_total_time:.1f}s exceeds threshold {threshold:.1f}s. Pruning trial {self.optuna_trial.number}."
                     )
                     self.optuna_trial.set_user_attr(
                         "prune_reason",
