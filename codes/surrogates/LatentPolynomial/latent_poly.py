@@ -61,7 +61,10 @@ class LatentPoly(AbstractSurrogateModel):
         # else:
         #     self.config.in_features = n_quantities + n_parameters
         self.model = PolynomialModelWrapper(
-            config=self.config, device=self.device, n_parameters=n_parameters
+            config=self.config,
+            device=self.device,
+            n_parameters=n_parameters,
+            n_timesteps=n_timesteps,
         )
 
     def forward(self, inputs) -> tuple[Tensor, Tensor]:
@@ -256,12 +259,14 @@ class PolynomialModelWrapper(nn.Module):
         coefficient_net (Module | None): The coefficient network (if config.coeff_network is True).
     """
 
-    def __init__(self, config, device, n_parameters: int = 0):
+    def __init__(self, config, device, n_parameters: int = 0, n_timesteps: int = 101):
         super().__init__()
         self.config = config
         self.loss_weights = getattr(config, "loss_weights", [100.0, 1.0, 1.0, 1.0])
         self.device = device
         latent_dim = self.config.latent_features
+        self.n_timesteps = n_timesteps
+        self.l2 = nn.MSELoss()
 
         # Use coeff_network as the single switch.
         if self.config.coeff_network and n_parameters > 0:
@@ -455,7 +460,7 @@ class PolynomialModelWrapper(nn.Module):
         """
         # only reconstruct the initial state
         x0 = x_true[:, 0, :]
-        if self.config.encode_params and params is not None:
+        if not self.config.coeff_network and params is not None:
             enc_input = torch.cat([x0, params], dim=1)
         else:
             enc_input = x0
