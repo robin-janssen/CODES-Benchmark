@@ -20,6 +20,8 @@ from .bench_plots import (  # plot_generalization_errors,; rel_errors_and_uq,
     plot_error_correlation_heatmap,
     plot_error_distribution_comparative,
     plot_error_distribution_per_quantity,
+    plot_error_percentiles_over_time,
+    plot_example_iterative_predictions,
     plot_example_mode_predictions,
     plot_example_predictions_with_uncertainty,
     plot_generalization_error_comparison,
@@ -27,7 +29,6 @@ from .bench_plots import (  # plot_generalization_errors,; rel_errors_and_uq,
     plot_loss_comparison_equal,
     plot_loss_comparison_train_duration,
     plot_relative_errors,
-    plot_relative_errors_over_time,
     plot_surr_losses,
     plot_uncertainty_confidence,
     plot_uncertainty_over_time_comparison,
@@ -137,6 +138,13 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
         model, surr_name, timesteps, val_loader, conf, labels
     )
 
+    if conf["iterative"]:
+        # Iterative training benchmark
+        print("Running iterative training benchmark...")
+        metrics["iterative"] = evaluate_iterative_predictions(
+            model, surr_name, timesteps, val_loader, conf, labels
+        )
+
     # Gradients benchmark
     if conf["gradients"]:
         print("Running gradients benchmark...")
@@ -207,20 +215,22 @@ def evaluate_accuracy(
     labels: list | None = None,
 ) -> dict[str, Any]:
     """
-        Evaluate the accuracy of the surrogate model.
-    quantitiesquantities
-        Args:
-            model: Instance of the surrogate model class.
-            surr_name (str): The name of the surrogate model.
-            timesteps (np.ndarray): The timesteps array.
-            test_loader (DataLoader): The DataLoader object containing the test data.
-            conf (dict): The configuration dictionary.
-            labels (list, optional): The labels for the quantities.
+    Evaluate the accuracy of the surrogate model.
 
-        Returns:
-            dict: A dictionary containing accuracy metrics.
+    Args:
+        model: Instance of the surrogate model class.
+        surr_name (str): The name of the surrogate model.
+        timesteps (np.ndarray): The timesteps array.
+        test_loader (DataLoader): The DataLoader object containing the test data.
+        conf (dict): The configuration dictionary.
+        labels (list, optional): The labels for the quantities.
+        percentile (int, optional): The percentile for error metrics.
+
+    Returns:
+        dict: A dictionary containing accuracy metrics.
     """
     training_id = conf["training_id"]
+    percentile = conf.get("error_percentile", 99)
 
     # Load the model
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
@@ -229,27 +239,56 @@ def evaluate_accuracy(
     model_index = conf["surrogates"].index(surr_name)
     n_epochs = conf["epochs"][model_index]
 
-    # Use the model's predict method
-    criterion = torch.nn.MSELoss()
-    preds, targets = model.predict(data_loader=test_loader)
-    mean_squared_error = criterion(preds, targets).item()  # / torch.numel(preds)
+    # Obtain log-space predictions and targets
+    preds, targets = model.predict(data_loader=test_loader, leave_log=True)
     preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
 
-    # Calculate relative errors
+    # Compute log-space error metrics
+    absolute_errors_log = np.abs(preds - targets)
+    root_mean_squared_error_log = np.sqrt(np.mean(absolute_errors_log**2))
+    median_absolute_error_log = np.median(absolute_errors_log)
+    mean_absolute_error_log = np.mean(absolute_errors_log)
+    percentile_absolute_error_log = np.percentile(absolute_errors_log, percentile)
+
+    # Obtain real-space predictions and targets
+    preds, targets = model.predict(data_loader=test_loader, leave_log=False)
+    preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
+
+    # Compute real-space error metrics
     absolute_errors = np.abs(preds - targets)
-    mean_absolute_error = np.mean(absolute_errors)
+    root_mean_squared_error_real = np.sqrt(np.mean(absolute_errors**2))
+    median_absolute_error_real = np.median(absolute_errors)
+    mean_absolute_error_real = np.mean(absolute_errors)
+    percentile_absolute_error_real = np.percentile(absolute_errors, percentile)
+
+    # Additional real-space errors: Relative error
     relative_error_threshold = float(conf.get("relative_error_threshold", 0.0))
     relative_errors = np.abs(
         absolute_errors / np.maximum(np.abs(targets), relative_error_threshold)
     )
+    median_relative_error = np.median(relative_errors)
+    mean_relative_error = np.mean(relative_errors)
+    percentile_relative_error = np.percentile(relative_errors, percentile)
 
-    # Plot relative errors over time
-    plot_relative_errors_over_time(
+    plot_error_percentiles_over_time(
         surr_name,
         conf,
         relative_errors,
         timesteps,
         title=f"Relative Errors over Time for {surr_name}",
+        mode="relative",
+        save=True,
+        show_title=TITLE,
+    )
+
+    plot_error_percentiles_over_time(
+        surr_name,
+        conf,
+        absolute_errors_log,
+        timesteps,
+        title=r"$\Delta dex$ (Absolute Log-Space) Errors over Time for "
+        + f"{surr_name}",
+        mode="deltadex",
         save=True,
         show_title=TITLE,
     )
@@ -266,19 +305,159 @@ def evaluate_accuracy(
 
     # Store metrics
     accuracy_metrics = {
-        "mean_squared_error": mean_squared_error,
-        "mean_absolute_error": mean_absolute_error,
-        "mean_relative_error": np.mean(relative_errors),
-        "median_relative_error": np.median(relative_errors),
-        "max_relative_error": np.max(relative_errors),
-        "min_relative_error": np.min(relative_errors),
-        "absolute_errors": absolute_errors,
-        "relative_errors": relative_errors,
+        "root_mean_squared_error_log": root_mean_squared_error_log,
+        "median_absolute_error_log": median_absolute_error_log,
+        "mean_absolute_error_log": mean_absolute_error_log,
+        "percentile_absolute_error_log": percentile_absolute_error_log,
+        "root_mean_squared_error_real": root_mean_squared_error_real,
+        "median_absolute_error_real": median_absolute_error_real,
+        "mean_absolute_error_real": mean_absolute_error_real,
+        "percentile_absolute_error_real": percentile_absolute_error_real,
+        "median_relative_error": median_relative_error,
+        "mean_relative_error": mean_relative_error,
+        "percentile_relative_error": percentile_relative_error,
+        "error_percentile": percentile,
         "main_model_training_time": train_time,
         "main_model_epochs": n_epochs,
+        "absolute_errors": absolute_errors,
+        "relative_errors": relative_errors,
     }
 
     return accuracy_metrics
+
+
+def evaluate_iterative_predictions(
+    model,
+    surr_name: str,
+    timesteps: np.ndarray,
+    val_loader: DataLoader,
+    conf: dict,
+    labels: list | None = None,
+) -> dict[str, Any]:
+    """
+    Evaluate the iterative predictions of the surrogate model.
+
+    Returns the same set of error metrics as evaluate_accuracy, but over the
+    full trajectory built by re-feeding the last prediction as the next initial state.
+    """
+    # load trained model
+    training_id = conf["training_id"]
+    model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
+
+    # get full ground truth (targets) and ignore one-shot preds
+    full_preds, targets = model.predict(
+        data_loader=val_loader, leave_log=True, leave_norm=True
+    )
+    targets = targets.detach().cpu().numpy()
+    n_samples, n_timesteps, n_quantities = targets.shape
+
+    original_n_timesteps = model.n_timesteps
+
+    # how many timesteps per chunk
+    iter_interval = 10  # conf["iterative"]["interval"]
+    # batch size same as in run_benchmark
+    surr_idx = conf["surrogates"].index(surr_name)
+    if isinstance(conf["batch_size"], list):
+        batch_size = conf["batch_size"][surr_idx]
+    else:
+        batch_size = conf["batch_size"]
+
+    # container for the piecewise predictions
+    iterative_preds = np.zeros_like(targets)
+
+    # number of chunks
+    n_chunks = (n_timesteps + iter_interval - 1) // iter_interval
+
+    # create timesteps array for the iterative predictions
+    timesteps_full = np.linspace(0, 1, original_n_timesteps)
+
+    for i in range(n_chunks):
+        start = i * iter_interval
+        end = min(start + iter_interval, n_timesteps)
+        model.n_timesteps = (
+            end - start + 1
+        )  # set the number of timesteps for this chunk
+
+        # choose initial state
+        if i == 0:
+            init_state = targets[:, 0, :]
+        else:
+            init_state = iterative_preds[:, start - 1, :]
+
+        # build dummy dataset: only first slice matters for prepare_data
+        ds = np.zeros((n_samples, model.n_timesteps, n_quantities))
+        ds[:, 0, :] = init_state
+
+        # only need the "train" loader for prediction
+        dt = timesteps_full[: model.n_timesteps]
+        train_loader, _, _ = model.prepare_data(
+            dataset_train=ds,
+            dataset_test=None,
+            dataset_val=None,
+            timesteps=dt,
+            batch_size=batch_size,
+            shuffle=False,
+            dataset_train_params=None,
+            dataset_test_params=None,
+            dataset_val_params=None,
+            dummy_timesteps=False,
+        )
+
+        # predict this chunk and insert into the global array
+        preds_chunk, _ = model.predict(
+            data_loader=train_loader, leave_log=True, leave_norm=True
+        )
+        iterative_preds[:, start:end, :] = (
+            preds_chunk[:, 1 : model.n_timesteps, :].detach().cpu().numpy()
+        )
+
+    iterative_preds_log = model.denormalize(iterative_preds, leave_log=True)
+    targets_log = model.denormalize(targets, leave_log=True)
+    iterative_preds = model.denormalize(iterative_preds)
+    full_preds = model.denormalize(full_preds.detach().cpu().numpy())
+    targets = model.denormalize(targets)
+
+    # compute error metrics
+    errors = iterative_preds - targets
+    abs_errors = np.abs(errors)
+    mse = float(np.mean(errors**2))
+    mae = float(np.mean(abs_errors))
+
+    # compute log-space errors
+    abs_errors_log = np.abs(iterative_preds_log - targets_log)
+    rmse_log = float(np.mean(abs_errors_log**2))
+    mae_log = float(np.mean(abs_errors_log))
+    percentile = conf.get("error_percentile", 99)
+    percentile_abs_error_log = float(np.percentile(abs_errors_log, percentile))
+
+    errors = np.mean(np.abs(iterative_preds - targets), axis=(1, 2))
+    example_idx = int(np.argsort(np.abs(errors - np.median(errors)))[0])
+
+    # Restore original number of timesteps
+    model.n_timesteps = original_n_timesteps
+
+    plot_example_iterative_predictions(
+        surr_name,
+        conf,
+        iterative_preds,
+        full_preds,
+        targets,
+        timesteps,
+        iter_interval=iter_interval,
+        example_idx=example_idx,
+        labels=labels,
+        save=True,
+        show_title=TITLE,
+    )
+
+    return {
+        "root_mean_squared_error_log": rmse_log,
+        "mean_absolute_error_log": mae_log,
+        "percentile_absolute_error_log": percentile_abs_error_log,
+        "mean_squared_error": mse,
+        "mean_absolute_error": mae,
+        "absolute_errors": abs_errors,
+    }
 
 
 def evaluate_dynamic_accuracy(

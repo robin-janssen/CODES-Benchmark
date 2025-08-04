@@ -48,3 +48,4 @@ class LatentPolyConfig:
     learning_rate: float = 0.0005
     layers_factor: int = 159
     activation: nn.Module = nn.LeakyReLU()
+    model_version: str = "v1"

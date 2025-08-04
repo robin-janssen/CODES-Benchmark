@@ -215,7 +215,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         pass
 
     def predict(
-        self, data_loader: DataLoader, leave_log: bool = False
+        self, data_loader: DataLoader, leave_log: bool = False, leave_norm: bool = False
     ) -> tuple[Tensor, Tensor]:
         """
         Evaluate the model on the given dataloader.
@@ -224,6 +224,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             data_loader (DataLoader): The DataLoader object containing the data the
                 model is evaluated on.
             leave_log (bool): If True, do not exponentiate the data even if log10_transform is True.
+            leave_norm (bool): If True, do not denormalize the data even if normalisation is applied.
 
         Returns:
             tuple[Tensor, Tensor]: The predictions and targets.
@@ -265,8 +266,8 @@ class AbstractSurrogateModel(ABC, nn.Module):
         predictions = predictions[:processed_samples, ...]
         targets = targets[:processed_samples, ...]
 
-        predictions = self.denormalize(predictions, leave_log=leave_log)
-        targets = self.denormalize(targets, leave_log=leave_log)
+        predictions = self.denormalize(predictions, leave_log, leave_norm)
+        targets = self.denormalize(targets, leave_log, leave_norm)
 
         predictions = predictions.reshape(-1, self.n_timesteps, self.n_quantities)
         targets = targets.reshape(-1, self.n_timesteps, self.n_quantities)
@@ -428,29 +429,42 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
         return progress_bar
 
-    def denormalize(self, data: Tensor, leave_log: bool = False) -> Tensor:
+    def denormalize(
+        self,
+        data: Tensor | np.ndarray,
+        leave_log: bool = False,
+        leave_norm: bool = False,
+    ) -> Tensor | np.ndarray:
         """
         Denormalize the data.
 
         Args:
-            data (np.ndarray): The data to denormalize.
+            data (Tensor | np.ndarray): The data to denormalize.
             leave_log (bool): If True, do not exponentiate the data even if log10_transform is True.
+            leave_norm (bool): If True, do not denormalize the data even if normalisation is applied.
 
         Returns:
-            np.ndarray: The denormalized data.
+            Tensor | np.ndarray: The denormalized data.
         """
         if self.normalisation is not None:
-            if self.normalisation["mode"] == "disabled":
-                ...
-            elif self.normalisation["mode"] == "minmax":
-                dmax = self.normalisation["max"]
-                dmin = self.normalisation["min"]
-                data = data.to("cpu")
-                data = (data + 1) * (dmax - dmin) / 2 + dmin
-            elif self.normalisation["mode"] == "standardize":
-                mean = self.normalisation["mean"]
-                std = self.normalisation["std"]
-                data = data * std + mean
+            if not leave_norm:
+                if self.normalisation["mode"] == "disabled":
+                    ...
+                elif self.normalisation["mode"] == "minmax":
+                    dmax = self.normalisation["max"]
+                    dmin = self.normalisation["min"]
+                    if isinstance(data, Tensor) and isinstance(dmax, np.ndarray):
+                        dmax = Tensor(dmax).to(data.device)
+                        dmin = Tensor(dmin).to(data.device)
+                    # data = data.to("cpu")
+                    data = (data + 1) * (dmax - dmin) / 2 + dmin
+                elif self.normalisation["mode"] == "standardize":
+                    mean = self.normalisation["mean"]
+                    std = self.normalisation["std"]
+                    if isinstance(data, Tensor) and isinstance(mean, np.ndarray):
+                        mean = Tensor(mean).to(data.device)
+                        std = Tensor(std).to(data.device)
+                    data = data * std + mean
 
             if self.normalisation["log10_transform"] and not leave_log:
                 data = 10**data
@@ -523,17 +537,11 @@ class AbstractSurrogateModel(ABC, nn.Module):
         else:
             threshold = None
 
-        # print(
-        #     f"[time_pruning] Epoch: {current_epoch}/{total_epochs} | "
-        #     f"Elapsed: {elapsed:.1f}s | Avg per epoch: {average_epoch_time:.1f}s | "
-        #     f"Projected total: {projected_total_time:.1f}s | Threshold: {threshold:.1f}s"
-        # )
-
         if threshold is not None:
             if projected_total_time > threshold:
                 if self.optuna_trial is not None:
                     tqdm.write(
-                        f"[time_pruning] Projected total time {projected_total_time:.1f}s exceeds threshold {threshold:.1f}s. Pruning trial."
+                        f"[time_pruning] Projected total time {projected_total_time:.1f}s exceeds threshold {threshold:.1f}s. Pruning trial {self.optuna_trial.number}."
                     )
                     self.optuna_trial.set_user_attr(
                         "prune_reason",

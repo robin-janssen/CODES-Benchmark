@@ -1,15 +1,15 @@
-import queue
 import math
+import queue
 from datetime import datetime, timedelta
 
 import pytest
 from optuna.trial import TrialState
 
 from codes.tune.optuna_fcts import (
+    MODULE_REGISTRY,
+    create_objective,
     make_optuna_params,
     maybe_set_runtime_threshold,
-    create_objective,
-    MODULE_REGISTRY,
 )
 
 
@@ -212,14 +212,6 @@ def test_training_run_single_objective(monkeypatch, tmp_path):
             None,
         ),
     )
-    monkeypatch.setattr(
-        "codes.tune.optuna_fcts.get_data_subset",
-        lambda *args, **kw: (
-            (dummy_data, dummy_data),
-            (dummy_params, dummy_params),
-            dummy_timesteps,
-        ),
-    )
     monkeypatch.setattr("codes.tune.optuna_fcts.set_random_seeds", lambda *a, **k: None)
 
     monkeypatch.setattr("codes.tune.optuna_fcts.get_surrogate", lambda name: DummyModel)
@@ -272,14 +264,6 @@ def test_training_run_multi_objective(monkeypatch, tmp_path):
             None,
             dummy_info,
             None,
-        ),
-    )
-    monkeypatch.setattr(
-        "codes.tune.optuna_fcts.get_data_subset",
-        lambda *args, **kw: (
-            (dummy_data, dummy_data),
-            (dummy_params, dummy_params),
-            dummy_timesteps,
         ),
     )
     monkeypatch.setattr("codes.tune.optuna_fcts.set_random_seeds", lambda *a, **k: None)

@@ -17,7 +17,7 @@ from codes.benchmark.bench_utils import (
     measure_inference_time,
 )
 from codes.utils import check_and_load_data, make_description, set_random_seeds
-from codes.utils.data_utils import download_data, get_data_subset
+from codes.utils.data_utils import download_data
 
 MODULE_REGISTRY: dict[str, type[nn.Module]] = {
     "relu": nn.ReLU,
@@ -71,76 +71,81 @@ def _suggest_param(trial: optuna.Trial, name: str, opts: dict):
 def make_optuna_params(trial: optuna.Trial, optuna_params: dict) -> dict:
     suggested: dict[str, any] = {}
 
-    # Sample switch parameters
+    # Sample any switches that exist
     for switch in ("scheduler", "optimizer", "coeff_network", "loss_function"):
-        if switch not in optuna_params:
-            continue
-        suggested[switch] = _suggest_param(trial, switch, optuna_params[switch])
+        if switch in optuna_params:
+            suggested[switch] = _suggest_param(trial, switch, optuna_params[switch])
 
-    # Sample conditional parameters
-    # scheduler - poly_power or eta_min
-    sched = suggested.get("scheduler")
-    if sched == "poly":
-        suggested["poly_power"] = _suggest_param(
-            trial, "poly_power", optuna_params["poly_power"]
-        )
-    elif sched == "cosine":
-        suggested["eta_min"] = _suggest_param(
-            trial, "eta_min", optuna_params["eta_min"]
-        )
-
-    # optimizer - momentum if SGD
-    optm = suggested.get("optimizer")
-    if isinstance(optm, str) and optm.lower() == "sgd":
-        suggested["momentum"] = _suggest_param(
-            trial, "momentum", optuna_params["momentum"]
-        )
-
-    # coeff_network - coeff_width, coeff_layers
-    coeff_net = suggested.get("coeff_network")
-    if bool(coeff_net):
-        suggested["coeff_width"] = _suggest_param(
-            trial, "coeff_width", optuna_params["coeff_width"]
-        )
-        suggested["coeff_layers"] = _suggest_param(
-            trial, "coeff_layers", optuna_params["coeff_layers"]
-        )
-
-    # loss_function - beta if smoothl1
-    lf = suggested.get("loss_function")
-    if isinstance(lf, str) and lf.lower() == "smoothl1":
-        suggested["beta"] = _suggest_param(trial, "beta", optuna_params["beta"])
-
-    # Sample independent parameters
-    excluded = {
-        "scheduler",
-        "poly_power",
-        "eta_min",
-        "optimizer",
-        "momentum",
-        "coeff_network",
-        "coeff_width",
-        "coeff_layers",
-        "loss_function",
-        "beta",
+    # Child‐sampling rules
+    # mapping: switch to its conditional children
+    mapping = {
+        "scheduler": ("poly_power", "eta_min"),
+        "optimizer": ("momentum",),
+        "coeff_network": ("coeff_width", "coeff_layers"),
+        "loss_function": ("beta",),
     }
 
+    for switch, children in mapping.items():
+        if switch in optuna_params:
+            # switch _was_ sampled: sample each child only if the switch value demands it
+            val = suggested.get(switch)
+            if switch == "scheduler":
+                if val == "poly" and "poly_power" in optuna_params:
+                    suggested["poly_power"] = _suggest_param(
+                        trial, "poly_power", optuna_params["poly_power"]
+                    )
+                elif val == "cosine" and "eta_min" in optuna_params:
+                    suggested["eta_min"] = _suggest_param(
+                        trial, "eta_min", optuna_params["eta_min"]
+                    )
+            elif switch == "optimizer":
+                if (
+                    isinstance(val, str)
+                    and val.lower() == "sgd"
+                    and "momentum" in optuna_params
+                ):
+                    suggested["momentum"] = _suggest_param(
+                        trial, "momentum", optuna_params["momentum"]
+                    )
+            elif switch == "coeff_network":
+                if bool(val):
+                    for child in ("coeff_width", "coeff_layers"):
+                        if child in optuna_params:
+                            suggested[child] = _suggest_param(
+                                trial, child, optuna_params[child]
+                            )
+            elif switch == "loss_function":
+                if (
+                    isinstance(val, str)
+                    and val.lower() == "smoothl1"
+                    and "beta" in optuna_params
+                ):
+                    suggested["beta"] = _suggest_param(
+                        trial, "beta", optuna_params["beta"]
+                    )
+
+        else:
+            # switch _not_ in config, but user still might want to tune child directly
+            for child in children:
+                if child in optuna_params:
+                    suggested[child] = _suggest_param(
+                        trial, child, optuna_params[child]
+                    )
+
+    # Sample everything else exactly once
+    excluded = set(mapping.keys()) | {c for kids in mapping.values() for c in kids}
     for name, opts in optuna_params.items():
         if name in excluded:
             continue
         suggested[name] = _suggest_param(trial, name, opts)
 
-    # map activation and loss_function to actual callables
+    # Map activation & loss_function strings to actual nn classes/instances
     for name, val in list(suggested.items()):
         if "activation" in name.lower():
-            cls = MODULE_REGISTRY.get(val.lower())
-            if cls is None:
-                raise ValueError(f"Unknown activation: {val}")
+            cls = MODULE_REGISTRY[val.lower()]
             suggested[name] = cls()
         elif name == "loss_function":
-            cls = MODULE_REGISTRY.get(val.lower())
-            if cls is None:
-                raise ValueError(f"Unknown loss function: {val}")
+            cls = MODULE_REGISTRY[val.lower()]
             suggested[name] = cls()
 
     return suggested
@@ -232,14 +237,10 @@ def training_run(
     )
 
     subset_factor = config["dataset"].get("subset_factor", 1)
-    # Get the appropriate data subset
-    (train_data, test_data), (train_params, test_params), timesteps = get_data_subset(
-        (train_data, test_data),
-        timesteps,
-        "sparse",
-        subset_factor,
-        (train_params, test_params),
-    )
+    # Get the appropriate subset of the training data
+    # We nevertheless use the full test data to measure performance.
+    train_data = train_data[::subset_factor]
+    train_params = train_params[::subset_factor] if train_params is not None else None
 
     set_random_seeds(config["seed"], device=device)
     surr_name = config["surrogate"]["name"]

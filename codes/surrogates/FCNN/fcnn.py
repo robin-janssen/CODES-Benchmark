@@ -175,6 +175,10 @@ class FullyConnected(AbstractSurrogateModel):
         if dummy_timesteps:
             timesteps = np.linspace(0, 1, dataset_train.shape[1])
 
+        assert (
+            timesteps.shape[0] == dataset_train.shape[1]
+        ), "Number of timesteps in timesteps array and dataset must match."
+
         nw = getattr(self.config, "num_workers", 0)
 
         train_loader = self.create_dataloader(
@@ -186,8 +190,9 @@ class FullyConnected(AbstractSurrogateModel):
             num_workers=nw,
         )
 
-        test_loader = (
-            self.create_dataloader(
+        test_loader = None
+        if dataset_test is not None:
+            test_loader = self.create_dataloader(
                 dataset_test,
                 timesteps,
                 batch_size,
@@ -195,12 +200,10 @@ class FullyConnected(AbstractSurrogateModel):
                 dataset_params=dataset_test_params,
                 num_workers=nw,
             )
-            if dataset_test is not None
-            else None
-        )
 
-        val_loader = (
-            self.create_dataloader(
+        val_loader = None
+        if dataset_val is not None:
+            val_loader = self.create_dataloader(
                 dataset_val,
                 timesteps,
                 batch_size,
@@ -208,9 +211,6 @@ class FullyConnected(AbstractSurrogateModel):
                 dataset_params=dataset_val_params,
                 num_workers=nw,
             )
-            if dataset_val is not None
-            else None
-        )
 
         return train_loader, test_loader, val_loader
 

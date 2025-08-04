@@ -575,7 +575,7 @@ def get_data_subset(
     Returns:
         tuple: (data_subset, params_subset, timesteps_subset)
     """
-    # First, subsample the data based on subset_factor.
+    # First, subsample the dataset based on subset_factor.
     data_sub = tuple(d[::subset_factor] for d in data)
 
     # Handle params:

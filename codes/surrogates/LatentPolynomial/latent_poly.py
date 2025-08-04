@@ -61,7 +61,10 @@ class LatentPoly(AbstractSurrogateModel):
         # else:
         #     self.config.in_features = n_quantities + n_parameters
         self.model = PolynomialModelWrapper(
-            config=self.config, device=self.device, n_parameters=n_parameters
+            config=self.config,
+            device=self.device,
+            n_parameters=n_parameters,
+            n_timesteps=n_timesteps,
         )
 
     def forward(self, inputs) -> tuple[Tensor, Tensor]:
@@ -129,6 +132,10 @@ class LatentPoly(AbstractSurrogateModel):
     ):
         if dummy_timesteps:
             timesteps = np.linspace(0, 1, dataset_train.shape[1])
+
+        assert (
+            timesteps.shape[0] == dataset_train.shape[1]
+        ), "Number of timesteps in timesteps array and dataset must match."
 
         nw = getattr(self.config, "num_workers", 0)
 
@@ -252,12 +259,14 @@ class PolynomialModelWrapper(nn.Module):
         coefficient_net (Module | None): The coefficient network (if config.coeff_network is True).
     """
 
-    def __init__(self, config, device, n_parameters: int = 0):
+    def __init__(self, config, device, n_parameters: int = 0, n_timesteps: int = 101):
         super().__init__()
         self.config = config
         self.loss_weights = getattr(config, "loss_weights", [100.0, 1.0, 1.0, 1.0])
         self.device = device
         latent_dim = self.config.latent_features
+        self.n_timesteps = n_timesteps
+        self.l2 = nn.MSELoss()
 
         # Use coeff_network as the single switch.
         if self.config.coeff_network and n_parameters > 0:
@@ -377,24 +386,6 @@ class PolynomialModelWrapper(nn.Module):
         z_pred = poly_out + z0.unsqueeze(1)
         return self.decoder(z_pred)
 
-    def renormalize_loss_weights(
-        self, x_true, x_pred, params, criterion: nn.Module = nn.MSELoss
-    ):
-        """
-        Renormalize the loss weights based on the current loss values so that they are accurately
-        weighted based on the provided weights. To be used once after a short burn in phase.
-
-        Args:
-            x_true (Tensor): The true trajectory.
-            x_pred (Tensor): The predicted trajectory
-            params (Tensor): Fixed parameters (batch, n_parameters).
-            criterion (nn.Module): Loss function to use for calculating the losses.
-        """
-        self.loss_weights[0] = 1 / criterion(x_pred, x_true).item() * 100
-        self.loss_weights[1] = 1 / self.identity_loss(x_true, params).item()
-        self.loss_weights[2] = 1 / self.deriv_loss(x_true, x_pred).item()
-        self.loss_weights[3] = 1 / self.deriv2_loss(x_true, x_pred).item()
-
     def total_loss(
         self,
         x_true: Tensor,
@@ -403,99 +394,81 @@ class PolynomialModelWrapper(nn.Module):
         criterion: nn.Module = nn.MSELoss(),
     ):
         """
-        Calculate the total loss based on the loss weights, including params for identity.
+        Total loss: weighted sum of trajectory reconstruction, identity, first derivative,
+        and second derivative losses. All terms remain in the computation graph.
         """
-        return (
-            self.loss_weights[0] * criterion(x_pred, x_true)
-            + self.loss_weights[1] * self.identity_loss(x_true, params)
-            + self.loss_weights[2] * self.deriv_loss(x_true, x_pred)
-            + self.loss_weights[3] * self.deriv2_loss(x_true, x_pred)
-        )
+        w0, w1, w2, w3 = (
+            self.loss_weights
+        )  # assume these are set in config and are floats
 
-    def identity_loss(self, x_true: Tensor, params: Tensor = None) -> Tensor:
+        # primary trajectory loss
+        traj_loss = criterion(x_pred, x_true)
+
+        # identity loss (reconstruct x0)
+        identity = self.identity_loss(x_true, params)
+
+        # derivative losses: compute once
+        d_pred = self.first_derivative(x_pred)
+        d_true = self.first_derivative(x_true)
+        deriv_loss = self.l2(d_pred, d_true)
+
+        d2_pred = self.second_derivative(x_pred)
+        d2_true = self.second_derivative(x_true)
+        deriv2_loss = self.l2(d2_pred, d2_true)
+
+        return w0 * traj_loss + w1 * identity + w2 * deriv_loss + w3 * deriv2_loss
+
+    def first_derivative(self, x: Tensor):
+        # x: [B, T, F]
+        h = 1.0 / self.n_timesteps
+        # central differences for interior
+        d_center = (x[:, 2:, :] - x[:, :-2, :]) / (2 * h)  # [B, T-2, F]
+        # forward/backward for boundaries
+        d_first = (x[:, 1:2, :] - x[:, :1, :]) / h  # [B,1,F]
+        d_last = (x[:, -1:, :] - x[:, -2:-1, :]) / h  # [B,1,F]
+        derivative = torch.cat([d_first, d_center, d_last], dim=1)  # [B,T,F]
+        return derivative
+
+    def second_derivative(self, x: Tensor):
+        # x: [B, T, F]
+        h = 1.0 / self.n_timesteps
+        # standard second derivative central
+        d2_center = (x[:, 2:, :] - 2 * x[:, 1:-1, :] + x[:, :-2, :]) / (
+            h * h
+        )  # [B, T-2, F]
+        # one-sided approximations at ends (second-order):
+        # at t0: f''(t0) ≈ (2 f0 - 5 f1 + 4 f2 - f3) / h^2
+        d2_first = (
+            2 * x[:, :1, :] - 5 * x[:, 1:2, :] + 4 * x[:, 2:3, :] - x[:, 3:4, :]
+        ) / (h * h)
+        # at t_{N-1}: symmetric formula
+        d2_last = (
+            2 * x[:, -1:, :] - 5 * x[:, -2:-1, :] + 4 * x[:, -3:-2, :] - x[:, -4:-3, :]
+        ) / (h * h)
+        d2 = torch.cat([d2_first, d2_center, d2_last], dim=1)  # [B,T,F]
+        return d2
+
+    def identity_loss(self, x_true: Tensor, params: Tensor = None):
         """
-        Identity loss on the initial state x0, handling three cases:
-          1. No params: params is None → encode x0 only.
-          2. coeff_network=True: encode x0 only, ignore params here.
-          3. coeff_network=False and params provided: encode [x0, params].
+        Calculate the identity loss (Encoder -> Decoder) on the initial state x0.
+
+        Args:
+            x_true (Tensor): The full trajectory (batch, timesteps, features).
+            params (Tensor | None): Fixed parameters (batch, n_parameters).
+        Returns:
+            Tensor: The identity loss on x0.
         """
-        x0 = x_true[:, 0, :]  # [batch, n_quantities]
-        # decide what to feed into the encoder:
-        if params is None or self.config.coeff_network:
-            enc_in = x0
+        # only reconstruct the initial state
+        x0 = x_true[:, 0, :]
+        if not self.config.coeff_network and params is not None:
+            enc_input = torch.cat([x0, params], dim=1)
         else:
-            enc_in = torch.cat([x0, params], dim=1)
-        z0 = self.encoder(enc_in)
+            enc_input = x0
+
+        # encode-decode
+        z0 = self.encoder(enc_input)
         x0_hat = self.decoder(z0)
-        return self.l2_loss(x0, x0_hat)
-
-    @classmethod
-    def l2_loss(cls, x_true: Tensor, x_pred: Tensor):
-        """
-        Compute the L2 loss.
-
-        Args:
-            x_true (Tensor): Ground truth.
-            x_pred (Tensor): Predictions.
-
-        Returns:
-            Tensor: L2 loss.
-        """
-        return torch.mean(torch.abs(x_true - x_pred) ** 2)
-
-    @classmethod
-    def deriv_loss(cls, x_true, x_pred):
-        """
-        Compute the loss based on the difference of first derivatives.
-
-        Args:
-            x_true (Tensor): Ground truth.
-            x_pred (Tensor): Predictions.
-
-        Returns:
-            Tensor: Derivative loss.
-        """
-        return cls.l2_loss(cls.deriv(x_pred), cls.deriv(x_true))
-
-    @classmethod
-    def deriv2_loss(cls, x_true, x_pred):
-        """
-        Compute the loss based on the difference of second derivatives.
-
-        Args:
-            x_true (Tensor): Ground truth.
-            x_pred (Tensor): Predictions.
-
-        Returns:
-            Tensor: Second derivative loss.
-        """
-        return cls.l2_loss(cls.deriv2(x_pred), cls.deriv2(x_true))
-
-    @classmethod
-    def deriv(cls, x):
-        """
-        Compute the numerical first derivative.
-
-        Args:
-            x (Tensor): Input tensor.
-
-        Returns:
-            Tensor: First derivative.
-        """
-        return torch.gradient(x, dim=1)[0].squeeze(0)
-
-    @classmethod
-    def deriv2(cls, x):
-        """
-        Compute the numerical second derivative.
-
-        Args:
-            x (Tensor): Input tensor.
-
-        Returns:
-            Tensor: Second derivative.
-        """
-        return cls.deriv(cls.deriv(x))
+        return self.l2(x0, x0_hat)
 
 
 class Polynomial(nn.Module):

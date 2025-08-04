@@ -89,85 +89,84 @@ def save_plot_counter(
 # Per-surrogate model plots
 
 
-def plot_relative_errors_over_time(
+def plot_error_percentiles_over_time(
     surr_name: str,
     conf: dict,
-    relative_errors: np.ndarray,
+    errors: np.ndarray,
     timesteps: np.ndarray,
     title: str,
+    mode: str = "relative",  # "relative" or "deltadex"
     save: bool = False,
     show_title: bool = True,
 ) -> None:
     """
-    Plot the mean and median relative errors over time with shaded regions for
-    the 50th, 90th, and 99th percentiles.
-
-    Args:
-        surr_name (str): The name of the surrogate model.
-        conf (dict): The configuration dictionary.
-        relative_errors (np.ndarray): The relative errors of the model.
-        timesteps (np.ndarray): Array of timesteps.
-        title (str): The title of the plot.
-        save (bool): Whether to save the plot.
-        show_title (bool): Whether to show the title on the plot.
+    Plot mean, median, and percentiles (50th, 90th, 99th) over time.
+    mode="relative" treats `errors` as relative errors;
+    mode="deltadex" treats them as log-space absolute errors.
     """
-    # Calculate the mean, median, and percentiles across all samples and quantities
-    mean_errors = np.mean(relative_errors, axis=(0, 2))
-    mean = np.mean(mean_errors)
-    median_errors = np.median(relative_errors, axis=(0, 2))
-    median = np.median(median_errors)
-    p50_upper = np.percentile(relative_errors, 75, axis=(0, 2))
-    p50_lower = np.percentile(relative_errors, 25, axis=(0, 2))
-    p90_upper = np.percentile(relative_errors, 95, axis=(0, 2))
-    p90_lower = np.percentile(relative_errors, 5, axis=(0, 2))
-    p99_upper = np.percentile(relative_errors, 99.5, axis=(0, 2))
-    p99_lower = np.percentile(relative_errors, 0.5, axis=(0, 2))
+    # compute statistics across samples and quantities
+    mean_ts = np.mean(errors, axis=(0, 2))
+    median_ts = np.median(errors, axis=(0, 2))
+    stats = {
+        "50": (25, 75),
+        "90": (5, 95),
+        "99": (0.5, 99.5),
+    }
+    percentiles = {}
+    for p, (low, high) in stats.items():
+        percentiles[p] = (
+            np.percentile(errors, low, axis=(0, 2)),
+            np.percentile(errors, high, axis=(0, 2)),
+        )
+    # overall means for legend
+    mean_val = mean_ts.mean()
+    median_val = median_ts.mean()
 
     plt.figure(figsize=(6, 4))
-    mean_label = f"Mean Error\nMean={mean * 100:.2f}%"
-    plt.plot(timesteps, mean_errors, label=mean_label, color="blue")
-    median_label = f"Median Error\nMedian={median * 100:.2f}%"
-    plt.plot(timesteps, median_errors, label=median_label, color="red")
-
-    # Shading areas
-    plt.fill_between(
+    plt.plot(
         timesteps,
-        p50_lower,
-        p50_upper,
-        color="grey",
-        alpha=0.45,
-        label="50th Percentile",
+        mean_ts,
+        label=f"Mean Error\nMean={mean_val * 100:.2f}%",
+        color="blue",
     )
-    plt.fill_between(
+    plt.plot(
         timesteps,
-        p90_lower,
-        p90_upper,
-        color="grey",
-        alpha=0.4,
-        label="90th Percentile",
-    )
-    plt.fill_between(
-        timesteps,
-        p99_lower,
-        p99_upper,
-        color="grey",
-        alpha=0.15,
-        label="99th Percentile",
+        median_ts,
+        label=f"Median Error\nMedian={median_val * 100:.2f}%",
+        color="red",
     )
 
-    plt.yscale("log")
+    for p, (low_ts, high_ts) in percentiles.items():
+        alpha = {"50": 0.45, "90": 0.4, "99": 0.15}[p]
+        plt.fill_between(
+            timesteps,
+            low_ts,
+            high_ts,
+            color="grey",
+            alpha=alpha,
+            label=f"{p}th Percentile",
+        )
+
     plt.xlabel("Time")
-    plt.ylabel("Relative Error")
+    if mode == "relative":
+        plt.yscale("log")
+        plt.ylabel("Relative Error")
+        filename = "accuracy_rel_errors_time.pdf"
+    elif mode == "deltadex":
+        plt.ylabel(r"$\Delta dex$ (log-space absolute error)")
+        filename = "accuracy_delta_dex_time.pdf"
+    else:
+        raise ValueError(f"Unknown mode: {mode}")
+
     plt.xlim(timesteps[0], timesteps[-1])
-    plt.ylim(bottom=1e-8)
-    if conf["dataset"]["log_timesteps"]:
+    if conf.get("dataset", {}).get("log_timesteps"):
         plt.xscale("log")
     if show_title:
         plt.title(title)
     plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
-    if save and conf:
-        save_plot(plt, "accuracy_rel_errors_time.pdf", conf, surr_name)
+    if save:
+        save_plot(plt, filename, conf, surr_name)
 
     plt.close()
 
@@ -394,7 +393,7 @@ def plot_example_mode_predictions(
 
     num_quantities = preds.shape[2]
     # Define the color palette for plotting quantities
-    colors = plt.cm.viridis(np.linspace(0, 1, num_quantities))
+    colors = plt.cm.viridis(np.linspace(0, 0.9, num_quantities))
 
     # Create the overall figure and subplots
     fig = plt.figure(figsize=(6, 4 * num_plots))
@@ -503,6 +502,105 @@ def plot_example_mode_predictions(
     plt.close()
 
 
+def plot_example_iterative_predictions(
+    surr_name: str,
+    conf: dict,
+    iterative_preds: np.ndarray,
+    full_preds: np.ndarray,
+    targets: np.ndarray,
+    timesteps: np.ndarray,
+    iter_interval: int,
+    example_idx: int | None = None,
+    num_quantities: int = 100,
+    labels: list[str] | None = None,
+    save: bool = False,
+    show_title: bool = True,
+) -> None:
+    """
+    Plot one sample's full iterative trajectory:
+    ground truth vs. chained predictions, with retrigger lines.
+    """
+    # choose example if not given
+    if example_idx is None:
+        errors = np.mean(np.abs(iterative_preds - targets), axis=(1, 2))
+        example_idx = int(np.argsort(np.abs(errors - np.median(errors)))[0])
+
+    n_q = min(iterative_preds.shape[2], num_quantities)
+    per_plot = min(10, n_q)
+    n_plots = int(np.ceil(n_q / per_plot))
+    colors = plt.cm.viridis(np.linspace(0, 0.9, per_plot))
+
+    fig = plt.figure(figsize=(6, 4 * n_plots))
+    gs = GridSpec(n_plots, 1, figure=fig)
+
+    for pi in range(n_plots):
+        ax = fig.add_subplot(gs[pi])
+        start, end = pi * per_plot, min((pi + 1) * per_plot, n_q)
+        for qi in range(start, end):
+            c = colors[qi % per_plot]
+            gt = targets[example_idx, :, qi]
+            pr = iterative_preds[example_idx, :, qi]
+            ax.plot(timesteps, gt, "--", color=c)
+            ax.plot(timesteps, pr, "-", color=c)
+            init_pr = full_preds[example_idx, :, qi]
+            ax.plot(timesteps, init_pr, ":", color=c)
+        # retrigger lines
+        for t in timesteps[::iter_interval]:
+            ax.axvline(x=t, linestyle=":", linewidth=0.8, alpha=0.7)
+        if conf.get("dataset", {}).get("log10_transform", False):
+            ax.set_yscale("log")
+        ax.set_xlim(timesteps.min(), timesteps.max())
+        if conf["dataset"].get("log_timesteps", False):
+            ax.set_xscale("log")
+        ax.set_ylabel("Abundance")
+        if labels is not None:
+            legend_lines = [
+                plt.Line2D([0], [0], color=colors[i % per_plot])
+                for i in range(start, end)
+            ]
+            ax.legend(
+                legend_lines,
+                labels[start:end],
+                loc="center left",
+                bbox_to_anchor=(1, 0.5),
+            )
+
+    fig.text(0.5, 0.04, "Time", ha="center", va="center", fontsize=12)
+
+    handles = [
+        plt.Line2D([0], [0], color="black", linestyle="--", label="Ground Truth"),
+        plt.Line2D(
+            [0], [0], color="black", linestyle="-", label="Iterative Prediction"
+        ),
+        plt.Line2D([0], [0], color="black", linestyle=":", label="Full Prediction"),
+    ]
+    pos = 0.95 - (0.06 / n_plots)
+    fig.legend(
+        handles,
+        ["Ground Truth", "Iterative Prediction", "Full Prediction"],
+        loc="upper center",
+        bbox_to_anchor=(0.5, pos),
+        ncol=2,
+        fontsize="small",
+    )
+    fig.align_ylabels()
+
+    if show_title:
+        title = (
+            f"Iterative Prediction Example ({surr_name})\n"
+            f"Sample {example_idx}, Interval {iter_interval}"
+        )
+        plt.suptitle(title, y=0.97)
+
+    plt.tight_layout(rect=[0.05, 0.03, 0.95, 0.92])
+
+    if save and conf:
+        fname = "iterative_example_preds.png"
+        save_plot(plt, fname, conf, surr_name)
+
+    plt.close()
+
+
 def plot_example_predictions_with_uncertainty(
     surr_name: str,
     conf: dict,
@@ -540,7 +638,7 @@ def plot_example_predictions_with_uncertainty(
     num_plots = int(np.ceil(num_quantities / quantities_per_plot))
 
     # Define the color palette
-    colors = plt.cm.viridis(np.linspace(0, 1, quantities_per_plot))
+    colors = plt.cm.viridis(np.linspace(0, 0.9, quantities_per_plot))
 
     # Create subplots
     fig = plt.figure(figsize=(8, 4 * num_plots))

@@ -1,4 +1,3 @@
-# test/test_compare_models.py
 import pytest
 from codes.benchmark import bench_fcts
 
