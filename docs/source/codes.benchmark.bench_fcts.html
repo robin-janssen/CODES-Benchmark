@@ -409,7 +409,7 @@ document.write(`
 <td><p>Evaluate the uncertainty quantification (UQ) performance of the surrogate model.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_accuracy" title="codes.benchmark.bench_fcts.evaluate_accuracy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_accuracy</span></code></a>(model, surr_name, ...[, ...])</p></td>
-<td><p></p></td>
+<td><p>Evaluate the accuracy of the surrogate model.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_batchsize" title="codes.benchmark.bench_fcts.evaluate_batchsize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_batchsize</span></code></a>(model, surr_name, ...)</p></td>
 <td><p>Evaluate the performance of the surrogate model with different batch sizes.</p></td>
@@ -426,16 +426,19 @@ document.write(`
 <tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_interpolation" title="codes.benchmark.bench_fcts.evaluate_interpolation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_interpolation</span></code></a>(model, surr_name, ...)</p></td>
 <td><p>Evaluate the interpolation performance of the surrogate model.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_sparse" title="codes.benchmark.bench_fcts.evaluate_sparse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_sparse</span></code></a>(model, surr_name, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_iterative_predictions" title="codes.benchmark.bench_fcts.evaluate_iterative_predictions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_iterative_predictions</span></code></a>(model, ...[, ...])</p></td>
+<td><p>Evaluate the iterative predictions of the surrogate model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_sparse" title="codes.benchmark.bench_fcts.evaluate_sparse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_sparse</span></code></a>(model, surr_name, ...)</p></td>
 <td><p>Evaluate the performance of the surrogate model with sparse training data.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.run_benchmark" title="codes.benchmark.bench_fcts.run_benchmark"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_benchmark</span></code></a>(surr_name, surrogate_class, conf)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.run_benchmark" title="codes.benchmark.bench_fcts.run_benchmark"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_benchmark</span></code></a>(surr_name, surrogate_class, conf)</p></td>
 <td><p>Run benchmarks for a given surrogate model.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.tabular_comparison" title="codes.benchmark.bench_fcts.tabular_comparison"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tabular_comparison</span></code></a>(all_metrics, config)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.tabular_comparison" title="codes.benchmark.bench_fcts.tabular_comparison"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tabular_comparison</span></code></a>(all_metrics, config)</p></td>
 <td><p>Compare the metrics of different surrogate models in a tabular format.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.time_inference" title="codes.benchmark.bench_fcts.time_inference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">time_inference</span></code></a>(model, surr_name, ...[, n_runs])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.time_inference" title="codes.benchmark.bench_fcts.time_inference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">time_inference</span></code></a>(model, surr_name, ...[, n_runs])</p></td>
 <td><p>Time the inference of the surrogate model (full version with metrics).</p></td>
 </tr>
 </tbody>

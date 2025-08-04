@@ -912,20 +912,21 @@ overwrite the single-file checkpoint on disk and update best_test_loss/epoch.</p
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel.denormalize">
-<span class="sig-name descname"><span class="pre">denormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel.denormalize" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">denormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel.denormalize" title="Link to this definition">#</a></dt>
 <dd><p>Denormalize the data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>np.ndarray</em>) – The data to denormalize.</p></li>
+<li><p><strong>data</strong> (<em>Tensor</em><em> | </em><em>np.ndarray</em>) – The data to denormalize.</p></li>
 <li><p><strong>leave_log</strong> (<em>bool</em>) – If True, do not exponentiate the data even if log10_transform is True.</p></li>
+<li><p><strong>leave_norm</strong> (<em>bool</em>) – If True, do not denormalize the data even if normalisation is applied.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The denormalized data.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>np.ndarray</p>
+<dd class="field-odd"><p>Tensor | np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1037,7 +1038,7 @@ If the final model is better, keep it; otherwise load the saved best checkpoint.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel.predict">
-<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel.predict" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel.predict" title="Link to this definition">#</a></dt>
 <dd><p>Evaluate the model on the given dataloader.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1045,6 +1046,7 @@ If the final model is better, keep it; otherwise load the saved best checkpoint.
 <li><p><strong>data_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the data the
 model is evaluated on.</p></li>
 <li><p><strong>leave_log</strong> (<em>bool</em>) – If True, do not exponentiate the data even if log10_transform is True.</p></li>
+<li><p><strong>leave_norm</strong> (<em>bool</em>) – If True, do not denormalize the data even if normalisation is applied.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1631,20 +1633,21 @@ overwrite the single-file checkpoint on disk and update best_test_loss/epoch.</p
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.denormalize">
-<span class="sig-name descname"><span class="pre">denormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.denormalize" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">denormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.denormalize" title="Link to this definition">#</a></dt>
 <dd><p>Denormalize the data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>np.ndarray</em>) – The data to denormalize.</p></li>
+<li><p><strong>data</strong> (<em>Tensor</em><em> | </em><em>np.ndarray</em>) – The data to denormalize.</p></li>
 <li><p><strong>leave_log</strong> (<em>bool</em>) – If True, do not exponentiate the data even if log10_transform is True.</p></li>
+<li><p><strong>leave_norm</strong> (<em>bool</em>) – If True, do not denormalize the data even if normalisation is applied.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The denormalized data.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>np.ndarray</p>
+<dd class="field-odd"><p>Tensor | np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1756,7 +1759,7 @@ If the final model is better, keep it; otherwise load the saved best checkpoint.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.predict">
-<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.predict" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogate.AbstractSurrogateModel.predict" title="Link to this definition">#</a></dt>
 <dd><p>Evaluate the model on the given dataloader.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1764,6 +1767,7 @@ If the final model is better, keep it; otherwise load the saved best checkpoint.
 <li><p><strong>data_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the data the
 model is evaluated on.</p></li>
 <li><p><strong>leave_log</strong> (<em>bool</em>) – If True, do not exponentiate the data even if log10_transform is True.</p></li>
+<li><p><strong>leave_norm</strong> (<em>bool</em>) – If True, do not denormalize the data even if normalisation is applied.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

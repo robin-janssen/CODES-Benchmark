@@ -429,6 +429,7 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.create_dataloader"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.create_dataloader()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.fit"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.fit()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.fit_profile"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.fit_profile()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.forward"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.prepare_data"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.prepare_data()</span></code></a></li>
 </ul>
@@ -444,14 +445,10 @@ document.write(`
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper"><code class="docutils literal notranslate"><span class="pre">ModelWrapper</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.deriv"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.deriv2"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv2()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.deriv2_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv2_loss()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.deriv_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv_loss()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.first_derivative"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.first_derivative()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.forward"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.identity_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.identity_loss()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.l2_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.l2_loss()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.renormalize_loss_weights"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.renormalize_loss_weights()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.second_derivative"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.second_derivative()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.total_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.total_loss()</span></code></a></li>
 </ul>
 </li>
@@ -732,20 +729,21 @@ overwrite the single-file checkpoint on disk and update best_test_loss/epoch.</p
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogateModel.denormalize">
-<span class="sig-name descname"><span class="pre">denormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.denormalize" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">denormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.denormalize" title="Link to this definition">#</a></dt>
 <dd><p>Denormalize the data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>np.ndarray</em>) – The data to denormalize.</p></li>
+<li><p><strong>data</strong> (<em>Tensor</em><em> | </em><em>np.ndarray</em>) – The data to denormalize.</p></li>
 <li><p><strong>leave_log</strong> (<em>bool</em>) – If True, do not exponentiate the data even if log10_transform is True.</p></li>
+<li><p><strong>leave_norm</strong> (<em>bool</em>) – If True, do not denormalize the data even if normalisation is applied.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The denormalized data.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>np.ndarray</p>
+<dd class="field-odd"><p>Tensor | np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -857,7 +855,7 @@ If the final model is better, keep it; otherwise load the saved best checkpoint.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.AbstractSurrogateModel.predict">
-<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.predict" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.AbstractSurrogateModel.predict" title="Link to this definition">#</a></dt>
 <dd><p>Evaluate the model on the given dataloader.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -865,6 +863,7 @@ If the final model is better, keep it; otherwise load the saved best checkpoint.
 <li><p><strong>data_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the data the
 model is evaluated on.</p></li>
 <li><p><strong>leave_log</strong> (<em>bool</em>) – If True, do not exponentiate the data even if log10_transform is True.</p></li>
+<li><p><strong>leave_norm</strong> (<em>bool</em>) – If True, do not denormalize the data even if normalisation is applied.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1252,7 +1251,7 @@ registered hooks while the latter silently ignores them.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="codes.surrogates.LatentNeuralODE">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">LatentNeuralODE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">torch.float64</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentNeuralODE" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">LatentNeuralODE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">torch.float32</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentNeuralODE" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="codes.surrogates.AbstractSurrogate.html#codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel" title="codes.surrogates.AbstractSurrogate.abstract_surrogate.AbstractSurrogateModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractSurrogateModel</span></code></a></p>
 <p>LatentNeuralODE represents a latent neural ODE model.
 It includes an encoder, decoder, and neural ODE. Fixed parameters can be injected either
@@ -1291,6 +1290,16 @@ If True, trial.report is not used (not supported by Optuna).</p></li>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="codes.surrogates.LatentNeuralODE.fit_profile">
+<span class="sig-name descname"><span class="pre">fit_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Training</span> <span class="pre">LatentNeuralODE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_objective</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.LatentNeuralODE.fit_profile" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1453,7 +1462,7 @@ return the DataLoader objects for the training, testing, and validation data.</p
 
 <dl class="py class">
 <dt class="sig sig-object py" id="codes.surrogates.ModelWrapper">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">ModelWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_quantities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ModelWrapper" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.surrogates.</span></span><span class="sig-name descname"><span class="pre">ModelWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_quantities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_timesteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">101</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">torch.float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_pid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adjoint_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'autodiff'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ModelWrapper" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
 <p>Wraps the encoder, decoder, and neural ODE in three distinct modes:</p>
 <ol class="arabic simple">
@@ -1472,78 +1481,9 @@ return the DataLoader objects for the training, testing, and validation data.</p
 - Decoder: latent_dim -&gt; output dimensions</p></li>
 </ol>
 <dl class="py method">
-<dt class="sig sig-object py" id="codes.surrogates.ModelWrapper.deriv">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">deriv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ModelWrapper.deriv" title="Link to this definition">#</a></dt>
-<dd><p>Calculate the numerical derivative.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>Tensor</em>) – The input tensor.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The numerical derivative.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="codes.surrogates.ModelWrapper.deriv2">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">deriv2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ModelWrapper.deriv2" title="Link to this definition">#</a></dt>
-<dd><p>Calculate the numerical second derivative.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>Tensor</em>) – The input tensor.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The numerical second derivative.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="codes.surrogates.ModelWrapper.deriv2_loss">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">deriv2_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ModelWrapper.deriv2_loss" title="Link to this definition">#</a></dt>
-<dd><p>Difference between the curvature of the predicted and true trajectories.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x_true</strong> (<em>Tensor</em>) – The true trajectory.</p></li>
-<li><p><strong>x_pred</strong> (<em>Tensor</em>) – The predicted trajectory</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The second derivative loss.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="codes.surrogates.ModelWrapper.deriv_loss">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">deriv_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ModelWrapper.deriv_loss" title="Link to this definition">#</a></dt>
-<dd><p>Difference between the slopes of the predicted and true trajectories.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x_true</strong> (<em>Tensor</em>) – The true trajectory.</p></li>
-<li><p><strong>x_pred</strong> (<em>Tensor</em>) – The predicted trajectory</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The derivative loss.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tensor</p>
-</dd>
-</dl>
-</dd></dl>
+<dt class="sig sig-object py" id="codes.surrogates.ModelWrapper.first_derivative">
+<span class="sig-name descname"><span class="pre">first_derivative</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ModelWrapper.first_derivative" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.ModelWrapper.forward">
@@ -1580,46 +1520,15 @@ registered hooks while the latter silently ignores them.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="codes.surrogates.ModelWrapper.l2_loss">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">l2_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ModelWrapper.l2_loss" title="Link to this definition">#</a></dt>
-<dd><p>Calculate the L2 loss.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x_true</strong> (<em>Tensor</em>) – The true trajectory.</p></li>
-<li><p><strong>x_pred</strong> (<em>Tensor</em>) – The predicted trajectory</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The L2 loss.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="codes.surrogates.ModelWrapper.renormalize_loss_weights">
-<span class="sig-name descname"><span class="pre">renormalize_loss_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">criterion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">MSELoss()</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ModelWrapper.renormalize_loss_weights" title="Link to this definition">#</a></dt>
-<dd><p>Renormalize the loss weights based on the current loss values so that they are accurately
-weighted based on the provided weights. To be used once after a short burn in phase.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x_true</strong> (<em>Tensor</em>) – The true trajectory.</p></li>
-<li><p><strong>x_pred</strong> (<em>Tensor</em>) – The predicted trajectory</p></li>
-<li><p><strong>params</strong> (<em>Tensor</em>) – Fixed parameters (batch, n_parameters).</p></li>
-<li><p><strong>criterion</strong> (<em>nn.Module</em>) – Loss function to use for calculating the losses.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
+<dt class="sig sig-object py" id="codes.surrogates.ModelWrapper.second_derivative">
+<span class="sig-name descname"><span class="pre">second_derivative</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ModelWrapper.second_derivative" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="codes.surrogates.ModelWrapper.total_loss">
 <span class="sig-name descname"><span class="pre">total_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">criterion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">MSELoss()</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.surrogates.ModelWrapper.total_loss" title="Link to this definition">#</a></dt>
-<dd><p>Calculate the total loss based on the loss weights, including params for identity.</p>
+<dd><p>Total loss: weighted sum of trajectory reconstruction, identity, first derivative,
+and second derivative losses. All terms remain in the computation graph.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1985,6 +1894,7 @@ registered hooks while the latter silently ignores them.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.create_dataloader"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.create_dataloader()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.fit"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.fit()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.fit_profile"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.fit_profile()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.forward"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.LatentNeuralODE.prepare_data"><code class="docutils literal notranslate"><span class="pre">LatentNeuralODE.prepare_data()</span></code></a></li>
 </ul>
@@ -2000,14 +1910,10 @@ registered hooks while the latter silently ignores them.</p>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper"><code class="docutils literal notranslate"><span class="pre">ModelWrapper</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.deriv"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.deriv2"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv2()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.deriv2_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv2_loss()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.deriv_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.deriv_loss()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.first_derivative"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.first_derivative()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.forward"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.forward()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.identity_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.identity_loss()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.l2_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.l2_loss()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.renormalize_loss_weights"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.renormalize_loss_weights()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.second_derivative"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.second_derivative()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.surrogates.ModelWrapper.total_loss"><code class="docutils literal notranslate"><span class="pre">ModelWrapper.total_loss()</span></code></a></li>
 </ul>
 </li>

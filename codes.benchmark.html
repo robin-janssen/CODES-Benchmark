@@ -385,6 +385,7 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_fcts.evaluate_dynamic_accuracy"><code class="docutils literal notranslate"><span class="pre">evaluate_dynamic_accuracy()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_fcts.evaluate_extrapolation"><code class="docutils literal notranslate"><span class="pre">evaluate_extrapolation()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_fcts.evaluate_interpolation"><code class="docutils literal notranslate"><span class="pre">evaluate_interpolation()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_fcts.evaluate_iterative_predictions"><code class="docutils literal notranslate"><span class="pre">evaluate_iterative_predictions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_fcts.evaluate_sparse"><code class="docutils literal notranslate"><span class="pre">evaluate_sparse()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_fcts.run_benchmark"><code class="docutils literal notranslate"><span class="pre">run_benchmark()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_fcts.tabular_comparison"><code class="docutils literal notranslate"><span class="pre">tabular_comparison()</span></code></a></li>
@@ -408,6 +409,8 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_correlation_heatmap_old"><code class="docutils literal notranslate"><span class="pre">plot_error_correlation_heatmap_old()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_distribution_comparative"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_comparative()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_distribution_per_quantity"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_per_quantity()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_percentiles_over_time"><code class="docutils literal notranslate"><span class="pre">plot_error_percentiles_over_time()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_example_iterative_predictions"><code class="docutils literal notranslate"><span class="pre">plot_example_iterative_predictions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_example_mode_predictions"><code class="docutils literal notranslate"><span class="pre">plot_example_mode_predictions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_example_predictions_with_uncertainty"><code class="docutils literal notranslate"><span class="pre">plot_example_predictions_with_uncertainty()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_generalization_error_comparison"><code class="docutils literal notranslate"><span class="pre">plot_generalization_error_comparison()</span></code></a></li>
@@ -418,7 +421,6 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_losses"><code class="docutils literal notranslate"><span class="pre">plot_losses()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_losses_dual_axis"><code class="docutils literal notranslate"><span class="pre">plot_losses_dual_axis()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_relative_errors"><code class="docutils literal notranslate"><span class="pre">plot_relative_errors()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_relative_errors_over_time"><code class="docutils literal notranslate"><span class="pre">plot_relative_errors_over_time()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_surr_losses"><code class="docutils literal notranslate"><span class="pre">plot_surr_losses()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_uncertainty_confidence"><code class="docutils literal notranslate"><span class="pre">plot_uncertainty_confidence()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_uncertainty_over_time_comparison"><code class="docutils literal notranslate"><span class="pre">plot_uncertainty_over_time_comparison()</span></code></a></li>
@@ -500,6 +502,8 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_error_correlation_heatmap"><code class="docutils literal notranslate"><span class="pre">plot_error_correlation_heatmap()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_error_distribution_comparative"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_comparative()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_error_distribution_per_quantity"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_per_quantity()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_error_percentiles_over_time"><code class="docutils literal notranslate"><span class="pre">plot_error_percentiles_over_time()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_example_iterative_predictions"><code class="docutils literal notranslate"><span class="pre">plot_example_iterative_predictions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_example_mode_predictions"><code class="docutils literal notranslate"><span class="pre">plot_example_mode_predictions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_example_predictions_with_uncertainty"><code class="docutils literal notranslate"><span class="pre">plot_example_predictions_with_uncertainty()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_generalization_error_comparison"><code class="docutils literal notranslate"><span class="pre">plot_generalization_error_comparison()</span></code></a></li>
@@ -508,7 +512,6 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_loss_comparison_train_duration"><code class="docutils literal notranslate"><span class="pre">plot_loss_comparison_train_duration()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_losses"><code class="docutils literal notranslate"><span class="pre">plot_losses()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_relative_errors"><code class="docutils literal notranslate"><span class="pre">plot_relative_errors()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_relative_errors_over_time"><code class="docutils literal notranslate"><span class="pre">plot_relative_errors_over_time()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_surr_losses"><code class="docutils literal notranslate"><span class="pre">plot_surr_losses()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_uncertainty_confidence"><code class="docutils literal notranslate"><span class="pre">plot_uncertainty_confidence()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_uncertainty_over_time_comparison"><code class="docutils literal notranslate"><span class="pre">plot_uncertainty_over_time_comparison()</span></code></a></li>
@@ -755,25 +758,24 @@ document.write(`
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.benchmark.bench_fcts.evaluate_accuracy">
 <span class="sig-prename descclassname"><span class="pre">codes.benchmark.bench_fcts.</span></span><span class="sig-name descname"><span class="pre">evaluate_accuracy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.bench_fcts.evaluate_accuracy" title="Link to this definition">#</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Evaluate the accuracy of the surrogate model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps array.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the quantities.</p></li>
+<li><p><strong>percentile</strong> (<em>int</em><em>, </em><em>optional</em>) – The percentile for error metrics.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing accuracy metrics.</p>
+</dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span></p>
-<p>Evaluate the accuracy of the surrogate model.</p>
-</p>
-</dd>
-</dl>
-<dl class="simple">
-<dt>quantitiesquantities</dt><dd><dl class="simple">
-<dt>Args:</dt><dd><p>model: Instance of the surrogate model class.
-surr_name (str): The name of the surrogate model.
-timesteps (np.ndarray): The timesteps array.
-test_loader (DataLoader): The DataLoader object containing the test data.
-conf (dict): The configuration dictionary.
-labels (list, optional): The labels for the quantities.</p>
-</dd>
-<dt>Returns:</dt><dd><p>dict: A dictionary containing accuracy metrics.</p>
-</dd>
-</dl>
+<dd class="field-odd"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -889,6 +891,19 @@ labels (list, optional): The labels for the quantities.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.benchmark.bench_fcts.evaluate_iterative_predictions">
+<span class="sig-prename descclassname"><span class="pre">codes.benchmark.bench_fcts.</span></span><span class="sig-name descname"><span class="pre">evaluate_iterative_predictions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.bench_fcts.evaluate_iterative_predictions" title="Link to this definition">#</a></dt>
+<dd><p>Evaluate the iterative predictions of the surrogate model.</p>
+<p>Returns the same set of error metrics as evaluate_accuracy, but over the
+full trajectory built by re-feeding the last prediction as the next initial state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1365,6 +1380,31 @@ axis_max (float): The computed upper axis limit such that cutoff_mass of the dat
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="codes.benchmark.bench_plots.plot_error_percentiles_over_time">
+<span class="sig-prename descclassname"><span class="pre">codes.benchmark.bench_plots.</span></span><span class="sig-name descname"><span class="pre">plot_error_percentiles_over_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'relative'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.bench_plots.plot_error_percentiles_over_time" title="Link to this definition">#</a></dt>
+<dd><p>Plot mean, median, and percentiles (50th, 90th, 99th) over time.
+mode=”relative” treats <cite>errors</cite> as relative errors;
+mode=”deltadex” treats them as log-space absolute errors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.benchmark.bench_plots.plot_example_iterative_predictions">
+<span class="sig-prename descclassname"><span class="pre">codes.benchmark.bench_plots.</span></span><span class="sig-name descname"><span class="pre">plot_example_iterative_predictions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterative_preds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_preds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iter_interval</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.bench_plots.plot_example_iterative_predictions" title="Link to this definition">#</a></dt>
+<dd><p>Plot one sample’s full iterative trajectory:
+ground truth vs. chained predictions, with retrigger lines.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="codes.benchmark.bench_plots.plot_example_mode_predictions">
 <span class="sig-prename descclassname"><span class="pre">codes.benchmark.bench_plots.</span></span><span class="sig-name descname"><span class="pre">plot_example_mode_predictions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'interpolation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.bench_plots.plot_example_mode_predictions" title="Link to this definition">#</a></dt>
 <dd><p>Plot example predictions from a single model alongside targets, and highlight
@@ -1614,29 +1654,6 @@ Numeric y-axis labels are removed.</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="codes.benchmark.bench_plots.plot_relative_errors_over_time">
-<span class="sig-prename descclassname"><span class="pre">codes.benchmark.bench_plots.</span></span><span class="sig-name descname"><span class="pre">plot_relative_errors_over_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relative_errors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.bench_plots.plot_relative_errors_over_time" title="Link to this definition">#</a></dt>
-<dd><p>Plot the mean and median relative errors over time with shaded regions for
-the 50th, 90th, and 99th percentiles.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
-<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
-<li><p><strong>relative_errors</strong> (<em>np.ndarray</em>) – The relative errors of the model.</p></li>
-<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – Array of timesteps.</p></li>
-<li><p><strong>title</strong> (<em>str</em>) – The title of the plot.</p></li>
-<li><p><strong>save</strong> (<em>bool</em>) – Whether to save the plot.</p></li>
-<li><p><strong>show_title</strong> (<em>bool</em>) – Whether to show the title on the plot.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2538,25 +2555,24 @@ This version strips out any formatting (like asterisks) from the table cells.</p
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.benchmark.evaluate_accuracy">
 <span class="sig-prename descclassname"><span class="pre">codes.benchmark.</span></span><span class="sig-name descname"><span class="pre">evaluate_accuracy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.evaluate_accuracy" title="Link to this definition">#</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Evaluate the accuracy of the surrogate model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – Instance of the surrogate model class.</p></li>
+<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
+<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – The timesteps array.</p></li>
+<li><p><strong>test_loader</strong> (<em>DataLoader</em>) – The DataLoader object containing the test data.</p></li>
+<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>, </em><em>optional</em>) – The labels for the quantities.</p></li>
+<li><p><strong>percentile</strong> (<em>int</em><em>, </em><em>optional</em>) – The percentile for error metrics.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing accuracy metrics.</p>
+</dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span></p>
-<p>Evaluate the accuracy of the surrogate model.</p>
-</p>
-</dd>
-</dl>
-<dl class="simple">
-<dt>quantitiesquantities</dt><dd><dl class="simple">
-<dt>Args:</dt><dd><p>model: Instance of the surrogate model class.
-surr_name (str): The name of the surrogate model.
-timesteps (np.ndarray): The timesteps array.
-test_loader (DataLoader): The DataLoader object containing the test data.
-conf (dict): The configuration dictionary.
-labels (list, optional): The labels for the quantities.</p>
-</dd>
-<dt>Returns:</dt><dd><p>dict: A dictionary containing accuracy metrics.</p>
-</dd>
-</dl>
+<dd class="field-odd"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -3242,6 +3258,31 @@ axis_max (float): The computed upper axis limit such that cutoff_mass of the dat
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="codes.benchmark.plot_error_percentiles_over_time">
+<span class="sig-prename descclassname"><span class="pre">codes.benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_error_percentiles_over_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'relative'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.plot_error_percentiles_over_time" title="Link to this definition">#</a></dt>
+<dd><p>Plot mean, median, and percentiles (50th, 90th, 99th) over time.
+mode=”relative” treats <cite>errors</cite> as relative errors;
+mode=”deltadex” treats them as log-space absolute errors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.benchmark.plot_example_iterative_predictions">
+<span class="sig-prename descclassname"><span class="pre">codes.benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_example_iterative_predictions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterative_preds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_preds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iter_interval</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.plot_example_iterative_predictions" title="Link to this definition">#</a></dt>
+<dd><p>Plot one sample’s full iterative trajectory:
+ground truth vs. chained predictions, with retrigger lines.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="codes.benchmark.plot_example_mode_predictions">
 <span class="sig-prename descclassname"><span class="pre">codes.benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_example_mode_predictions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'interpolation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_quantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.plot_example_mode_predictions" title="Link to this definition">#</a></dt>
 <dd><p>Plot example predictions from a single model alongside targets, and highlight
@@ -3437,29 +3478,6 @@ In extrapolation mode, indicates the index of the cutoff timestep.</p></li>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="codes.benchmark.plot_relative_errors_over_time">
-<span class="sig-prename descclassname"><span class="pre">codes.benchmark.</span></span><span class="sig-name descname"><span class="pre">plot_relative_errors_over_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relative_errors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.benchmark.plot_relative_errors_over_time" title="Link to this definition">#</a></dt>
-<dd><p>Plot the mean and median relative errors over time with shaded regions for
-the 50th, 90th, and 99th percentiles.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>surr_name</strong> (<em>str</em>) – The name of the surrogate model.</p></li>
-<li><p><strong>conf</strong> (<em>dict</em>) – The configuration dictionary.</p></li>
-<li><p><strong>relative_errors</strong> (<em>np.ndarray</em>) – The relative errors of the model.</p></li>
-<li><p><strong>timesteps</strong> (<em>np.ndarray</em>) – Array of timesteps.</p></li>
-<li><p><strong>title</strong> (<em>str</em>) – The title of the plot.</p></li>
-<li><p><strong>save</strong> (<em>bool</em>) – Whether to save the plot.</p></li>
-<li><p><strong>show_title</strong> (<em>bool</em>) – Whether to show the title on the plot.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -3802,6 +3820,7 @@ Also saves a CSV file with only the metrics that appear in the CLI table.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_fcts.evaluate_dynamic_accuracy"><code class="docutils literal notranslate"><span class="pre">evaluate_dynamic_accuracy()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_fcts.evaluate_extrapolation"><code class="docutils literal notranslate"><span class="pre">evaluate_extrapolation()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_fcts.evaluate_interpolation"><code class="docutils literal notranslate"><span class="pre">evaluate_interpolation()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_fcts.evaluate_iterative_predictions"><code class="docutils literal notranslate"><span class="pre">evaluate_iterative_predictions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_fcts.evaluate_sparse"><code class="docutils literal notranslate"><span class="pre">evaluate_sparse()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_fcts.run_benchmark"><code class="docutils literal notranslate"><span class="pre">run_benchmark()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_fcts.tabular_comparison"><code class="docutils literal notranslate"><span class="pre">tabular_comparison()</span></code></a></li>
@@ -3825,6 +3844,8 @@ Also saves a CSV file with only the metrics that appear in the CLI table.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_correlation_heatmap_old"><code class="docutils literal notranslate"><span class="pre">plot_error_correlation_heatmap_old()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_distribution_comparative"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_comparative()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_distribution_per_quantity"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_per_quantity()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_error_percentiles_over_time"><code class="docutils literal notranslate"><span class="pre">plot_error_percentiles_over_time()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_example_iterative_predictions"><code class="docutils literal notranslate"><span class="pre">plot_example_iterative_predictions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_example_mode_predictions"><code class="docutils literal notranslate"><span class="pre">plot_example_mode_predictions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_example_predictions_with_uncertainty"><code class="docutils literal notranslate"><span class="pre">plot_example_predictions_with_uncertainty()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_generalization_error_comparison"><code class="docutils literal notranslate"><span class="pre">plot_generalization_error_comparison()</span></code></a></li>
@@ -3835,7 +3856,6 @@ Also saves a CSV file with only the metrics that appear in the CLI table.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_losses"><code class="docutils literal notranslate"><span class="pre">plot_losses()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_losses_dual_axis"><code class="docutils literal notranslate"><span class="pre">plot_losses_dual_axis()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_relative_errors"><code class="docutils literal notranslate"><span class="pre">plot_relative_errors()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_relative_errors_over_time"><code class="docutils literal notranslate"><span class="pre">plot_relative_errors_over_time()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_surr_losses"><code class="docutils literal notranslate"><span class="pre">plot_surr_losses()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_uncertainty_confidence"><code class="docutils literal notranslate"><span class="pre">plot_uncertainty_confidence()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.bench_plots.plot_uncertainty_over_time_comparison"><code class="docutils literal notranslate"><span class="pre">plot_uncertainty_over_time_comparison()</span></code></a></li>
@@ -3917,6 +3937,8 @@ Also saves a CSV file with only the metrics that appear in the CLI table.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_error_correlation_heatmap"><code class="docutils literal notranslate"><span class="pre">plot_error_correlation_heatmap()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_error_distribution_comparative"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_comparative()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_error_distribution_per_quantity"><code class="docutils literal notranslate"><span class="pre">plot_error_distribution_per_quantity()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_error_percentiles_over_time"><code class="docutils literal notranslate"><span class="pre">plot_error_percentiles_over_time()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_example_iterative_predictions"><code class="docutils literal notranslate"><span class="pre">plot_example_iterative_predictions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_example_mode_predictions"><code class="docutils literal notranslate"><span class="pre">plot_example_mode_predictions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_example_predictions_with_uncertainty"><code class="docutils literal notranslate"><span class="pre">plot_example_predictions_with_uncertainty()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_generalization_error_comparison"><code class="docutils literal notranslate"><span class="pre">plot_generalization_error_comparison()</span></code></a></li>
@@ -3925,7 +3947,6 @@ Also saves a CSV file with only the metrics that appear in the CLI table.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_loss_comparison_train_duration"><code class="docutils literal notranslate"><span class="pre">plot_loss_comparison_train_duration()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_losses"><code class="docutils literal notranslate"><span class="pre">plot_losses()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_relative_errors"><code class="docutils literal notranslate"><span class="pre">plot_relative_errors()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_relative_errors_over_time"><code class="docutils literal notranslate"><span class="pre">plot_relative_errors_over_time()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_surr_losses"><code class="docutils literal notranslate"><span class="pre">plot_surr_losses()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_uncertainty_confidence"><code class="docutils literal notranslate"><span class="pre">plot_uncertainty_confidence()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.benchmark.plot_uncertainty_over_time_comparison"><code class="docutils literal notranslate"><span class="pre">plot_uncertainty_over_time_comparison()</span></code></a></li>

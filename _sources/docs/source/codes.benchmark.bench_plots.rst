@@ -24,6 +24,8 @@ codes.benchmark.bench\_plots
       plot_error_correlation_heatmap_old
       plot_error_distribution_comparative
       plot_error_distribution_per_quantity
+      plot_error_percentiles_over_time
+      plot_example_iterative_predictions
       plot_example_mode_predictions
       plot_example_predictions_with_uncertainty
       plot_generalization_error_comparison
@@ -34,7 +36,6 @@ codes.benchmark.bench\_plots
       plot_losses
       plot_losses_dual_axis
       plot_relative_errors
-      plot_relative_errors_over_time
       plot_surr_losses
       plot_uncertainty_confidence
       plot_uncertainty_over_time_comparison

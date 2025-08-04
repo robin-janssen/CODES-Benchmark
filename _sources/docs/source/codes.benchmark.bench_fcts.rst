@@ -25,6 +25,7 @@ codes.benchmark.bench\_fcts
       evaluate_dynamic_accuracy
       evaluate_extrapolation
       evaluate_interpolation
+      evaluate_iterative_predictions
       evaluate_sparse
       run_benchmark
       tabular_comparison
