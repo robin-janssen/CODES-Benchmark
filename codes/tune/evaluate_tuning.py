@@ -23,6 +23,58 @@ from codes.tune import load_yaml_config
 from codes.utils import nice_print
 
 
+def pareto_front(points: np.ndarray) -> np.ndarray:
+    # lower-is-better for both objectives
+    is_efficient = np.ones(points.shape[0], dtype=bool)
+    for i, p in enumerate(points):
+        if not is_efficient[i]:
+            continue
+        # any other point strictly better in both dims dominates p
+        better = np.all(points <= p, axis=1) & np.any(points < p, axis=1)
+        dominated = better & (np.arange(points.shape[0]) != i)
+        if np.any(dominated):
+            is_efficient[i] = False
+    return points[is_efficient]
+
+
+def hypervolume_2d(pareto_points: np.ndarray, reference: np.ndarray) -> float:
+    # assumes minimize-minimize; reference worse than all pareto_points
+    if pareto_points.size == 0:
+        return 0.0
+    pts = pareto_points[np.argsort(pareto_points[:, 0])]  # sort by first objective
+    hv = 0.0
+    prev_f2 = reference[1]
+    for f1, f2 in pts:
+        width = reference[0] - f1
+        height = prev_f2 - f2
+        if width > 0 and height > 0:
+            hv += width * height
+        prev_f2 = f2
+    return hv
+
+
+def compute_hypervolume_over_time(study: optuna.Study, ref_slack=1.1):
+    from optuna.trial import TrialState
+
+    completed = [t for t in study.trials if t.state == TrialState.COMPLETE]
+    if not completed:
+        return [], None
+
+    # Order by completion time
+    completed.sort(key=lambda t: t.datetime_complete or t.datetime_start)
+    all_vals = np.array([t.values for t in completed])  # shape (N, 2)
+    reference = all_vals.max(axis=0) * ref_slack  # slightly worse than worst seen
+
+    hypervolumes = []
+    for k in range(1, len(completed) + 1):
+        subset = completed[:k]
+        pts = np.array([t.values for t in subset])
+        pareto = pareto_front(pts)
+        hv = hypervolume_2d(pareto, reference)
+        hypervolumes.append(hv)
+    return hypervolumes, reference
+
+
 def load_loss_history(model_path: str) -> tuple[np.ndarray, np.ndarray, int]:
     """
     Load loss histories from a saved model file (.pth).
@@ -218,6 +270,49 @@ def evaluate_tuning(
             print(f"Could not load study '{full_name}'")
             continue
 
+        # Compute hypervolume over time
+        if len(study.directions) == 2:
+            hvs, reference = compute_hypervolume_over_time(study)
+            if hvs:
+                # Normalize to final hypervolume for relative curve
+                final_hv = hvs[-1]
+                rel_hvs = [hv / final_hv if final_hv > 0 else 0 for hv in hvs]
+
+                # Plot absolute and relative hypervolume
+                plt.figure(figsize=(6, 4))
+                plt.plot(np.arange(1, len(hvs) + 1), hvs, label="Hypervolume")
+                plt.xlabel("Completed Trials")
+                plt.ylabel("Hypervolume")
+                plt.title(f"{suffix} Hypervolume over trials")
+                plt.grid(True)
+                plt.tight_layout()
+                plt.savefig(
+                    os.path.join(save_dir, f"hypervolume_{suffix}.png"), dpi=300
+                )
+                plt.close()
+
+                plt.figure(figsize=(6, 4))
+                plt.plot(
+                    np.arange(1, len(rel_hvs) + 1),
+                    rel_hvs,
+                    label="Relative Hypervolume",
+                )
+                plt.xlabel("Completed Trials")
+                plt.ylabel("Fraction of Final HV")
+                plt.title(f"{suffix} Relative Hypervolume")
+                plt.grid(True)
+                plt.tight_layout()
+                plt.savefig(
+                    os.path.join(save_dir, f"hypervolume_relative_{suffix}.png"),
+                    dpi=300,
+                )
+                plt.close()
+                print(f"Saved hypervolume plots for {suffix} (final HV={final_hv:.3e})")
+            else:
+                print("No hypervolume computed (no complete trials).")
+        else:
+            print("Skipping hypervolume: study is not two-objective.")
+
         best = get_best_trials(study, top_n)
         if not best:
             print(f"No completed trials in {full_name}")
@@ -285,19 +380,19 @@ def parse_args():
     p.add_argument(
         "--study_name",
         type=str,
-        default="cloud_tuning_rough",
+        default="cloud_tuning_fine",
         help="Main study prefix (e.g. lvparams5)",
     )
     p.add_argument(
         "--storage_name",
         type=str,
-        default="optuna_cloud",
+        default="optuna_cloud_2",
         help="Main study prefix (e.g. lvparams5)",
     )
     p.add_argument(
         "--top_n",
         type=int,
-        default=10,
+        default=20,
         help="Number of top trials to plot per surrogate",
     )
     return p.parse_args()
