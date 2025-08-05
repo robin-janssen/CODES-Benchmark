@@ -218,12 +218,6 @@ class LatentPoly(AbstractSurrogateModel):
                 loss.backward()
                 optimizer.step()
 
-                if epoch == 10 and i == 0:
-                    with torch.no_grad():
-                        self.model.renormalize_loss_weights(
-                            x_true, x_pred, params, criterion
-                        )
-
             scheduler.step()
 
             self.validate(

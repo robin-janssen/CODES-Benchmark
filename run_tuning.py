@@ -64,7 +64,7 @@ def run_single_study(config: dict, study_name: str, db_url: str):
     objective_fn = create_objective(config, study_name, device_queue)
     n_trials = config["n_trials"]
     n_jobs = len(config["devices"])
-    warmup_target = max(5, int(n_trials * 0.10))
+    warmup_target = max(10, int(n_trials * 0.10))
 
     all_durations: list[float] = []
 
@@ -97,7 +97,7 @@ def run_single_study(config: dict, study_name: str, db_url: str):
     ) as trial_pbar:
         study.optimize(
             objective_fn,
-            n_trials=n_trials,
+            n_trials=n_trials * 2,  # upper bound, study ended by MaxTrialsCallback
             n_jobs=n_jobs,
             callbacks=[
                 MaxTrialsCallback(n_trials, states=[TrialState.COMPLETE]),
