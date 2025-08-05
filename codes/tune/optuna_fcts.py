@@ -1,6 +1,7 @@
 import math
 import os
 import queue
+import threading
 from datetime import datetime
 
 import numpy as np
@@ -18,6 +19,8 @@ from codes.benchmark.bench_utils import (
 )
 from codes.utils import check_and_load_data, make_description, set_random_seeds
 from codes.utils.data_utils import download_data
+
+_inference_time_lock = threading.Lock()
 
 MODULE_REGISTRY: dict[str, type[nn.Module]] = {
     "relu": nn.ReLU,
@@ -308,7 +311,8 @@ def training_run(
     # Check if we're running multi-objective optimisation
     if config["multi_objective"]:
         # Measure inference time
-        inference_times = measure_inference_time(model, test_loader)
+        with _inference_time_lock:
+            inference_times = measure_inference_time(model, test_loader)
         return p99_dex, np.mean(inference_times)
     else:
         return p99_dex
@@ -336,13 +340,47 @@ def maybe_set_runtime_threshold(
     trials_sorted = sorted(trials, key=lambda tr: tr.number)
 
     durs = []
-    for tr in trials_sorted:
-        if len(durs) >= warmup_target:
-            break
+    used_trial_numbers = []
+
+    # First, identify the first warmup_target trials by number
+    first_warmup_trials = trials_sorted[:warmup_target]
+
+    # Check if any of the first warmup_target trials are still running
+    running_in_first = any(tr.state == TrialState.RUNNING for tr in first_warmup_trials)
+    if running_in_first:
+        # We have running trials in the first batch - wait for them to complete
+        return
+
+    # Count how many of the first warmup_target trials are in wanted_states
+    valid_from_first = 0
+    failed_or_pruned_count = 0
+
+    for tr in first_warmup_trials:
         if tr.state in wanted_states:
             dur = _trial_duration_seconds(tr)
             if dur is not None:
                 durs.append(dur)
+                used_trial_numbers.append(tr.number)
+                valid_from_first += 1
+        elif tr.state in (TrialState.FAIL, TrialState.PRUNED):
+            failed_or_pruned_count += 1
+
+    # If we need more trials because some of the first warmup_target failed/were pruned,
+    # take additional trials from beyond the first warmup_target
+    if failed_or_pruned_count > 0:
+        additional_trials = trials_sorted[
+            warmup_target : warmup_target + failed_or_pruned_count
+        ]
+
+        for tr in additional_trials:
+            if tr.state in wanted_states:
+                dur = _trial_duration_seconds(tr)
+                if dur is not None:
+                    durs.append(dur)
+                    used_trial_numbers.append(tr.number)
+                    failed_or_pruned_count -= 1
+                    if failed_or_pruned_count <= 0:
+                        break
 
     if len(durs) < warmup_target:
         # Not enough qualifying trials yet — do nothing
@@ -351,14 +389,16 @@ def maybe_set_runtime_threshold(
     mean_ = sum(durs) / len(durs)
     var = sum((d - mean_) ** 2 for d in durs) / len(durs)
     std_ = math.sqrt(var)
-    threshold = mean_ + 2 * std_
+    threshold = mean_ + std_
 
     study.set_user_attr("runtime_threshold", float(threshold))
     study.set_user_attr("warmup_mean", float(mean_))
     study.set_user_attr("warmup_std", float(std_))
     study.set_user_attr("warmup_target", warmup_target)
+    study.set_user_attr("warmup_trials_used", used_trial_numbers)
 
     tqdm.write(
         f"\n[Study] Warmup complete. Runtime threshold set to {threshold:.1f}s "
-        f"(mean = {mean_: .1f}s, std = {std_: .1f}s) over {warmup_target} trials."
+        f"(mean = {mean_: .1f}s, std = {std_: .1f}s) over {warmup_target} trials "
+        f"(trial numbers: {used_trial_numbers})."
     )
