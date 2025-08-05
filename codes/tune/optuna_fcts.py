@@ -39,6 +39,21 @@ MODULE_REGISTRY: dict[str, type[nn.Module]] = {
 }
 
 
+class MaxValidTrialsCallback:
+    def __init__(self, target: int):
+        self.target = target
+
+    def __call__(self, study: optuna.Study, trial: optuna.trial.FrozenTrial):
+        # count only COMPLETE trials with no exception
+        valid = [
+            t
+            for t in study.trials
+            if t.state == TrialState.COMPLETE and "exception" not in t.user_attrs
+        ]
+        if len(valid) >= self.target:
+            study.stop()
+
+
 def load_yaml_config(config_path: str) -> dict:
     """
     Load a YAML configuration file.
@@ -179,9 +194,15 @@ def create_objective(
                 msg = repr(e).strip()
                 if not msg:
                     msg = "CUDA Out of Memory (no details provided)."
-                print(f"Trial {trial.number} failed due to: {msg}")
                 trial.set_user_attr("exception", msg)
-                raise optuna.TrialPruned(f"OOM error in trial {trial.number}")
+                tqdm.write(f"[Trial {trial.number}] resulted in an OOM error.")
+                # raise optuna.TrialPruned(f"OOM error in trial {trial.number}")
+                if config.get("multi_objective", False):
+                    # In multi-objective mode, we return a tuple
+                    return float(config.get("loss_cap", 20)), float(10)
+                else:
+                    # In single objective mode, we return a single value
+                    return float(config.get("loss_cap", 20))
             except optuna.TrialPruned as e:
                 msg = repr(e).strip()
                 trial.set_user_attr("exception", msg)
@@ -191,7 +212,9 @@ def create_objective(
                 msg = repr(e).strip()
                 if not msg:
                     msg = "Unknown error occurred."
-                print(f"Trial {trial.number} failed due to an unexpected error: {msg}")
+                tqdm.write(
+                    f"Trial {trial.number} failed due to an unexpected error: {msg}"
+                )
                 trial.set_user_attr("exception", msg)
                 raise optuna.TrialPruned(f"Error in trial {trial.number}: {msg}")
         finally:
@@ -294,7 +317,9 @@ def training_run(
     p99_dex = torch.quantile(
         (preds - targets).abs().flatten(), float(config["target_percentile"])
     ).item()
-    # loss = criterion(preds, targets).item()
+    # cap the loss to prevent exploding values
+    p99_dex = min(p99_dex, config.get("loss_cap", 20))
+
     # Extract the study name without the timestamp/suffix part
     parts = study_name.split("_")
     sname = "_".join(parts[:-1]) if len(parts) > 1 else study_name
@@ -328,67 +353,46 @@ def _trial_duration_seconds(t: optuna.trial.FrozenTrial) -> float | None:
 def maybe_set_runtime_threshold(
     study: optuna.Study, warmup_target: int, include_pruned: bool = False
 ) -> None:
-    # already done?
     if "runtime_threshold" in study.user_attrs:
         return
 
-    wanted_states = (TrialState.COMPLETE,)
+    wanted_states = {TrialState.COMPLETE}
     if include_pruned:
-        wanted_states += (TrialState.PRUNED,)
+        wanted_states.add(TrialState.PRUNED)
 
-    trials = study.get_trials(deepcopy=False)
-    trials_sorted = sorted(trials, key=lambda tr: tr.number)
+    # skip any trial with an exception (e.g. OOM)
+    def is_bad(tr):
+        return "exception" in tr.user_attrs
 
+    trials_sorted = sorted(study.get_trials(deepcopy=False), key=lambda t: t.number)
+    good_trials = []
+
+    # scan in order until we collect warmup_target good complete trials
+    for tr in trials_sorted:
+        if len(good_trials) >= warmup_target:
+            break
+        if is_bad(tr):
+            continue
+        if tr.state == TrialState.RUNNING:
+            return  # wait for running trials before proceeding
+        if tr.state in wanted_states:
+            good_trials.append(tr)
+
+    if len(good_trials) < warmup_target:
+        return  # not enough complete trials yet
+
+    # compute durations for the first warmup_target complete trials
     durs = []
     used_trial_numbers = []
-
-    # First, identify the first warmup_target trials by number
-    first_warmup_trials = trials_sorted[:warmup_target]
-
-    # Check if any of the first warmup_target trials are still running
-    running_in_first = any(tr.state == TrialState.RUNNING for tr in first_warmup_trials)
-    if running_in_first:
-        # We have running trials in the first batch - wait for them to complete
-        return
-
-    # Count how many of the first warmup_target trials are in wanted_states
-    valid_from_first = 0
-    failed_or_pruned_count = 0
-
-    for tr in first_warmup_trials:
-        if tr.state in wanted_states:
-            dur = _trial_duration_seconds(tr)
-            if dur is not None:
-                durs.append(dur)
-                used_trial_numbers.append(tr.number)
-                valid_from_first += 1
-        elif tr.state in (TrialState.FAIL, TrialState.PRUNED):
-            failed_or_pruned_count += 1
-
-    # If we need more trials because some of the first warmup_target failed/were pruned,
-    # take additional trials from beyond the first warmup_target
-    if failed_or_pruned_count > 0:
-        additional_trials = trials_sorted[
-            warmup_target : warmup_target + failed_or_pruned_count
-        ]
-
-        for tr in additional_trials:
-            if tr.state in wanted_states:
-                dur = _trial_duration_seconds(tr)
-                if dur is not None:
-                    durs.append(dur)
-                    used_trial_numbers.append(tr.number)
-                    failed_or_pruned_count -= 1
-                    if failed_or_pruned_count <= 0:
-                        break
-
-    if len(durs) < warmup_target:
-        # Not enough qualifying trials yet — do nothing
-        return
+    for tr in good_trials[:warmup_target]:
+        dur = _trial_duration_seconds(tr)
+        if dur is None:
+            return
+        durs.append(dur)
+        used_trial_numbers.append(tr.number)
 
     mean_ = sum(durs) / len(durs)
-    var = sum((d - mean_) ** 2 for d in durs) / len(durs)
-    std_ = math.sqrt(var)
+    std_ = math.sqrt(sum((d - mean_) ** 2 for d in durs) / len(durs))
     threshold = mean_ + std_
 
     study.set_user_attr("runtime_threshold", float(threshold))
@@ -399,6 +403,5 @@ def maybe_set_runtime_threshold(
 
     tqdm.write(
         f"\n[Study] Warmup complete. Runtime threshold set to {threshold:.1f}s "
-        f"(mean = {mean_: .1f}s, std = {std_: .1f}s) over {warmup_target} trials "
-        f"(trial numbers: {used_trial_numbers})."
+        f"(mean = {mean_:.1f}s, std = {std_:.1f}s) over trials {used_trial_numbers}."
     )

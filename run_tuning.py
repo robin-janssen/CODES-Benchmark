@@ -10,8 +10,8 @@ from optuna.trial import TrialState
 from tqdm import tqdm
 
 from codes.tune import (
+    MaxValidTrialsCallback,
     create_objective,
-    delete_studies_if_requested,
     initialize_optuna_database,
     load_yaml_config,
     maybe_set_runtime_threshold,
@@ -70,7 +70,10 @@ def run_single_study(config: dict, study_name: str, db_url: str):
 
     def trial_complete_callback(study_: optuna.Study, trial_: optuna.trial.FrozenTrial):
         # progress bar update
-        if trial_.state in (TrialState.COMPLETE, TrialState.PRUNED):
+        if (
+            trial_.state in (TrialState.COMPLETE, TrialState.PRUNED)
+            and "exception" not in trial_.user_attrs  # skip OOM trials
+        ):
             trial_pbar.update(1)
 
         # duration/eta
@@ -100,7 +103,7 @@ def run_single_study(config: dict, study_name: str, db_url: str):
             n_trials=n_trials * 2,  # upper bound, study ended by MaxTrialsCallback
             n_jobs=n_jobs,
             callbacks=[
-                MaxTrialsCallback(n_trials, states=[TrialState.COMPLETE]),
+                MaxValidTrialsCallback(n_trials),
                 trial_complete_callback,
             ],
         )
@@ -184,8 +187,8 @@ def main():
     # Initialize DB (remote/local)
     db_url = initialize_optuna_database(config, study_folder_name=tuning_id)
 
-    # If overwriting, delete Optuna studies
-    delete_studies_if_requested(config, tuning_id, db_url)
+    # # If overwriting, delete Optuna studies
+    # delete_studies_if_requested(config, tuning_id, db_url)
 
     # Run
     if "surrogates" in config:
