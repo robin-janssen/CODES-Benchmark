@@ -6,6 +6,8 @@ from .evaluate_study import (
 )
 from .optuna_fcts import (
     MaxValidTrialsCallback,
+    _count_valid_trials,
+    build_fine_optuna_params,
     create_objective,
     load_yaml_config,
     make_optuna_params,
@@ -31,6 +33,8 @@ from .tune_utils import (
 
 __all__ = [
     "create_objective",
+    "MaxValidTrialsCallback",
+    "build_fine_optuna_params",
     "load_yaml_config",
     "make_optuna_params",
     "maybe_set_runtime_threshold",
@@ -51,4 +55,5 @@ __all__ = [
     "_check_remote_reachable",
     "_initialize_postgres_local",
     "_initialize_postgres_remote",
+    "_count_valid_trials",
 ]
