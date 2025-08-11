@@ -62,7 +62,7 @@ def create_model_dir(
 
     # Check if the directory exists, and create it if it doesn't
     if not os.path.exists(full_path):
-        os.makedirs(full_path)
+        os.makedirs(full_path, exist_ok=True)
 
     return full_path
 

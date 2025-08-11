@@ -42,37 +42,38 @@ class LatentNeuralODEConfig:
 
 
 @dataclass
-class FullyConnectedConfig:
-    """Model config for FullyConnected for the primordial dataset"""
-
-    # primordial_final, trial 174
-    scheduler: str = "poly"
-    optimizer: str = "adam"
-    loss_function: nn.Module = nn.MSELoss()
-    momentum: float = 0.0132
-    degree: int = 4
-    latent_features: int = 8
-    coder_layers: int = 2
-    coder_width: int = 470
-    learning_rate: float = 1.77e-04
-    regularization_factor: float = 9.20e-03
-    activation: nn.Module = nn.ReLU()
-
-
-@dataclass
 class LatentPolyConfig:
     """Model config for LatentPoly for the primordial dataset"""
 
-    # primordial_final, trial 31
+    # primordial_final_latentpoly, trial 31
     scheduler: str = "schedulefree"
     optimizer: str = "SGD"
+    loss_function: nn.Module = nn.MSELoss()
+    activation: nn.Module = nn.ReLU()
+    coder_layers: int = 2
+    coder_width: int = 470
+    degree: int = 4
+    latent_features: int = 8
+    learning_rate: float = 0.000177
+    momentum: float = 0.0132
+    regularization_factor: float = 0.0092
+
+
+@dataclass
+class FullyConnectedConfig:
+    """Model config for FullyConnected for the primordial dataset"""
+
+    # primordial_final_fullyconnected, trial 174
+    scheduler: str = "poly"
+    optimizer: str = "AdamW"
     loss_function: nn.Module = nn.SmoothL1Loss()
+    activation: nn.Module = nn.ELU()
     beta: float = 3.73
     hidden_size: int = 470
+    learning_rate: float = 0.00127
     num_hidden_layers: int = 5
-    learning_rate: float = 1.27e-03
-    regularization_factor: float = 3.23e-05
-    activation: nn.Module = nn.ELU()
+    poly_power: float = 1.48
+    regularization_factor: float = 3.3e-05
 
 
 # @dataclass
