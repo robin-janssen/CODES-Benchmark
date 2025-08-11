@@ -5,7 +5,6 @@ import time
 from pathlib import Path
 
 import optuna
-from optuna.study import MaxTrialsCallback
 from optuna.trial import TrialState
 from tqdm import tqdm
 

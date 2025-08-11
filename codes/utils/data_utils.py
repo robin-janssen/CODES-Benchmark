@@ -159,6 +159,9 @@ def check_and_load_data(
             elif normalisation_mode == "standardise":
                 data_info["mean_params"] = params_info["mean"]
                 data_info["std_params"] = params_info["std"]
+            if verbose:
+                print("Parameters normalized.")
+                print(f"Parameters info: {params_info}")
 
         data_info["log10_transform"] = True if log else False
 

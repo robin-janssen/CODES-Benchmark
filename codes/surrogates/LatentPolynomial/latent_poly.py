@@ -399,7 +399,7 @@ class PolynomialModelWrapper(nn.Module):
         traj_loss = criterion(x_pred, x_true)
 
         # identity loss (reconstruct x0)
-        identity = self.identity_loss(x_true, params)
+        identity = self.identity_loss(x_true, params.to(self.device))
 
         # derivative losses: compute once
         d_pred = self.first_derivative(x_pred)
