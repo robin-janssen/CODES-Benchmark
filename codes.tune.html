@@ -377,15 +377,20 @@ document.write(`
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.evaluate_tuning">codes.tune.evaluate_tuning module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.compute_hypervolume_over_time"><code class="docutils literal notranslate"><span class="pre">compute_hypervolume_over_time()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.evaluate_tuning"><code class="docutils literal notranslate"><span class="pre">evaluate_tuning()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.get_best_trials"><code class="docutils literal notranslate"><span class="pre">get_best_trials()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.hypervolume_2d"><code class="docutils literal notranslate"><span class="pre">hypervolume_2d()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.load_loss_history"><code class="docutils literal notranslate"><span class="pre">load_loss_history()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.pareto_front"><code class="docutils literal notranslate"><span class="pre">pareto_front()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.plot_losses"><code class="docutils literal notranslate"><span class="pre">plot_losses()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.optuna_fcts">codes.tune.optuna_fcts module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.MaxValidTrialsCallback"><code class="docutils literal notranslate"><span class="pre">MaxValidTrialsCallback</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.build_fine_optuna_params"><code class="docutils literal notranslate"><span class="pre">build_fine_optuna_params()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.create_objective"><code class="docutils literal notranslate"><span class="pre">create_objective()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.load_yaml_config"><code class="docutils literal notranslate"><span class="pre">load_yaml_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.make_optuna_params"><code class="docutils literal notranslate"><span class="pre">make_optuna_params()</span></code></a></li>
@@ -406,6 +411,8 @@ document.write(`
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune">Module contents</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.MaxValidTrialsCallback"><code class="docutils literal notranslate"><span class="pre">MaxValidTrialsCallback</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.build_fine_optuna_params"><code class="docutils literal notranslate"><span class="pre">build_fine_optuna_params()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.build_study_names"><code class="docutils literal notranslate"><span class="pre">build_study_names()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.copy_config"><code class="docutils literal notranslate"><span class="pre">copy_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.create_objective"><code class="docutils literal notranslate"><span class="pre">create_objective()</span></code></a></li>
@@ -528,6 +535,11 @@ Usually, viewing the study database with Optuna Dashboard is more informative.</
 <section id="module-codes.tune.evaluate_tuning">
 <span id="codes-tune-evaluate-tuning-module"></span><h2>codes.tune.evaluate_tuning module<a class="headerlink" href="#module-codes.tune.evaluate_tuning" title="Link to this heading">#</a></h2>
 <dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.evaluate_tuning.compute_hypervolume_over_time">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">compute_hypervolume_over_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">study</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_slack</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.compute_hypervolume_over_time" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.evaluate_tuning.evaluate_tuning">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">evaluate_tuning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">study_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'optuna_db'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.evaluate_tuning" title="Link to this definition">#</a></dt>
 <dd><p>For all surrogate studies named ‘&lt;study_prefix&gt;_&lt;surrogate&gt;’,
@@ -553,6 +565,16 @@ Multi-objective: Pareto front; if fewer than top_n, pad with closest-to-origin a
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.evaluate_tuning.hypervolume_2d">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">hypervolume_2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pareto_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.hypervolume_2d" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.evaluate_tuning.load_loss_history">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">load_loss_history</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.load_loss_history" title="Link to this definition">#</a></dt>
 <dd><p>Load loss histories from a saved model file (.pth).
@@ -570,6 +592,16 @@ Returns (train_loss, test_loss, n_epochs).</p>
 <dd></dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.evaluate_tuning.pareto_front">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">pareto_front</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.pareto_front" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.evaluate_tuning.parse_args">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.parse_args" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
@@ -583,6 +615,22 @@ Returns (train_loss, test_loss, n_epochs).</p>
 </section>
 <section id="module-codes.tune.optuna_fcts">
 <span id="codes-tune-optuna-fcts-module"></span><h2>codes.tune.optuna_fcts module<a class="headerlink" href="#module-codes.tune.optuna_fcts" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="codes.tune.optuna_fcts.MaxValidTrialsCallback">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.tune.optuna_fcts.</span></span><span class="sig-name descname"><span class="pre">MaxValidTrialsCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.optuna_fcts.MaxValidTrialsCallback" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.optuna_fcts.build_fine_optuna_params">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.optuna_fcts.</span></span><span class="sig-name descname"><span class="pre">build_fine_optuna_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.optuna_fcts.build_fine_optuna_params" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.optuna_fcts.create_objective">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.optuna_fcts.</span></span><span class="sig-name descname"><span class="pre">create_objective</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_queue</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.optuna_fcts.create_objective" title="Link to this definition">#</a></dt>
@@ -732,6 +780,22 @@ tuple[float, float]: (loss, mean_inference_time) in multi objective mode.</p>
 </section>
 <section id="module-codes.tune">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-codes.tune" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="codes.tune.MaxValidTrialsCallback">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">MaxValidTrialsCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.MaxValidTrialsCallback" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.build_fine_optuna_params">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">build_fine_optuna_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.build_fine_optuna_params" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.build_study_names">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.</span></span><span class="sig-name descname"><span class="pre">build_study_names</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_study_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.build_study_names" title="Link to this definition">#</a></dt>
@@ -983,15 +1047,20 @@ tuple[float, float]: (loss, mean_inference_time) in multi objective mode.</p>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.evaluate_tuning">codes.tune.evaluate_tuning module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.compute_hypervolume_over_time"><code class="docutils literal notranslate"><span class="pre">compute_hypervolume_over_time()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.evaluate_tuning"><code class="docutils literal notranslate"><span class="pre">evaluate_tuning()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.get_best_trials"><code class="docutils literal notranslate"><span class="pre">get_best_trials()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.hypervolume_2d"><code class="docutils literal notranslate"><span class="pre">hypervolume_2d()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.load_loss_history"><code class="docutils literal notranslate"><span class="pre">load_loss_history()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.pareto_front"><code class="docutils literal notranslate"><span class="pre">pareto_front()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.plot_losses"><code class="docutils literal notranslate"><span class="pre">plot_losses()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.optuna_fcts">codes.tune.optuna_fcts module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.MaxValidTrialsCallback"><code class="docutils literal notranslate"><span class="pre">MaxValidTrialsCallback</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.build_fine_optuna_params"><code class="docutils literal notranslate"><span class="pre">build_fine_optuna_params()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.create_objective"><code class="docutils literal notranslate"><span class="pre">create_objective()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.load_yaml_config"><code class="docutils literal notranslate"><span class="pre">load_yaml_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.optuna_fcts.make_optuna_params"><code class="docutils literal notranslate"><span class="pre">make_optuna_params()</span></code></a></li>
@@ -1012,6 +1081,8 @@ tuple[float, float]: (loss, mean_inference_time) in multi objective mode.</p>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune">Module contents</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.MaxValidTrialsCallback"><code class="docutils literal notranslate"><span class="pre">MaxValidTrialsCallback</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.build_fine_optuna_params"><code class="docutils literal notranslate"><span class="pre">build_fine_optuna_params()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.build_study_names"><code class="docutils literal notranslate"><span class="pre">build_study_names()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.copy_config"><code class="docutils literal notranslate"><span class="pre">copy_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.create_objective"><code class="docutils literal notranslate"><span class="pre">create_objective()</span></code></a></li>

@@ -18,6 +18,7 @@ codes.utils.utils
       make_description
       nice_print
       parse_for_none
+      parse_hyperparameters
       read_yaml_config
       save_task_list
       set_random_seeds

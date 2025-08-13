@@ -393,6 +393,7 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.make_description"><code class="docutils literal notranslate"><span class="pre">make_description()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.nice_print"><code class="docutils literal notranslate"><span class="pre">nice_print()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.parse_for_none"><code class="docutils literal notranslate"><span class="pre">parse_for_none()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.parse_hyperparameters"><code class="docutils literal notranslate"><span class="pre">parse_hyperparameters()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.read_yaml_config"><code class="docutils literal notranslate"><span class="pre">read_yaml_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.save_task_list"><code class="docutils literal notranslate"><span class="pre">save_task_list()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.set_random_seeds"><code class="docutils literal notranslate"><span class="pre">set_random_seeds()</span></code></a></li>
@@ -416,6 +417,7 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.make_description"><code class="docutils literal notranslate"><span class="pre">make_description()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.nice_print"><code class="docutils literal notranslate"><span class="pre">nice_print()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.normalize_data"><code class="docutils literal notranslate"><span class="pre">normalize_data()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.parse_hyperparameters"><code class="docutils literal notranslate"><span class="pre">parse_hyperparameters()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.read_yaml_config"><code class="docutils literal notranslate"><span class="pre">read_yaml_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.save_task_list"><code class="docutils literal notranslate"><span class="pre">save_task_list()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.set_random_seeds"><code class="docutils literal notranslate"><span class="pre">set_random_seeds()</span></code></a></li>
@@ -830,6 +832,16 @@ If value is a dictionary, recursively parse the dictionary.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="codes.utils.utils.parse_hyperparameters">
+<span class="sig-prename descclassname"><span class="pre">codes.utils.utils.</span></span><span class="sig-name descname"><span class="pre">parse_hyperparameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyperparams</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.utils.utils.parse_hyperparameters" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="codes.utils.utils.read_yaml_config">
 <span class="sig-prename descclassname"><span class="pre">codes.utils.utils.</span></span><span class="sig-name descname"><span class="pre">read_yaml_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.utils.utils.read_yaml_config" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
@@ -1229,6 +1241,16 @@ If it is a tuple of Nones, then params_subset will be that tuple of Nones.</p></
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="codes.utils.parse_hyperparameters">
+<span class="sig-prename descclassname"><span class="pre">codes.utils.</span></span><span class="sig-name descname"><span class="pre">parse_hyperparameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyperparams</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.utils.parse_hyperparameters" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="codes.utils.read_yaml_config">
 <span class="sig-prename descclassname"><span class="pre">codes.utils.</span></span><span class="sig-name descname"><span class="pre">read_yaml_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.utils.read_yaml_config" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
@@ -1347,6 +1369,7 @@ as an attribute of the function.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.make_description"><code class="docutils literal notranslate"><span class="pre">make_description()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.nice_print"><code class="docutils literal notranslate"><span class="pre">nice_print()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.parse_for_none"><code class="docutils literal notranslate"><span class="pre">parse_for_none()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.parse_hyperparameters"><code class="docutils literal notranslate"><span class="pre">parse_hyperparameters()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.read_yaml_config"><code class="docutils literal notranslate"><span class="pre">read_yaml_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.save_task_list"><code class="docutils literal notranslate"><span class="pre">save_task_list()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.utils.set_random_seeds"><code class="docutils literal notranslate"><span class="pre">set_random_seeds()</span></code></a></li>
@@ -1370,6 +1393,7 @@ as an attribute of the function.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.make_description"><code class="docutils literal notranslate"><span class="pre">make_description()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.nice_print"><code class="docutils literal notranslate"><span class="pre">nice_print()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.normalize_data"><code class="docutils literal notranslate"><span class="pre">normalize_data()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.parse_hyperparameters"><code class="docutils literal notranslate"><span class="pre">parse_hyperparameters()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.read_yaml_config"><code class="docutils literal notranslate"><span class="pre">read_yaml_config()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.save_task_list"><code class="docutils literal notranslate"><span class="pre">save_task_list()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.utils.set_random_seeds"><code class="docutils literal notranslate"><span class="pre">set_random_seeds()</span></code></a></li>

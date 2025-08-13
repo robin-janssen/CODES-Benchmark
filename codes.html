@@ -707,15 +707,20 @@ document.write(`
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="codes.tune.html#module-codes.tune.evaluate_tuning">codes.tune.evaluate_tuning module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.evaluate_tuning.compute_hypervolume_over_time"><code class="docutils literal notranslate"><span class="pre">compute_hypervolume_over_time()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.evaluate_tuning.evaluate_tuning"><code class="docutils literal notranslate"><span class="pre">evaluate_tuning()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.evaluate_tuning.get_best_trials"><code class="docutils literal notranslate"><span class="pre">get_best_trials()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.evaluate_tuning.hypervolume_2d"><code class="docutils literal notranslate"><span class="pre">hypervolume_2d()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.evaluate_tuning.load_loss_history"><code class="docutils literal notranslate"><span class="pre">load_loss_history()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.evaluate_tuning.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.evaluate_tuning.pareto_front"><code class="docutils literal notranslate"><span class="pre">pareto_front()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.evaluate_tuning.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.evaluate_tuning.plot_losses"><code class="docutils literal notranslate"><span class="pre">plot_losses()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="codes.tune.html#module-codes.tune.optuna_fcts">codes.tune.optuna_fcts module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.optuna_fcts.MaxValidTrialsCallback"><code class="docutils literal notranslate"><span class="pre">MaxValidTrialsCallback</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.optuna_fcts.build_fine_optuna_params"><code class="docutils literal notranslate"><span class="pre">build_fine_optuna_params()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.optuna_fcts.create_objective"><code class="docutils literal notranslate"><span class="pre">create_objective()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.optuna_fcts.load_yaml_config"><code class="docutils literal notranslate"><span class="pre">load_yaml_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.optuna_fcts.make_optuna_params"><code class="docutils literal notranslate"><span class="pre">make_optuna_params()</span></code></a></li>
@@ -736,6 +741,8 @@ document.write(`
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="codes.tune.html#module-codes.tune">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.MaxValidTrialsCallback"><code class="docutils literal notranslate"><span class="pre">MaxValidTrialsCallback</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.build_fine_optuna_params"><code class="docutils literal notranslate"><span class="pre">build_fine_optuna_params()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.build_study_names"><code class="docutils literal notranslate"><span class="pre">build_study_names()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.copy_config"><code class="docutils literal notranslate"><span class="pre">copy_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.tune.html#codes.tune.create_objective"><code class="docutils literal notranslate"><span class="pre">create_objective()</span></code></a></li>
@@ -783,6 +790,7 @@ document.write(`
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.utils.make_description"><code class="docutils literal notranslate"><span class="pre">make_description()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.utils.nice_print"><code class="docutils literal notranslate"><span class="pre">nice_print()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.utils.parse_for_none"><code class="docutils literal notranslate"><span class="pre">parse_for_none()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.utils.parse_hyperparameters"><code class="docutils literal notranslate"><span class="pre">parse_hyperparameters()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.utils.read_yaml_config"><code class="docutils literal notranslate"><span class="pre">read_yaml_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.utils.save_task_list"><code class="docutils literal notranslate"><span class="pre">save_task_list()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.utils.set_random_seeds"><code class="docutils literal notranslate"><span class="pre">set_random_seeds()</span></code></a></li>
@@ -806,6 +814,7 @@ document.write(`
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.make_description"><code class="docutils literal notranslate"><span class="pre">make_description()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.nice_print"><code class="docutils literal notranslate"><span class="pre">nice_print()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.normalize_data"><code class="docutils literal notranslate"><span class="pre">normalize_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.parse_hyperparameters"><code class="docutils literal notranslate"><span class="pre">parse_hyperparameters()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.read_yaml_config"><code class="docutils literal notranslate"><span class="pre">read_yaml_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.save_task_list"><code class="docutils literal notranslate"><span class="pre">save_task_list()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="codes.utils.html#codes.utils.set_random_seeds"><code class="docutils literal notranslate"><span class="pre">set_random_seeds()</span></code></a></li>
