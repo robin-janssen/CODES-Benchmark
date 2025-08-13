@@ -399,7 +399,7 @@ class PolynomialModelWrapper(nn.Module):
         traj_loss = criterion(x_pred, x_true)
 
         # identity loss (reconstruct x0)
-        identity = self.identity_loss(x_true, params.to(self.device))
+        identity = self.identity_loss(x_true, params)
 
         # derivative losses: compute once
         d_pred = self.first_derivative(x_pred)
@@ -455,6 +455,7 @@ class PolynomialModelWrapper(nn.Module):
         # only reconstruct the initial state
         x0 = x_true[:, 0, :]
         if not self.config.coeff_network and params is not None:
+            params = params.to(self.device)
             enc_input = torch.cat([x0, params], dim=1)
         else:
             enc_input = x0
