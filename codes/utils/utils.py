@@ -10,6 +10,7 @@ from fractions import Fraction
 import numpy as np
 import torch
 import yaml
+from torch import Tensor
 from tqdm import tqdm
 
 
@@ -391,3 +392,45 @@ def batch_factor_to_float(batch_factor: str | int | float) -> float:
         raise ValueError(
             f"Invalid batch factor: {batch_factor}. Must be a float, int, or a valid fraction string."
         ) from e
+
+
+def parse_hyperparameters(hyperparams: dict) -> dict:
+    for key, value in hyperparams.items():
+        if isinstance(value, np.ndarray):
+            hyperparams[key] = value.tolist()
+        elif isinstance(value, Tensor):
+            hyperparams[key] = value.cpu().detach().numpy().tolist()
+        elif isinstance(value, (np.number, np.bool_)):
+            # Handle numpy scalars (like numpy.float32, numpy.int64, etc.)
+            hyperparams[key] = value.item()
+        elif isinstance(value, dict):
+            hyperparams[key] = parse_hyperparameters(value)
+        elif isinstance(value, (list, tuple)):
+            # Recursively handle lists and tuples that might contain numpy objects
+            hyperparams[key] = [
+                (
+                    item.item()
+                    if isinstance(item, (np.number, np.bool_))
+                    else (
+                        item.tolist()
+                        if isinstance(item, np.ndarray)
+                        else (
+                            item.cpu().detach().numpy().tolist()
+                            if isinstance(item, Tensor)
+                            else item
+                        )
+                    )
+                )
+                for item in value
+            ]
+        elif hasattr(value, "item") and callable(getattr(value, "item")):
+            # Catch-all for any object with an .item() method (like numpy scalars)
+            try:
+                hyperparams[key] = value.item()
+            except (ValueError, TypeError):
+                # If .item() fails, convert to string as fallback
+                hyperparams[key] = str(value)
+        elif not isinstance(value, (str, int, float, bool, type(None))):
+            # Convert any remaining non-serializable objects to string
+            hyperparams[key] = str(value)
+    return hyperparams

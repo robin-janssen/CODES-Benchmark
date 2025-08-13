@@ -16,6 +16,7 @@ from .utils import (
     load_task_list,
     make_description,
     nice_print,
+    parse_hyperparameters,
     read_yaml_config,
     save_task_list,
     set_random_seeds,
@@ -44,4 +45,5 @@ __all__ = [
     "check_training_status",
     "determine_batch_size",
     "batch_factor_to_float",
+    "parse_hyperparameters",
 ]

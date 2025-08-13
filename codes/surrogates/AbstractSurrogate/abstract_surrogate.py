@@ -13,7 +13,7 @@ from torch import Tensor, nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from codes.utils import create_model_dir
+from codes.utils import create_model_dir, parse_hyperparameters
 
 
 class AbstractSurrogateModel(ABC, nn.Module):
@@ -334,17 +334,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             )
         hyperparameters["date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Recursively parse hyperparameters for numpy arrays and convert them to lists
-        def parse_hyperparameters(hyperparams: dict) -> dict:
-            for key, value in hyperparams.items():
-                if isinstance(value, np.ndarray):
-                    hyperparams[key] = value.tolist()
-                elif isinstance(value, Tensor):
-                    hyperparams[key] = value.cpu().detach().numpy().tolist()
-                elif isinstance(value, dict):
-                    hyperparams[key] = parse_hyperparameters(value)
-            return hyperparams
-
+        # Recursively parse hyperparameters to make them yaml-serializable
         hyperparameters = parse_hyperparameters(hyperparameters)
 
         # Reduce the precision of the losses and accuracy
