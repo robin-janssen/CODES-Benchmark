@@ -218,12 +218,6 @@ class LatentPoly(AbstractSurrogateModel):
                 loss.backward()
                 optimizer.step()
 
-                if epoch == 10 and i == 0:
-                    with torch.no_grad():
-                        self.model.renormalize_loss_weights(
-                            x_true, x_pred, params, criterion
-                        )
-
             scheduler.step()
 
             self.validate(
@@ -461,6 +455,7 @@ class PolynomialModelWrapper(nn.Module):
         # only reconstruct the initial state
         x0 = x_true[:, 0, :]
         if not self.config.coeff_network and params is not None:
+            params = params.to(self.device)
             enc_input = torch.cat([x0, params], dim=1)
         else:
             enc_input = x0

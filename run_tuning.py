@@ -1,17 +1,21 @@
 import argparse
+import os
 import queue
 import sys
 import time
 from pathlib import Path
 
 import optuna
-from optuna.study import MaxTrialsCallback
+import yaml
 from optuna.trial import TrialState
 from tqdm import tqdm
 
+from codes.benchmark import get_model_config
 from codes.tune import (
+    MaxValidTrialsCallback,
+    _count_valid_trials,
+    build_fine_optuna_params,
     create_objective,
-    delete_studies_if_requested,
     initialize_optuna_database,
     load_yaml_config,
     maybe_set_runtime_threshold,
@@ -23,6 +27,16 @@ from codes.utils import download_data, nice_print
 def run_single_study(config: dict, study_name: str, db_url: str):
     if not config.get("optuna_logging", False):
         optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+    if config.get("fine", False):
+        try:
+            base_cfg = get_model_config(config["surrogate"]["name"], config)
+            finetune_space = build_fine_optuna_params(base_cfg)
+            n_fine = len(finetune_space)
+        except Exception:
+            n_fine = 0  # conservative fallback
+
+        config["n_trials"] = max(5 * n_fine, 5)  # disregard YAML trials
 
     if config["multi_objective"]:
         sampler = optuna.samplers.NSGAIISampler(
@@ -57,6 +71,13 @@ def run_single_study(config: dict, study_name: str, db_url: str):
             load_if_exists=True,
         )
 
+    have = _count_valid_trials(study)
+    if have >= config["n_trials"]:
+        print(
+            f"[skip] {study_name}: already has {have} valid trials (target {config['n_trials']}). Skipping optimize()."
+        )
+        return
+
     device_queue = queue.Queue()
     for slot_id, dev in enumerate(config["devices"]):
         device_queue.put((dev, slot_id))
@@ -64,13 +85,16 @@ def run_single_study(config: dict, study_name: str, db_url: str):
     objective_fn = create_objective(config, study_name, device_queue)
     n_trials = config["n_trials"]
     n_jobs = len(config["devices"])
-    warmup_target = max(5, int(n_trials * 0.10))
+    warmup_target = max(10, int(n_trials * 0.10))
 
     all_durations: list[float] = []
 
     def trial_complete_callback(study_: optuna.Study, trial_: optuna.trial.FrozenTrial):
         # progress bar update
-        if trial_.state in (TrialState.COMPLETE, TrialState.PRUNED):
+        if (
+            trial_.state in (TrialState.COMPLETE, TrialState.PRUNED)
+            and "exception" not in trial_.user_attrs  # skip OOM trials
+        ):
             trial_pbar.update(1)
 
         # duration/eta
@@ -97,10 +121,10 @@ def run_single_study(config: dict, study_name: str, db_url: str):
     ) as trial_pbar:
         study.optimize(
             objective_fn,
-            n_trials=n_trials,
+            n_trials=n_trials * 2,  # upper bound, study ended by MaxTrialsCallback
             n_jobs=n_jobs,
             callbacks=[
-                MaxTrialsCallback(n_trials, states=[TrialState.COMPLETE]),
+                MaxValidTrialsCallback(n_trials),
                 trial_complete_callback,
             ],
         )
@@ -108,7 +132,11 @@ def run_single_study(config: dict, study_name: str, db_url: str):
 
 def run_all_studies(config: dict, main_study_name: str, db_url: str):
     surrogates = config["surrogates"]
-    global_params = config.get("global_optuna_params", {})
+    global_params = (
+        {} if config.get("fine", False) else config.get("global_optuna_params", {})
+    )
+
+    fine_report: dict[str, dict] = {}
 
     total_sub_studies = len(surrogates)
     with tqdm(
@@ -120,15 +148,47 @@ def run_all_studies(config: dict, main_study_name: str, db_url: str):
             )
 
         for surr in surrogates:
-            local = surr.get("optuna_params", {})
-            for name, opts in global_params.items():
-                if name in local:
-                    print(
-                        f"⚠️ Hyperparameter '{name}' defined globally and locally for {surr['name']}; using local."
-                    )
-                else:
-                    local[name] = opts
-            surr["optuna_params"] = local
+            arch_name = surr["name"]
+            if config.get("fine", False):
+                # ignore manual search spaces
+                surr["optuna_params"] = {}
+
+                # derive fine space from previously best config
+                base_cfg = get_model_config(arch_name, config)
+                fine_space = build_fine_optuna_params(base_cfg)
+                n_fine = len(fine_space)
+                n_trials_override = max(5 * n_fine, 5)
+
+                # CLI confirmation
+                print(
+                    f"[fine] {arch_name}: found fine-tunable parameters: {list(fine_space.keys()) or 'none'}"
+                )
+                for k, spec in fine_space.items():
+                    print(f"  - {k}: [{spec['low']:.3g}, {spec['high']:.3g}] (log)")
+                print(f"  -> running for {n_trials_override} trials\n")
+
+                # stash for YAML and pass along to run_single_study
+                fine_report[arch_name] = {
+                    "trials": int(n_trials_override),
+                    "params": {
+                        k: {
+                            "low": float(v["low"]),
+                            "high": float(v["high"]),
+                            "log": bool(v.get("log", False)),
+                        }
+                        for k, v in fine_space.items()
+                    },
+                }
+            else:
+                local = surr.get("optuna_params", {})
+                for name, opts in global_params.items():
+                    if name in local:
+                        print(
+                            f"⚠️ Hyperparameter '{name}' defined globally and locally for {surr['name']}; using local."
+                        )
+                    else:
+                        local[name] = opts
+                surr["optuna_params"] = local
 
             arch_name = surr["name"]
             study_name = f"{main_study_name}_{arch_name.lower()}"
@@ -140,21 +200,35 @@ def run_all_studies(config: dict, main_study_name: str, db_url: str):
                 "dataset": config["dataset"],
                 "devices": config["devices"],
                 "epochs": surr["epochs"],
-                "n_trials": trials,
+                "n_trials": trials if not n_trials_override else n_trials_override,
                 "seed": config["seed"],
                 "surrogate": {"name": arch_name},
-                "optuna_params": surr["optuna_params"],
+                "optuna_params": surr.get("optuna_params", {}),
                 "prune": config.get("prune", True),
                 "optuna_logging": config.get("optuna_logging", False),
                 "use_optimal_params": config.get("use_optimal_params", False),
                 "multi_objective": config.get("multi_objective", False),
                 "population_size": config.get("population_size", 50),
                 "target_percentile": config.get("target_percentile", 0.95),
+                "fine": config.get("fine", False),  # pass through
+                "loss_cap": config.get("loss_cap", 20),
             }
+
+            if config.get("fine", False):
+                sub_config["fine_space"] = fine_space
 
             run_single_study(sub_config, study_name, db_url)
             arch_pbar.update(1)
             arch_pbar.set_postfix({"done": study_name})
+
+    # Write YAML summary once per main study (only in fine mode)
+    if config.get("fine", False):
+        out_dir = os.path.join("tuned", main_study_name)
+        os.makedirs(out_dir, exist_ok=True)
+        out_path = os.path.join(out_dir, "fine_summary.yaml")
+        with open(out_path, "w", encoding="utf-8") as f:
+            yaml.safe_dump(fine_report, f, sort_keys=True, default_flow_style=False)
+        print(f"[fine] Wrote summary: {out_path}")
 
 
 def parse_arguments():
@@ -184,8 +258,8 @@ def main():
     # Initialize DB (remote/local)
     db_url = initialize_optuna_database(config, study_folder_name=tuning_id)
 
-    # If overwriting, delete Optuna studies
-    delete_studies_if_requested(config, tuning_id, db_url)
+    # # If overwriting, delete Optuna studies
+    # delete_studies_if_requested(config, tuning_id, db_url)
 
     # Run
     if "surrogates" in config:

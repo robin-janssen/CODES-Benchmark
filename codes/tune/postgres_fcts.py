@@ -144,25 +144,74 @@ def _initialize_postgres_local(config: dict, study_folder_name: str) -> str:
 
 
 def _initialize_postgres_remote(config: dict, study_folder_name: str) -> str:
-    db_config = config.get("postgres_config", {})
-    host = db_config["host"]
-    port = db_config.get("port", 5432)
-    user = db_config.get("user", "optuna_user")
-    # look first in env, then in config
-    pwd = os.getenv("PGPASSWORD", None) or db_config.get("password", None)
-    db_name = db_config.get("db_name", "optuna_global")
-    sslmode = db_config.get("sslmode")
+    db_conf = config["postgres_config"]
+    host = db_conf["host"]
+    port = db_conf.get("port", 5432)
+    user = db_conf["user"]
+    pwd = os.getenv("PGPASSWORD") or db_conf.get("password", "")
+    db_name = db_conf.get("db_name", "optuna_global")
+    sslmode = db_conf.get("sslmode")
 
-    # if still no password, ask interactively
     if not pwd:
-        prompt = f"Password for {user}@{host}:{port}/{db_name}: "
-        pwd = getpass.getpass(prompt)
+        pwd = getpass.getpass(f"Password for {user}@{host}:{port}/{db_name}: ")
 
-    # quick reachability check using the supplied credentials
-    _check_remote_reachable({**db_config, "password": pwd})
+    _check_remote_reachable({**db_conf, "password": pwd})
 
-    extra = f"?sslmode={sslmode}" if sslmode else ""
-    return _make_db_url(user, pwd, host, port, db_name, extra)
+    conn = psycopg2.connect(
+        dbname=db_name, user=user, password=pwd, host=host, port=port, sslmode=sslmode
+    )
+    conn.autocommit = True
+    cur = conn.cursor()
+
+    # check for existing schema
+    cur.execute(
+        """
+        SELECT 1
+        FROM information_schema.schemata
+        WHERE schema_name = %s
+        """,
+        (study_folder_name,),
+    )
+    if cur.fetchone():
+        choice = (
+            input(
+                f"Schema '{study_folder_name}' exists in database '{db_name}'. "
+                "(U)se it or (O)verwrite it? [U/O]: "
+            )
+            .strip()
+            .lower()
+        )
+        if choice == "o":
+            cur.execute(
+                sql.SQL("DROP SCHEMA {} CASCADE").format(
+                    sql.Identifier(study_folder_name)
+                )
+            )
+            cur.execute(
+                sql.SQL("CREATE SCHEMA {} AUTHORIZATION {}").format(
+                    sql.Identifier(study_folder_name), sql.Identifier(user)
+                )
+            )
+            print(f"Schema '{study_folder_name}' recreated.")
+        else:
+            print(f"Using existing schema '{study_folder_name}'.")
+    else:
+        cur.execute(
+            sql.SQL("CREATE SCHEMA {} AUTHORIZATION {}").format(
+                sql.Identifier(study_folder_name), sql.Identifier(user)
+            )
+        )
+        print(f"Created schema '{study_folder_name}'.")
+
+    cur.close()
+    conn.close()
+
+    extra = []
+    if sslmode:
+        extra.append(f"sslmode={sslmode}")
+    opts = "-c search_path=" + study_folder_name
+    extra.append(f"options={opts!s}")
+    return _make_db_url(user, pwd, host, port, db_name, extra="?" + "&".join(extra))
 
 
 def initialize_optuna_database(config: dict, study_folder_name: str) -> str:

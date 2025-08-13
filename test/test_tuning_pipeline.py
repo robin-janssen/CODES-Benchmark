@@ -125,6 +125,7 @@ class FakeTrial:
         self.state = state
         self.datetime_start = start
         self.datetime_complete = complete
+        self.user_attrs = {}
 
 
 class FakeStudy:
@@ -144,8 +145,8 @@ def test_maybe_set_runtime_threshold_not_enough():
     t1 = FakeTrial(
         0,
         TrialState.COMPLETE,
-        datetime.utcnow() - timedelta(seconds=5),
-        datetime.utcnow(),
+        datetime.now() - timedelta(seconds=5),
+        datetime.now(),
     )
     study = FakeStudy([t1])
     maybe_set_runtime_threshold(study, warmup_target=2)
@@ -153,7 +154,7 @@ def test_maybe_set_runtime_threshold_not_enough():
 
 
 def test_maybe_set_runtime_threshold_enough():
-    now = datetime.utcnow()
+    now = datetime.now()
     trials = []
     for i in range(3):
         trials.append(

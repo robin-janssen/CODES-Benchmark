@@ -1,6 +1,6 @@
 # CODES Benchmark
 
-[![codecov](https://codecov.io/github/robin-janssen/CODES-Benchmark/graph/badge.svg?token=TNF9ISCAJK)](https://codecov.io/github/robin-janssen/CODES-Benchmark)
+[![codecov](https://codecov.io/github/robin-janssen/CODES-Benchmark/branch/main/graph/badge.svg?token=TNF9ISCAJK)](https://codecov.io/github/robin-janssen/CODES-Benchmark)
 ![Static Badge](https://img.shields.io/badge/license-GPLv3-blue)
 ![Static Badge](https://img.shields.io/badge/NeurIPS-2024-green)
 

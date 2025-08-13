@@ -13,7 +13,7 @@ from torch import Tensor, nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from codes.utils import create_model_dir
+from codes.utils import create_model_dir, parse_hyperparameters
 
 
 class AbstractSurrogateModel(ABC, nn.Module):
@@ -334,6 +334,9 @@ class AbstractSurrogateModel(ABC, nn.Module):
             )
         hyperparameters["date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+        # Recursively parse hyperparameters to make them yaml-serializable
+        hyperparameters = parse_hyperparameters(hyperparameters)
+
         # Reduce the precision of the losses and accuracy
         for attribute in ["train_loss", "test_loss", "MAE"]:
             value = getattr(self, attribute)
@@ -518,10 +521,6 @@ class AbstractSurrogateModel(ABC, nn.Module):
         # Define warmup period based on 10% of total epochs.
         warmup_epochs = max(10, int(total_epochs * 0.02))
         if current_epoch < warmup_epochs:
-            # Do not attempt to prune before the warmup period is complete.
-            # print(
-            #     f"[time_pruning] Warmup period: {current_epoch}/{warmup_epochs} epochs completed. Skipping pruning check."
-            # )
             return
 
         elapsed = time.time() - self._trial_start_time
@@ -541,7 +540,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
             if projected_total_time > threshold:
                 if self.optuna_trial is not None:
                     tqdm.write(
-                        f"[time_pruning] Projected total time {projected_total_time:.1f}s exceeds threshold {threshold:.1f}s. Pruning trial {self.optuna_trial.number}."
+                        f"[Trial {self.optuna_trial.number}] Projected total time {projected_total_time:.1f}s exceeds threshold {threshold:.1f}s. Pruning trial."
                     )
                     self.optuna_trial.set_user_attr(
                         "prune_reason",

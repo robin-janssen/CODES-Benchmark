@@ -1,6 +1,7 @@
 import math
 import os
 import queue
+import threading
 from datetime import datetime
 
 import numpy as np
@@ -19,6 +20,8 @@ from codes.benchmark.bench_utils import (
 from codes.utils import check_and_load_data, make_description, set_random_seeds
 from codes.utils.data_utils import download_data
 
+_inference_time_lock = threading.Lock()
+
 MODULE_REGISTRY: dict[str, type[nn.Module]] = {
     "relu": nn.ReLU,
     "leakyrelu": nn.LeakyReLU,
@@ -34,6 +37,21 @@ MODULE_REGISTRY: dict[str, type[nn.Module]] = {
     "mse": nn.MSELoss,
     "smoothl1": nn.SmoothL1Loss,
 }
+
+
+class MaxValidTrialsCallback:
+    def __init__(self, target: int):
+        self.target = target
+
+    def __call__(self, study: optuna.Study, trial: optuna.trial.FrozenTrial):
+        # count only COMPLETE trials with no exception
+        valid = [
+            t
+            for t in study.trials
+            if t.state == TrialState.COMPLETE and "exception" not in t.user_attrs
+        ]
+        if len(valid) >= self.target:
+            study.stop()
 
 
 def load_yaml_config(config_path: str) -> dict:
@@ -176,9 +194,15 @@ def create_objective(
                 msg = repr(e).strip()
                 if not msg:
                     msg = "CUDA Out of Memory (no details provided)."
-                print(f"Trial {trial.number} failed due to: {msg}")
                 trial.set_user_attr("exception", msg)
-                raise optuna.TrialPruned(f"OOM error in trial {trial.number}")
+                tqdm.write(f"[Trial {trial.number}] resulted in an OOM error.")
+                # raise optuna.TrialPruned(f"OOM error in trial {trial.number}")
+                if config.get("multi_objective", False):
+                    # In multi-objective mode, we return a tuple
+                    return float(config.get("loss_cap", 20)), float(10)
+                else:
+                    # In single objective mode, we return a single value
+                    return float(config.get("loss_cap", 20))
             except optuna.TrialPruned as e:
                 msg = repr(e).strip()
                 trial.set_user_attr("exception", msg)
@@ -188,7 +212,63 @@ def create_objective(
                 msg = repr(e).strip()
                 if not msg:
                     msg = "Unknown error occurred."
-                print(f"Trial {trial.number} failed due to an unexpected error: {msg}")
+                tqdm.write(
+                    f"Trial {trial.number} failed due to an unexpected error: {msg}"
+                )
+                trial.set_user_attr("exception", msg)
+                raise optuna.TrialPruned(f"Error in trial {trial.number}: {msg}")
+        finally:
+            device_queue.put((device, slot_id))
+
+    return objective
+
+
+def create_objective(
+    config: dict, study_name: str, device_queue: queue.Queue
+) -> callable:
+    """
+    Create the objective function for Optuna.
+
+    Args:
+        config (dict): Configuration dictionary.
+        study_name (str): Name of the study.
+        device_queue (queue.Queue): Queue of available devices.
+
+    Returns:
+        function: Objective function for Optuna.
+    """
+
+    def objective(trial):
+        device, slot_id = device_queue.get()
+        try:
+            try:
+                return training_run(trial, device, slot_id, config, study_name)
+            except torch.cuda.OutOfMemoryError as e:
+                torch.cuda.empty_cache()
+                msg = repr(e).strip()
+                if not msg:
+                    msg = "CUDA Out of Memory (no details provided)."
+                trial.set_user_attr("exception", msg)
+                tqdm.write(f"[Trial {trial.number}] resulted in an OOM error.")
+                # raise optuna.TrialPruned(f"OOM error in trial {trial.number}")
+                if config.get("multi_objective", False):
+                    # In multi-objective mode, we return a tuple
+                    return float(config.get("loss_cap", 20)), float(10)
+                else:
+                    # In single objective mode, we return a single value
+                    return float(config.get("loss_cap", 20))
+            except optuna.TrialPruned as e:
+                msg = repr(e).strip()
+                trial.set_user_attr("exception", msg)
+                raise
+            except Exception as e:
+                torch.cuda.empty_cache()
+                msg = repr(e).strip()
+                if not msg:
+                    msg = "Unknown error occurred."
+                tqdm.write(
+                    f"Trial {trial.number} failed due to an unexpected error: {msg}"
+                )
                 trial.set_user_attr("exception", msg)
                 raise optuna.TrialPruned(f"Error in trial {trial.number}: {msg}")
         finally:
@@ -218,7 +298,6 @@ def training_run(
 
     download_data(config["dataset"]["name"], verbose=False)
 
-    # Load full data and parameters
     (
         (train_data, test_data, _),
         (train_params, test_params, _),
@@ -237,21 +316,29 @@ def training_run(
     )
 
     subset_factor = config["dataset"].get("subset_factor", 1)
-    # Get the appropriate subset of the training data
-    # We nevertheless use the full test data to measure performance.
     train_data = train_data[::subset_factor]
     train_params = train_params[::subset_factor] if train_params is not None else None
 
     set_random_seeds(config["seed"], device=device)
     surr_name = config["surrogate"]["name"]
-    suggested_params = make_optuna_params(trial, config["optuna_params"])
-    n_params = train_params.shape[1] if train_params is not None else 0
 
+    # Load base (best) config from disk as you already do
+    model_config = get_model_config(surr_name, config)
+
+    # Decide search space
+    if config.get("fine", False):
+        fine_space = config.get("fine_space")
+        suggested_params = make_optuna_params(trial, fine_space)
+    else:
+        suggested_params = make_optuna_params(trial, config["optuna_params"])
+
+    n_params = train_params.shape[1] if train_params is not None else 0
     n_timesteps = train_data.shape[1]
     n_quantities = train_data.shape[2]
     surrogate_class = get_surrogate(surr_name)
-    model_config = get_model_config(surr_name, config)
+
     model_config.update(suggested_params)
+
     model = surrogate_class(
         device=device,
         n_quantities=n_quantities,
@@ -286,29 +373,23 @@ def training_run(
         multi_objective=config["multi_objective"],
     )
 
-    # criterion = torch.nn.MSELoss()
     preds, targets = model.predict(test_loader, leave_log=True)
     p99_dex = torch.quantile(
         (preds - targets).abs().flatten(), float(config["target_percentile"])
     ).item()
-    # loss = criterion(preds, targets).item()
-    # Extract the study name without the timestamp/suffix part
+    p99_dex = min(p99_dex, config.get("loss_cap", 20))
+
     parts = study_name.split("_")
     sname = "_".join(parts[:-1]) if len(parts) > 1 else study_name
 
     savepath = os.path.join("tuned", sname, "models")
     os.makedirs(savepath, exist_ok=True)
     model_name = f"{surr_name.lower()}_{trial.number}"
-    model.save(
-        model_name=model_name,
-        base_dir="",
-        training_id=savepath,
-    )
+    model.save(model_name=model_name, base_dir="", training_id=savepath)
 
-    # Check if we're running multi-objective optimisation
     if config["multi_objective"]:
-        # Measure inference time
-        inference_times = measure_inference_time(model, test_loader)
+        with _inference_time_lock:
+            inference_times = measure_inference_time(model, test_loader)
         return p99_dex, np.mean(inference_times)
     else:
         return p99_dex
@@ -324,41 +405,106 @@ def _trial_duration_seconds(t: optuna.trial.FrozenTrial) -> float | None:
 def maybe_set_runtime_threshold(
     study: optuna.Study, warmup_target: int, include_pruned: bool = False
 ) -> None:
-    # already done?
     if "runtime_threshold" in study.user_attrs:
         return
 
-    wanted_states = (TrialState.COMPLETE,)
+    wanted_states = {TrialState.COMPLETE}
     if include_pruned:
-        wanted_states += (TrialState.PRUNED,)
+        wanted_states.add(TrialState.PRUNED)
 
-    trials = study.get_trials(deepcopy=False)
-    trials_sorted = sorted(trials, key=lambda tr: tr.number)
+    # skip any trial with an exception (e.g. OOM)
+    def is_bad(tr):
+        return "exception" in tr.user_attrs
 
-    durs = []
+    trials_sorted = sorted(study.get_trials(deepcopy=False), key=lambda t: t.number)
+    good_trials = []
+
+    # scan in order until we collect warmup_target good complete trials
     for tr in trials_sorted:
-        if len(durs) >= warmup_target:
+        if len(good_trials) >= warmup_target:
             break
+        if is_bad(tr):
+            continue
+        if tr.state == TrialState.RUNNING:
+            return  # wait for running trials before proceeding
         if tr.state in wanted_states:
-            dur = _trial_duration_seconds(tr)
-            if dur is not None:
-                durs.append(dur)
+            good_trials.append(tr)
 
-    if len(durs) < warmup_target:
-        # Not enough qualifying trials yet — do nothing
-        return
+    if len(good_trials) < warmup_target:
+        return  # not enough complete trials yet
+
+    # compute durations for the first warmup_target complete trials
+    durs = []
+    used_trial_numbers = []
+    for tr in good_trials[:warmup_target]:
+        dur = _trial_duration_seconds(tr)
+        if dur is None:
+            return
+        durs.append(dur)
+        used_trial_numbers.append(tr.number)
 
     mean_ = sum(durs) / len(durs)
-    var = sum((d - mean_) ** 2 for d in durs) / len(durs)
-    std_ = math.sqrt(var)
-    threshold = mean_ + 2 * std_
+    std_ = math.sqrt(sum((d - mean_) ** 2 for d in durs) / len(durs))
+    threshold = mean_ + std_
 
     study.set_user_attr("runtime_threshold", float(threshold))
     study.set_user_attr("warmup_mean", float(mean_))
     study.set_user_attr("warmup_std", float(std_))
     study.set_user_attr("warmup_target", warmup_target)
+    study.set_user_attr("warmup_trials_used", used_trial_numbers)
 
     tqdm.write(
         f"\n[Study] Warmup complete. Runtime threshold set to {threshold:.1f}s "
-        f"(mean = {mean_: .1f}s, std = {std_: .1f}s) over {warmup_target} trials."
+        f"(mean = {mean_:.1f}s, std = {std_:.1f}s) over trials {used_trial_numbers}."
     )
+
+
+def _bounds_around(
+    v: float, factor: float = 10.0, lo: float | None = None, hi: float | None = None
+) -> tuple[float, float]:
+    low, high = float(v) / factor, float(v) * factor
+    if lo is not None:
+        low = max(low, lo)
+    if hi is not None:
+        high = min(high, hi)
+    # avoid degenerate ranges
+    if high <= low:
+        eps = max(abs(v) * 1e-3, 1e-12)
+        low, high = float(v) - eps, float(v) + eps
+    return low, high
+
+
+def build_fine_optuna_params(model_config: dict) -> dict:
+    keys = (
+        "learning_rate",
+        "beta",
+        "poly_power",
+        "eta_min",
+        "regularization_factor",
+        "momentum",
+    )
+    space: dict[str, dict] = {}
+    for k in keys:
+        if k not in model_config:
+            continue
+        val = model_config[k]
+        if not isinstance(val, (int, float)) or val == 0:
+            continue
+        lo, hi = _bounds_around(
+            val,
+            factor=10.0,
+            lo=1e-12 if k != "momentum" else 0.0,
+            hi=0.999 if k == "momentum" else None,
+        )
+        space[k] = {"type": "float", "low": lo, "high": hi, "log": True}
+    return space
+
+
+def _is_valid_trial(t: optuna.trial.FrozenTrial) -> bool:
+    return (t.state in (TrialState.COMPLETE, TrialState.PRUNED)) and (
+        "exception" not in t.user_attrs
+    )
+
+
+def _count_valid_trials(study: optuna.Study) -> int:
+    return sum(1 for t in study.get_trials(deepcopy=False) if _is_valid_trial(t))
