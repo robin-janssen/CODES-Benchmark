@@ -32,7 +32,7 @@ class LatentNeuralODEConfig:
     activation: nn.Module = nn.SiLU()
     coder_layers: int = 8
     coder_width: int = 80
-    latent_features: bool = True
+    latent_features: int = 1
     learning_rate: float = 1.38e-05
     momentum: float = 0.785
     ode_layers: int = 3
