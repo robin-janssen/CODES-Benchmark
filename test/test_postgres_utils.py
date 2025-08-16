@@ -1,17 +1,18 @@
-import subprocess
 import getpass
-import pytest
+import subprocess
+
 import psycopg2
+import pytest
 from psycopg2 import OperationalError
 
 # Import all functions to test
 from codes.tune import (
-    _make_db_url,
-    _check_remote_reachable,
     _check_postgres_running_local,
-    _start_postgres_server_local,
+    _check_remote_reachable,
     _initialize_postgres_local,
     _initialize_postgres_remote,
+    _make_db_url,
+    _start_postgres_server_local,
     initialize_optuna_database,
 )
 
@@ -194,6 +195,36 @@ def test_initialize_postgres_remote_interactive(monkeypatch):
     monkeypatch.setattr(
         "codes.tune.postgres_fcts._check_remote_reachable", lambda conf: None
     )
+
+    # fake psycopg2 connection/cursor to avoid real network calls
+    def fake_connect(**kwargs):
+        class FakeCursor:
+            def execute(self, query, params=None):
+                # accept any SQL (CREATE/DROP/SELECT)
+                self._last_query = query
+
+            def fetchone(self):
+                # simulate "schema does not exist"
+                return None
+
+            def close(self):
+                pass
+
+        class FakeConn:
+            def __init__(self):
+                self.autocommit = False
+
+            def cursor(self):
+                return FakeCursor()
+
+            def close(self):
+                pass
+
+        return FakeConn()
+
+    # patch the connect used inside the module under test
+    monkeypatch.setattr("codes.tune.postgres_fcts.psycopg2.connect", fake_connect)
+
     url = _initialize_postgres_remote(cfg, "ignored")
     assert "sslmode=require" in url
 
