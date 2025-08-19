@@ -28,16 +28,6 @@ def run_single_study(config: dict, study_name: str, db_url: str):
     if not config.get("optuna_logging", False):
         optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-    if config.get("fine", False):
-        try:
-            base_cfg = get_model_config(config["surrogate"]["name"], config)
-            finetune_space = build_fine_optuna_params(base_cfg)
-            n_fine = len(finetune_space)
-        except Exception:
-            n_fine = 0  # conservative fallback
-
-        config["n_trials"] = max(5 * n_fine, 5)  # disregard YAML trials
-
     if config["multi_objective"]:
         sampler = optuna.samplers.NSGAIISampler(
             seed=config["seed"], population_size=config["population_size"]
@@ -91,10 +81,12 @@ def run_single_study(config: dict, study_name: str, db_url: str):
 
     def trial_complete_callback(study_: optuna.Study, trial_: optuna.trial.FrozenTrial):
         # progress bar update
-        if (
-            trial_.state in (TrialState.COMPLETE, TrialState.PRUNED)
-            and "exception" not in trial_.user_attrs  # skip OOM trials
-        ):
+        trial_oom = "exception" in trial_.user_attrs  # do not count OOM trials
+        trial_timepruned = (
+            "prune_reason" in trial_.user_attrs
+        )  # do not count time-pruned trials
+        wanted_states = (TrialState.COMPLETE, TrialState.PRUNED)
+        if trial_.state in wanted_states and not (trial_oom or trial_timepruned):
             trial_pbar.update(1)
 
         # duration/eta
@@ -121,7 +113,7 @@ def run_single_study(config: dict, study_name: str, db_url: str):
     ) as trial_pbar:
         study.optimize(
             objective_fn,
-            n_trials=n_trials * 2,  # upper bound, study ended by MaxTrialsCallback
+            n_trials=n_trials * 2 if config["multi_objective"] else n_trials,
             n_jobs=n_jobs,
             callbacks=[
                 MaxValidTrialsCallback(n_trials),
@@ -157,7 +149,7 @@ def run_all_studies(config: dict, main_study_name: str, db_url: str):
                 base_cfg = get_model_config(arch_name, config)
                 fine_space = build_fine_optuna_params(base_cfg)
                 n_fine = len(fine_space)
-                n_trials_override = max(5 * n_fine, 5)
+                n_trials_override = max(10 * n_fine, 10)
 
                 # CLI confirmation
                 print(
