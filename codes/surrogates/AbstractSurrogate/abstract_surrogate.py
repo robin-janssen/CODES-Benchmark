@@ -335,7 +335,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         hyperparameters["date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Recursively parse hyperparameters to make them yaml-serializable
-        hyperparameters = parse_hyperparameters(hyperparameters)
+        clean_hyperparameters = parse_hyperparameters(hyperparameters.copy())
 
         # Reduce the precision of the losses and accuracy
         for attribute in ["train_loss", "test_loss", "MAE"]:
@@ -350,7 +350,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
         # Save the hyperparameters as a yaml file
         hyperparameters_path = os.path.join(model_dir, f"{model_name}.yaml")
         with open(hyperparameters_path, "w", encoding="utf-8") as file:
-            yaml.dump(hyperparameters, file)
+            yaml.dump(clean_hyperparameters, file)
 
         save_attributes = {
             k: v
@@ -456,9 +456,12 @@ class AbstractSurrogateModel(ABC, nn.Module):
                 elif self.normalisation["mode"] == "minmax":
                     dmax = self.normalisation["max"]
                     dmin = self.normalisation["min"]
+                    dmax = np.array(dmax) if isinstance(dmax, list) else dmax
+                    dmin = np.array(dmin) if isinstance(dmin, list) else dmin
                     if isinstance(data, Tensor) and isinstance(dmax, np.ndarray):
                         dmax = Tensor(dmax).to(data.device)
                         dmin = Tensor(dmin).to(data.device)
+
                     # data = data.to("cpu")
                     data = (data + 1) * (dmax - dmin) / 2 + dmin
                 elif self.normalisation["mode"] == "standardize":

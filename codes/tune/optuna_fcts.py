@@ -223,60 +223,6 @@ def create_objective(
     return objective
 
 
-def create_objective(
-    config: dict, study_name: str, device_queue: queue.Queue
-) -> callable:
-    """
-    Create the objective function for Optuna.
-
-    Args:
-        config (dict): Configuration dictionary.
-        study_name (str): Name of the study.
-        device_queue (queue.Queue): Queue of available devices.
-
-    Returns:
-        function: Objective function for Optuna.
-    """
-
-    def objective(trial):
-        device, slot_id = device_queue.get()
-        try:
-            try:
-                return training_run(trial, device, slot_id, config, study_name)
-            except torch.cuda.OutOfMemoryError as e:
-                torch.cuda.empty_cache()
-                msg = repr(e).strip()
-                if not msg:
-                    msg = "CUDA Out of Memory (no details provided)."
-                trial.set_user_attr("exception", msg)
-                tqdm.write(f"[Trial {trial.number}] resulted in an OOM error.")
-                # raise optuna.TrialPruned(f"OOM error in trial {trial.number}")
-                if config.get("multi_objective", False):
-                    # In multi-objective mode, we return a tuple
-                    return float(config.get("loss_cap", 20)), float(10)
-                else:
-                    # In single objective mode, we return a single value
-                    return float(config.get("loss_cap", 20))
-            except optuna.TrialPruned as e:
-                msg = repr(e).strip()
-                trial.set_user_attr("exception", msg)
-                raise
-            except Exception as e:
-                torch.cuda.empty_cache()
-                msg = repr(e).strip()
-                if not msg:
-                    msg = "Unknown error occurred."
-                tqdm.write(
-                    f"Trial {trial.number} failed due to an unexpected error: {msg}"
-                )
-                trial.set_user_attr("exception", msg)
-                raise optuna.TrialPruned(f"Error in trial {trial.number}: {msg}")
-        finally:
-            device_queue.put((device, slot_id))
-
-    return objective
-
-
 def training_run(
     trial: optuna.Trial, device: str, slot_id: int, config: dict, study_name: str
 ) -> float | tuple[float, float]:
