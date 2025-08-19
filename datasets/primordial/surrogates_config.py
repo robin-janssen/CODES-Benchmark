@@ -11,14 +11,19 @@ class MultiONetConfig:
     scheduler: str = "schedulefree"
     optimizer: str = "AdamW"
     loss_function: nn.Module = nn.SmoothL1Loss()
-    beta: float = 0.845
+    # beta: float = 0.845
     branch_hidden_layers: int = 3
     hidden_size: int = 160
     output_factor: int = 130
     trunk_hidden_layers: int = 2
-    learning_rate: float = 9.6e-04
-    regularization_factor: float = 0.283
+    # learning_rate: float = 9.6e-04
+    # regularization_factor: float = 0.283
     activation: nn.Module = nn.LeakyReLU()
+
+    # primordial_final_fine, trial 21
+    beta: float = 0.732
+    learning_rate: float = 0.00269
+    regularization_factor: float = 0.117
 
 
 @dataclass
@@ -29,16 +34,21 @@ class LatentNeuralODEConfig:
     scheduler: str = "schedulefree"
     optimizer: str = "SGD"
     loss_function: nn.Module = nn.MSELoss()
-    momentum: float = 0.085
+    # momentum: float = 0.085
     latent_features: int = 9
     coder_layers: int = 1
     coder_width: int = 580
     ode_tanh_reg: bool = True
     ode_layers: int = 6
     ode_width: int = 480
-    learning_rate: float = 9.68e-5
-    regularization_factor: float = 0.0544
+    # learning_rate: float = 9.68e-5
+    # regularization_factor: float = 0.0544
     activation: nn.Module = nn.SiLU()
+
+    # primordial_final_fine, trial 25
+    momentum: float = 0.274
+    learning_rate: float = 5.97e-04
+    regularization_factor: float = 9.24e-03
 
 
 @dataclass
@@ -54,9 +64,14 @@ class LatentPolyConfig:
     coder_width: int = 470
     degree: int = 4
     latent_features: int = 8
-    learning_rate: float = 0.000177
-    momentum: float = 0.0132
-    regularization_factor: float = 0.0092
+    # learning_rate: float = 0.000177
+    # momentum: float = 0.0132
+    # regularization_factor: float = 0.0092
+
+    # primordial_final_fine, trial 24
+    momentum: float = 0.0161
+    learning_rate: float = 2.40e-04
+    regularization_factor: float = 1.05e-03
 
 
 @dataclass
@@ -68,12 +83,18 @@ class FullyConnectedConfig:
     optimizer: str = "AdamW"
     loss_function: nn.Module = nn.SmoothL1Loss()
     activation: nn.Module = nn.ELU()
-    beta: float = 3.73
+    # beta: float = 3.73
     hidden_size: int = 470
-    learning_rate: float = 0.00127
+    # learning_rate: float = 0.00127
     num_hidden_layers: int = 5
-    poly_power: float = 1.48
-    regularization_factor: float = 3.3e-05
+    # poly_power: float = 1.48
+    # regularization_factor: float = 3.3e-05
+
+    # primordial_final_fine, trial 39
+    beta: float = 0.863
+    learning_rate: float = 1.78e-03
+    poly_power: float = 3.59
+    regularization_factor: float = 5.25e-05
 
 
 # @dataclass
