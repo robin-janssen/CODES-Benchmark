@@ -33,7 +33,7 @@ class LatentNeuralODEConfig:
     activation: nn.Module = nn.SiLU()
     coder_layers: int = 8
     coder_width: int = 80
-    latent_features: bool = True
+    latent_features: int = 1
     ode_layers: int = 3
     ode_tanh_reg: bool = False
     ode_width: int = 250
