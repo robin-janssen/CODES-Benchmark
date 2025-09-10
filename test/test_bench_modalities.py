@@ -1,13 +1,14 @@
-import pytest
-import numpy as np
-import torch
 from unittest.mock import patch
 
+import numpy as np
+import pytest
+import torch
+
 from codes.benchmark.bench_fcts import (
-    evaluate_interpolation,
-    evaluate_extrapolation,
-    evaluate_sparse,
     evaluate_batchsize,
+    evaluate_extrapolation,
+    evaluate_interpolation,
+    evaluate_sparse,
     evaluate_UQ,
 )
 
@@ -44,7 +45,7 @@ def patch_plots():
     for name in dir(bf):
         if not name.startswith("plot_"):
             continue
-        if name == "plot_error_correlation_heatmap":
+        if name == "plot_uncertainty_heatmap":
             fake_impl[name] = _fake_heatmap
         else:
             fake_impl[name] = _fake_noop

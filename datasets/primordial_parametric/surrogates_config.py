@@ -16,7 +16,7 @@ class MultiONetConfig:
     hidden_size: int = 50
     output_factor: int = 74
     params_branch: bool = True
-    trunk_hidden_layers: bool = True
+    trunk_hidden_layers: int = 1
     # primordial_parametric_final_fine, trial 1
     poly_power: float = 2.57
     learning_rate: float = 0.00519

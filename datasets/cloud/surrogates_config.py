@@ -15,7 +15,7 @@ class MultiONetConfig:
     branch_hidden_layers: int = 8
     hidden_size: int = 100
     output_factor: int = 50
-    trunk_hidden_layers: bool = True
+    trunk_hidden_layers: int = 1
     # cloud_final_fine, trial 26
     poly_power: float = 0.647
     learning_rate: float = 0.00374
@@ -54,7 +54,7 @@ class FullyConnectedConfig:
     loss_function: nn.Module = nn.SmoothL1Loss()
     activation: nn.Module = nn.PReLU()
     hidden_size: int = 310
-    num_hidden_layers: bool = True
+    num_hidden_layers: int = 1
     # cloud_final_fine, trial 37
     eta_min: float = 0.00266
     beta: float = 8.39

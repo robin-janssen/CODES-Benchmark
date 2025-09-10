@@ -1,16 +1,16 @@
-tuning_id: primordial_final
+tuning_id: cloud_parametric_final
 
 seed: 42
 dataset:
-  name: primordial
+  name: cloud_parametric
   log10_transform: True
+  log10_transform_params: True
   normalise: minmax
-  per_species: True
-  subset_factor: 1
-  tolerance: 1e-15
+  subset_factor: 2
+  tolerance: 1e-25
   normalise_per_species: True
   log_timesteps: True
-devices: ["cuda:0", "cuda:2", "cuda:3", "cuda:5", "cuda:6", "cuda:8", "cuda:9"]
+devices: ["cuda:0", "cuda:1", "cuda:2", "cuda:5", "cuda:7", "cuda:8"]
 optuna_logs: False
 prune: True
 verbose: False
@@ -23,9 +23,9 @@ postgres_config:
   user: "optuna_user"
   host: "localhost" # "localhost" for local use
   database_folder: "/export/home/rjanssen/postgres/" # only for local use
-  db_name: "primordial_final"       # remote mode: single DB for all runs
+  db_name: "cloud_parametric_final"       # remote mode: single DB for all runs
   sslmode: "require"            # if needed
-  password: ""                # optional; prefer env PGPASSWORD
+  password: ""                  # optional; prefer env PGPASSWORD
 
 global_optuna_params:
   learning_rate:
@@ -73,9 +73,9 @@ global_optuna_params:
 
 surrogates:
   - name: MultiONet
-    batch_size: 47767
+    batch_size: 35838
     epochs: 2000
-    trials: 210
+    trials: 225
     optuna_params:
       branch_hidden_layers:
         type: int
@@ -89,18 +89,18 @@ surrogates:
       output_factor:
         type: int
         low: 1
-        high: 400
+        high: 100
       trunk_hidden_layers:
         type: int
         low: 1
         high: 10
-      # params_branch:
-      #   type: categorical
-      #   choices: ["True", "False"]
+      params_branch:
+        type: categorical
+        choices: ["True", "False"]
       
 
   - name: FullyConnected
-    batch_size: 47767
+    batch_size: 35838
     epochs: 2000
     trials: 165
     optuna_params:
@@ -117,7 +117,7 @@ surrogates:
   - name: LatentPoly
     batch_size: 717
     epochs: 2000
-    trials: 195
+    trials: 240
     optuna_params:
       degree:
         type: int
@@ -136,23 +136,23 @@ surrogates:
         low: 10
         high: 700
         step: 10
-      # coeff_network:
-      #   type: categorical
-      #   choices: ["True", "False"]
-      # coeff_width:
-      #   type: int
-      #   low: 10
-      #   high: 700
-      #   step: 10
-      # coeff_layers:
-      #   type: int
-      #   low: 1
-      #   high: 5
+      coeff_network:
+        type: categorical
+        choices: ["True", "False"]
+      coeff_width:
+        type: int
+        low: 10
+        high: 700
+        step: 10
+      coeff_layers:
+        type: int
+        low: 1
+        high: 5
 
   - name: LatentNeuralODE
     batch_size: 717
     epochs: 2000
-    trials: 225
+    trials: 240
     optuna_params:
       latent_features:
         type: int
@@ -179,6 +179,6 @@ surrogates:
         type: int
         low: 1
         high: 10
-      # encode_params:
-      #   type: categorical
-      #   choices: ["True", "False"]
+      encode_params:
+        type: categorical
+        choices: ["True", "False"]

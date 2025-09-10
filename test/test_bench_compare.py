@@ -1,6 +1,8 @@
+import os
+
 import numpy as np
 import pytest
-import os
+
 import codes.benchmark.bench_fcts as bf
 
 
@@ -84,7 +86,7 @@ def stub_plots_and_io(monkeypatch):
     for fn in [
         # only stub out any pure-plot routines, but leave the CSV writers alone
         "inference_time_bar_plot",
-        "plot_comparative_dynamic_correlation_heatmaps",
+        "plot_comparative_gradient_heatmaps",
         "plot_generalization_error_comparison",
         "plot_uncertainty_over_time_comparison",
         "plot_comparative_error_correlation_heatmaps",
@@ -179,12 +181,12 @@ def test_compare_inference_time(stub_plots_and_io, cfg):
     assert kw.get("show_title", False) is True
 
 
-def test_compare_dynamic_accuracy(stub_plots_and_io, cfg):
+def test_compare_gradients(stub_plots_and_io, cfg):
     m = make_metrics_for_dynamic(["M1"])
-    bf.compare_dynamic_accuracy(m, cfg)
+    bf.compare_gradients(m, cfg)
 
     name, args, kw = stub_plots_and_io[0]
-    assert name == "plot_comparative_dynamic_correlation_heatmaps"
+    assert name == "plot_comparative_gradient_heatmaps"
 
     # now args has 7 elements, show_title is in kw
     grads, abs_errs, corrs, max_grads, max_errs, max_counts, conf = args

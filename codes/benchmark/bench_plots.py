@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import ListedColormap
 from matplotlib.gridspec import GridSpec
+from matplotlib.ticker import FuncFormatter
 from scipy.ndimage import gaussian_filter1d
 
 from codes.utils import batch_factor_to_float
@@ -100,64 +101,117 @@ def plot_error_percentiles_over_time(
     show_title: bool = True,
 ) -> None:
     """
-    Plot mean, median, and percentiles (50th, 90th, 99th) over time.
-    mode="relative" treats `errors` as relative errors;
-    mode="deltadex" treats them as log-space absolute errors.
+    Plot mean, median, and percentile error envelopes over time.
+
+    - mode="relative":
+        Treats `errors` as relative errors (0..∞).
+        Plots bidirectional percentile bands (25-75, 5-95, 0.5-99.5).
+        Y-axis is log-scaled.
+    - mode="deltadex":
+        Treats `errors` as log-space absolute errors (Δdex ≥ 0).
+        Plots one-sided percentile bands (0-50, 0-90, 0-99).
+        Y-axis is linear, starting at 0.
+
+    Args:
+        surr_name (str): Name of the surrogate model (used for saving).
+        conf (dict): Configuration dictionary containing dataset and output settings.
+        errors (np.ndarray): Error array of shape [N_samples, N_timesteps, N_quantities].
+                             Values are either relative errors or Δdex depending on `mode`.
+        timesteps (np.ndarray): Array of timesteps corresponding to the second axis of `errors`.
+        title (str): Title for the plot.
+        mode (str, optional): "relative" for relative errors, "deltadex" for log-space absolute errors.
+                              Defaults to "relative".
+        save (bool, optional): Whether to save the plot to disk. Defaults to False.
+        show_title (bool, optional): Whether to show the plot title. Defaults to True.
+
+    Returns:
+        None
     """
-    # compute statistics across samples and quantities
     mean_ts = np.mean(errors, axis=(0, 2))
     median_ts = np.median(errors, axis=(0, 2))
-    stats = {
-        "50": (25, 75),
-        "90": (5, 95),
-        "99": (0.5, 99.5),
-    }
-    percentiles = {}
-    for p, (low, high) in stats.items():
-        percentiles[p] = (
-            np.percentile(errors, low, axis=(0, 2)),
-            np.percentile(errors, high, axis=(0, 2)),
-        )
-    # overall means for legend
     mean_val = mean_ts.mean()
     median_val = median_ts.mean()
 
     plt.figure(figsize=(6, 4))
-    plt.plot(
-        timesteps,
-        mean_ts,
-        label=f"Mean Error\nMean={mean_val * 100:.2f}%",
-        color="blue",
-    )
-    plt.plot(
-        timesteps,
-        median_ts,
-        label=f"Median Error\nMedian={median_val * 100:.2f}%",
-        color="red",
-    )
 
-    for p, (low_ts, high_ts) in percentiles.items():
-        alpha = {"50": 0.45, "90": 0.4, "99": 0.15}[p]
-        plt.fill_between(
+    if mode == "relative":
+        # bidirectional bands
+        stats = {
+            "50": (25, 75),
+            "90": (5, 95),
+            "99": (0.5, 99.5),
+        }
+        percentiles = {
+            p: (
+                np.percentile(errors, low, axis=(0, 2)),
+                np.percentile(errors, high, axis=(0, 2)),
+            )
+            for p, (low, high) in stats.items()
+        }
+
+        plt.plot(
             timesteps,
-            low_ts,
-            high_ts,
-            color="grey",
-            alpha=alpha,
-            label=f"{p}th Percentile",
+            mean_ts,
+            label=f"Mean Error\nMean={mean_val * 100:.2f}%",
+            color="blue",
+        )
+        plt.plot(
+            timesteps,
+            median_ts,
+            label=f"Median Error\nMedian={median_val * 100:.2f}%",
+            color="red",
         )
 
-    plt.xlabel("Time")
-    if mode == "relative":
+        for p, (low_ts, high_ts) in percentiles.items():
+            alpha = {"50": 0.45, "90": 0.4, "99": 0.15}[p]
+            plt.fill_between(
+                timesteps,
+                low_ts,
+                high_ts,
+                color="grey",
+                alpha=alpha,
+                label=f"{p}th Percentile",
+            )
+
         plt.yscale("log")
         plt.ylabel("Relative Error")
         filename = "accuracy_rel_errors_time.pdf"
+
     elif mode == "deltadex":
-        plt.ylabel(r"$\Delta dex$ (log-space absolute error)")
+        # one-sided bands
+        percentiles = {
+            "50": np.percentile(errors, 50, axis=(0, 2)),
+            "90": np.percentile(errors, 90, axis=(0, 2)),
+            "99": np.percentile(errors, 99, axis=(0, 2)),
+        }
+
+        plt.plot(
+            timesteps,
+            mean_ts,
+            label=f"Mean Δdex\nMean={mean_val:.3f}",
+            color="blue",
+        )
+        plt.plot(
+            timesteps,
+            median_ts,
+            label=f"Median Δdex\nMedian={median_val:.3f}",
+            color="red",
+        )
+
+        for p, vals in percentiles.items():
+            alpha = {"50": 0.45, "90": 0.35, "99": 0.2}[p]
+            plt.fill_between(
+                timesteps, 0, vals, alpha=alpha, color="grey", label=f"{p}th Percentile"
+            )
+
+        plt.ylabel(r"$\Delta dex$")
+        plt.ylim(0, plt.ylim()[1])
         filename = "accuracy_delta_dex_time.pdf"
+
     else:
         raise ValueError(f"Unknown mode: {mode}")
 
+    plt.xlabel("Time")
     plt.xlim(timesteps[0], timesteps[-1])
     if conf.get("dataset", {}).get("log_timesteps"):
         plt.xscale("log")
@@ -246,7 +300,7 @@ def plot_generalization_errors(
         title = "Sparse Training Errors"
         filename = "sparse_errors.png"
     elif mode == "batchsize":
-        xlabel = "Batch Size"
+        xlabel = "Elements per Batch"
         title = "Batch Size Training Errors"
         filename = "batchsize_errors.png"
     else:
@@ -283,17 +337,15 @@ def plot_average_errors_over_time(
     show_title: bool = True,
 ) -> None:
     """
-    Plot the errors over time for different modes (interpolation, extrapolation, sparse, batchsize).
+    Plot Δdex errors over time for different evaluation modes.
 
     Args:
-        surr_name (str): The name of the surrogate model.
-        conf (dict): The configuration dictionary.
-        errors (np.ndarray): Errors array of shape [N_metrics, n_timesteps].
-        metrics (np.ndarray): Metrics array of shape [N_metrics].
-        timesteps (np.ndarray): Timesteps array.
-        mode (str): The mode of evaluation ('interpolation', 'extrapolation', 'sparse', 'batchsize').
-        save (bool, optional): Whether to save the plot as a file.
-        show_title (bool): Whether to show the title on the plot.
+        surr_name (str): Surrogate name.
+        conf (dict): Config dictionary.
+        errors (np.ndarray): Errors [N_metrics, n_timesteps].
+        metrics (np.ndarray): Metrics [N_metrics].
+        timesteps (np.ndarray): Timesteps.
+        mode (str): One of 'interpolation', 'extrapolation', 'sparse', 'batchsize'.
     """
     plt.figure(figsize=(6, 4))
 
@@ -304,9 +356,7 @@ def plot_average_errors_over_time(
         "batchsize": "batch size",
     }
     if mode not in labels:
-        raise ValueError(
-            "Invalid mode. Choose from 'interpolation', 'extrapolation', 'sparse', 'batchsize'."
-        )
+        raise ValueError("Invalid mode for error plotting.")
 
     colors = plt.cm.magma(np.linspace(0.15, 0.85, errors.shape[0]))
 
@@ -328,18 +378,18 @@ def plot_average_errors_over_time(
                     errors[i, metric - 1],
                     f"{metric}",
                     color=colors[i],
-                    verticalalignment="bottom",
-                    horizontalalignment="right",
+                    va="bottom",
+                    ha="right",
                 )
 
     plt.xlabel("Time")
     plt.xlim(timesteps[0], timesteps[-1])
-    plt.ylabel("Mean Absolute Error")
+    plt.ylabel(r"Mean $\Delta dex$")
     plt.yscale("log")
     if conf["dataset"]["log_timesteps"]:
         plt.xscale("log")
-    title = f"Mean Absolute Errors over Time ({mode.capitalize()}, {surr_name})"
-    filename = f"{mode}_errors_over_time.png"
+    title = f"Mean Δdex Errors over Time ({mode.capitalize()}, {surr_name})"
+    filename = f"errors_over_time_{mode}.png"
 
     if show_title:
         plt.title(title)
@@ -354,11 +404,12 @@ def plot_average_errors_over_time(
 def plot_example_mode_predictions(
     surr_name: str,
     conf: dict,
-    preds: np.ndarray,
-    targets: np.ndarray,
+    preds_log: np.ndarray,
+    preds_main_log: np.ndarray,
+    targets_log: np.ndarray,
     timesteps: np.ndarray,
     metric: int,
-    mode: str = "interpolation",  # Either "interpolation" or "extrapolation"
+    mode: str = "interpolation",
     example_idx: int = 0,
     num_quantities: int = 100,
     labels: list[str] | None = None,
@@ -366,84 +417,77 @@ def plot_example_mode_predictions(
     show_title: bool = True,
 ) -> None:
     """
-    Plot example predictions from a single model alongside targets, and highlight
-    either the training timesteps (interpolation mode) or the cutoff point (extrapolation mode).
+    Plot example predictions in log-space (Δdex) alongside ground truth targets
+    for either interpolation or extrapolation mode.
+
+    Predictions and targets are assumed to be in log10 space (leave_log=True).
+    Axis labels and plotted values are consistent with this log representation.
 
     Args:
-        surr_name (str): The name of the surrogate model.
-        conf (dict): The configuration dictionary.
-        preds (np.ndarray): Predictions from the single model.
-        targets (np.ndarray): True targets.
+        surr_name (str): Name of the surrogate model.
+        conf (dict): Configuration dictionary.
+        preds_log (np.ndarray): Predictions in log-space of shape [N_samples, T, Q].
+        preds_main_log (np.ndarray): Main model (reference) predictions in log-space of shape [N_samples, T, Q].
+        targets_log (np.ndarray): Targets in log-space of shape [N_samples, T, Q].
         timesteps (np.ndarray): Array of timesteps.
-        metric (int): In interpolation mode, indicates the training interval (e.g., 10 means every tenth timestep was used).
-                      In extrapolation mode, indicates the index of the cutoff timestep.
-        mode (str, optional): "interpolation" or "extrapolation". Default is "interpolation".
+        metric (int):
+            - In interpolation mode: the training interval (e.g., 10 means every 10th timestep was used).
+            - In extrapolation mode: the cutoff timestep index.
+        mode (str, optional): Either "interpolation" or "extrapolation". Default is "interpolation".
         example_idx (int, optional): Index of the example to plot. Default is 0.
-        num_quantities (int, optional): Number of quantities to plot. Default is 100.
-        labels (list, optional): List of labels for the quantities.
-        save (bool, optional): Whether to save the plot as a file.
-        show_title (bool): Whether to show the title on the plot.
-    """
-    # Cap the number of quantities at the maximum available
-    num_quantities = min(preds.shape[2], num_quantities)
+        num_quantities (int, optional): Maximum number of quantities to plot. Default is 100.
+        labels (list[str], optional): Names of the quantities to display in legends.
+        save (bool, optional): Whether to save the figure. Default is False.
+        show_title (bool, optional): Whether to add a title to the figure. Default is True.
 
-    # Determine the number of plots (10 quantities per subplot)
+    Returns:
+        None
+    """
+    num_quantities = min(preds_log.shape[2], num_quantities)
     quantities_per_plot = 10
     num_plots = int(np.ceil(num_quantities / quantities_per_plot))
 
-    num_quantities = preds.shape[2]
-    # Define the color palette for plotting quantities
-    colors = plt.cm.viridis(np.linspace(0, 0.9, num_quantities))
-
-    # Create the overall figure and subplots
+    # colors = plt.cm.viridis(np.linspace(0, 0.95, preds_log.shape[2]))
+    colors = get_custom_palette(quantities_per_plot)
     fig = plt.figure(figsize=(6, 4 * num_plots))
     gs = GridSpec(num_plots, 1, figure=fig)
 
     for plot_idx in range(num_plots):
         ax = fig.add_subplot(gs[plot_idx])
-
         start_idx = plot_idx * quantities_per_plot
-        end_idx = min((plot_idx + 1) * quantities_per_plot, num_quantities)
-        legend_lines = []  # To store ground truth line objects for the legend
+        end_idx = min((plot_idx + 1) * quantities_per_plot, preds_log.shape[2])
+        legend_lines = []
 
         for chem_idx in range(start_idx, end_idx):
             color = colors[chem_idx % quantities_per_plot]
-            gt = targets[example_idx, :, chem_idx]
-            pred = preds[example_idx, :, chem_idx]
-
-            # Plot ground truth (dashed line) and prediction (solid line)
-            (gt_line,) = ax.plot(timesteps, gt, "--", color=color)
-            ax.plot(timesteps, pred, "-", color=color)
+            gt = targets_log[example_idx, :, chem_idx]
+            pred = preds_log[example_idx, :, chem_idx]
+            pred_main = preds_main_log[example_idx, :, chem_idx]
+            (gt_line,) = ax.plot(timesteps, gt, "-", color=color)
+            ax.plot(timesteps, pred, "--", color=color)
+            ax.plot(timesteps, pred_main, ":", color=color)
             legend_lines.append(gt_line)
 
-        # Depending on mode, highlight either the training timesteps or the cutoff point
         if mode == "interpolation":
-            # Compute timesteps used for training (e.g., every metric-th timestep)
             used_timesteps = timesteps[::metric]
             for t in used_timesteps:
                 ax.axvline(
                     x=t, color="gray", linestyle="dashed", linewidth=0.8, alpha=0.7
                 )
         elif mode == "extrapolation":
-            # Compute the cutoff timestep (using metric as index)
             if metric < len(timesteps):
                 cutoff = timesteps[metric]
                 ax.axvline(
                     x=cutoff, color="red", linestyle="solid", linewidth=1.0, alpha=0.9
                 )
             else:
-                raise ValueError(
-                    "The metric value exceeds the length of timesteps for extrapolation mode."
-                )
+                raise ValueError("Extrapolation metric exceeds timestep length.")
 
-        # Set y-axis to log scale if specified in configuration
-        if conf.get("dataset", {}).get("log10_transform", False):
-            ax.set_yscale("log")
+        ax.set_ylabel("log(Abundance)")
+        ax.set_xlim(timesteps.min(), timesteps.max())
+        if conf["dataset"]["log_timesteps"]:
+            ax.set_xscale("log")
 
-        # Label the y-axis
-        ax.set_ylabel("Abundance")
-
-        # Add quantity labels if provided
         if labels is not None:
             legend_labels = labels[start_idx:end_idx]
             ax.legend(
@@ -454,18 +498,13 @@ def plot_example_mode_predictions(
                 bbox_transform=ax.transAxes,
             )
 
-        # Set the x-axis limits based on the timesteps array
-        ax.set_xlim(timesteps.min(), timesteps.max())
-        if conf["dataset"]["log_timesteps"]:
-            ax.set_xscale("log")
-
-    # Add a single x-axis label to the bottom of the figure
     fig.text(0.5, 0.04, "Time", ha="center", va="center", fontsize=12)
-
-    # Create a general legend for the line styles
     handles = [
-        plt.Line2D([0], [0], color="black", linestyle="--", label="Ground Truth"),
-        plt.Line2D([0], [0], color="black", linestyle="-", label="Prediction"),
+        plt.Line2D([0], [0], color="black", linestyle="-", label="Ground Truth"),
+        plt.Line2D([0], [0], color="black", linestyle="--", label="Prediction"),
+        plt.Line2D(
+            [0], [0], color="black", linestyle=":", label="Main Model Prediction"
+        ),
     ]
     y_pos = 0.95 - (0.06 / num_plots)
     fig.legend(
@@ -477,28 +516,18 @@ def plot_example_mode_predictions(
     )
     fig.align_ylabels()
 
-    # Set the overall title with details depending on the mode
     if mode == "interpolation":
-        title = f"Interpolation: Example Predictions (Interpolation, {surr_name})\n"
-        extra_info = f"Sample Index: {example_idx}, Training Interval: {metric}"
-    elif mode == "extrapolation":
-        title = f"Extrapolation: Example Predictions (Extrapolation, {surr_name})\n"
-        extra_info = f"Sample Index: {example_idx}, Cutoff Timestep: {metric}"
+        title = f"Interpolation Example Predictions ({surr_name})\nSample {example_idx}, Interval {metric}"
     else:
-        raise ValueError(
-            "Invalid mode. Choose from 'interpolation' or 'extrapolation'."
-        )
+        title = f"Extrapolation Example Predictions ({surr_name})\nSample {example_idx}, Cutoff {metric}"
 
     if show_title:
-        plt.suptitle(title + extra_info, y=0.97)
+        plt.suptitle(title, y=0.97)
 
     plt.tight_layout(rect=[0.05, 0.03, 0.95, 0.92])
-
-    # Save the plot if requested
     if save and conf:
-        filename = f"{mode}_example_predictions.png"
+        filename = f"example_preds_{mode}.png"
         save_plot(plt, filename, conf, surr_name)
-
     plt.close()
 
 
@@ -527,8 +556,10 @@ def plot_example_iterative_predictions(
 
     n_q = min(iterative_preds.shape[2], num_quantities)
     per_plot = min(10, n_q)
+
     n_plots = int(np.ceil(n_q / per_plot))
-    colors = plt.cm.viridis(np.linspace(0, 0.9, per_plot))
+    # colors = plt.cm.viridis(np.linspace(0, 0.95, per_plot))
+    colors = get_custom_palette(per_plot)
 
     fig = plt.figure(figsize=(6, 4 * n_plots))
     gs = GridSpec(n_plots, 1, figure=fig)
@@ -540,8 +571,8 @@ def plot_example_iterative_predictions(
             c = colors[qi % per_plot]
             gt = targets[example_idx, :, qi]
             pr = iterative_preds[example_idx, :, qi]
-            ax.plot(timesteps, gt, "--", color=c)
-            ax.plot(timesteps, pr, "-", color=c)
+            ax.plot(timesteps, gt, "-", color=c)
+            ax.plot(timesteps, pr, "--", color=c)
             init_pr = full_preds[example_idx, :, qi]
             ax.plot(timesteps, init_pr, ":", color=c)
         # retrigger lines
@@ -568,9 +599,9 @@ def plot_example_iterative_predictions(
     fig.text(0.5, 0.04, "Time", ha="center", va="center", fontsize=12)
 
     handles = [
-        plt.Line2D([0], [0], color="black", linestyle="--", label="Ground Truth"),
+        plt.Line2D([0], [0], color="black", linestyle="-", label="Ground Truth"),
         plt.Line2D(
-            [0], [0], color="black", linestyle="-", label="Iterative Prediction"
+            [0], [0], color="black", linestyle="--", label="Iterative Prediction"
         ),
         plt.Line2D([0], [0], color="black", linestyle=":", label="Full Prediction"),
     ]
@@ -595,7 +626,7 @@ def plot_example_iterative_predictions(
     plt.tight_layout(rect=[0.05, 0.03, 0.95, 0.92])
 
     if save and conf:
-        fname = "iterative_example_preds.png"
+        fname = "example_preds_iterative.png"
         save_plot(plt, fname, conf, surr_name)
 
     plt.close()
@@ -604,9 +635,9 @@ def plot_example_iterative_predictions(
 def plot_example_predictions_with_uncertainty(
     surr_name: str,
     conf: dict,
-    preds_mean: np.ndarray,
-    preds_std: np.ndarray,
-    targets: np.ndarray,
+    log_mean: np.ndarray,
+    log_std: np.ndarray,
+    log_targets: np.ndarray,
     timesteps: np.ndarray,
     example_idx: int = 0,
     num_quantities: int = 100,
@@ -615,122 +646,92 @@ def plot_example_predictions_with_uncertainty(
     show_title: bool = True,
 ) -> None:
     """
-    Plot example predictions with uncertainty.
+    Plot example predictions with uncertainty in log10 space (dex).
 
     Args:
-        surr_name (str): The name of the surrogate model.
-        conf (dict): The configuration dictionary.
-        preds_mean (np.ndarray): Mean predictions from the ensemble of models.
-        preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
-        targets (np.ndarray): True targets.
-        timesteps (np.ndarray): Timesteps array.
-        example_idx (int, optional): Index of the example to plot. Default is 0.
-        num_quantities (int, optional): Number of quantities to plot. Default is 100.
-        labels (list, optional): List of labels for the quantities.
-        save (bool, optional): Whether to save the plot as a file.
-        show_title (bool): Whether to show the title on the plot.
+        surr_name (str): Name of the surrogate model.
+        conf (dict): Configuration dictionary.
+        log_mean (np.ndarray): Ensemble mean predictions in log10 space.
+        log_std (np.ndarray): Ensemble standard deviation in log10 space.
+        log_targets (np.ndarray): Ground truth targets in log10 space.
+        timesteps (np.ndarray): Array of timesteps.
+        example_idx (int): Index of the example to plot.
+        num_quantities (int): Number of species/quantities to plot.
+        labels (list, optional): Quantity labels.
+        save (bool): Whether to save the figure.
+        show_title (bool): Whether to display a title.
     """
-    # Cap the number of quantities at 100
-    num_quantities = min(preds_std.shape[2], num_quantities)
-
-    # Determine the number of plots needed
+    num_quantities = min(log_std.shape[2], num_quantities)
     quantities_per_plot = 10
     num_plots = int(np.ceil(num_quantities / quantities_per_plot))
+    # colors = plt.cm.viridis(np.linspace(0, 0.95, quantities_per_plot))
+    colors = get_custom_palette(quantities_per_plot)
 
-    # Define the color palette
-    colors = plt.cm.viridis(np.linspace(0, 0.9, quantities_per_plot))
-
-    # Create subplots
-    fig = plt.figure(figsize=(8, 4 * num_plots))
-    gs = GridSpec(num_plots, 1, figure=fig)  # Single column of plots
+    fig = plt.figure(figsize=(6, 4 * num_plots))
+    gs = GridSpec(num_plots, 1, figure=fig)
 
     for plot_idx in range(num_plots):
         ax = fig.add_subplot(gs[plot_idx])
-
         start_idx = plot_idx * quantities_per_plot
         end_idx = min((plot_idx + 1) * quantities_per_plot, num_quantities)
 
-        legend_lines = []  # To store the line objects for the legend
-
+        legend_lines = []
         for chem_idx in range(start_idx, end_idx):
             color = colors[chem_idx % quantities_per_plot]
-            gt = targets[example_idx, :, chem_idx]
-            mean = preds_mean[example_idx, :, chem_idx]
-            std = preds_std[example_idx, :, chem_idx]
+            gt = log_targets[example_idx, :, chem_idx]
+            mean = log_mean[example_idx, :, chem_idx]
+            std = log_std[example_idx, :, chem_idx]
 
-            # Plot ground truth and store the line object
             (gt_line,) = ax.plot(timesteps, gt, "--", color=color)
-            # Plot prediction mean and store the line object
             ax.plot(timesteps, mean, "-", color=color)
-
-            # Store only the ground truth line in legend_lines
             legend_lines.append(gt_line)
 
-            # Plot standard deviations as shaded areas
-            for sigma_multiplier in [1, 2, 3]:  # 1, 2, and 3 standard deviations
-                ax.fill_between(
-                    timesteps,
-                    mean - sigma_multiplier * std,
-                    mean + sigma_multiplier * std,
-                    color=color,
-                    alpha=0.5 / sigma_multiplier,
-                )
+            for sigma in [1, 2, 3]:
+                lower = mean - sigma * std
+                upper = mean + sigma * std
+                ax.fill_between(timesteps, lower, upper, color=color, alpha=0.5 / sigma)
 
-            # Set the y-axis to log scale if specified in the configuration
-            if conf["dataset"]["log10_transform"]:
-                ax.set_yscale("log")
-
-        # Set the y-axis label for each subplot
-        ax.set_ylabel("Abundance")
-
-        # Create a legend directly next to the plot using the stored line objects
+        ax.set_ylabel("log10(Abundance) [dex]")
         if labels is not None:
-            legend_labels = labels[start_idx:end_idx]
             ax.legend(
                 legend_lines,
-                legend_labels,
+                labels[start_idx:end_idx],
                 loc="center left",
-                bbox_to_anchor=(1, 0.5),  # Position legend to the right of the plot
-                bbox_transform=ax.transAxes,  # Place it relative to the axes
+                bbox_to_anchor=(1, 0.5),
+                bbox_transform=ax.transAxes,
             )
 
-        # Set the x limit exactly from the lowest to the highest timestep
         ax.set_xlim(timesteps.min(), timesteps.max())
         if conf["dataset"]["log_timesteps"]:
             ax.set_xscale("log")
 
-    # Add a single x-axis label to the bottom plot
     fig.text(0.5, 0.04, "Time", ha="center", va="center", fontsize=12)
-
-    # Create a general legend for line styles, positioned below the title
     handles = [
         plt.Line2D([0], [0], color="black", linestyle="--", label="Ground Truth"),
         plt.Line2D(
             [0], [0], color="black", linestyle="-", label="Prediction (Ensemble Mean)"
         ),
     ]
-    y_pos = 0.95 - (0.08 / num_plots)  # Adjust to position the legend below the title
+    y_pos = 0.945 - (0.06 / num_plots)
     fig.legend(
         handles=handles,
         loc="upper center",
-        bbox_to_anchor=(0.5, y_pos),  # Adjust to position the legend below the title
+        bbox_to_anchor=(0.5, y_pos),
         ncol=2,
         fontsize="small",
     )
 
-    # Adjust the title to include the sample index and place additional information on a second line
     if show_title:
         plt.suptitle(
-            f"DeepEnsemble: Example Predictions with Uncertainty for {surr_name} \n"
-            f"Sample Index: {example_idx},  " + r"$\mu \pm (1,2,3) \sigma$ Intervals",
+            f"DeepEnsemble Predictions with Uncertainty for {surr_name}\n"
+            f"Sample Index: {example_idx},  "
+            + r"$\mu \pm (1,2,3)\,\sigma$ Intervals (log-space)",
             y=0.97,
         )
 
     plt.tight_layout(rect=[0.05, 0.03, 0.95, 0.92])
-
     if save and conf:
-        save_plot(plt, "uncertainty_deepensemble_preds.png", conf, surr_name)
-
+        save_plot(plt, "uq_example_deepensemble_preds.png", conf, surr_name)
     plt.close()
 
 
@@ -744,36 +745,45 @@ def plot_average_uncertainty_over_time(
     show_title: bool = True,
 ) -> None:
     """
-    Plot the average uncertainty over time.
+    Plot average predictive uncertainty and errors over time in log-space (dex).
 
     Args:
-        surr_name (str): The name of the surrogate model.
-        conf (dict): The configuration dictionary.
-        errors_time (np.ndarray): Prediction errors over time.
-        preds_std (np.ndarray): Standard deviation over time of predictions from the ensemble of models.
-        timesteps (np.ndarray): Timesteps array.
-        save (bool, optional): Whether to save the plot as a file.
-        show_title (bool): Whether to show the title on the plot.
+        surr_name (str): Name of the surrogate model.
+        conf (dict): Configuration dictionary.
+        errors_time (np.ndarray): Log-space prediction errors over time.
+        preds_std (np.ndarray): Log-space ensemble standard deviation over time.
+        timesteps (np.ndarray): Array of timesteps.
+        save (bool): Whether to save the plot.
+        show_title (bool): Whether to show a title.
     """
-    errors_mean = np.mean(errors_time)
-    preds_mean = np.mean(preds_std)
+    mean_error = np.mean(errors_time)
+    mean_uncertainty = np.mean(preds_std)
+
     plt.figure(figsize=(8, 4))
-    errors_label = f"Mean Uncertainty (Mean: {preds_mean:.2e})"
-    preds_label = f"Mean Absolute Error (Mean: {errors_mean:.2e})"
-    plt.plot(timesteps, preds_std, label=preds_label, color="#3A1A5A")
-    plt.plot(timesteps, errors_time, label=errors_label, color="#DA5F4D")
+    plt.plot(
+        timesteps,
+        preds_std,
+        label=f"Mean Uncertainty (avg: {mean_uncertainty:.2e})",
+        color="#3A1A5A",
+    )
+    plt.plot(
+        timesteps,
+        errors_time,
+        label=r"Mean Error $\Delta dex$" + f"(avg: {mean_error:.2e})",
+        color="#DA5F4D",
+    )
+
     plt.xlabel("Time")
-    plt.ylabel("Average Uncertainty / Mean Absolute Error")
+    plt.ylabel(r"$\Delta dex$ / Log-Space Uncertainty")
     plt.xlim(timesteps[0], timesteps[-1])
     if conf["dataset"]["log_timesteps"]:
         plt.xscale("log")
     if show_title:
-        plt.title("Average Uncertainty and Mean Absolute Error Over Time")
+        plt.title(r"Average Log-Space Uncertainty and Error ($\Delta dex$) Over Time")
     plt.legend()
 
     if save and conf:
-        save_plot(plt, "uncertainty_over_time.png", conf, surr_name)
-
+        save_plot(plt, "uq_uncertainty_over_time.png", conf, surr_name)
     plt.close()
 
 
@@ -980,11 +990,19 @@ def plot_error_distribution_per_quantity(
     errors: np.ndarray,
     quantity_names: list[str] | None = None,
     num_quantities: int = 10,
+    mode: str = "relative",  # "relative" or "deltadex"
     save: bool = True,
     show_title: bool = True,
 ) -> None:
     """
     Plot the distribution of errors for each quantity as a smoothed histogram plot.
+
+    - mode="relative":
+        Errors are relative (0..∞).
+        Histogram is plotted in log-space (x-axis log-scaled).
+    - mode="deltadex":
+        Errors are absolute log-space errors (Δdex ≥ 0).
+        Histogram is plotted on linear scale.
 
     Args:
         surr_name (str): The name of the surrogate model.
@@ -992,63 +1010,68 @@ def plot_error_distribution_per_quantity(
         errors (np.ndarray): Errors array of shape [num_samples, num_timesteps, num_quantities].
         quantity_names (list, optional): List of quantity names for labeling the lines.
         num_quantities (int, optional): Number of quantities to plot. Default is 10.
+        mode (str, optional): "relative" or "deltadex". Default is "relative".
         save (bool, optional): Whether to save the plot as a file.
         show_title (bool): Whether to show the title on the plot.
     """
-    # Reshape errors to combine samples and timesteps
     total_quantities = errors.shape[2]
     errors = errors.reshape(-1, total_quantities)
 
-    # Cap the number of quantities to plot at 50
     num_quantities = min(num_quantities, 50)
     errors = errors[:, :num_quantities]
     quantity_names = (
         quantity_names[:num_quantities] if quantity_names is not None else None
     )
 
-    # Split the quantities into groups of 10
     quantities_per_plot = 10
     num_plots = int(np.ceil(num_quantities / quantities_per_plot))
 
-    # Initialize list to hold log-transformed non-zero errors and count zeros
-    log_errors = []
-    zero_counts = 0
-
-    # Transform error magnitudes to log-space and filter out zeros
+    data_per_quantity = []
     for i in range(num_quantities):
-        quantity_errors = errors[:, i]
-        if np.isnan(quantity_errors).any():
+        q_errors = errors[:, i]
+        if np.isnan(q_errors).any():
             raise ValueError("Error values contain NaNs.")
-        non_zero_quantity_errors = quantity_errors[quantity_errors > 0]
-        log_errors.append(np.log10(non_zero_quantity_errors))
-        zero_counts += np.sum(quantity_errors == 0)
+        if mode == "relative":
+            q_errors = q_errors[q_errors > 0]
+            data_per_quantity.append(np.log10(q_errors))
+        elif mode == "deltadex":
+            q_errors = q_errors[q_errors >= 0]
+            data_per_quantity.append(np.log10(q_errors))  # q_errors)
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
 
-    # Calculate the 1st and 99th percentiles in the log-space
-    min_percentiles = [np.percentile(err, 1) for err in log_errors if len(err) > 0]
-    max_percentiles = [np.percentile(err, 99) for err in log_errors if len(err) > 0]
+    if mode == "relative":
+        min_percentiles = [np.percentile(d, 1) for d in data_per_quantity if len(d) > 0]
+        max_percentiles = [
+            np.percentile(d, 99) for d in data_per_quantity if len(d) > 0
+        ]
+        global_min, global_max = np.min(min_percentiles), np.max(max_percentiles)
+        x_min, x_max = np.floor(global_min), np.ceil(global_max)
+        x_vals = np.linspace(x_min, x_max + 0.1, 100)
+    else:  # deltadex
+        # max_percentiles = [
+        #     np.percentile(d, 98) for d in data_per_quantity if len(d) > 0
+        # ]
+        # global_max = np.max(max_percentiles)
+        # x_min, x_max = 0.0, global_max
+        min_percentiles = [np.percentile(d, 1) for d in data_per_quantity if len(d) > 0]
+        max_percentiles = [
+            np.percentile(d, 99) for d in data_per_quantity if len(d) > 0
+        ]
+        global_min, global_max = np.min(min_percentiles), np.max(max_percentiles)
+        x_min, x_max = np.floor(global_min), np.ceil(global_max)
+        x_vals = np.linspace(x_min, x_max + 0.1, 100)
 
-    global_min = np.min(min_percentiles)
-    global_max = np.max(max_percentiles)
-
-    # Set up the x-axis range to nearest whole numbers in log-space
-    x_min = np.floor(global_min)
-    x_max = np.ceil(global_max)
-
-    # Create subplots with shared x-axis and a figure size closer to the comparative plot
     fig, axes = plt.subplots(
         num_plots,
         1,
         figsize=(8, 3 * num_plots) if num_plots > 1 else (10, 4),
         sharex=True,
     )
-
     if num_plots == 1:
-        axes = [axes]  # Ensure axes is iterable even if there's only one plot
+        axes = [axes]
 
     colors = get_custom_palette(quantities_per_plot)
-
-    # Define the x-axis range for plotting
-    x_vals = np.linspace(x_min, x_max + 0.1, 100)
 
     for plot_idx in range(num_plots):
         ax = axes[plot_idx]
@@ -1056,15 +1079,20 @@ def plot_error_distribution_per_quantity(
         end_idx = min((plot_idx + 1) * quantities_per_plot, num_quantities)
 
         for i in range(start_idx, end_idx):
-            # Compute histogram in log-space
-            hist, bin_edges = np.histogram(log_errors[i], bins=x_vals, density=True)
+            d = data_per_quantity[i]
+            if len(d) == 0:
+                continue
 
-            # Smooth the histogram with a Gaussian filter
+            hist, bin_edges = np.histogram(d, bins=x_vals, density=True)
             smoothed_hist = gaussian_filter1d(hist, sigma=2)
 
-            # Plot the smoothed histogram
+            if mode == "relative":
+                x_axis = 10 ** bin_edges[:-1]
+            else:
+                x_axis = 10 ** bin_edges[:-1]  # bin_edges[:-1]
+
             ax.plot(
-                10 ** bin_edges[:-1],
+                x_axis,
                 smoothed_hist,
                 label=(
                     quantity_names[i]
@@ -1074,27 +1102,33 @@ def plot_error_distribution_per_quantity(
                 color=colors[i % quantities_per_plot],
             )
 
-        ax.set_yscale("linear")
         ax.set_ylabel("Smoothed Histogram Count")
         if quantity_names is not None:
-            # Move legend outside of plot area on the right, centered vertically
             ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
     fig.align_ylabels()
 
-    plt.xscale("log")  # Log scale for error magnitudes
-    plt.xlim(
-        np.maximum(10**x_min, 1e-8), 10**x_max
-    )  # Set x-axis range based on log-space calculations
-    plt.xlabel("Relative Error")
+    if mode == "relative":
+        plt.xscale("log")
+        plt.xlim(np.maximum(10**x_min, 1e-8), 10**x_max)
+        plt.xlabel("Relative Error")
+        filename = "accuracy_rel_error_per_quantity.png"
+        title_str = f"Relative Error Distribution per Quantity ({surr_name})"
+    else:
+        plt.xscale("log")
+        plt.xlim(np.maximum(10**x_min, 1e-8), 10**x_max)  # x_min, x_max)
+        plt.xlabel(r"$\Delta dex$")
+        filename = "accuracy_delta_dex_per_quantity.png"
+        title_str = f"Absolute Log-Space Error Distribution per Quantity ({surr_name})"
+
     if show_title:
         if num_plots > 1:
-            fig.suptitle(f"Relative Error Distribution per Quantity ({surr_name})")
+            fig.suptitle(title_str)
         else:
-            plt.title(f"Relative Error Distribution per Quantity ({surr_name})")
+            plt.title(title_str)
 
     if save and conf:
-        save_plot(plt, "accuracy_error_per_quantity.png", conf, surr_name)
+        save_plot(plt, filename, conf, surr_name)
 
     plt.close()
 
@@ -1173,7 +1207,7 @@ def plot_losses(
 
     plt.xlabel("Epoch")
     plt.xlim(0, num_epochs)
-    plt.ylabel("Loss")
+    plt.ylabel("Log-MAE")
     plt.yscale("log")
     plt.ylim(min_val, max_val)
     if show_title:
@@ -1276,7 +1310,7 @@ def plot_loss_comparison(
         None
     """
     plt.figure(figsize=(6, 4))
-    colors = plt.cm.viridis(np.linspace(0, 0.9, len(train_losses)))
+    colors = plt.cm.viridis(np.linspace(0, 0.95, len(train_losses)))
     max_epochs, min_val, max_val = 0, np.inf, 0
 
     for i, (train_loss, test_loss, label) in enumerate(
@@ -1310,7 +1344,7 @@ def plot_loss_comparison(
 
     plt.xlabel("Epoch")
     plt.xlim(0, max_epochs)
-    plt.ylabel("MSE")
+    plt.ylabel("Log-MAE")
     plt.yscale("log")
     plt.ylim(min_val, max_val)
     if show_title:
@@ -1355,7 +1389,7 @@ def plot_loss_comparison_equal(
         None
     """
     plt.figure(figsize=(6, 4))
-    colors = plt.cm.viridis(np.linspace(0, 0.9, len(test_losses)))
+    colors = plt.cm.viridis(np.linspace(0, 0.95, len(test_losses)))
 
     for i, (train_loss, test_loss, label) in enumerate(
         zip(train_losses, test_losses, labels)
@@ -1387,7 +1421,7 @@ def plot_loss_comparison_equal(
 
     plt.xlabel("Normalized Training Duration")
     plt.xlim(0, 1)
-    plt.ylabel("Normalized Log MSE")
+    plt.ylabel("Normalized Log-MAE")
     plt.ylim(0, 1)
     # plt.yticks([])  # Remove numeric y-axis labels
     if show_title:
@@ -1419,7 +1453,7 @@ def plot_MAE_comparison(
         show_title (bool): Whether to show the title on the plot.
     """
     plt.figure(figsize=(8, 4))
-    colors = plt.cm.viridis(np.linspace(0, 0.9, len(MAEs)))
+    colors = plt.cm.viridis(np.linspace(0, 0.95, len(MAEs)))
 
     for i, (accuracy, label) in enumerate(zip(MAEs, labels)):
         # Modify the label to include the final MAE
@@ -1460,7 +1494,7 @@ def plot_loss_comparison_train_duration(
         show_title (bool): Whether to show the title on the plot.
     """
     plt.figure(figsize=(6, 4))
-    colors = plt.cm.viridis(np.linspace(0, 0.9, len(test_losses)))
+    colors = plt.cm.viridis(np.linspace(0, 0.95, len(test_losses)))
     min_val, max_val = np.inf, 0
 
     for i, (test_loss, label, train_duration) in enumerate(
@@ -1476,7 +1510,7 @@ def plot_loss_comparison_train_duration(
 
     plt.xlabel("Time (s)")
     plt.xlim(0, max(train_durations))
-    plt.ylabel("MSE")
+    plt.ylabel("Log-MAE")
     plt.yscale("log")
     plt.ylim(min_val, max_val)
     if show_title:
@@ -1513,7 +1547,7 @@ def plot_relative_errors(
         None
     """
     plt.figure(figsize=(6, 4))
-    colors = plt.cm.viridis(np.linspace(0, 0.9, len(mean_errors)))
+    colors = plt.cm.viridis(np.linspace(0, 0.95, len(mean_errors)))
     linestyles = ["-", "--"]
 
     for i, surrogate in enumerate(mean_errors.keys()):
@@ -1552,66 +1586,77 @@ def plot_relative_errors(
     plt.close()
 
 
-def plot_uncertainty_over_time_comparison(
-    uncertainties: dict[str, np.ndarray],
-    absolute_errors: dict[str, np.ndarray],
+def plot_errors_over_time(
+    mean_errors: dict[str, np.ndarray],
+    median_errors: dict[str, np.ndarray],
     timesteps: np.ndarray,
     config: dict,
     save: bool = True,
     show_title: bool = True,
+    mode: str = "relative",  # "relative" or "deltadex"
 ) -> None:
     """
-    Plot the uncertainty and true MAE over time for different surrogate models.
+    Plot errors over time for different surrogate models (relative or Δdex).
 
     Args:
-        uncertainties (dict): Dictionary containing the uncertainties for each surrogate model.
-        absolute_errors (dict): Dictionary containing the absolute errors for each surrogate model.
+        mean_errors (dict): Mean errors for each surrogate.
+        median_errors (dict): Median errors for each surrogate.
         timesteps (np.ndarray): Array of timesteps.
         config (dict): Configuration dictionary.
-        save (bool): Whether to save the plot.
-        show_title (bool): Whether to show the title on the plot.
-
-    Returns:
-        None
+        save (bool): Whether to save the figure.
+        show_title (bool): Whether to add a title.
+        mode (str): "relative" (percentage errors) or "deltadex" (log-space abs. errors).
     """
-    plt.figure(figsize=(7, 4))
-    colors = plt.cm.viridis(np.linspace(0, 0.9, len(uncertainties)))
+    plt.figure(figsize=(6, 4))
+    colors = plt.cm.viridis(np.linspace(0, 0.95, len(mean_errors)))
+    linestyles = ["-", "--"]
 
-    for i, surrogate in enumerate(uncertainties.keys()):
-        avg_uncertainty = np.mean(uncertainties[surrogate])
-        uq_label = f"{surrogate} UQ 1σ\nmean: {avg_uncertainty:.2e}"
+    for i, surrogate in enumerate(mean_errors.keys()):
+        mean_val = np.mean(mean_errors[surrogate])
+        median_val = np.mean(median_errors[surrogate])
+
+        if mode == "relative":
+            mean_label = f"{surrogate}\nMean = {mean_val * 100:.2f}%"
+            median_label = f"{surrogate}\nMedian = {median_val * 100:.2f}%"
+        else:  # deltadex
+            mean_label = f"{surrogate}\nMean = {mean_val:.3f} dex"
+            median_label = f"{surrogate}\nMedian = {median_val:.3f} dex"
+
         plt.plot(
             timesteps,
-            uncertainties[surrogate],
-            label=uq_label,
-            linestyle="-",
+            mean_errors[surrogate],
+            label=mean_label,
             color=colors[i],
+            linestyle=linestyles[0],
         )
-
-        abs_errors = absolute_errors[surrogate]
-        abs_errors_time = np.mean(abs_errors, axis=(0, 2))
-        abs_error_avg = np.mean(abs_errors_time)
-        err_label = f"{surrogate} MAE\nmean: {abs_error_avg:.2e}"
         plt.plot(
             timesteps,
-            abs_errors_time,
-            label=err_label,
+            median_errors[surrogate],
+            label=median_label,
             color=colors[i],
-            linestyle="--",
+            linestyle=linestyles[1],
         )
 
     plt.xlabel("Time")
     plt.xlim(timesteps[0], timesteps[-1])
-    plt.ylabel("Uncertainty / MAE")
-    plt.yscale("log")
+    if mode == "relative":
+        plt.ylabel("Relative Error")
+        plt.yscale("log")
+        fname = "accuracy_rel_errors_time_models.png"
+        title = "Comparison of Relative Errors Over Time"
+    else:
+        plt.ylabel(r"Log-MAE ($\Delta dex$)")
+        fname = "accuracy_delta_dex_time.png"
+        title = "Comparison of Δdex Errors Over Time"
+
     if config["dataset"]["log_timesteps"]:
         plt.xscale("log")
     if show_title:
-        plt.title("Comparison of Predictive Uncertainty and True MAE over Time")
-    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+        plt.title(title)
 
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
     if save and config:
-        save_plot(plt, "uncertainty_over_time.png", config)
+        save_plot(plt, fname, config)
 
     plt.close()
 
@@ -1820,6 +1865,121 @@ def plot_uncertainty_confidence(
     return net_diff
 
 
+def plot_mean_deltadex_over_time_main_vs_ensemble(
+    main_errors: dict[str, np.ndarray],
+    ensemble_errors: dict[str, np.ndarray],
+    timesteps: np.ndarray,
+    config: dict,
+    save: bool = True,
+    show_title: bool = True,
+) -> None:
+    """
+    Plot mean Δdex over time for each surrogate: main vs ensemble.
+
+    Args:
+        main_errors (dict): Main model Δdex arrays [N, T, Q] per surrogate.
+        ensemble_errors (dict): Ensemble Δdex arrays [N, T, Q] per surrogate.
+        timesteps (np.ndarray): Timesteps array.
+        config (dict): Configuration dictionary.
+        save (bool): Whether to save figure.
+        show_title (bool): Whether to add a title.
+    """
+    plt.figure(figsize=(7, 4))
+    names = list(ensemble_errors.keys())
+    colors = plt.cm.viridis(np.linspace(0, 0.95, len(names)))
+
+    for i, name in enumerate(names):
+        main_ts = np.mean(main_errors[name], axis=(0, 2))
+        ens_ts = np.mean(ensemble_errors[name], axis=(0, 2))
+        main_avg = main_ts.mean()
+        ens_avg = ens_ts.mean()
+
+        plt.plot(
+            timesteps,
+            ens_ts,
+            color=colors[i],
+            linestyle="-",
+            label=f"{name} (Ensemble)\nMean={ens_avg:.3f} dex",
+        )
+        plt.plot(
+            timesteps,
+            main_ts,
+            color=colors[i],
+            linestyle="--",
+            label=f"{name} (Main)\nMean={main_avg:.3f} dex",
+        )
+
+    plt.xlabel("Time")
+    plt.ylabel(r"Log-MAE ($\Delta dex$)")
+    plt.xlim(timesteps[0], timesteps[-1])
+    if config["dataset"]["log_timesteps"]:
+        plt.xscale("log")
+    if show_title:
+        plt.title("Mean Δdex Over Time: Main vs Ensemble")
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+
+    if save and config:
+        save_plot(plt, "uq_deltadex_main_vs_ensemble.png", config)
+    plt.close()
+
+
+def plot_uncertainty_over_time_comparison(
+    uncertainties: dict[str, np.ndarray],
+    absolute_errors: dict[str, np.ndarray],
+    timesteps: np.ndarray,
+    config: dict,
+    save: bool = True,
+    show_title: bool = True,
+) -> None:
+    """
+    Plot log-space uncertainty and Δdex over time for multiple surrogates.
+
+    Args:
+        uncertainties (dict): Mean log-space std over time per surrogate (1σ time series).
+        absolute_errors (dict): Δdex arrays [N, T, Q] per surrogate.
+        timesteps (np.ndarray): Timesteps array.
+        config (dict): Configuration dictionary.
+        save (bool): Save figure.
+        show_title (bool): Add title.
+    """
+    plt.figure(figsize=(7, 4))
+    colors = plt.cm.viridis(np.linspace(0, 0.95, len(uncertainties)))
+
+    for i, name in enumerate(uncertainties.keys()):
+        uq_ts = uncertainties[name]
+        err_ts = np.mean(absolute_errors[name], axis=(0, 2))
+        uq_mean = uq_ts.mean()
+        err_mean = err_ts.mean()
+
+        plt.plot(
+            timesteps,
+            uq_ts,
+            color=colors[i],
+            linestyle="-",
+            label=f"{name} Unc (1σ)\nMean={uq_mean:.3f}",
+        )
+        plt.plot(
+            timesteps,
+            err_ts,
+            color=colors[i],
+            linestyle="--",
+            label=f"{name} Δdex\nMean={err_mean:.3f}",
+        )
+
+    plt.xlabel("Time")
+    plt.ylabel("Log-Space Uncertainty / Log-Space MAE")
+    plt.xlim(timesteps[0], timesteps[-1])
+    if config["dataset"]["log_timesteps"]:
+        plt.xscale("log")
+    if show_title:
+        plt.title("Comparison of Log-Space Uncertainty and Log-MAE Over Time")
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+
+    if save and config:
+        save_plot(plt, "uq_deltadex_vs_uncertainty.png", config)
+    plt.close()
+
+
 def inference_time_bar_plot(
     surrogates: list[str],
     means: list[float],
@@ -1844,7 +2004,7 @@ def inference_time_bar_plot(
     """
     # Create the bar plot
     fig, ax = plt.subplots(figsize=(7, 4))
-    colors = plt.cm.viridis(np.linspace(0, 0.9, len(surrogates)))
+    colors = plt.cm.viridis(np.linspace(0, 0.95, len(surrogates)))
     ax.bar(
         surrogates, means, yerr=stds, capsize=5, alpha=0.7, color=colors, ecolor="black"
     )
@@ -1909,7 +2069,7 @@ def plot_generalization_error_comparison(
     Returns:
         None
     """
-    colors = plt.cm.viridis(np.linspace(0, 0.9, len(surrogates)))
+    colors = plt.cm.viridis(np.linspace(0, 0.95, len(surrogates)))
 
     plt.figure(figsize=(6, 4))
     for i, surrogate in enumerate(surrogates):
@@ -1929,10 +2089,9 @@ def plot_generalization_error_comparison(
     plt.xlabel(xlabel)
     if xlog:
         plt.xscale("log")
-    plt.ylabel("Mean Absolute Error")
-    plt.yscale("log")
+    plt.ylabel(r"Log-MAE($\Delta dex$)")
     if show_title:
-        plt.title(f"Comparison of {xlabel} Errors")
+        plt.title(f"Comparison of {xlabel} Errors " + r"($\Delta dex$)")
     plt.grid(True, which="major", linestyle="--", linewidth=0.5, axis="y")
     plt.legend()
 
@@ -1942,7 +2101,7 @@ def plot_generalization_error_comparison(
     plt.close()
 
 
-def plot_error_correlation_heatmap(
+def plot_uncertainty_heatmap(
     surr_name: str,
     conf: dict,
     preds_std: np.ndarray,
@@ -1951,41 +2110,30 @@ def plot_error_correlation_heatmap(
     save: bool = True,
     cutoff_mass: float = 0.98,
     show_title: bool = True,
-) -> None:
+) -> tuple[float, float]:
     """
-    Plot the correlation between predictive uncertainty and prediction errors using a heatmap.
-
-    Instead of using a fixed threshold factor, this function determines axis limits based on a
-    cutoff_mass: the axis_max is chosen such that the histogram contains cutoff_mass (e.g. 95%)
-    of the total data mass, with the top (1 - cutoff_mass) fraction cut off. The plot is symmetric
-    (max_x = max_y) so that the diagonal retains its meaning.
+    Plot correlation between predictive log-space uncertainty and log-space errors (delta dex).
 
     Args:
-        surr_name (str): The name of the surrogate model.
-        conf (dict): The configuration dictionary.
-        preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
-        errors (np.ndarray): Prediction errors.
-        average_correlation (float): The average correlation between gradients and prediction errors.
-        save (bool, optional): Whether to save the plot as a file.
-        cutoff_mass (float, optional): Fraction of total mass to include (e.g. 0.95). Default is 0.95.
-        show_title (bool): Whether to show the title on the plot.
+        surr_name (str): Name of the surrogate model.
+        conf (dict): Configuration dictionary.
+        preds_std (np.ndarray): Log-space ensemble standard deviation.
+        errors (np.ndarray): Log-space prediction errors.
+        average_correlation (float): Correlation between log uncertainty and log error.
+        save (bool): Whether to save the figure.
+        cutoff_mass (float): Fraction of mass to keep in histogram.
+        show_title (bool): Whether to show a title.
 
     Returns:
-        max_value (float): The maximum count from the initial histogram.
-        axis_max (float): The computed upper axis limit such that cutoff_mass of the data is included.
+        tuple: (max histogram count, axis_max used for plotting).
     """
     plt.figure(figsize=(8, 4))
 
-    # Create an initial histogram (without range restrictions) to obtain the maximum count.
     heatmap_init, _, _ = np.histogram2d(preds_std.flatten(), errors.flatten(), bins=100)
-
-    # Combine all data from both arrays and determine the common axis limits.
-    # Use the minimum of the data as axis_min and the cutoff_mass percentile as axis_max.
     all_data = np.concatenate([preds_std.flatten(), errors.flatten()])
     axis_min = np.min(all_data)
     axis_max = np.percentile(all_data, cutoff_mass * 100)
 
-    # Re-bin the data using a square range [axis_min, axis_max] for both dimensions.
     heatmap, _, _ = np.histogram2d(
         preds_std.flatten(),
         errors.flatten(),
@@ -1994,28 +2142,25 @@ def plot_error_correlation_heatmap(
     )
 
     max_value = heatmap.max()
-
-    # For log-scale plotting, set cells with 0 counts to 1.
     heatmap[heatmap == 0] = 1
 
     plt.imshow(
-        np.log10(heatmap.T),  # Log scale for visualization.
+        np.log10(heatmap.T),
         origin="lower",
         aspect="auto",
         extent=[axis_min, axis_max, axis_min, axis_max],
         cmap="inferno",
     )
     plt.colorbar(label=r"$\log_{10}$(Counts)")
-    plt.xlabel("Predictive Uncertainty")
-    plt.ylabel("Prediction Error")
-    title = (
-        f"Correlation between Predictive Uncertainty and Prediction Errors\n"
-        f"Average Correlation: {average_correlation:.2f}"
-    )
-    if show_title:
-        plt.title(title)
+    plt.xlabel("Log-Space Uncertainty")
+    plt.ylabel(r"$\Delta dex$")
 
-    # Add the diagonal line.
+    if show_title:
+        plt.title(
+            r"Correlation Between Log-Space Uncertainty and Errors ($\Delta dex$)"
+            + f"\nAverage Correlation: {average_correlation:.2f}"
+        )
+
     plt.plot(
         [axis_min, axis_max],
         [axis_min, axis_max],
@@ -2025,171 +2170,62 @@ def plot_error_correlation_heatmap(
     )
 
     if save and conf:
-        save_plot(plt, "uncertainty_errors_correlation.png", conf, surr_name)
-
+        save_plot(plt, "uq_uncertainty_errors_correlation.png", conf, surr_name)
     plt.close()
     return max_value, axis_max
 
 
-def plot_error_correlation_heatmap_old(
+def plot_gradients_heatmap(
     surr_name: str,
     conf: dict,
-    preds_std: np.ndarray,
-    errors: np.ndarray,
-    average_correlation: float,
-    save: bool = False,
-    threshold_factor: float = 1e-4,
-    show_title: bool = True,
-) -> None:
-    """
-    Plot the correlation between predictive uncertainty and prediction errors using a heatmap.
-
-    Args:
-        surr_name (str): The name of the surrogate model.
-        conf (dict): The configuration dictionary.
-        preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
-        errors (np.ndarray): Prediction errors.
-        average_correlation (float): The average correlation between gradients and prediction errors (pearson correlation).
-        save (bool, optional): Whether to save the plot as a file.
-        threshold_factor (float, optional): Fraction of max value below which cells are set to 0. Default is 0.001.
-        show_title (bool): Whether to show the title on the plot.
-    """
-
-    plt.figure(figsize=(8, 4))
-    heatmap, xedges, yedges = np.histogram2d(
-        preds_std.flatten(), errors.flatten(), bins=100
-    )
-
-    # Apply threshold to create a mask and determine new axis limits
-    max_value = heatmap.max()
-    threshold = threshold_factor * max_value
-
-    # Mask to find the densest part for axis limits, but don't alter heatmap values
-    mask = heatmap >= threshold
-    non_zero_indices = np.nonzero(mask)
-    x_min, x_max = (
-        xedges[non_zero_indices[0].min()],
-        xedges[non_zero_indices[0].max() + 1],
-    )
-    y_min, y_max = (
-        yedges[non_zero_indices[1].min()],
-        yedges[non_zero_indices[1].max() + 1],
-    )
-
-    # Find the common range to use for both axes to ensure aspect ratio
-    axis_min = min(x_min, y_min)
-    axis_max = max(x_max, y_max)
-
-    # Re-bin the data using the new axis limits
-    heatmap, xedges, yedges = np.histogram2d(
-        preds_std.flatten(),
-        errors.flatten(),
-        bins=100,
-        range=[[axis_min, axis_max], [axis_min, axis_max]],
-    )
-
-    # Set all fields with 0 counts to 1 count for log scale plotting
-    heatmap[heatmap == 0] = 1
-
-    plt.imshow(
-        np.log10(heatmap.T),  # Log scale for better visualization
-        origin="lower",
-        aspect="auto",
-        extent=[axis_min, axis_max, axis_min, axis_max],
-        cmap="inferno",
-    )
-    plt.colorbar(label=r"$\log_{10}$(Counts)")
-    plt.xlabel("Predictive Uncertainty")
-    plt.ylabel("Prediction Error")
-    title = f"Correlation between Predictive Uncertainty and Prediction Errors\nAverage Correlation: {average_correlation:.2f}"
-    if show_title:
-        plt.title(title)
-
-    # Add diagonal line
-    plt.plot(
-        [axis_min, axis_max],
-        [axis_min, axis_max],
-        color="white",
-        linestyle="--",
-        linewidth=1,
-    )
-
-    if save and conf:
-        save_plot(plt, "uncertainty_errors_correlation.png", conf, surr_name)
-
-    plt.close()
-
-    return max_value, axis_max
-
-
-def plot_dynamic_correlation_heatmap(
-    surr_name: str,
-    conf: dict,
-    preds_std: np.ndarray,
-    errors: np.ndarray,
+    gradients: np.ndarray,
+    errors_log: np.ndarray,
     average_correlation: float,
     save: bool = False,
     cutoff_mass: float = 0.98,
     show_title: bool = True,
-) -> None:
+) -> tuple[float, float, float]:
     """
-    Plot the correlation between predictive uncertainty and prediction errors using a heatmap.
+    Plot correlation between gradients (normalized) and Δdex errors using a heatmap.
 
-    This version uses a cutoff_mass approach. We choose the x_max and y_max such that the
-    marginal distributions each include sqrt(cutoff_mass) of the total mass. For example,
-    for cutoff_mass=0.95, we set:
-        x_max = percentile(preds_std, 100*np.sqrt(0.95))
-        y_max = percentile(errors, 100*np.sqrt(0.95))
-    Normalized gradients are assumed to start at 0.
+    Both gradients and errors are in log-space.
+    Gradients are normalized, errors are absolute log differences (Δdex).
 
     Args:
-        surr_name (str): The name of the surrogate model.
-        conf (dict): The configuration dictionary.
-        preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
-        errors (np.ndarray): Prediction errors.
-        average_correlation (float): The average correlation between gradients and prediction errors.
-        save (bool, optional): Whether to save the plot as a file.
-        cutoff_mass (float, optional): Fraction of total mass to include in the heatmap (e.g. 0.95).
-        show_title (bool): Whether to show the title on the plot.
+        surr_name (str): Surrogate name.
+        conf (dict): Config dictionary.
+        gradients (np.ndarray): Normalized log-space gradients.
+        errors_log (np.ndarray): Δdex errors.
+        average_correlation (float): Mean correlation value.
+        save (bool): Save plot.
+        cutoff_mass (float): Fraction of mass to retain in axes.
+        show_title (bool): Show title.
 
     Returns:
-        max_value (float): The maximum count in the updated histogram.
-        x_max (float): The computed upper limit for the x-axis.
-        y_max (float): The computed upper limit for the y-axis.
+        (max_value, x_max, y_max): Histogram stats for reuse.
     """
-    import matplotlib.pyplot as plt
-    import numpy as np
-
     plt.figure(figsize=(8, 4))
 
-    # Compute the marginal cutoff: we assume separability so that each marginal
-    # should include sqrt(cutoff_mass) fraction of the total counts.
     marginal_cutoff = np.sqrt(cutoff_mass)
 
-    # Set x_min and compute x_max from preds_std.
-    x_min = 0  # normalized gradients typically start from 0
-    x_max = np.percentile(preds_std.flatten(), 100 * marginal_cutoff)
+    x_min = 0  # gradients normalized
+    x_max = np.percentile(gradients.flatten(), 100 * marginal_cutoff)
 
-    # For errors, we use the minimum value and compute y_max from errors.
-    y_min = np.min(errors.flatten())
-    y_max = np.percentile(errors.flatten(), 100 * marginal_cutoff)
+    y_min = np.min(errors_log.flatten())
+    y_max = np.percentile(errors_log.flatten(), 100 * marginal_cutoff)
 
-    # Re-bin the data using the new axis limits.
-    heatmap, xedges, yedges = np.histogram2d(
-        preds_std.flatten(),
-        errors.flatten(),
+    heatmap, _, _ = np.histogram2d(
+        gradients.flatten(),
+        errors_log.flatten(),
         bins=100,
         range=[[x_min, x_max], [y_min, y_max]],
     )
 
-    # Now compute max_value on the updated histogram.
     max_value = heatmap.max()
-
-    # For log-scale plotting, set zero counts to 1.
     heatmap[heatmap == 0] = 1
 
     plt.imshow(
-        np.log10(heatmap.T),  # log scale for visualization
+        np.log10(heatmap.T),
         origin="lower",
         aspect="auto",
         extent=[x_min, x_max, y_min, y_max],
@@ -2197,107 +2233,17 @@ def plot_dynamic_correlation_heatmap(
     )
     plt.colorbar(label=r"$\log_{10}$(Counts)")
     plt.xlabel("Absolute Gradient (Normalized)")
-    plt.ylabel("Absolute Prediction Error")
-    title = (
-        f"Correlation between Gradients and Prediction Errors\n"
-        f"Average Correlation: {average_correlation:.2f}"
-    )
+    plt.ylabel(r"Log-MAE ($\Delta dex$)")
     if show_title:
-        plt.title(title)
+        plt.title(
+            f"Correlation between Gradients and Δdex Errors\n"
+            f"Average Correlation: {average_correlation:.2f}"
+        )
 
     if save and conf:
         save_plot(plt, "gradient_error_heatmap.png", conf, surr_name)
 
     plt.close()
-
-    return max_value, x_max, y_max
-
-
-def plot_dynamic_correlation_heatmap_old(
-    surr_name: str,
-    conf: dict,
-    preds_std: np.ndarray,
-    errors: np.ndarray,
-    average_correlation: float,
-    save: bool = False,
-    threshold_factor: float = 1e-4,
-    xcut_percent: float = 3e-3,  # Default to keep 95% of the total counts in the heatmap
-    show_title: bool = True,
-) -> None:
-    """
-    Plot the correlation between predictive uncertainty and prediction errors using a heatmap.
-
-    Args:
-        surr_name (str): The name of the surrogate model.
-        conf (dict): The configuration dictionary.
-        preds_std (np.ndarray): Standard deviation of predictions from the ensemble of models.
-        errors (np.ndarray): Prediction errors.
-        average_correlation (float): The average correlation between gradients and prediction errors (pearson correlation).
-        save (bool, optional): Whether to save the plot as a file.
-        threshold_factor (float, optional): Fraction of max value below which cells are set to 0. Default is 5e-5.
-        cutoff_percent (float, optional): The percentage of total counts to include in the heatmap. Default is 0.95.
-        show_title (bool): Whether to show the title on the plot.
-    """
-
-    plt.figure(figsize=(8, 4))
-    heatmap, xedges, yedges = np.histogram2d(
-        preds_std.flatten(), errors.flatten(), bins=100
-    )
-
-    # Apply threshold to create a mask and determine new axis limits
-    max_value = heatmap.max()
-    threshold = threshold_factor * max_value
-
-    # Mask to find the densest part for y-axis limits
-    mask = heatmap >= threshold
-    non_zero_indices = np.nonzero(mask)
-    y_min, y_max = (
-        yedges[non_zero_indices[1].min()],
-        yedges[non_zero_indices[1].max() + 1],
-    )
-
-    # Calculate the cumulative counts along the x-axis
-    cumulative_counts = np.cumsum(heatmap.sum(axis=1))
-    total_counts = cumulative_counts[-1]
-    cutoff_percent = 1 - xcut_percent
-    cutoff_count = cutoff_percent * total_counts
-
-    # Find the x_max where the cumulative count exceeds cutoff_count
-    x_max_index = np.searchsorted(cumulative_counts, cutoff_count)
-    x_max = xedges[x_max_index + 1]  # +1 to include the bin
-
-    x_min = 0  # Normalized gradients typically start from 0
-
-    # Re-bin the data using the new axis limits
-    heatmap, xedges, yedges = np.histogram2d(
-        preds_std.flatten(),
-        errors.flatten(),
-        bins=100,
-        range=[[x_min, x_max], [y_min, y_max]],
-    )
-
-    # Set all fields with 0 counts to 1 count for log scale plotting
-    heatmap[heatmap == 0] = 1
-
-    plt.imshow(
-        np.log10(heatmap.T),  # Log scale for better visualization
-        origin="lower",
-        aspect="auto",
-        extent=[x_min, x_max, y_min, y_max],
-        cmap="inferno",
-    )
-    plt.colorbar(label=r"$\log_{10}$(Counts)")
-    plt.xlabel("Absolute Gradient (Normalized)")
-    plt.ylabel("Absolute Prediction Error")
-    title = f"Correlation between Gradients and Prediction Errors\nAverage Correlation: {average_correlation:.2f}"
-    if show_title:
-        plt.title(title)
-
-    if save and conf:
-        save_plot(plt, "gradient_error_heatmap.png", conf, surr_name)
-
-    plt.close()
-
     return max_value, x_max, y_max
 
 
@@ -2305,112 +2251,86 @@ def plot_error_distribution_comparative(
     errors: dict[str, np.ndarray],
     conf: dict,
     save: bool = True,
-    mode: str = "main",
     show_title: bool = True,
+    mode: str = "relative",  # "relative" or "deltadex"
 ) -> None:
     """
-    Plot the comparative distribution of errors for each surrogate model as a smoothed histogram plot.
+    Plot comparative error distributions for each surrogate model.
 
     Args:
-        conf (dict): The configuration dictionary.
-        errors (dict): Dictionary containing numpy arrays of shape [num_samples, num_timesteps, num_quantities] for each model.
-        save (bool, optional): Whether to save the plot as a file.
-        mode (str, optional): The mode of the plot. Default is "main".
-        show_title (bool): Whether to show the title on the plot.
+        errors (dict): Model → array of errors [num_samples, num_timesteps, num_quantities].
+        conf (dict): Configuration dictionary.
+        save (bool): Whether to save the figure.
+        show_title (bool): Whether to add a title.
+        mode (str): "relative" (unitless %) or "deltadex" (log-space abs. errors).
     """
-    # Number of models
     model_names = list(errors.keys())
     num_models = len(model_names)
 
-    # Initialize list to hold log-transformed non-zero errors and count zeros
     log_errors = []
     mean_errors = []
     median_errors = []
-    zero_counts = 0
 
-    # Transform error magnitudes to log-space and filter out zeros for each model
     for model_name in model_names:
         model_errors = errors[model_name].flatten()
         mean_errors.append(np.mean(model_errors))
         median_errors.append(np.median(model_errors))
-        non_zero_model_errors = model_errors[model_errors > 0]
-        log_errors.append(np.log10(non_zero_model_errors))
-        zero_counts += np.sum(model_errors == 0)
 
-    # Calculate the 1st and 99th percentiles in the log-space
+        # transform for histogram plotting
+        non_zero = model_errors[model_errors > 0]
+        log_errors.append(np.log10(non_zero))
+
     min_percentiles = [np.percentile(err, 2) for err in log_errors if len(err) > 0]
     max_percentiles = [np.percentile(err, 98) for err in log_errors if len(err) > 0]
+    global_min, global_max = np.min(min_percentiles), np.max(max_percentiles)
 
-    global_min = np.min(min_percentiles)
-    global_max = np.max(max_percentiles)
+    x_min, x_max = np.floor(global_min), np.ceil(global_max)
 
-    # Set up the x-axis range to nearest whole numbers in log-space
-    x_min = np.floor(global_min)
-    x_max = np.ceil(global_max)
-
-    # Set up the plot
     plt.figure(figsize=(8, 3))
-    colors = plt.cm.viridis(np.linspace(0, 0.9, num_models))
-
-    # Define the x-axis range for plotting
+    colors = plt.cm.viridis(np.linspace(0, 0.95, num_models))
     x_vals = np.linspace(x_min, x_max + 0.1, 100)
 
     for i, model_name in enumerate(model_names):
-        # Compute histogram in log-space
         hist, bin_edges = np.histogram(log_errors[i], bins=x_vals, density=True)
+        smoothed = gaussian_filter1d(hist, sigma=2)
 
-        # Smooth the histogram with a Gaussian filter
-        smoothed_hist = gaussian_filter1d(hist, sigma=2)
-
-        # Plot the smoothed histogram
         plt.plot(
             10 ** bin_edges[:-1],
-            smoothed_hist,
+            smoothed,
             label=model_name,
             color=colors[i],
         )
+        # add mean/median markers
+        plt.axvline(
+            x=mean_errors[i],
+            color=colors[i],
+            linestyle="--",
+            label=f"{model_name} mean = {mean_errors[i]:.3g}",
+        )
+        plt.axvline(
+            x=median_errors[i],
+            color=colors[i],
+            linestyle="-.",
+            label=f"{model_name} median = {median_errors[i]:.3g}",
+        )
 
-        if mode == "main":
+    plt.xscale("log")
+    plt.xlim(np.maximum(10**x_min, 1e-8), 10**x_max)
 
-            # Plot the average error as a vertical line
-            plt.axvline(
-                x=mean_errors[i],
-                color=colors[i],
-                linestyle="--",
-                label=f"Mean = {mean_errors[i]:.2e}",
-            )
-
-            # Plot the median error as a vertical line
-            plt.axvline(
-                x=median_errors[i],
-                color=colors[i],
-                linestyle="-.",
-                label=f"Median = {median_errors[i]:.2e}",
-            )
-
-    plt.xscale("log")  # Log scale for error magnitudes
-    plt.xlim(np.maximum(10**x_min, 1e-8), 10**x_max)  # Set x-axis range
-
-    if mode == "main":
+    if mode == "relative":
+        xlabel = "Relative Error Magnitude"
         title = "Distribution of Surrogate Relative Errors"
-        fname = "accuracy_error_distributions.png"
-        xlabel = "Magnitude of Relative Error"
-    elif mode == "uq_abs":
-        title = "Difference between Predictive Uncertainty and True Error"
-        fname = "uncertainty_distribution.png"
-        xlabel = "Absolute Difference between Uncertainty Estimate and True Error"
-    elif mode == "uq_rel":
-        title = "Difference between Relative Predictive Uncertainty and True MRE"
-        fname = "uncertainty_distribution_rel.png"
-        xlabel = "Relative Difference between Uncertainty Estimate and True Error"
+        fname = "accuracy_error_dist_relative.png"
+    else:
+        xlabel = r"Log-MAE ($\Delta dex$)"
+        title = "Distribution of Surrogate Δdex Errors"
+        fname = "accuracy_error_dist_deltadex.png"
 
     plt.xlabel(xlabel)
     plt.ylabel("Smoothed Histogram Count")
-    # Move the legend outside the plot area on the right, centered vertically
-    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
-
     if show_title:
         plt.title(title)
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
     if save and conf:
         save_plot(plt, fname, conf)
@@ -2429,74 +2349,47 @@ def plot_comparative_error_correlation_heatmaps(
     show_title: bool = True,
 ) -> None:
     """
-    Plot comparative heatmaps of correlation between predictive uncertainty and prediction errors
-    for multiple surrogate models.
+    Comparative heatmaps of log-space uncertainty vs Δdex.
 
     Args:
-        preds_std (dict[str, np.ndarray]): Dictionary of standard deviation of predictions from the ensemble of models.
-        errors (dict[str, np.ndarray]): Dictionary of prediction errors.
-        avg_correlations (dict[str, float]): Dictionary of average correlations between gradients and prediction errors.
-        axis_max (dict[str, float]): Dictionary of maximum values for axis scaling across models.
-        max_count (dict[str, float]): Dictionary of maximum count values for heatmap normalization across models.
+        preds_std (dict): Log-space std arrays per surrogate.
+        errors (dict): Δdex arrays per surrogate.
+        avg_correlations (dict): Pearson r per surrogate (log-space).
+        axis_max (dict): Axis maxima from per-surrogate plots.
+        max_count (dict): Peak counts for normalization per surrogate.
         config (dict): Configuration dictionary.
-        save (bool, optional): Whether to save the plot. Defaults to True.
-        show_title (bool): Whether to show the title on the plot.
-
-    Returns:
-        None
+        save (bool): Save figure.
+        show_title (bool): Add title.
     """
-    # Number of models
-    model_names = list(preds_std.keys())
-    num_models = len(model_names)
-
-    # Determine the global maximum value for axis scaling
+    names = list(preds_std.keys())
+    n = len(names)
     global_axis_max = max(axis_max.values())
-
-    # Determine global max for heatmap normalization
     global_max_count = max(max_count.values())
 
-    # Create subplots, one row per model
-    fig, axes = plt.subplots(
-        num_models, 1, figsize=(8, 4.5 * num_models), sharex=True, sharey=True
-    )
+    fig, axes = plt.subplots(n, 1, figsize=(8, 4.5 * n), sharex=True, sharey=True)
+    if n == 1:
+        axes = [axes]
+    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
 
-    # Adjust layout for shared colorbar
-    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])  # Position for the colorbar
-
-    for i, model_name in enumerate(model_names):
+    for i, name in enumerate(names):
         ax = axes[i]
-        preds_std_model = preds_std[model_name].flatten()
-        errors_model = errors[model_name].flatten()
-        avg_corr = avg_correlations[model_name]
+        u = preds_std[name].flatten()
+        e = errors[name].flatten()
 
-        # Compute 2D histogram (heatmap)
-        heatmap, _, _ = np.histogram2d(
-            preds_std_model,
-            errors_model,
-            bins=100,
-            range=[[0, global_axis_max], [0, global_axis_max]],
+        H, _, _ = np.histogram2d(
+            u, e, bins=100, range=[[0, global_axis_max], [0, global_axis_max]]
         )
+        H[H == 0] = 1
 
-        # Set all fields with 0 counts to 1 count for log scale plotting
-        heatmap[heatmap == 0] = 1
-
-        # Plot heatmap
         im = ax.imshow(
-            np.log10(heatmap.T),
+            np.log10(H.T),
             origin="lower",
             aspect="auto",
             extent=[0, global_axis_max, 0, global_axis_max],
             cmap="inferno",
             vmin=0,
-            vmax=np.log10(global_max_count),  # Normalize across all models
+            vmax=np.log10(global_max_count),
         )
-
-        if i == num_models - 1:
-            ax.set_xlabel("Predictive Uncertainty")
-        ax.set_ylabel("Prediction Error")
-
-        ax.set_title(f"{model_name}\nAvg Correlation: {avg_corr:.2f}")
-        # Add diagonal line
         ax.plot(
             [0, global_axis_max],
             [0, global_axis_max],
@@ -2504,22 +2397,165 @@ def plot_comparative_error_correlation_heatmaps(
             linestyle="--",
             linewidth=1,
         )
+        ax.set_ylabel(r"$\Delta dex$")
+        ax.set_title(f"{name}\nAvg Correlation: {avg_correlations[name]:.2f}")
+
+    axes[-1].set_xlabel("Log-Space Uncertainty")
 
     fig.subplots_adjust(top=0.94, bottom=0.06, left=0.08, right=0.9, hspace=0.2)
-
-    # Shared colorbar
     fig.colorbar(im, cax=cbar_ax, label=r"$\log_{10}$(Counts)")
 
     if show_title:
-        plt.suptitle("Comparative Error Correlation Heatmaps Across Models", y=0.98)
+        plt.suptitle("Uncertainty vs Δdex: Comparative Heatmaps", y=0.98)
 
-    if save:
-        save_plot(fig, "uncertainty_error_corr_comparison.png", config)
-
+    if save and config:
+        save_plot(fig, "uq_heatmaps.png", config)
     plt.close()
 
 
-def plot_comparative_dynamic_correlation_heatmaps(
+def plot_catastrophic_detection_curves(
+    errors_log: dict[str, np.ndarray],
+    std_log: dict[str, np.ndarray],
+    conf: dict,
+    percentiles: tuple[float, ...] = (99.0, 90.0),
+    flag_fractions: tuple[float, ...] = (0.0, 0.01, 0.05, 0.10, 0.20, 0.30),
+    save: bool = True,
+    show_title: bool = True,
+) -> dict[str, dict[float, dict[str, float]]]:
+    """
+    Plot catastrophic error recall (Δdex) vs fraction flagged by uncertainty,
+    across multiple catastrophic percentiles, plus performance improvement curves.
+
+    Catastrophic errors are those with Δdex >= P_cat (e.g. 99th percentile).
+    For each flag fraction f, the uncertainty threshold is the (1 - f) quantile of std.
+    We then flag samples with std >= threshold and measure recall among catastrophic samples.
+
+    Additionally, computes the effective log-space MAE if flagged samples are replaced
+    by solver outputs (0 error). This measures how much UQ-guided deferral improves performance.
+
+    Args:
+        errors_log (dict): Δdex arrays [N, T, Q] per surrogate.
+        std_log (dict): Log-space std arrays [N, T, Q] per surrogate.
+        conf (dict): Configuration dictionary.
+        percentiles (tuple): Catastrophic percentiles to evaluate (default: (90, 95, 99)).
+        flag_fractions (tuple): Fractions of predictions to flag (includes 0 for baseline).
+        save (bool): Save figure.
+        show_title (bool): Add title.
+
+    Returns:
+        dict: Nested dict of results:
+              summary[surrogate][percentile] = {
+                  'flag_fraction': f, 'recall': r, 'cat_threshold': thr,
+                  'mae_curve': [(f, mae), ...]
+              }
+    """
+    n_rows = len(percentiles) + 1  # +1 for MAE improvement curves
+    fig, axes = plt.subplots(n_rows, 1, figsize=(7, 4 * n_rows), sharex=True)
+
+    if n_rows == 1:
+        axes = [axes]
+
+    names = list(errors_log.keys())
+    colors = plt.cm.viridis(np.linspace(0, 0.95, len(names)))
+    summary: dict[str, dict[float, dict[str, float]]] = {}
+
+    # --- Recall vs fraction flagged (per catastrophic percentile) ---
+    for ax, perc in zip(axes[:-1], percentiles):
+        for i, name in enumerate(names):
+            e = errors_log[name].flatten()
+            u = std_log[name].flatten()
+            if e.size == 0 or u.size == 0:
+                continue
+
+            # catastrophic cutoff
+            cat_thr = np.percentile(e, perc)
+            is_cat = e >= cat_thr
+            n_cat = int(is_cat.sum())
+            if n_cat == 0:
+                continue
+
+            xs, ys = [], []
+            for f in flag_fractions:
+                unc_thr = np.percentile(u, 100.0 * (1.0 - float(f)))
+                flagged = u >= unc_thr
+                recall = (flagged & is_cat).sum() / n_cat if n_cat > 0 else 0.0
+                xs.append(100.0 * flagged.mean())
+                ys.append(100.0 * recall)
+
+            ax.plot(
+                xs,
+                ys,
+                marker="o",
+                color=colors[i],
+                label=f"{name} (thr ≈ {cat_thr:.3f} dex)",
+            )
+
+            # Store last-point summary
+            summary.setdefault(name, {})[perc] = {
+                "flag_fraction": xs[-1] / 100.0,
+                "recall": ys[-1] / 100.0,
+                "cat_threshold": cat_thr,
+            }
+
+        ax.set_ylabel("Catastrophic error recall (%)")
+        ax.set_xlim(0, 100 * max(flag_fractions) * 1.05)
+        ax.set_ylim(0, 100)
+        ax.grid(True, alpha=0.3)
+        ax.legend(loc="best", fontsize="small")
+        if show_title:
+            ax.set_title(
+                f"Detection @ {perc}th percentile (Top {100 - perc:.0f}% Δdex)"
+            )
+
+    # MAE improvement plot
+    ax_mae = axes[-1]
+    for i, name in enumerate(names):
+        e = errors_log[name].flatten()
+        u = std_log[name].flatten()
+
+        mae_curve = []
+        xs, ys = [], []
+        for f in flag_fractions:
+            unc_thr = np.percentile(u, 100.0 * (1.0 - float(f))) if f > 0 else np.inf
+            flagged = u >= unc_thr if f > 0 else np.zeros_like(u, dtype=bool)
+
+            # replace flagged errors with 0 (numerical solver fallback)
+            adjusted = e.copy()
+            adjusted[flagged] = 0.0
+            mae_val = adjusted.mean()
+
+            xs.append(100.0 * flagged.mean())
+            ys.append(mae_val)
+            mae_curve.append((f, mae_val))
+
+        ax_mae.plot(xs, ys, marker="o", color=colors[i], label=name)
+
+        # store mae curve under percentile-independent key
+        for perc in percentiles:
+            summary[name][perc]["mae_curve"] = mae_curve
+
+    ax_mae.set_xlabel("Fraction flagged by uncertainty (%)")
+    ax_mae.set_ylabel("Log MAE (Δdex)")
+    ax_mae.grid(True, alpha=0.3)
+    ax_mae.legend(loc="best")
+    ax_mae.set_ylim(0, ax_mae.get_ylim()[1])
+    ax_mae.set_title("Log MAE Improvement")
+
+    if show_title:
+        fig.suptitle(
+            "Catastrophic Error Detection and UQ-based Performance Gain", y=0.99
+        )
+
+    plt.tight_layout(rect=[0, 0, 1, 0.99])
+
+    if save and conf:
+        save_plot(fig, "uq_catastrophic_detection.png", conf)
+    plt.close(fig)
+
+    return summary
+
+
+def plot_comparative_gradient_heatmaps(
     gradients: dict[str, np.ndarray],
     errors: dict[str, np.ndarray],
     avg_correlations: dict[str, float],
@@ -2597,7 +2633,7 @@ def plot_comparative_dynamic_correlation_heatmaps(
 
         if i == num_models - 1:
             ax.set_xlabel("Absolute Gradient (Normalized)")
-        ax.set_ylabel("Absolute Prediction Error")
+        ax.set_ylabel(r"$\Delta dex$ (log-space error)")
 
         ax.set_title(f"{model_name}\nAvg Correlation: {avg_corr:.2f}")
 
@@ -2612,7 +2648,7 @@ def plot_comparative_dynamic_correlation_heatmaps(
         )
 
     if save:
-        save_plot(fig, "gradients_error_corr_comparison.png", config)
+        save_plot(fig, "gradients_heatmaps.png", config)
 
     plt.show()
     plt.close()
@@ -2643,16 +2679,39 @@ def get_custom_palette(num_colors):
     # ]
 
     custom_palette = [
-        "#10002B",  # Darkest violet
-        "#3A1A5A",  # Dark purple (slightly brighter)
-        "#6A1C75",  # Deep magenta (slightly brighter)
-        "#8A3065",  # Magenta with a hint of red
-        "#B73779",  # Deep reddish-pink
-        "#DA5F4D",  # Dark red-orange
-        "#F48842",  # Bright orange
-        "#FBC200",  # Yellow-orange (slightly more yellow)
-        "#C0CD32",  # Yellow-green (more yellowish)
-        "#D2B48C",  # Tan (brownish)
+        # Original palette
+        # "#10002B",  # Darkest violet
+        # "#3A1A5A",  # Dark purple (slightly brighter)
+        # "#6A1C75",  # Deep magenta (slightly brighter)
+        # "#8A3065",  # Magenta with a hint of red
+        # "#B73779",  # Deep reddish-pink
+        # "#DA5F4D",  # Dark red-orange
+        # "#F48842",  # Bright orange
+        # "#FBC200",  # Yellow-orange (slightly more yellow)
+        # "#C0CD32",  # Yellow-green (more yellowish)
+        # "#D2B48C",  # Tan (brownish)
+        # Clean palette
+        # "#1B3A4B",  # Deep teal-blue
+        # "#005F73",  # Teal
+        # "#0A9396",  # Bright cyan-teal
+        # "#94D2BD",  # Soft aqua
+        # "#E9D891",  # Sand (light neutral contrast)
+        # "#EE9B00",  # Amber (warm accent)
+        # "#CA6702",  # Burnt orange
+        # "#BB3E03",  # Rust red
+        # "#9B2226",  # Deep crimson
+        # "#5C4D7D",  # Muted indigo (ties back to cool theme)
+        # Distinct palette
+        "#1B3A4B",  # Deep teal-blue
+        "#006D77",  # Ocean teal
+        "#83C5BE",  # Soft turquoise
+        "#A7C957",  # Fresh green
+        "#217E53",  # Jade green
+        "#E9D891",  # Sand (light neutral contrast)
+        "#E86241",  # Coral
+        "#9B2226",  # Deep crimson
+        "#7F33B2",  # Vivid purple
+        "#9C7E56",  # Tan (brownish)
     ]
 
     # Create a custom colormap from the palette
@@ -2662,158 +2721,6 @@ def get_custom_palette(num_colors):
     colors = custom_cmap(np.linspace(0, 1, num_colors))
 
     return colors
-
-
-def int_ext_sparse(
-    all_metrics: dict,
-    config: dict,
-    show_title: bool = True,
-) -> None:
-    """
-    Function to make one comparative plot of the interpolation, extrapolation, and sparse training errors.
-
-    Args:
-        all_metrics (dict): dictionary containing the benchmark metrics for each surrogate model.
-        config (dict): Configuration dictionary.
-        show_title (bool): Whether to show the title on the plot.
-
-    Returns:
-        None
-    """
-    surrogates = list(all_metrics.keys())
-
-    # Prepare the data for each modality
-    interpolation_metrics_list = []
-    interpolation_errors_list = []
-
-    extrapolation_metrics_list = []
-    extrapolation_errors_list = []
-
-    sparse_metrics_list = []
-    sparse_errors_list = []
-
-    for surrogate in surrogates:
-        # Interpolation data
-        if "interpolation" in all_metrics[surrogate]:
-            interpolation_metrics_list.append(
-                all_metrics[surrogate]["interpolation"]["intervals"]
-            )
-            interpolation_errors_list.append(
-                all_metrics[surrogate]["interpolation"]["model_errors"]
-            )
-
-        # Extrapolation data
-        if "extrapolation" in all_metrics[surrogate]:
-            extrapolation_metrics_list.append(
-                all_metrics[surrogate]["extrapolation"]["cutoffs"]
-            )
-            extrapolation_errors_list.append(
-                all_metrics[surrogate]["extrapolation"]["model_errors"]
-            )
-
-        # Sparse training data
-        if "sparse" in all_metrics[surrogate]:
-            sparse_metrics_list.append(
-                all_metrics[surrogate]["sparse"]["n_train_samples"]
-            )
-            sparse_errors_list.append(all_metrics[surrogate]["sparse"]["model_errors"])
-
-    # Create the figure and subplots
-    fig, axes = plt.subplots(1, 3, figsize=(10, 4), sharey=True)
-    colors = plt.cm.viridis(np.linspace(0, 0.9, len(surrogates)))
-
-    # Interpolation subplot
-    for i, surrogate in enumerate(surrogates):
-        if i < len(interpolation_metrics_list):
-            axes[0].scatter(
-                interpolation_metrics_list[i],
-                interpolation_errors_list[i],
-                label=surrogate,
-                color=colors[i],
-            )
-            axes[0].plot(
-                interpolation_metrics_list[i],
-                interpolation_errors_list[i],
-                color=colors[i],
-                alpha=0.5,
-                linestyle="-",
-            )
-    axes[0].set_xlabel("Interpolation Intervals")
-    axes[0].set_title("Interpolation")
-    axes[0].set_yscale("log")
-    axes[0].grid(True, which="major", linestyle="--", linewidth=0.5, axis="y")
-
-    # Extrapolation subplot
-    for i, surrogate in enumerate(surrogates):
-        if i < len(extrapolation_metrics_list):
-            axes[1].scatter(
-                extrapolation_metrics_list[i],
-                extrapolation_errors_list[i],
-                label=surrogate,
-                color=colors[i],
-            )
-            axes[1].plot(
-                extrapolation_metrics_list[i],
-                extrapolation_errors_list[i],
-                color=colors[i],
-                alpha=0.5,
-                linestyle="-",
-            )
-    axes[1].set_xlabel("Extrapolation Cutoffs")
-    axes[1].set_title("Extrapolation")
-    axes[1].set_yscale("log")
-    axes[1].grid(True, which="major", linestyle="--", linewidth=0.5, axis="y")
-
-    # Sparse training subplot
-    for i, surrogate in enumerate(surrogates):
-        if i < len(sparse_metrics_list):
-            axes[2].scatter(
-                sparse_metrics_list[i],
-                sparse_errors_list[i],
-                label=surrogate,
-                color=colors[i],
-            )
-            axes[2].plot(
-                sparse_metrics_list[i],
-                sparse_errors_list[i],
-                color=colors[i],
-                alpha=0.5,
-                linestyle="-",
-            )
-    axes[2].set_xlabel("Number of Training Samples (log scale)")
-    axes[2].set_title("Sparse Training")
-    axes[2].set_xscale("log")
-    axes[2].set_yscale("log")
-    axes[2].grid(True, which="major", linestyle="--", linewidth=0.5, axis="y")
-
-    # Set the x-ticks to all values in sparse_metrics_list
-    axes[2].set_xticks(sparse_metrics_list[0])
-    axes[2].get_xaxis().set_major_formatter(plt.ScalarFormatter())
-
-    # Get current y-axis min and max values
-    y_min, y_max = axes[0].get_ylim()
-
-    # Ensure y-axis max does not exceed 1000
-    if y_max > 1e3:
-        axes[0].set_ylim(y_min, 1e3)
-
-    # Set the ylabel on the leftmost subplot
-    axes[0].set_ylabel("Mean Absolute Error")
-
-    # Add the legend to the first plot only
-    handles, labels = axes[0].get_legend_handles_labels()
-    axes[0].legend(handles, labels, loc="upper left", fontsize="small")
-
-    # Set the overall title
-    if show_title:
-        fig.suptitle("Model Errors for Different Modalities", fontsize=16)
-
-    # Adjust layout to reduce whitespace and improve spacing
-    plt.tight_layout(rect=[0, 0.03, 1, 0.98])
-
-    save_plot(fig, "generalization_error_comparison.png", config)
-
-    plt.close()
 
 
 def plot_all_generalization_errors(
@@ -2859,7 +2766,7 @@ def plot_all_generalization_errors(
             )
         if "batch_size" in all_metrics[surrogate]:
             batch_data[surrogate] = (
-                all_metrics[surrogate]["batch_size"]["batch_sizes"],
+                all_metrics[surrogate]["batch_size"]["batch_elements"],
                 all_metrics[surrogate]["batch_size"]["model_errors"],
             )
 
@@ -2892,14 +2799,14 @@ def plot_all_generalization_errors(
             "xscale": "log",
         },
         "batch_size": {
-            "xlabel": "Batch Sizes",
+            "xlabel": "Elements per Batch",
             "title": "Batch Size",
             "xscale": "log",
         },
     }
 
     # Create a consistent color mapping for all surrogates
-    cmap = plt.cm.viridis(np.linspace(0, 0.9, len(surrogates)))
+    cmap = plt.cm.viridis(np.linspace(0, 0.95, len(surrogates)))
     color_map = {s: cmap[i] for i, s in enumerate(surrogates)}
 
     # Create figure and subplots: width scales with number of modalities
@@ -2938,7 +2845,7 @@ def plot_all_generalization_errors(
         ax.set_title(modality_props[modality]["title"])
         if modality_props[modality]["xscale"]:
             ax.set_xscale(modality_props[modality]["xscale"])
-        ax.set_yscale("log")
+        # ax.set_yscale("log")
         ax.grid(True, which="major", linestyle="--", linewidth=0.5, axis="y")
         # For the sparse modality, if available, set x-ticks to the first surrogate's data for consistency.
         if (modality == "sparse" or modality == "batch_size") and mod_data:
@@ -2946,8 +2853,18 @@ def plot_all_generalization_errors(
             all_values = np.unique(
                 np.concatenate([x_data for x_data, _ in mod_data.values()])
             )
-            ax.set_xticks(all_values)
             ax.get_xaxis().set_major_formatter(plt.ScalarFormatter())
+
+            if len(all_values) > 5 and modality == "batch_size":
+                ax.get_xaxis().set_major_formatter(
+                    FuncFormatter(lambda val, pos: f"{val / 1e3:.1f}")
+                )
+                ax.set_xlabel(r"Elements per Batch $[\times 10^3]$")
+                all_values = all_values[np.diff(all_values, prepend=0) > 1000]
+            else:
+                ax.get_xaxis().set_major_formatter(plt.ScalarFormatter())
+
+            ax.set_xticks(all_values)
 
     # Get current y-axis limits from the first subplot and ensure the upper limit does not exceed 1e3.
     y_min, y_max = axes[0].get_ylim()
@@ -2966,7 +2883,7 @@ def plot_all_generalization_errors(
         fig.suptitle("Model Errors for Different Modalities", fontsize=16)
     plt.tight_layout(rect=[0, 0.03, 1, 0.98])
 
-    save_plot(fig, "generalization_error_comparison.png", config)
+    save_plot(fig, "errors_all_modalities.png", config)
     plt.close()
 
 
@@ -3015,7 +2932,7 @@ def rel_errors_and_uq(
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 
     # Plot 1: Relative Errors
-    colors = plt.cm.viridis(np.linspace(0, 0.9, len(mean_errors)))
+    colors = plt.cm.viridis(np.linspace(0, 0.95, len(mean_errors)))
     linestyles = ["-", "--"]
 
     for i, surrogate in enumerate(mean_errors.keys()):

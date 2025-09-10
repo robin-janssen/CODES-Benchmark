@@ -37,7 +37,7 @@ def no_plots(monkeypatch):
     for fn in [
         "plot_error_percentiles_over_time",
         "plot_error_distribution_per_quantity",
-        "plot_dynamic_correlation_heatmap",
+        "plot_gradients_heatmap",
     ]:
         monkeypatch.setattr(
             bf,
@@ -48,7 +48,7 @@ def no_plots(monkeypatch):
                     0.1,
                     0.2,
                 )
-                if fn == "plot_dynamic_correlation_heatmap"
+                if fn == "plot_gradients_heatmap"
                 else None
             ),
         )
@@ -103,12 +103,12 @@ def test_evaluate_accuracy(simple_conf, simple_loader):
     assert metrics["relative_errors"].shape == (1, 3, 2)
 
 
-def test_evaluate_dynamic_accuracy(simple_conf, simple_loader):
+def test_evaluate_gradients(simple_conf, simple_loader):
     model = FakeModel(n_quantities=1)
     surr = "SurrA"
     simple_conf["surrogates"] = [surr]
     # call
-    out = bf.evaluate_dynamic_accuracy(
+    out = bf.evaluate_gradients(
         model=model,
         surr_name=surr,
         test_loader=simple_loader,

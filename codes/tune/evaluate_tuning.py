@@ -53,7 +53,16 @@ def hypervolume_2d(pareto_points: np.ndarray, reference: np.ndarray) -> float:
     return hv
 
 
-def compute_hypervolume_over_time(study: optuna.Study, ref_slack=1.1):
+def compute_hypervolume_over_time(
+    study: optuna.Study, ref_slack: float = 1.1, ignore_last_n: int = 10
+):
+    """
+    Compute the 2D hypervolume curve over time while excluding the last N trials
+    from the Pareto calculation (by completion time). This prevents unreliable
+    late-trial improvements (e.g., inference time) from appearing on the Pareto front.
+
+    Returns (hypervolumes, reference_point).
+    """
     from optuna.trial import TrialState
 
     completed = [t for t in study.trials if t.state == TrialState.COMPLETE]
@@ -62,12 +71,27 @@ def compute_hypervolume_over_time(study: optuna.Study, ref_slack=1.1):
 
     # Order by completion time
     completed.sort(key=lambda t: t.datetime_complete or t.datetime_start)
-    all_vals = np.array([t.values for t in completed])  # shape (N, 2)
-    reference = all_vals.max(axis=0) * ref_slack  # slightly worse than worst seen
+
+    # Determine index cutoff for eligible trials (exclude last N)
+    cutoff_idx = max(0, len(completed) - max(0, ignore_last_n))
+    eligible = completed[:cutoff_idx]
+    if not eligible:
+        # No eligible trials to compute HV
+        return [], None
+
+    # Reference point from eligible trials only
+    eligible_vals = np.array([t.values for t in eligible])  # shape (M, 2)
+    reference = eligible_vals.max(axis=0) * ref_slack  # slightly worse than worst seen
 
     hypervolumes = []
-    for k in range(1, len(completed) + 1):
-        subset = completed[:k]
+    total = len(completed)
+    for k in range(1, total + 1):
+        # Freeze the Pareto set after cutoff: ignore last N trials entirely
+        subset_upto_k = min(k, cutoff_idx)
+        if subset_upto_k == 0:
+            hypervolumes.append(0.0)
+            continue
+        subset = completed[:subset_upto_k]
         pts = np.array([t.values for t in subset])
         pareto = pareto_front(pts)
         hv = hypervolume_2d(pareto, reference)
@@ -191,7 +215,10 @@ def get_best_trials(study: optuna.Study, top_n: int) -> list[int]:
 
 
 def evaluate_tuning(
-    study_prefix: str, top_n: int = 10, storage_name: str = "optuna_db"
+    study_prefix: str,
+    top_n: int = 10,
+    storage_name: str = "optuna_db",
+    ignore_last_n: int = 10,
 ) -> None:
     """
     For all surrogate studies named '<study_prefix>_<surrogate>',
@@ -272,7 +299,9 @@ def evaluate_tuning(
 
         # Compute hypervolume over time
         if len(study.directions) == 2:
-            hvs, reference = compute_hypervolume_over_time(study)
+            hvs, reference = compute_hypervolume_over_time(
+                study, ignore_last_n=ignore_last_n
+            )
             if hvs:
                 # Normalize to final hypervolume for relative curve
                 final_hv = hvs[-1]
@@ -307,7 +336,10 @@ def evaluate_tuning(
                     dpi=300,
                 )
                 plt.close()
-                print(f"Saved hypervolume plots for {suffix} (final HV={final_hv:.3e})")
+                print(
+                    f"Saved hypervolume plots for {suffix} (final HV={final_hv:.3e}); "
+                    f"ignored last {ignore_last_n} trials in Pareto/HV."
+                )
             else:
                 print("No hypervolume computed (no complete trials).")
         else:
@@ -380,13 +412,13 @@ def parse_args():
     p.add_argument(
         "--study_name",
         type=str,
-        default="cloud_tuning_fine",
+        default="primordial_parametric_final",
         help="Main study prefix (e.g. lvparams5)",
     )
     p.add_argument(
         "--storage_name",
         type=str,
-        default="optuna_cloud_2",
+        default="primordial_parametric_final",
         help="Main study prefix (e.g. lvparams5)",
     )
     p.add_argument(
@@ -395,12 +427,25 @@ def parse_args():
         default=20,
         help="Number of top trials to plot per surrogate",
     )
+    p.add_argument(
+        "--ignore_last_n",
+        type=int,
+        default=10,
+        help=(
+            "Number of most-recent completed trials to exclude from Pareto/hypervolume"
+        ),
+    )
     return p.parse_args()
 
 
 def main():
     args = parse_args()
-    evaluate_tuning(args.study_name, args.top_n, args.storage_name)
+    evaluate_tuning(
+        args.study_name,
+        args.top_n,
+        args.storage_name,
+        ignore_last_n=args.ignore_last_n,
+    )
 
 
 if __name__ == "__main__":

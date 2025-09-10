@@ -73,7 +73,7 @@ class LatentPolyConfig:
     optimizer: str = "AdamW"
     loss_function: nn.Module = nn.SmoothL1Loss()
     activation: nn.Module = nn.ReLU()
-    coder_layers: bool = True
+    coder_layers: int = 1
     coder_width: int = 170
     coeff_network: bool = False
     degree: int = 9
