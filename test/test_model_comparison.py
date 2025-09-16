@@ -11,7 +11,7 @@ def record_calls(monkeypatch):
     """
     calls = []
     names = [
-        "compare_relative_errors",
+        "compare_errors",
         "compare_main_losses",
         "compare_gradients",
         "compare_inference_time",
@@ -88,7 +88,7 @@ def make_dummy_metrics():
                 "uncertainty": {"enabled": True},
             },
             [
-                "compare_relative_errors",
+                "compare_errors",
                 "compare_main_losses",
                 "compare_gradients",
                 "compare_inference_time",
@@ -114,7 +114,7 @@ def make_dummy_metrics():
                 "uncertainty": {"enabled": False},
             },
             [
-                "compare_relative_errors",
+                "compare_errors",
                 "tabular_comparison",
             ],
         ),
@@ -131,7 +131,7 @@ def make_dummy_metrics():
                 "uncertainty": {"enabled": False},
             },
             [
-                "compare_relative_errors",
+                "compare_errors",
                 "compare_main_losses",
                 "tabular_comparison",
             ],

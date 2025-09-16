@@ -14,7 +14,7 @@ class FakeModel:
     def load(self, training_id, surr_name, model_identifier):
         self.load_calls.append((training_id, surr_name, model_identifier))
 
-    def predict(self, *, data_loader, leave_log=None, leave_norm=None):
+    def predict(self, data_loader, leave_log=None, leave_norm=None):
         """
         Return preds and targets of shape [1, 3, n_quantities] where
         preds are always 2x targets.
@@ -193,7 +193,7 @@ def test_evaluate_iterative_predictions(simple_conf, simple_loader, monkeypatch)
         def load(self, training_id, surr_name, model_identifier):
             self.load_calls.append((training_id, surr_name, model_identifier))
 
-        def predict(self, *, data_loader, leave_log=None, leave_norm=None):
+        def predict(self, data_loader, leave_log: bool = False, leave_norm=None):
             # preds == targets == ones
             shape = (1, self.n_timesteps, self.n_quantities)
             ones = torch.ones(shape, dtype=torch.float32)
@@ -219,6 +219,7 @@ def test_evaluate_iterative_predictions(simple_conf, simple_loader, monkeypatch)
         surr_name=surr,
         timesteps=timesteps,
         val_loader="dummy_val_loader",
+        val_params=None,
         conf=simple_conf,
         labels=["q1", "q2"],
     )
@@ -226,7 +227,7 @@ def test_evaluate_iterative_predictions(simple_conf, simple_loader, monkeypatch)
     # ensure we loaded the main model
     assert model.load_calls == [("TID", surr, f"{surr.lower()}_main")]
 
-    # since preds == targets, all errors should be zero
+    # ensure that each m
     for key in [
         "root_mean_squared_error_log",
         "mean_absolute_error_log",
@@ -235,6 +236,7 @@ def test_evaluate_iterative_predictions(simple_conf, simple_loader, monkeypatch)
         "mean_absolute_error",
         "absolute_errors",
     ]:
+        print(metrics[key])
         assert metrics[key] == pytest.approx(0.0)
 
     # array shapes should be (1, T, Q)

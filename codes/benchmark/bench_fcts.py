@@ -375,8 +375,10 @@ def evaluate_iterative_predictions(
     else:
         batch_size = conf["batch_size"]
 
-    # container for the piecewise predictions
+    # container for the piecewise predictions; seed t=0 with ground truth so errors
+    # are computed only on actual predictions for t>=1 while keeping shape intact
     iterative_preds = np.zeros_like(targets)
+    iterative_preds[:, 0, :] = targets[:, 0, :]
 
     # number of chunks
     n_chunks = (n_timesteps + iter_interval - 1) // iter_interval
@@ -429,7 +431,9 @@ def evaluate_iterative_predictions(
         preds_chunk, _ = model.predict(
             data_loader=train_loader, leave_log=True, leave_norm=True
         )
-        iterative_preds[:, start:end, :] = (
+        # We predict steps 1..(chunk_len-1) relative to the provided init state (index 0).
+        # Map these to global indices [start+1 .. end] inclusively.
+        iterative_preds[:, start + 1 : end + 1, :] = (
             preds_chunk[:, 1 : model.n_timesteps, :].detach().cpu().numpy()
         )
 

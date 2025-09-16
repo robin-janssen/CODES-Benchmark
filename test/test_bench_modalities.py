@@ -17,15 +17,20 @@ from codes.benchmark.bench_fcts import (
 class DummyModel:
     def __init__(self, device, n_quantities, n_timesteps, n_parameters, config):
         self._loads = []
+        self.n_timesteps = n_timesteps
 
     def load(self, training_id, surr_name, model_identifier):
         self._loads.append(model_identifier)
 
-    def predict(self, data_loader):
+    def predict(self, data_loader, leave_log=None, leave_norm=None):
         # targets always zero.  Shape (batch=2, timesteps=4, quantities=1).
         preds = torch.rand(2, 4, 1)
         targets = torch.rand(2, 4, 1)
         return preds, targets
+
+    def __call__(self, inputs):
+        # Return a dummy output tensor with 3 dims (B, T, Q)
+        return torch.zeros(1, self.n_timesteps, 1), None
 
 
 # Two standalone fakes: one for heatmap (returns tuple), one for all others (returns None)
@@ -82,7 +87,8 @@ def test_modality_variations(raw_vals, cfg_key, func, main_bs, expected_nums):
         cfg["batch_size"] = [main_bs]
 
     timesteps = np.arange(4)
-    loader = object()
+    # minimal iterable loader; evaluate_batchsize will call next(iter(loader))
+    loader = [np.zeros((1,))]
     labels = ["q"] if func is evaluate_interpolation else None
 
     model = DummyModel(None, 1, len(timesteps), 0, {})
@@ -133,4 +139,4 @@ def test_modality_variations(raw_vals, cfg_key, func, main_bs, expected_nums):
         for num in expected_nums:
             assert f"{prefix} {num}" in metrics
     else:
-        assert "average_uncertainty" in metrics
+        assert "average_uncertainty_log" in metrics

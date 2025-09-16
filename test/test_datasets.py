@@ -280,7 +280,7 @@ class TestCheckAndLoadData:
     def test_check_and_load_data_valid_dataset(self, dataset_name):
         """Test loading valid local datasets."""
         try:
-            result = check_and_load_data(dataset_name, verbose=False)
+            result = check_and_load_data(dataset_name, verbose=False, tolerance=1e-30)
 
             # Check return tuple structure
             assert len(result) == 6, "check_and_load_data should return 6 elements"
