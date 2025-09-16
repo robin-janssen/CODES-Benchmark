@@ -14,12 +14,13 @@ class MultiONetConfig:
     activation: nn.Module = nn.ELU()
     branch_hidden_layers: int = 4
     hidden_size: int = 100
-    learning_rate: float = 0.00184
     output_factor: int = 40
     params_branch: bool = True
-    poly_power: float = 1.52
-    regularization_factor: float = 0.0171
     trunk_hidden_layers: int = 4
+    # cloud_parametric_final_fine, trial 21
+    poly_power: float = 8.20
+    learning_rate: float = 0.00317
+    regularization_factor: float = 0.00653
 
 
 @dataclass
@@ -31,17 +32,18 @@ class LatentNeuralODEConfig:
     optimizer: str = "SGD"
     loss_function: nn.Module = nn.SmoothL1Loss()
     activation: nn.Module = nn.GELU()
-    beta: float = 9.61
     coder_layers: int = 2
     coder_width: int = 180
     encode_params: bool = False
     latent_features: int = 10
-    learning_rate: float = 0.00693
-    momentum: float = 0.613
     ode_layers: int = 3
     ode_tanh_reg: bool = False
     ode_width: int = 220
-    regularization_factor: float = 0.000134
+    # cloud_parametric_final_fine, trial 27
+    momentum: float = 0.075
+    beta: float = 14.4
+    learning_rate: float = 0.00447
+    regularization_factor: float = 3.61e-04
 
 
 @dataclass
@@ -53,12 +55,13 @@ class FullyConnectedConfig:
     optimizer: str = "AdamW"
     loss_function: nn.Module = nn.SmoothL1Loss()
     activation: nn.Module = nn.ELU()
-    beta: float = 0.299
     hidden_size: int = 290
-    learning_rate: float = 0.00331
     num_hidden_layers: int = 5
-    poly_power: float = 1.88
-    regularization_factor: float = 0.113
+    # cloud_parametric_final_fine, trial 26
+    poly_power: float = 8.16
+    beta: float = 2.66
+    learning_rate: float = 0.0122
+    regularization_factor: float = 0.114
 
 
 @dataclass
@@ -70,15 +73,16 @@ class LatentPolyConfig:
     optimizer: str = "AdamW"
     loss_function: nn.Module = nn.SmoothL1Loss()
     activation: nn.Module = nn.ReLU()
-    beta: float = 2.88
-    coder_layers: bool = True
+    coder_layers: int = 1
     coder_width: int = 170
     coeff_network: bool = False
     degree: int = 9
     latent_features: int = 10
-    learning_rate: float = 0.00551
-    poly_power: float = 1.65
-    regularization_factor: float = 0.00629
+    # cloud_parametric_final_fine
+    poly_power: float = 2.46
+    beta: float = 0.694
+    learning_rate: float = 0.00822
+    regularization_factor: float = 0.0567
 
 
 # @dataclass

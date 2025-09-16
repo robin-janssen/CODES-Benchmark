@@ -1,6 +1,7 @@
 import csv
 import importlib.util
 import inspect
+import math
 import os
 import time
 from copy import deepcopy
@@ -410,11 +411,16 @@ def clean_metrics(metrics: dict, conf: dict) -> dict:
     write_metrics.pop("timesteps", None)
     write_metrics["accuracy"].pop("absolute_errors", None)
     write_metrics["accuracy"].pop("relative_errors", None)
+    write_metrics["accuracy"].pop("absolute_errors_log", None)
+
+    if conf["iterative"]:
+        write_metrics["iterative"].pop("absolute_errors", None)
     if conf["gradients"]:
         write_metrics["gradients"].pop("gradients", None)
         write_metrics["gradients"].pop("max_counts", None)
         write_metrics["gradients"].pop("max_gradient", None)
         write_metrics["gradients"].pop("max_error", None)
+        write_metrics["gradients"].pop("errors_log", None)
     if conf["interpolation"]["enabled"]:
         write_metrics["interpolation"].pop("model_errors", None)
         write_metrics["interpolation"].pop("intervals", None)
@@ -425,13 +431,13 @@ def clean_metrics(metrics: dict, conf: dict) -> dict:
         write_metrics["sparse"].pop("model_errors", None)
         write_metrics["sparse"].pop("n_train_samples", None)
     if conf["uncertainty"]["enabled"]:
-        write_metrics["UQ"].pop("pred_uncertainty", None)
+        write_metrics["UQ"].pop("pred_uncertainty_log", None)
         write_metrics["UQ"].pop("max_counts", None)
         write_metrics["UQ"].pop("axis_max", None)
-        write_metrics["UQ"].pop("absolute_errors", None)
-        write_metrics["UQ"].pop("relative_errors", None)
-        write_metrics["UQ"].pop("weighted_diff", None)
-        write_metrics["UQ"].pop("targets", None)
+        write_metrics["UQ"].pop("absolute_errors_log", None)
+        write_metrics["UQ"].pop("relative_errors_log", None)
+        write_metrics["UQ"].pop("weighted_diff_log", None)
+        write_metrics["UQ"].pop("targets_log", None)
 
     return write_metrics
 
@@ -518,6 +524,33 @@ def format_seconds(seconds: int) -> str:
     minutes = (seconds % 3600) // 60
     seconds = seconds % 60
     return f"{hours:02}:{minutes:02}:{seconds:02}"
+
+
+def format_value(v: float, suffix: str = "") -> str:
+    """
+    Format a float with ~3 significant digits, in fixed or scientific notation.
+    Optionally append a suffix (e.g. 'dex', 'MB').
+
+    Args:
+        v (float): Value to format.
+        suffix (str): Unit/suffix to append, e.g. 'dex'. Ignored if as_percent=True.
+
+    Returns:
+        str: Formatted string with optional suffix or percent.
+    """
+
+    if v == 0 or not math.isfinite(v):
+        base = "0" if v == 0 else str(v)
+    else:
+        av = abs(v)
+        if 1e-2 <= av < 1e4:
+            e = math.floor(math.log10(av))
+            dec = max(0, 3 - 1 - e)
+            base = f"{v:.{dec}f}".rstrip("0").rstrip(".")
+        else:
+            base = f"{v:.2e}"
+
+    return f"{base} {suffix}".strip()
 
 
 def flatten_dict(d: dict, parent_key: str = "", sep: str = " - ") -> dict:

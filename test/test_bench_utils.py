@@ -1,10 +1,9 @@
 import csv
-
 from pathlib import Path
 
 import numpy as np
-import torch
 import pytest
+import torch
 
 from codes.benchmark import bench_utils as bu
 
@@ -122,6 +121,7 @@ def test_make_and_save_csv(tmp_path):
         "sparse": {"enabled": False},
         "uncertainty": {"enabled": False},
         "verbose": False,
+        "iterative": False,
     }
     # run
     bu.make_comparison_csv(metrics, config)

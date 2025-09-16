@@ -96,7 +96,7 @@ def plot_test_losses(
     """
 
     plt.figure(figsize=(12, 6))
-    colors = plt.cm.viridis(np.linspace(0, 0.9, len(test_losses)))
+    colors = plt.cm.viridis(np.linspace(0, 0.95, len(test_losses)))
 
     for i, test_loss in enumerate(test_losses):
         avg_loss = moving_average(test_loss, window_size)

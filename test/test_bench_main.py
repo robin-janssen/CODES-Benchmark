@@ -14,7 +14,7 @@ class FakeModel:
     def load(self, training_id, surr_name, model_identifier):
         self.load_calls.append((training_id, surr_name, model_identifier))
 
-    def predict(self, *, data_loader, leave_log=None, leave_norm=None):
+    def predict(self, data_loader, leave_log=None, leave_norm=None):
         """
         Return preds and targets of shape [1, 3, n_quantities] where
         preds are always 2x targets.
@@ -37,7 +37,7 @@ def no_plots(monkeypatch):
     for fn in [
         "plot_error_percentiles_over_time",
         "plot_error_distribution_per_quantity",
-        "plot_dynamic_correlation_heatmap",
+        "plot_gradients_heatmap",
     ]:
         monkeypatch.setattr(
             bf,
@@ -48,7 +48,7 @@ def no_plots(monkeypatch):
                     0.1,
                     0.2,
                 )
-                if fn == "plot_dynamic_correlation_heatmap"
+                if fn == "plot_gradients_heatmap"
                 else None
             ),
         )
@@ -103,12 +103,12 @@ def test_evaluate_accuracy(simple_conf, simple_loader):
     assert metrics["relative_errors"].shape == (1, 3, 2)
 
 
-def test_evaluate_dynamic_accuracy(simple_conf, simple_loader):
+def test_evaluate_gradients(simple_conf, simple_loader):
     model = FakeModel(n_quantities=1)
     surr = "SurrA"
     simple_conf["surrogates"] = [surr]
     # call
-    out = bf.evaluate_dynamic_accuracy(
+    out = bf.evaluate_gradients(
         model=model,
         surr_name=surr,
         test_loader=simple_loader,
@@ -193,7 +193,7 @@ def test_evaluate_iterative_predictions(simple_conf, simple_loader, monkeypatch)
         def load(self, training_id, surr_name, model_identifier):
             self.load_calls.append((training_id, surr_name, model_identifier))
 
-        def predict(self, *, data_loader, leave_log=None, leave_norm=None):
+        def predict(self, data_loader, leave_log: bool = False, leave_norm=None):
             # preds == targets == ones
             shape = (1, self.n_timesteps, self.n_quantities)
             ones = torch.ones(shape, dtype=torch.float32)
@@ -219,6 +219,7 @@ def test_evaluate_iterative_predictions(simple_conf, simple_loader, monkeypatch)
         surr_name=surr,
         timesteps=timesteps,
         val_loader="dummy_val_loader",
+        val_params=None,
         conf=simple_conf,
         labels=["q1", "q2"],
     )
@@ -226,7 +227,7 @@ def test_evaluate_iterative_predictions(simple_conf, simple_loader, monkeypatch)
     # ensure we loaded the main model
     assert model.load_calls == [("TID", surr, f"{surr.lower()}_main")]
 
-    # since preds == targets, all errors should be zero
+    # ensure that each m
     for key in [
         "root_mean_squared_error_log",
         "mean_absolute_error_log",
@@ -235,6 +236,7 @@ def test_evaluate_iterative_predictions(simple_conf, simple_loader, monkeypatch)
         "mean_absolute_error",
         "absolute_errors",
     ]:
+        print(metrics[key])
         assert metrics[key] == pytest.approx(0.0)
 
     # array shapes should be (1, T, Q)

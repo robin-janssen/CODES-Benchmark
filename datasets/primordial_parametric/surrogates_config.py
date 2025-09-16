@@ -14,12 +14,13 @@ class MultiONetConfig:
     activation: nn.Module = nn.PReLU()
     branch_hidden_layers: int = 5
     hidden_size: int = 50
-    learning_rate: float = 0.0018
     output_factor: int = 74
     params_branch: bool = True
-    poly_power: float = 0.64
-    regularization_factor: float = 0.00114
-    trunk_hidden_layers: bool = True
+    trunk_hidden_layers: int = 1
+    # primordial_parametric_final_fine, trial 1
+    poly_power: float = 2.57
+    learning_rate: float = 0.00519
+    regularization_factor: float = 0.00138
 
 
 @dataclass
@@ -34,14 +35,15 @@ class LatentNeuralODEConfig:
     coder_layers: bool = True
     coder_width: int = 360
     encode_params: bool = False
-    eta_min: float = 0.00191
     latent_features: int = 10
-    learning_rate: float = 2.04e-05
-    momentum: float = 0.823
     ode_layers: int = 8
     ode_tanh_reg: bool = True
     ode_width: int = 220
-    regularization_factor: float = 1.87e-05
+    # primordial_parametric_final_fine, trial 1
+    eta_min: float = 5.32e-04
+    learning_rate: float = 2.78e-06
+    momentum: float = 0.331
+    regularization_factor: float = 6.36e-05
 
 
 @dataclass
@@ -53,12 +55,13 @@ class FullyConnectedConfig:
     optimizer: str = "AdamW"
     loss_function: nn.Module = nn.SmoothL1Loss()
     activation: nn.Module = nn.Mish()
-    beta: float = 6.69
     hidden_size: int = 470
-    learning_rate: float = 0.00129
     num_hidden_layers: int = 3
-    poly_power: float = 0.899
-    regularization_factor: float = 0.0144
+    # primordial_parametric_final_fine, trial 1
+    poly_power: float = 0.163
+    beta: float = 39.5
+    learning_rate: float = 1.29e-04
+    regularization_factor: float = 0.0333
 
 
 @dataclass
@@ -75,9 +78,10 @@ class LatentPolyConfig:
     coeff_network: bool = False
     degree: int = 3
     latent_features: int = 7
-    learning_rate: float = 1.33e-05
-    poly_power: float = 0.804
-    regularization_factor: float = 0.0174
+    # primordial_parametric_final_fine
+    poly_power: float = 0.264
+    learning_rate: float = 5.96e-06
+    regularization_factor: float = 0.0510
 
 
 # @dataclass

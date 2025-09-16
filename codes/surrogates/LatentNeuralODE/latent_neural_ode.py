@@ -421,7 +421,7 @@ class ModelWrapper(nn.Module):
         if n_parameters == 0 or config.encode_params:
             # solver state = latent_dim
             ode_net = ODE(
-                input_shape=latent_dim + (0 if config.encode_params else 0),
+                input_shape=latent_dim,
                 output_shape=latent_dim,
                 activation=config.activation,
                 ode_layers=config.ode_layers,

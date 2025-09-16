@@ -1,4 +1,5 @@
 import pytest
+
 from codes.benchmark import bench_fcts
 
 
@@ -10,9 +11,9 @@ def record_calls(monkeypatch):
     """
     calls = []
     names = [
-        "compare_relative_errors",
+        "compare_errors",
         "compare_main_losses",
-        "compare_dynamic_accuracy",
+        "compare_gradients",
         "compare_inference_time",
         "compare_interpolation",
         "compare_extrapolation",
@@ -87,9 +88,9 @@ def make_dummy_metrics():
                 "uncertainty": {"enabled": True},
             },
             [
-                "compare_relative_errors",
+                "compare_errors",
                 "compare_main_losses",
-                "compare_dynamic_accuracy",
+                "compare_gradients",
                 "compare_inference_time",
                 "compare_interpolation",
                 "compare_extrapolation",
@@ -113,7 +114,7 @@ def make_dummy_metrics():
                 "uncertainty": {"enabled": False},
             },
             [
-                "compare_relative_errors",
+                "compare_errors",
                 "tabular_comparison",
             ],
         ),
@@ -130,7 +131,7 @@ def make_dummy_metrics():
                 "uncertainty": {"enabled": False},
             },
             [
-                "compare_relative_errors",
+                "compare_errors",
                 "compare_main_losses",
                 "tabular_comparison",
             ],

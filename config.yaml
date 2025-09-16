@@ -1,19 +1,17 @@
 # Global settings for the benchmark
-training_id: "primordial_naive_main"
+training_id: "_cloud_finetuned"
 surrogates: ["MultiONet", "FullyConnected", "LatentNeuralODE", "LatentPoly"]
-batch_size: [71650, 71650, 717, 717] # [65536, 65536, 512, 512]
-epochs: [10000, 10000, 10000, 10000] # [4096, 4096, 4096, 4096]
+batch_size: [35838, 35838, 717, 717] # [65536, 65536, 512, 512]
+epochs: [8000, 8000, 8000, 8000] # [4096, 4096, 4096, 4096]
 dataset: 
-  name: "primordial"
+  name: cloud
   log10_transform: True
-  log10_transform_params: False
-  per_species: True
-  normalise: "minmax" # "minmax" # "standardise", "minmax", "disable"
-  use_optimal_params: True
-  tolerance: 1e-15
+  normalise: minmax
   subset_factor: 1
+  tolerance: 1e-25
+  normalise_per_species: True
   log_timesteps: True
-devices: ["cuda:0", "cuda:1", "cuda:2", "cuda:3"]
+devices: ["cuda:3", "cuda:2", "cuda:3", "cuda:5", "cuda:6", "cuda:7", "cuda:8", "cuda:9"]
 seed: 42
 verbose: False
 checkpoint: True
@@ -30,15 +28,15 @@ sparse:
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
   enabled: False
-  sizes: [64, 512, 1024, 4096]
+  sizes: [1/16, 1/8, 1/4, 1/2]
 uncertainty: 
   enabled: False
   ensemble_size: 5  # Number of models for deep ensemble
 
 # Evaluations during benchmark
-iterative: True
-losses: True
-gradients: True
+iterative: False
+losses: False
+gradients: False
 timing: True
-compute: True
+compute: False
 compare: True # Whether to compare the surrogates
