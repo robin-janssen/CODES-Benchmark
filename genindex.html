@@ -616,16 +616,22 @@ document.write(`
         <li><a href="codes.benchmark.html#codes.benchmark.bench_fcts.compare_batchsize">(in module codes.benchmark.bench_fcts)</a>
 </li>
       </ul></li>
-      <li><a href="codes.benchmark.html#codes.benchmark.compare_dynamic_accuracy">compare_dynamic_accuracy() (in module codes.benchmark)</a>
+      <li><a href="codes.benchmark.html#codes.benchmark.compare_errors">compare_errors() (in module codes.benchmark)</a>
 
       <ul>
-        <li><a href="codes.benchmark.html#codes.benchmark.bench_fcts.compare_dynamic_accuracy">(in module codes.benchmark.bench_fcts)</a>
+        <li><a href="codes.benchmark.html#codes.benchmark.bench_fcts.compare_errors">(in module codes.benchmark.bench_fcts)</a>
 </li>
       </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.compare_extrapolation">compare_extrapolation() (in module codes.benchmark)</a>
 
       <ul>
         <li><a href="codes.benchmark.html#codes.benchmark.bench_fcts.compare_extrapolation">(in module codes.benchmark.bench_fcts)</a>
+</li>
+      </ul></li>
+      <li><a href="codes.benchmark.html#codes.benchmark.compare_gradients">compare_gradients() (in module codes.benchmark)</a>
+
+      <ul>
+        <li><a href="codes.benchmark.html#codes.benchmark.bench_fcts.compare_gradients">(in module codes.benchmark.bench_fcts)</a>
 </li>
       </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.compare_inference_time">compare_inference_time() (in module codes.benchmark)</a>
@@ -650,12 +656,6 @@ document.write(`
 
       <ul>
         <li><a href="codes.benchmark.html#codes.benchmark.bench_fcts.compare_models">(in module codes.benchmark.bench_fcts)</a>
-</li>
-      </ul></li>
-      <li><a href="codes.benchmark.html#codes.benchmark.compare_relative_errors">compare_relative_errors() (in module codes.benchmark)</a>
-
-      <ul>
-        <li><a href="codes.benchmark.html#codes.benchmark.bench_fcts.compare_relative_errors">(in module codes.benchmark.bench_fcts)</a>
 </li>
       </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.compare_sparse">compare_sparse() (in module codes.benchmark)</a>
@@ -860,16 +860,16 @@ document.write(`
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="codes.benchmark.html#codes.benchmark.evaluate_dynamic_accuracy">evaluate_dynamic_accuracy() (in module codes.benchmark)</a>
-
-      <ul>
-        <li><a href="codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_dynamic_accuracy">(in module codes.benchmark.bench_fcts)</a>
-</li>
-      </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.evaluate_extrapolation">evaluate_extrapolation() (in module codes.benchmark)</a>
 
       <ul>
         <li><a href="codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_extrapolation">(in module codes.benchmark.bench_fcts)</a>
+</li>
+      </ul></li>
+      <li><a href="codes.benchmark.html#codes.benchmark.evaluate_gradients">evaluate_gradients() (in module codes.benchmark)</a>
+
+      <ul>
+        <li><a href="codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_gradients">(in module codes.benchmark.bench_fcts)</a>
 </li>
       </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.evaluate_interpolation">evaluate_interpolation() (in module codes.benchmark)</a>
@@ -938,6 +938,12 @@ document.write(`
 
       <ul>
         <li><a href="codes.benchmark.html#codes.benchmark.bench_utils.format_time">(in module codes.benchmark.bench_utils)</a>
+</li>
+      </ul></li>
+      <li><a href="codes.benchmark.html#codes.benchmark.format_value">format_value() (in module codes.benchmark)</a>
+
+      <ul>
+        <li><a href="codes.benchmark.html#codes.benchmark.bench_utils.format_value">(in module codes.benchmark.bench_utils)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -1068,12 +1074,6 @@ document.write(`
 
       <ul>
         <li><a href="codes.tune.html#codes.tune.postgres_fcts.initialize_optuna_database">(in module codes.tune.postgres_fcts)</a>
-</li>
-      </ul></li>
-      <li><a href="codes.benchmark.html#codes.benchmark.int_ext_sparse">int_ext_sparse() (in module codes.benchmark)</a>
-
-      <ul>
-        <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.int_ext_sparse">(in module codes.benchmark.bench_plots)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -1399,16 +1399,18 @@ document.write(`
         <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_average_uncertainty_over_time">(in module codes.benchmark.bench_plots)</a>
 </li>
       </ul></li>
-      <li><a href="codes.benchmark.html#codes.benchmark.plot_comparative_dynamic_correlation_heatmaps">plot_comparative_dynamic_correlation_heatmaps() (in module codes.benchmark)</a>
-
-      <ul>
-        <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_comparative_dynamic_correlation_heatmaps">(in module codes.benchmark.bench_plots)</a>
+      <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_catastrophic_detection_curves">plot_catastrophic_detection_curves() (in module codes.benchmark.bench_plots)</a>
 </li>
-      </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.plot_comparative_error_correlation_heatmaps">plot_comparative_error_correlation_heatmaps() (in module codes.benchmark)</a>
 
       <ul>
         <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_comparative_error_correlation_heatmaps">(in module codes.benchmark.bench_plots)</a>
+</li>
+      </ul></li>
+      <li><a href="codes.benchmark.html#codes.benchmark.plot_comparative_gradient_heatmaps">plot_comparative_gradient_heatmaps() (in module codes.benchmark)</a>
+
+      <ul>
+        <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_comparative_gradient_heatmaps">(in module codes.benchmark.bench_plots)</a>
 </li>
       </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.plot_dynamic_correlation">plot_dynamic_correlation() (in module codes.benchmark)</a>
@@ -1417,22 +1419,6 @@ document.write(`
         <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_dynamic_correlation">(in module codes.benchmark.bench_plots)</a>
 </li>
       </ul></li>
-      <li><a href="codes.benchmark.html#codes.benchmark.plot_dynamic_correlation_heatmap">plot_dynamic_correlation_heatmap() (in module codes.benchmark)</a>
-
-      <ul>
-        <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_dynamic_correlation_heatmap">(in module codes.benchmark.bench_plots)</a>
-</li>
-      </ul></li>
-      <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_dynamic_correlation_heatmap_old">plot_dynamic_correlation_heatmap_old() (in module codes.benchmark.bench_plots)</a>
-</li>
-      <li><a href="codes.benchmark.html#codes.benchmark.plot_error_correlation_heatmap">plot_error_correlation_heatmap() (in module codes.benchmark)</a>
-
-      <ul>
-        <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_error_correlation_heatmap">(in module codes.benchmark.bench_plots)</a>
-</li>
-      </ul></li>
-      <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_error_correlation_heatmap_old">plot_error_correlation_heatmap_old() (in module codes.benchmark.bench_plots)</a>
-</li>
       <li><a href="codes.benchmark.html#codes.benchmark.plot_error_distribution_comparative">plot_error_distribution_comparative() (in module codes.benchmark)</a>
 
       <ul>
@@ -1451,6 +1437,8 @@ document.write(`
         <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_error_percentiles_over_time">(in module codes.benchmark.bench_plots)</a>
 </li>
       </ul></li>
+      <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_errors_over_time">plot_errors_over_time() (in module codes.benchmark.bench_plots)</a>
+</li>
       <li><a href="codes.benchmark.html#codes.benchmark.plot_example_iterative_predictions">plot_example_iterative_predictions() (in module codes.benchmark)</a>
 
       <ul>
@@ -1475,12 +1463,16 @@ document.write(`
         <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_generalization_error_comparison">(in module codes.benchmark.bench_plots)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="codes.benchmark.html#codes.benchmark.plot_generalization_errors">plot_generalization_errors() (in module codes.benchmark)</a>
 
       <ul>
         <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_generalization_errors">(in module codes.benchmark.bench_plots)</a>
+</li>
+      </ul></li>
+      <li><a href="codes.benchmark.html#codes.benchmark.plot_gradients_heatmap">plot_gradients_heatmap() (in module codes.benchmark)</a>
+
+      <ul>
+        <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_gradients_heatmap">(in module codes.benchmark.bench_plots)</a>
 </li>
       </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.plot_loss_comparison">plot_loss_comparison() (in module codes.benchmark)</a>
@@ -1489,6 +1481,8 @@ document.write(`
         <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_loss_comparison">(in module codes.benchmark.bench_plots)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_loss_comparison_equal">plot_loss_comparison_equal() (in module codes.benchmark.bench_plots)</a>
 </li>
       <li><a href="codes.benchmark.html#codes.benchmark.plot_loss_comparison_train_duration">plot_loss_comparison_train_duration() (in module codes.benchmark)</a>
@@ -1513,6 +1507,8 @@ document.write(`
         <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_MAE_comparison">(in module codes.benchmark.bench_plots)</a>
 </li>
       </ul></li>
+      <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_mean_deltadex_over_time_main_vs_ensemble">plot_mean_deltadex_over_time_main_vs_ensemble() (in module codes.benchmark.bench_plots)</a>
+</li>
       <li><a href="codes.benchmark.html#codes.benchmark.plot_relative_errors">plot_relative_errors() (in module codes.benchmark)</a>
 
       <ul>
@@ -1535,6 +1531,12 @@ document.write(`
 
       <ul>
         <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_uncertainty_confidence">(in module codes.benchmark.bench_plots)</a>
+</li>
+      </ul></li>
+      <li><a href="codes.benchmark.html#codes.benchmark.plot_uncertainty_heatmap">plot_uncertainty_heatmap() (in module codes.benchmark)</a>
+
+      <ul>
+        <li><a href="codes.benchmark.html#codes.benchmark.bench_plots.plot_uncertainty_heatmap">(in module codes.benchmark.bench_plots)</a>
 </li>
       </ul></li>
       <li><a href="codes.benchmark.html#codes.benchmark.plot_uncertainty_over_time_comparison">plot_uncertainty_over_time_comparison() (in module codes.benchmark)</a>

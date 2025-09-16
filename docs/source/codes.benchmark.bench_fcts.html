@@ -376,31 +376,31 @@ document.write(`
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.compare_UQ" title="codes.benchmark.bench_fcts.compare_UQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_UQ</span></code></a>(all_metrics, config)</p></td>
-<td><p>Compare the uncertainty quantification (UQ) metrics of different surrogate models.</p></td>
+<td><p>Compare log-space UQ across surrogates, focusing on:</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.compare_batchsize" title="codes.benchmark.bench_fcts.compare_batchsize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_batchsize</span></code></a>(all_metrics, config)</p></td>
 <td><p>Compare the batch size training errors of different surrogate models.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.compare_dynamic_accuracy" title="codes.benchmark.bench_fcts.compare_dynamic_accuracy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_dynamic_accuracy</span></code></a>(metrics, config)</p></td>
-<td><p>Compare the gradients of different surrogate models.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.compare_errors" title="codes.benchmark.bench_fcts.compare_errors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_errors</span></code></a>(metrics, config)</p></td>
+<td><p>Compare relative errors and Δdex errors over time for different surrogate models.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.compare_extrapolation" title="codes.benchmark.bench_fcts.compare_extrapolation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_extrapolation</span></code></a>(all_metrics, config)</p></td>
 <td><p>Compare the extrapolation errors of different surrogate models.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.compare_inference_time" title="codes.benchmark.bench_fcts.compare_inference_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_inference_time</span></code></a>(metrics, config[, save])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.compare_gradients" title="codes.benchmark.bench_fcts.compare_gradients"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_gradients</span></code></a>(metrics, config)</p></td>
+<td><p>Compare the gradients of different surrogate models.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.compare_inference_time" title="codes.benchmark.bench_fcts.compare_inference_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_inference_time</span></code></a>(metrics, config[, save])</p></td>
 <td><p>Compare the mean inference time of different surrogate models.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.compare_interpolation" title="codes.benchmark.bench_fcts.compare_interpolation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_interpolation</span></code></a>(all_metrics, config)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.compare_interpolation" title="codes.benchmark.bench_fcts.compare_interpolation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_interpolation</span></code></a>(all_metrics, config)</p></td>
 <td><p>Compare the interpolation errors of different surrogate models.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.compare_main_losses" title="codes.benchmark.bench_fcts.compare_main_losses"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_main_losses</span></code></a>(metrics, config)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.compare_main_losses" title="codes.benchmark.bench_fcts.compare_main_losses"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_main_losses</span></code></a>(metrics, config)</p></td>
 <td><p>Compare the training and test losses of the main models for different surrogate models.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.compare_models" title="codes.benchmark.bench_fcts.compare_models"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_models</span></code></a>(metrics, config)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.compare_models" title="codes.benchmark.bench_fcts.compare_models"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_models</span></code></a>(metrics, config)</p></td>
 <td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.compare_relative_errors" title="codes.benchmark.bench_fcts.compare_relative_errors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_relative_errors</span></code></a>(metrics, config)</p></td>
-<td><p>Compare the relative errors over time for different surrogate models.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.compare_sparse" title="codes.benchmark.bench_fcts.compare_sparse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_sparse</span></code></a>(all_metrics, config)</p></td>
 <td><p>Compare the sparse training errors of different surrogate models.</p></td>
@@ -412,25 +412,25 @@ document.write(`
 <td><p>Evaluate the accuracy of the surrogate model.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_batchsize" title="codes.benchmark.bench_fcts.evaluate_batchsize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_batchsize</span></code></a>(model, surr_name, ...)</p></td>
-<td><p>Evaluate the performance of the surrogate model with different batch sizes.</p></td>
+<td><p>Evaluate the batch-size scaling performance of the surrogate model in log-space (Δdex).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_compute" title="codes.benchmark.bench_fcts.evaluate_compute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_compute</span></code></a>(model, surr_name, ...)</p></td>
 <td><p>Evaluate the computational resource requirements of the surrogate model.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_dynamic_accuracy" title="codes.benchmark.bench_fcts.evaluate_dynamic_accuracy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_dynamic_accuracy</span></code></a>(model, surr_name, ...)</p></td>
-<td><p>Evaluate the gradients of the surrogate model.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_extrapolation" title="codes.benchmark.bench_fcts.evaluate_extrapolation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_extrapolation</span></code></a>(model, surr_name, ...)</p></td>
+<td><p>Evaluate the extrapolation performance of the surrogate model in log-space (Δdex).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_extrapolation" title="codes.benchmark.bench_fcts.evaluate_extrapolation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_extrapolation</span></code></a>(model, surr_name, ...)</p></td>
-<td><p>Evaluate the extrapolation performance of the surrogate model.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_gradients" title="codes.benchmark.bench_fcts.evaluate_gradients"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_gradients</span></code></a>(model, surr_name, ...[, ...])</p></td>
+<td><p>Evaluate the gradients of the surrogate model in log-space (Δdex).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_interpolation" title="codes.benchmark.bench_fcts.evaluate_interpolation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_interpolation</span></code></a>(model, surr_name, ...)</p></td>
-<td><p>Evaluate the interpolation performance of the surrogate model.</p></td>
+<td><p>Evaluate the interpolation performance of the surrogate model in log-space (Δdex).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_iterative_predictions" title="codes.benchmark.bench_fcts.evaluate_iterative_predictions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_iterative_predictions</span></code></a>(model, ...[, ...])</p></td>
 <td><p>Evaluate the iterative predictions of the surrogate model.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.evaluate_sparse" title="codes.benchmark.bench_fcts.evaluate_sparse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_sparse</span></code></a>(model, surr_name, ...)</p></td>
-<td><p>Evaluate the performance of the surrogate model with sparse training data.</p></td>
+<td><p>Evaluate the sparse-data training performance of the surrogate model in log-space (Δdex).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../../codes.benchmark.html#codes.benchmark.bench_fcts.run_benchmark" title="codes.benchmark.bench_fcts.run_benchmark"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_benchmark</span></code></a>(surr_name, surrogate_class, conf)</p></td>
 <td><p>Run benchmarks for a given surrogate model.</p></td>

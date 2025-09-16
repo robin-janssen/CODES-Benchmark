@@ -18,6 +18,7 @@ codes.benchmark.bench\_utils
       flatten_dict
       format_seconds
       format_time
+      format_value
       get_model_config
       get_required_models_list
       get_surrogate
