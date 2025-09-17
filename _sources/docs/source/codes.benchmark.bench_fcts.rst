@@ -15,6 +15,7 @@ codes.benchmark.bench\_fcts
       compare_gradients
       compare_inference_time
       compare_interpolation
+      compare_iterative
       compare_main_losses
       compare_models
       compare_sparse
