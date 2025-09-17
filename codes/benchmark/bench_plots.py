@@ -1593,45 +1593,55 @@ def plot_errors_over_time(
     config: dict,
     save: bool = True,
     show_title: bool = True,
-    mode: str = "relative",  # "relative" or "deltadex"
+    mode: str = "relative",  # "relative", "deltadex", or "iterative"
+    iter_interval: int | None = None,
 ) -> None:
     """
-    Plot errors over time for different surrogate models (relative or Δdex).
+    Plot errors over time for different surrogate models (relative, Δdex, or iterative Δdex).
 
     Args:
         mean_errors (dict): Mean errors for each surrogate.
         median_errors (dict): Median errors for each surrogate.
         timesteps (np.ndarray): Array of timesteps.
         config (dict): Configuration dictionary.
-        save (bool): Whether to save the figure.
-        show_title (bool): Whether to add a title.
-        mode (str): "relative" (percentage errors) or "deltadex" (log-space abs. errors).
+                save (bool): Whether to save the figure.
+                show_title (bool): Whether to add a title.
+                mode (str):
+                        - "relative": percentage errors (y-axis log scale)
+                        - "deltadex": log-space absolute errors (Δdex)
+                        - "iterative": like "deltadex" but also draws dashed vertical lines at every
+                            n-th timestep to indicate the iterative retrigger interval.
+                iter_interval (int | None): Interval for vertical guide lines when mode == "iterative".
     """
     plt.figure(figsize=(6, 4))
     colors = plt.cm.viridis(np.linspace(0, 0.95, len(mean_errors)))
     linestyles = ["-", "--"]
 
+    # Support both dict inputs and array-like median_errors
     for i, surrogate in enumerate(mean_errors.keys()):
-        mean_val = np.mean(mean_errors[surrogate])
-        median_val = np.mean(median_errors[surrogate])
+        mean_series = mean_errors[surrogate]
+        median_series = median_errors[surrogate]
+
+        mean_val = float(np.mean(mean_series))
+        median_val = float(np.mean(median_series))
 
         if mode == "relative":
             mean_label = f"{surrogate}\nMean = {mean_val * 100:.2f}%"
             median_label = f"{surrogate}\nMedian = {median_val * 100:.2f}%"
-        else:  # deltadex
+        else:  # deltadex or iterative
             mean_label = f"{surrogate}\nMean = {mean_val:.3f} dex"
             median_label = f"{surrogate}\nMedian = {median_val:.3f} dex"
 
         plt.plot(
             timesteps,
-            mean_errors[surrogate],
+            mean_series,
             label=mean_label,
             color=colors[i],
             linestyle=linestyles[0],
         )
         plt.plot(
             timesteps,
-            median_errors[surrogate],
+            median_series,
             label=median_label,
             color=colors[i],
             linestyle=linestyles[1],
@@ -1644,10 +1654,23 @@ def plot_errors_over_time(
         plt.yscale("log")
         fname = "accuracy_rel_errors_time_models.png"
         title = "Comparison of Relative Errors Over Time"
-    else:
+    elif mode == "deltadex":
         plt.ylabel(r"Log-MAE ($\Delta dex$)")
         fname = "accuracy_delta_dex_time.png"
         title = "Comparison of Δdex Errors Over Time"
+    elif mode == "iterative":
+        # Single backslash inside raw string to render the LaTeX Delta properly
+        plt.ylabel(r"Log-MAE ($\Delta dex$)")
+        fname = "iterative_delta_dex_time.png"
+        title = "Comparison of Δdex Errors Over Time for Iterative Predictions"
+        # Add subtle dashed vertical lines at every n-th timestep if provided and valid
+        if isinstance(iter_interval, int) and iter_interval > 0:
+            # start at iter_interval to avoid drawing a line at the very first x-limit
+            for idx in range(iter_interval, len(timesteps), iter_interval):
+                x = timesteps[idx]
+                plt.axvline(x=x, linestyle="--", color="gray", alpha=0.3, linewidth=0.8)
+    else:
+        raise ValueError(f"Unknown mode: {mode}")
 
     if config["dataset"]["log_timesteps"]:
         plt.xscale("log")
@@ -2252,7 +2275,7 @@ def plot_error_distribution_comparative(
     conf: dict,
     save: bool = True,
     show_title: bool = True,
-    mode: str = "relative",  # "relative" or "deltadex"
+    mode: str = "relative",  # "relative", "deltadex", or "iterative"
 ) -> None:
     """
     Plot comparative error distributions for each surrogate model.
@@ -2262,7 +2285,8 @@ def plot_error_distribution_comparative(
         conf (dict): Configuration dictionary.
         save (bool): Whether to save the figure.
         show_title (bool): Whether to add a title.
-        mode (str): "relative" (unitless %) or "deltadex" (log-space abs. errors).
+        mode (str): "relative" (unitless %), "deltadex" (log-space abs. errors), or
+            "iterative" (same as deltadex plotting, different title/filename for iterative context).
     """
     model_names = list(errors.keys())
     num_models = len(model_names)
@@ -2321,10 +2345,17 @@ def plot_error_distribution_comparative(
         xlabel = "Relative Error Magnitude"
         title = "Distribution of Surrogate Relative Errors"
         fname = "accuracy_error_dist_relative.png"
-    else:
+    elif mode == "deltadex":
         xlabel = r"Log-MAE ($\Delta dex$)"
         title = "Distribution of Surrogate Δdex Errors"
         fname = "accuracy_error_dist_deltadex.png"
+    elif mode == "iterative":
+        # Plot identical to deltadex but labeled for iterative evaluation context
+        xlabel = r"Log-MAE ($\Delta dex$)"
+        title = "Distribution of Surrogate Relative Errors for Iterative Prediction"
+        fname = "iterative_error_dist_deltadex.png"
+    else:
+        raise ValueError(f"Unknown mode: {mode}")
 
     plt.xlabel(xlabel)
     plt.ylabel("Smoothed Histogram Count")

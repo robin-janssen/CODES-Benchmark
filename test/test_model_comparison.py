@@ -12,6 +12,7 @@ def record_calls(monkeypatch):
     calls = []
     names = [
         "compare_errors",
+        "compare_iterative",
         "compare_main_losses",
         "compare_gradients",
         "compare_inference_time",
@@ -68,6 +69,10 @@ def make_dummy_metrics():
                 "correlation_metrics": None,
                 "weighted_diff": None,
             },
+            "iterative": {
+                "iteration_interval": 10,
+                "absolute_errors_log": None,
+            },
         }
     }
 
@@ -79,6 +84,7 @@ def make_dummy_metrics():
         (
             {
                 "losses": True,
+                "iterative": True,
                 "gradients": True,
                 "timing": True,
                 "interpolation": {"enabled": True},
@@ -90,6 +96,7 @@ def make_dummy_metrics():
             [
                 "compare_errors",
                 "compare_main_losses",
+                "compare_iterative",
                 "compare_gradients",
                 "compare_inference_time",
                 "compare_interpolation",
@@ -105,6 +112,7 @@ def make_dummy_metrics():
         (
             {
                 "losses": False,
+                "iterative": False,
                 "gradients": False,
                 "timing": False,
                 "interpolation": {"enabled": False},
@@ -122,6 +130,7 @@ def make_dummy_metrics():
         (
             {
                 "losses": True,
+                "iterative": False,
                 "gradients": False,
                 "timing": False,
                 "interpolation": {"enabled": False},
@@ -143,6 +152,7 @@ def test_compare_models_branching(record_calls, flags, expected_sequence):
         "training_id": "test",
         "devices": ["cpu"],  # for compare_main_losses
         "losses": flags["losses"],
+        "iterative": flags["iterative"],
         "gradients": flags["gradients"],
         "timing": flags["timing"],
         "interpolation": flags["interpolation"],

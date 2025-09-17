@@ -486,6 +486,8 @@ def evaluate_iterative_predictions(
         "mean_squared_error": mse,
         "mean_absolute_error": mae,
         "absolute_errors": abs_errors,
+        "absolute_errors_log": abs_errors_log,
+        "iteration_interval": iter_interval,
     }
 
 
@@ -1148,6 +1150,9 @@ def compare_models(metrics: dict, config: dict):
     if config["losses"]:
         compare_main_losses(metrics, config)
 
+    if config["iterative"]:
+        compare_iterative(metrics, config)
+
     if config["gradients"]:
         compare_gradients(metrics, config)
 
@@ -1279,6 +1284,44 @@ def compare_errors(metrics: dict[str, dict], config: dict) -> None:
         dataset = config["dataset"]["name"]
         os.makedirs(f"scripts/pp/{dataset}", exist_ok=True)
         np.savez(f"scripts/pp/{dataset}/all_log_errors.npz", log_errors)
+
+
+def compare_iterative(metrics: dict[str, dict], config: dict) -> None:
+    """
+    Compare the iterative prediction errors of different surrogate models.
+
+    Args:
+        metrics (dict[str, dict]): dictionary containing the benchmark metrics for each surrogate model.
+        config (dict): Configuration dictionary.
+
+    Returns:
+        None
+    """
+    iterative_errors = {}
+    mean_iterative_errors = {}
+    median_iterative_errors = {}
+
+    for surrogate, surrogate_metrics in metrics.items():
+        if "iterative" in surrogate_metrics:
+            iterative_errors[surrogate] = surrogate_metrics["iterative"][
+                "absolute_errors_log"
+            ]
+            mean_iterative_errors[surrogate] = np.mean(
+                iterative_errors[surrogate], axis=(0, 2)
+            )
+            median_iterative_errors[surrogate] = np.median(
+                iterative_errors[surrogate], axis=(0, 2)
+            )
+
+    plot_errors_over_time(
+        mean_iterative_errors,
+        median_iterative_errors,
+        surrogate_metrics["timesteps"],
+        config,
+        mode="iterative",
+        iter_interval=surrogate_metrics["iterative"]["iteration_interval"],
+    )
+    plot_error_distribution_comparative(iterative_errors, config, mode="iterative")
 
 
 def compare_inference_time(
