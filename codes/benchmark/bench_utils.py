@@ -415,6 +415,7 @@ def clean_metrics(metrics: dict, conf: dict) -> dict:
 
     if conf["iterative"]:
         write_metrics["iterative"].pop("absolute_errors", None)
+        write_metrics["iterative"].pop("absolute_errors_log", None)
     if conf["gradients"]:
         write_metrics["gradients"].pop("gradients", None)
         write_metrics["gradients"].pop("max_counts", None)
