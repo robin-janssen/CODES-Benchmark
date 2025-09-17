@@ -11,32 +11,32 @@ dataset:
   tolerance: 1e-25
   normalise_per_species: True
   log_timesteps: True
-devices: ["cuda:3", "cuda:2", "cuda:3", "cuda:5", "cuda:6", "cuda:7", "cuda:8", "cuda:9"]
+devices: ["cuda:0", "cuda:2", "cuda:3", "cuda:5", "cuda:6", "cuda:7", "cuda:8", "cuda:9"]
 seed: 42
 verbose: False
 checkpoint: True
 
 # Models to train
 interpolation: 
-  enabled: False
+  enabled: True
   intervals: [2, 3, 4, 5, 6, 7, 8, 9, 10]
 extrapolation:
-  enabled: False
+  enabled: True
   cutoffs: [50, 60, 70, 80, 90]
 sparse: 
-  enabled: False
+  enabled: True
   factors: [2, 4, 8, 16, 32]
 batch_scaling:
-  enabled: False
+  enabled: True
   sizes: [1/16, 1/8, 1/4, 1/2]
 uncertainty: 
-  enabled: False
+  enabled: True
   ensemble_size: 5  # Number of models for deep ensemble
 
 # Evaluations during benchmark
-iterative: False
-losses: False
-gradients: False
+iterative: True
+losses: True
+gradients: True
 timing: True
-compute: False
+compute: True
 compare: True # Whether to compare the surrogates

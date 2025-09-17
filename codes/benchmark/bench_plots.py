@@ -2458,6 +2458,10 @@ def plot_catastrophic_detection_curves(
     names = list(errors_log.keys())
     colors = plt.cm.viridis(np.linspace(0, 0.95, len(names)))
     summary: dict[str, dict[float, dict[str, float]]] = {}
+    # TEMP
+    recall_99 = np.zeros((len(names), len(flag_fractions)))
+    recall_90 = np.zeros((len(names), len(flag_fractions)))
+    dataset_name = conf["dataset"]["name"]
 
     # --- Recall vs fraction flagged (per catastrophic percentile) ---
     for ax, perc in zip(axes[:-1], percentiles):
@@ -2476,11 +2480,21 @@ def plot_catastrophic_detection_curves(
 
             xs, ys = [], []
             for f in flag_fractions:
-                unc_thr = np.percentile(u, 100.0 * (1.0 - float(f)))
-                flagged = u >= unc_thr
-                recall = (flagged & is_cat).sum() / n_cat if n_cat > 0 else 0.0
-                xs.append(100.0 * flagged.mean())
-                ys.append(100.0 * recall)
+                if f <= 0.0:
+                    xs.append(0.0)
+                    ys.append(0.0)
+                    recall = 0.0
+                else:
+                    unc_thr = np.percentile(u, 100.0 * (1.0 - float(f)))
+                    flagged = u >= unc_thr
+                    recall = (flagged & is_cat).sum() / n_cat if n_cat > 0 else 0.0
+                    xs.append(100.0 * flagged.mean())
+                    ys.append(100.0 * recall)
+                # TEMP
+                if perc == 99.0:
+                    recall_99[i, flag_fractions.index(f)] = recall
+                if perc == 90.0:
+                    recall_90[i, flag_fractions.index(f)] = recall
 
             ax.plot(
                 xs,
@@ -2506,6 +2520,9 @@ def plot_catastrophic_detection_curves(
             ax.set_title(
                 f"Detection @ {perc}th percentile (Top {100 - perc:.0f}% Δdex)"
             )
+
+    np.savez(f"scripts/pp/{dataset_name}/catastrophic_recall_99.npz", recall_99)
+    np.savez(f"scripts/pp/{dataset_name}/catastrophic_recall_90.npz", recall_90)
 
     # MAE improvement plot
     ax_mae = axes[-1]

@@ -1,3 +1,4 @@
+import os
 from contextlib import redirect_stdout
 from typing import Any
 
@@ -95,6 +96,8 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
         tolerance=conf["dataset"]["tolerance"],
         per_species=conf["dataset"].get("normalise_per_species", False),
     )
+    # TEMP
+    print(conf["dataset"]["name"], train_data.shape, val_data.shape, test_data.shape)
 
     model_config = get_model_config(surr_name, conf)
     n_timesteps = train_data.shape[1]
@@ -1272,6 +1275,10 @@ def compare_errors(metrics: dict[str, dict], config: dict) -> None:
     if log_errors:
         plot_errors_over_time(mean_log, median_log, timesteps, config, mode="deltadex")
         plot_error_distribution_comparative(log_errors, config, mode="deltadex")
+        # TEMP
+        dataset = config["dataset"]["name"]
+        os.makedirs(f"scripts/pp/{dataset}", exist_ok=True)
+        np.savez(f"scripts/pp/{dataset}/all_log_errors.npz", log_errors)
 
 
 def compare_inference_time(
@@ -1540,7 +1547,7 @@ def compare_UQ(all_metrics: dict, config: dict) -> None:
         ensemble_errors,
         ensemble_std,
         config,
-        flag_fractions=(0.01, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50),
+        flag_fractions=(0, 0.025, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50),
         save=True,
         show_title=True,
     )
