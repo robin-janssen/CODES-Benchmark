@@ -1661,6 +1661,7 @@ def plot_errors_over_time(
     elif mode == "iterative":
         # Single backslash inside raw string to render the LaTeX Delta properly
         plt.ylabel(r"Log-MAE ($\Delta dex$)")
+        plt.ylim(bottom=0, top=min(np.max(list(mean_errors.values())) * 1.1, 5))
         fname = "iterative_delta_dex_time.png"
         title = "Comparison of Δdex Errors Over Time for Iterative Predictions"
         # Add subtle dashed vertical lines at every n-th timestep if provided and valid

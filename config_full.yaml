@@ -13,7 +13,7 @@ dataset:
   tolerance: 1e-25
   subset_factor: 1
   log_timesteps: True
-devices: ["cuda:0", "cuda:1", "cuda:2", "cuda:3"] # ["cuda:0", "cuda:1", "cuda:2", "cuda:3", "cuda:4", "cuda:5", "cuda:6", "cuda:7", "cuda:8"]
+devices: ["cuda:1", "cuda:1", "cuda:2", "cuda:3"] # ["cuda:0", "cuda:1", "cuda:2", "cuda:3", "cuda:4", "cuda:5", "cuda:6", "cuda:7", "cuda:8"]
 seed: 42
 verbose: False
 relative_error_threshold: 1e-10

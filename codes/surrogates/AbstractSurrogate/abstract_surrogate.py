@@ -449,8 +449,10 @@ class AbstractSurrogateModel(ABC, nn.Module):
         Returns:
             Tensor | np.ndarray: The denormalized data.
         """
+        data_type = None
         if self.normalisation is not None:
             if not leave_norm:
+                data_type = data.dtype
                 if self.normalisation["mode"] == "disabled":
                     ...
                 elif self.normalisation["mode"] == "minmax":
@@ -475,6 +477,13 @@ class AbstractSurrogateModel(ABC, nn.Module):
             if self.normalisation["log10_transform"] and not leave_log:
                 data = 10**data
 
+            # Conserve dtype
+            if data_type is not None:
+                if isinstance(data, Tensor):
+                    return data.to(dtype=data_type)
+                if isinstance(data, np.ndarray):
+                    return data.astype(data_type)
+            
         return data
 
     def denormalize_old(self, data: Tensor) -> Tensor:

@@ -11,7 +11,7 @@ dataset:
   tolerance: 1e-25
   normalise_per_species: True
   log_timesteps: True
-devices: ["cuda:0", "cuda:2", "cuda:3", "cuda:5", "cuda:6", "cuda:7", "cuda:8", "cuda:9"]
+devices: ["cuda:4", "cuda:2", "cuda:3", "cuda:5", "cuda:6", "cuda:7", "cuda:8", "cuda:9"]
 seed: 42
 verbose: False
 checkpoint: True

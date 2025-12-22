@@ -21,12 +21,17 @@ Notes:
 from __future__ import annotations
 
 import argparse
+import csv
 import os
+import re
+import warnings
 from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
+import yaml
 from scipy.ndimage import gaussian_filter1d
+from sklearn.metrics import roc_auc_score
 
 # Reuse palette from project for consistent styling, but keep a safe fallback
 try:
@@ -158,6 +163,153 @@ def build_color_map(datasets_errors: Dict[str, Dict[str, np.ndarray]]):
     return color_map, names
 
 
+SURROGATE_YAML_FILENAMES: Dict[str, str] = {
+    "LatentNeuralODE": "latentneuralode_metrics.yaml",
+    "MultiONet": "multionet_metrics.yaml",
+    "FullyConnected": "fullyconnected_metrics.yaml",
+    "LatentPoly": "latentpoly_metrics.yaml",
+}
+
+
+def _extract_first_number(token: str) -> float | None:
+    """Return the first numeric value found in a label like 'interval 4'."""
+    matches = re.findall(r"[-+]?\d*\.?\d+", token)
+    if not matches:
+        return None
+    try:
+        return float(matches[0])
+    except ValueError:
+        return None
+
+
+def load_all_surrogate_metrics(
+    root: str, datasets: List[str], surrogates: List[str]
+) -> Dict[str, Dict[str, dict]]:
+    """Load per-surrogate YAML metric dictionaries for each dataset."""
+    results: Dict[str, Dict[str, dict]] = {}
+    for dataset in datasets:
+        dataset_metrics: Dict[str, dict] = {}
+        for surrogate in surrogates:
+            yaml_name = SURROGATE_YAML_FILENAMES.get(surrogate)
+            if not yaml_name:
+                continue
+            path = os.path.join(root, dataset, yaml_name)
+            if not os.path.exists(path):
+                continue
+            try:
+                with open(path, "r", encoding="utf-8") as fh:
+                    data = yaml.safe_load(fh) or {}
+            except Exception:
+                continue
+            if isinstance(data, dict):
+                dataset_metrics[surrogate] = data
+        results[dataset] = dataset_metrics
+    return results
+
+
+def _extract_interpolation_series(metrics: dict) -> Tuple[np.ndarray, np.ndarray]:
+    section = metrics.get("interpolation")
+    if not isinstance(section, dict):
+        return np.array([]), np.array([])
+
+    entries: List[Tuple[float, float]] = []
+    for label, payload in section.items():
+        if not isinstance(payload, dict):
+            continue
+        position = _extract_first_number(label)
+        mae = payload.get("MAE_log")
+        if position is None or mae is None:
+            continue
+        try:
+            entries.append((float(position), float(mae)))
+        except (TypeError, ValueError):
+            continue
+
+    if not entries:
+        return np.array([]), np.array([])
+
+    entries.sort(key=lambda item: item[0])
+    xs, ys = zip(*entries)
+    return np.asarray(xs, dtype=float), np.asarray(ys, dtype=float)
+
+
+def _extract_extrapolation_series(metrics: dict) -> Tuple[np.ndarray, np.ndarray]:
+    section = metrics.get("extrapolation")
+    if not isinstance(section, dict):
+        return np.array([]), np.array([])
+
+    entries: List[Tuple[float, float]] = []
+    for label, payload in section.items():
+        if not isinstance(payload, dict):
+            continue
+        cutoff = _extract_first_number(label)
+        mae = payload.get("MAE_log")
+        if cutoff is None or mae is None:
+            continue
+        try:
+            entries.append((float(cutoff), float(mae)))
+        except (TypeError, ValueError):
+            continue
+
+    if not entries:
+        return np.array([]), np.array([])
+
+    entries.sort(key=lambda item: item[0])
+    xs, ys = zip(*entries)
+    return np.asarray(xs, dtype=float), np.asarray(ys, dtype=float)
+
+
+def _extract_sparse_series(metrics: dict) -> Tuple[np.ndarray, np.ndarray]:
+    section = metrics.get("sparse")
+    if not isinstance(section, dict):
+        return np.array([]), np.array([])
+
+    entries: List[Tuple[float, float]] = []
+    for payload in section.values():
+        if not isinstance(payload, dict):
+            continue
+        mae = payload.get("MAE_log")
+        samples = payload.get("n_train_samples")
+        if mae is None or samples is None:
+            continue
+        try:
+            entries.append((float(samples), float(mae)))
+        except (TypeError, ValueError):
+            continue
+
+    if not entries:
+        return np.array([]), np.array([])
+
+    entries.sort(key=lambda item: item[0])
+    xs, ys = zip(*entries)
+    return np.asarray(xs, dtype=float), np.asarray(ys, dtype=float)
+
+
+def collect_modality_series(
+    dataset_metrics: Dict[str, Dict[str, dict]], modality: str
+) -> Dict[str, Dict[str, Tuple[np.ndarray, np.ndarray]]]:
+    """Convert raw YAML metric dictionaries into plottable series per modality."""
+    extractor_map = {
+        "interpolation": _extract_interpolation_series,
+        "extrapolation": _extract_extrapolation_series,
+        "sparse": _extract_sparse_series,
+    }
+    extractor = extractor_map.get(modality)
+    if extractor is None:
+        raise ValueError(f"Unknown modality '{modality}'")
+
+    modality_data: Dict[str, Dict[str, Tuple[np.ndarray, np.ndarray]]] = {}
+    for dataset, surrogate_metrics in dataset_metrics.items():
+        per_surrogate: Dict[str, Tuple[np.ndarray, np.ndarray]] = {}
+        for surrogate, metrics in surrogate_metrics.items():
+            xs, ys = extractor(metrics)
+            if xs.size == 0 or ys.size == 0:
+                continue
+            per_surrogate[surrogate] = (xs, ys)
+        modality_data[dataset] = per_surrogate
+    return modality_data
+
+
 def reorder_legend_entries_rowwise(
     handles: List, labels: List[str], max_ncols: int
 ) -> Tuple[List, List[str], int]:
@@ -189,6 +341,132 @@ def reorder_legend_entries_rowwise(
                 final_labels.append(labels[idx])
 
     return final_handles, final_labels, legend_ncol
+
+
+def plot_modality_comparison_grid(
+    datasets: List[str],
+    modality_data: Dict[str, Dict[str, Tuple[np.ndarray, np.ndarray]]],
+    color_map: Dict[str, Tuple[float, float, float, float]],
+    xlabel: str,
+    filename: str,
+    dpi: int = 300,
+    n_cols: int = 2,
+    xlog: bool = False,
+    linear_fit: bool = True,
+) -> None:
+    """Render a grid comparing Log-MAE trends across surrogates for one modality.
+
+    When `linear_fit` is True, draw a least-squares fit line per surrogate.
+    """
+
+    n = max(1, len(datasets))
+    n_cols = max(1, n_cols)
+    n_rows = int(np.ceil(n / n_cols))
+    fig, axes = plt.subplots(
+        n_rows,
+        n_cols,
+        figsize=(5 * n_cols, 3.5 * n_rows),
+        sharey=True,
+        squeeze=False,
+    )
+    axes_flat = axes.flatten()
+
+    for idx, dataset in enumerate(datasets):
+        ax = axes_flat[idx]
+        per_surrogate = modality_data.get(dataset, {})
+        if not per_surrogate:
+            ax.text(0.5, 0.5, "No metrics", ha="center", va="center")
+            ax.set_axis_off()
+            continue
+
+        for surrogate, color in color_map.items():
+            series = per_surrogate.get(surrogate)
+            if series is None:
+                continue
+            xs, ys = series
+            if xs.size == 0 or ys.size == 0:
+                continue
+            ax.scatter(xs, ys, color=color, s=25)
+            ax.plot(xs, ys, color=color, alpha=0.6, linestyle="-")
+
+            if linear_fit:
+                mask = np.isfinite(xs) & np.isfinite(ys)
+                if xlog:
+                    mask &= xs > 0
+                if np.count_nonzero(mask) >= 2:
+                    fit_x = xs[mask]
+                    fit_y = ys[mask]
+                    if xlog:
+                        fit_x = np.log10(fit_x)
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", np.RankWarning)
+                        coeffs = np.polyfit(fit_x, fit_y, deg=1)
+                        # print(f"Dataset '{dataset}', Surrogate '{surrogate}': fit coeffs {coeffs}")
+                    fit_domain = np.linspace(fit_x.min(), fit_x.max(), 100)
+                    fit_values = np.polyval(coeffs, fit_domain)
+                    if xlog:
+                        fit_domain = np.power(10.0, fit_domain)
+                    ax.plot(
+                        fit_domain,
+                        fit_values,
+                        color=color,
+                        linestyle="--",
+                        linewidth=1.1,
+                        alpha=0.9,
+                    )
+
+        if xlog:
+            ax.set_xscale("log")
+        # ax.set_yscale("log")
+        ax.grid(True, which="major", linestyle="--", linewidth=0.5, alpha=0.4)
+        if (idx % n_cols) == 0:
+            ax.set_ylabel(r"Log-MAE($\Delta dex$)")
+        ax.set_title(_format_dataset_title(dataset))
+
+    # Hide unused axes (when datasets < grid slots)
+    for ax in axes_flat[len(datasets) :]:
+        ax.set_axis_off()
+
+    # Label bottom row x-axes
+    for ax in axes_flat[-n_cols:]:
+        if ax.has_data():
+            ax.set_xlabel(xlabel)
+
+    legend_handles: List = []
+    legend_labels: List[str] = []
+    for surrogate, color in color_map.items():
+        handle = plt.Line2D(
+            [0],
+            [0],
+            color=color,
+            marker="o",
+            linestyle="-",
+            linewidth=1.2,
+            markersize=5,
+            label=surrogate,
+        )
+        legend_handles.append(handle)
+        legend_labels.append(surrogate)
+
+    legend_handles, legend_labels, legend_ncol = reorder_legend_entries_rowwise(
+        legend_handles, legend_labels, max_ncols=2
+    )
+
+    fig.legend(
+        legend_handles,
+        legend_labels,
+        loc="lower center",
+        bbox_to_anchor=(0.52, 0.03),
+        fontsize="small",
+        frameon=True,
+        ncol=legend_ncol,
+    )
+
+    plt.tight_layout(rect=[0.03, 0.08, 0.97, 0.96])
+
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    fig.savefig(filename, dpi=dpi, bbox_inches="tight")
+    plt.close(fig)
 
 
 def plot_grid_deltadex(
@@ -441,6 +719,89 @@ def _load_catastrophic_recall(
     return None
 
 
+def _load_npz_dict(path: str) -> Dict[str, np.ndarray] | None:
+    if not os.path.exists(path):
+        return None
+    data = np.load(path, allow_pickle=True)
+    try:
+        if "arr_0" in data.files:
+            obj = data["arr_0"]
+            if isinstance(obj, np.ndarray) and obj.dtype == object and obj.shape == ():
+                d = obj.item()
+                return {k: np.asarray(v) for k, v in d.items()}
+            # fallthrough if it wasn't a pickled dict
+        # handle the case np.savez(key=array, ...) was used
+        return {k: np.asarray(data[k]) for k in data.files}
+    finally:
+        data.close()
+
+
+def compute_and_report_auroc_for_datasets(
+    datasets: List[str],
+    root: str,
+    percentile: int = 99,
+    save_csv: bool = True,
+):
+    p = percentile / 100.0
+    for dataset in datasets:
+        err_path = os.path.join(root, dataset, "all_uq_errors.npz")
+        std_path = os.path.join(root, dataset, "all_uq_std.npz")
+
+        errors_dict = _load_npz_dict(err_path)
+        std_dict = _load_npz_dict(std_path)
+
+        if errors_dict is None or std_dict is None:
+            print(f"[WARN] Missing NPZ for {dataset}; skipping.")
+            continue
+
+        keys = [k for k in errors_dict.keys() if k in std_dict]
+        if not keys:
+            print(f"[WARN] No overlapping surrogates for {dataset}; skipping.")
+            continue
+
+        print(
+            f"\n=== AUROC — {dataset} (per-model catastrophic = top {100*(1-p):.1f}% errors) ==="
+        )
+        out_rows = [("surrogate", "auroc", "n_used", "k_cat")]
+
+        for k in keys:
+            e = np.ravel(errors_dict[k])
+            u = np.ravel(std_dict[k])
+            m = np.isfinite(e) & np.isfinite(u)
+            e, u = e[m], u[m]
+
+            N = e.size
+            if N <= 1:
+                print(f"  {k:<20s}: insufficient samples (N={N}).")
+                out_rows.append((k, "", N, 0))
+                continue
+
+            # top-k by error as catastrophics (model-specific)
+            k_cat = int(np.ceil((1.0 - p) * N))
+            k_cat = max(1, min(N - 1, k_cat))
+
+            idx = np.argsort(e)  # ascending
+            cat_idx = idx[-k_cat:]  # largest errors
+            y = np.zeros(N, dtype=int)
+            y[cat_idx] = 1
+
+            try:
+                auc = roc_auc_score(y, u)
+                print(f"  {k:<20s}: AUROC = {auc:.3f}  (N={N}, k={k_cat})")
+                out_rows.append((k, f"{auc:.6f}", N, k_cat))
+            except Exception as ex:
+                print(f"  {k:<20s}: AUROC error: {ex}")
+                out_rows.append((k, "", N, k_cat))
+
+        if save_csv:
+            out_dir = os.path.join(root, dataset)
+            os.makedirs(out_dir, exist_ok=True)
+            csv_path = os.path.join(out_dir, f"auroc_per_model_topk_{percentile}.csv")
+            with open(csv_path, "w", newline="") as f:
+                csv.writer(f).writerows(out_rows)
+            print(f"  → Saved: {csv_path}")
+
+
 def plot_grid_catastrophic_detection(
     datasets: List[str],
     datasets_errors: Dict[str, Dict[str, np.ndarray]],
@@ -548,6 +909,206 @@ def plot_grid_catastrophic_detection(
     plt.close(fig)
 
 
+def _load_iterative_errors(root: str, dataset: str) -> Dict[str, np.ndarray] | None:
+    """Load dict[str, np.ndarray] of iterative Δdex errors for a dataset.
+
+    Expected file: scripts/pp/<dataset>/all_iterative_errors.npz
+    Returns None if missing or unreadable.
+    """
+    path = os.path.join(root, dataset, "all_iterative_errors_3.npz")
+    if not os.path.exists(path):
+        return None
+    try:
+        return _load_errors_npz(path)
+    except Exception:
+        return None
+
+
+def plot_grid_iterative_deltadex_percentiles(
+    datasets: List[str],
+    root: str,
+    timesteps: np.ndarray,
+    color_map: Dict[str, Tuple[float, float, float, float]],
+    dpi: int = 300,
+    n_cols: int = 2,
+    iter_interval: int = 10,
+):
+    """
+    Create a grid (one per dataset) showing iterative Δdex percentiles over time.
+
+    For each dataset, load scripts/pp/<dataset>/all_iterative_errors.npz (dict surrogate-> [N,T,Q]).
+    Plot each surrogate's mean and 99th percentile Δdex over time, with subtle dashed vertical
+    lines at every `iter_interval`-th timestep.
+    """
+    n = max(1, len(datasets))
+    n_cols = max(1, n_cols)
+    n_rows = int(np.ceil(n / n_cols))
+    fig, axes = plt.subplots(
+        n_rows, n_cols, figsize=(5 * n_cols, 3 * n_rows), sharex=False, sharey=True
+    )
+    if isinstance(axes, np.ndarray):
+        axes = axes.flatten()
+    else:
+        axes = [axes]
+
+    # Legend proxies for line styles
+    non_iter_proxy = plt.Line2D(
+        [0],
+        [0],
+        color="black",
+        linestyle="-",
+        label="Non-iterative mean",
+    )
+    iter_proxy = plt.Line2D(
+        [0],
+        [0],
+        color="black",
+        linestyle="--",
+        label="Iterative mean",
+    )
+    # iter_p99_proxy = plt.Line2D(
+    #     [0],
+    #     [0],
+    #     color="black",
+    #     linestyle=":",
+    #     label="Iterative 99th percentile",
+    # )
+
+    surrogate_proxies = []
+    surrogate_labels = []
+    for name, color in color_map.items():
+        surrogate_proxies.append(plt.Line2D([0], [0], color=color, label=name))
+        surrogate_labels.append(name)
+
+    for idx, (ax, dataset) in enumerate(zip(axes, datasets)):
+        iter_err_dict = _load_iterative_errors(root, dataset)
+        try:
+            non_iter_err_dict = load_dataset_errors(root, dataset)
+        except Exception:
+            non_iter_err_dict = {}
+
+        if not iter_err_dict and not non_iter_err_dict:
+            ax.text(
+                0.5,
+                0.5,
+                f"No error data for {dataset}",
+                ha="center",
+                va="center",
+            )
+            ax.set_axis_off()
+            continue
+
+        T = len(timesteps)
+
+        # Plot per-surrogate series
+        for model_name, color in color_map.items():
+            non_iter_arr = (
+                non_iter_err_dict.get(model_name)
+                if model_name in non_iter_err_dict
+                else None
+            )
+            iter_arr = (
+                iter_err_dict.get(model_name)
+                if iter_err_dict and model_name in iter_err_dict
+                else None
+            )
+
+            if non_iter_arr is not None and non_iter_arr.shape[1] == T:
+                axes_to_reduce = tuple(i for i in range(non_iter_arr.ndim) if i != 1)
+                mean_ts = (
+                    np.mean(non_iter_arr, axis=axes_to_reduce)
+                    if axes_to_reduce
+                    else non_iter_arr
+                )
+
+                ax.plot(
+                    timesteps,
+                    mean_ts,
+                    color=color,
+                    linestyle="-",
+                    linewidth=1.3,
+                )
+
+            if iter_arr is not None and iter_arr.shape[1] == T:
+                axes_to_reduce = tuple(i for i in range(iter_arr.ndim) if i != 1)
+                iter_mean = (
+                    np.mean(iter_arr, axis=axes_to_reduce)
+                    if axes_to_reduce
+                    else iter_arr
+                )
+                # iter_p99 = (
+                #     np.percentile(iter_arr, 99, axis=axes_to_reduce)
+                #     if axes_to_reduce
+                #     else iter_arr
+                # )
+                ax.plot(
+                    timesteps,
+                    iter_mean,
+                    color=color,
+                    linestyle="--",
+                    linewidth=1.2,
+                )
+                # ax.plot(
+                #     timesteps,
+                #     iter_p99,
+                #     color=color,
+                #     linestyle=":",
+                #     linewidth=1.0,
+                # )
+
+        # Vertical dashed lines every iter_interval steps (skip initial boundary)
+        if isinstance(iter_interval, int) and iter_interval > 0:
+            for i in range(iter_interval, T, iter_interval):
+                if i < len(timesteps):
+                    x = timesteps[i]
+                    ax.axvline(
+                        x=x, linestyle="--", color="gray", alpha=0.3, linewidth=0.8
+                    )
+
+        ax.set_xscale("log")
+        ax.set_xlim(left=timesteps[0], right=timesteps[-1])
+        if (idx % n_cols) == 0:
+            ax.set_ylabel(r"$\Delta dex$")
+        ax.set_ylim(0, 3.2)
+        ax.set_title(_format_dataset_title(dataset))
+        # ax.set_yscale("log")
+        ax.grid(False)
+
+    # Label bottom row x-axis
+    for ax in axes[-n_cols:]:
+        ax.set_xlabel("Time (y)")
+
+    if n_rows > 1:
+        for ax in axes[:-n_cols]:
+            ax.set_xticklabels([])
+
+    # Combined legend
+    handles = surrogate_proxies + [non_iter_proxy, iter_proxy]  # iter_p99_proxy
+    labels = surrogate_labels + [
+        "One-shot mean",
+        "Iterative mean",
+        # "Iterative 99th percentile",
+    ]
+    handles, labels, legend_ncol = reorder_legend_entries_rowwise(handles, labels, 2)
+
+    fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        bbox_to_anchor=(0.52, 0.025),
+        fontsize="small",
+        frameon=True,
+        ncol=legend_ncol,
+    )
+
+    plt.tight_layout(rect=[0.03, 0.08, 0.97, 0.98])
+
+    out_path = "scripts/pp/iterative_error_percentiles_deltadex_by_dataset.png"
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    fig.savefig(out_path, dpi=dpi, bbox_inches="tight")
+    plt.close(fig)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="2x2 comparative Δdex error distributions across datasets"
@@ -601,45 +1162,91 @@ def main():
     x_min, x_max = compute_global_range(datasets_errors)
     color_map, _ = build_color_map(datasets_errors)
 
-    plot_grid_deltadex(
-        datasets=datasets,
-        datasets_errors=datasets_errors,
-        x_log_min=x_min,
-        x_log_max=x_max,
-        color_map=color_map,
-        dpi=args.dpi,
-        n_cols=args.cols,
+    surrogate_names = list(color_map.keys())
+    dataset_metrics = load_all_surrogate_metrics(
+        root=args.root, datasets=datasets, surrogates=surrogate_names
     )
 
-    # Percentiles-over-time grid (deltadex mode)
-    plot_grid_deltadex_percentiles(
+    modality_specs = [
+        ("interpolation", "Interpolation Interval", False),
+        ("extrapolation", "Extrapolation Cutoff (%)", False),
+        ("sparse", "Training Samples", True),
+    ]
+
+    # for modality, xlabel, xlog in modality_specs:
+    #     modality_data = collect_modality_series(dataset_metrics, modality)
+    #     out_path = os.path.join(
+    #         args.root, f"{modality}_logmae_comparison_by_dataset.png"
+    #     )
+    #     plot_modality_comparison_grid(
+    #         datasets=datasets,
+    #         modality_data=modality_data,
+    #         color_map=color_map,
+    #         xlabel=xlabel,
+    #         filename=out_path,
+    #         dpi=args.dpi,
+    #         n_cols=args.cols,
+    #         xlog=xlog,
+    #     )
+
+    # plot_grid_deltadex(
+    #     datasets=datasets,
+    #     datasets_errors=datasets_errors,
+    #     x_log_min=x_min,
+    #     x_log_max=x_max,
+    #     color_map=color_map,
+    #     dpi=args.dpi,
+    #     n_cols=args.cols,
+    # )
+
+    # # Percentiles-over-time grid (deltadex mode)
+    # plot_grid_deltadex_percentiles(
+    #     datasets=datasets,
+    #     datasets_errors=datasets_errors,
+    #     timesteps=timesteps,
+    #     color_map=color_map,
+    #     dpi=args.dpi,
+    #     n_cols=args.cols,
+    # )
+
+    # Iterative percentiles-over-time grid (deltadex with vertical guide lines)
+    plot_grid_iterative_deltadex_percentiles(
         datasets=datasets,
-        datasets_errors=datasets_errors,
+        root=args.root,
         timesteps=timesteps,
         color_map=color_map,
         dpi=args.dpi,
         n_cols=args.cols,
+        iter_interval=3,
     )
 
-    # Catastrophic detection grid
-    plot_grid_catastrophic_detection(
-        datasets=datasets,
-        datasets_errors=datasets_errors,
-        color_map=color_map,
-        root=args.root,
-        recall_percentile=99,
-        dpi=args.dpi,
-        n_cols=args.cols,
-    )
+    # # Catastrophic detection grid
+    # plot_grid_catastrophic_detection(
+    #     datasets=datasets,
+    #     datasets_errors=datasets_errors,
+    #     color_map=color_map,
+    #     root=args.root,
+    #     recall_percentile=99,
+    #     dpi=args.dpi,
+    #     n_cols=args.cols,
+    # )
 
-    plot_grid_catastrophic_detection(
+    # plot_grid_catastrophic_detection(
+    #     datasets=datasets,
+    #     datasets_errors=datasets_errors,
+    #     color_map=color_map,
+    #     root=args.root,
+    #     recall_percentile=90,
+    #     dpi=args.dpi,
+    #     n_cols=args.cols,
+    # )
+
+    # AUROC reports
+    compute_and_report_auroc_for_datasets(
         datasets=datasets,
-        datasets_errors=datasets_errors,
-        color_map=color_map,
         root=args.root,
-        recall_percentile=90,
-        dpi=args.dpi,
-        n_cols=args.cols,
+        percentile=99,
+        save_csv=True,
     )
 
 
