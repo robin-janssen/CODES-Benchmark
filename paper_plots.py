@@ -420,7 +420,7 @@ def plot_modality_comparison_grid(
         # ax.set_yscale("log")
         ax.grid(True, which="major", linestyle="--", linewidth=0.5, alpha=0.4)
         if (idx % n_cols) == 0:
-            ax.set_ylabel(r"Log-MAE($\Delta dex$)")
+            ax.set_ylabel(r"LAE [dex]")
         ax.set_title(_format_dataset_title(dataset))
 
     # Hide unused axes (when datasets < grid slots)
@@ -537,13 +537,13 @@ def plot_grid_deltadex(
         ax.set_xlim(left=1e-4, right=10)
         # Y label only on first column
         if (idx % n_cols) == 0:
-            ax.set_ylabel("Smoothed Histogram Count")
+            ax.set_ylabel("Smoothed normalized\nlog-space frequency")
         ax.set_ylim(0, None)
         ax.set_title(_format_dataset_title(dataset))
 
     # Common X label and legend
     for ax in axes[-n_cols:]:
-        ax.set_xlabel(r"Log-MAE ($\Delta dex$)")
+        ax.set_xlabel(r"LAE [dex]")
 
     # Build a single legend using first axis handles for present models
     handles, labels = [], []
@@ -567,7 +567,7 @@ def plot_grid_deltadex(
         final_handles,
         final_labels,
         loc="lower center",
-        bbox_to_anchor=(0.52, 0.05),
+        bbox_to_anchor=(0.52, 0.045),
         fontsize="small",
         frameon=True,
         ncol=legend_ncol,
@@ -575,6 +575,7 @@ def plot_grid_deltadex(
 
     # No overall title; leave space at the bottom for legend
     plt.tight_layout(rect=[0.03, 0.08, 0.97, 0.98])
+    fig.align_ylabels(axes)
 
     out_path = "scripts/pp/error_dist_deltadex_by_dataset.png"
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
@@ -655,7 +656,7 @@ def plot_grid_deltadex_percentiles(
         ax.set_xlim(left=max(1, timesteps[0]), right=timesteps[-1])
         # Y label only on first column
         if (idx % n_cols) == 0:
-            ax.set_ylabel(r"$\Delta dex$")
+            ax.set_ylabel(r"LAE [dex]")
         ax.set_ylim(2 * 1e-2, 20)
         ax.set_title(_format_dataset_title(dataset))
         ax.set_yscale("log")
@@ -1068,8 +1069,8 @@ def plot_grid_iterative_deltadex_percentiles(
         ax.set_xscale("log")
         ax.set_xlim(left=timesteps[0], right=timesteps[-1])
         if (idx % n_cols) == 0:
-            ax.set_ylabel(r"$\Delta dex$")
-        ax.set_ylim(0, 3.2)
+            ax.set_ylabel("LAE [dex]")
+        ax.set_ylim(0, 4)
         ax.set_title(_format_dataset_title(dataset))
         # ax.set_yscale("log")
         ax.grid(False)
@@ -1199,7 +1200,7 @@ def main():
     #     n_cols=args.cols,
     # )
 
-    # # Percentiles-over-time grid (deltadex mode)
+    # Percentiles-over-time grid (deltadex mode)
     # plot_grid_deltadex_percentiles(
     #     datasets=datasets,
     #     datasets_errors=datasets_errors,
@@ -1241,13 +1242,13 @@ def main():
     #     n_cols=args.cols,
     # )
 
-    # AUROC reports
-    compute_and_report_auroc_for_datasets(
-        datasets=datasets,
-        root=args.root,
-        percentile=99,
-        save_csv=True,
-    )
+    # # AUROC reports
+    # compute_and_report_auroc_for_datasets(
+    #     datasets=datasets,
+    #     root=args.root,
+    #     percentile=99,
+    #     save_csv=True,
+    # )
 
 
 if __name__ == "__main__":

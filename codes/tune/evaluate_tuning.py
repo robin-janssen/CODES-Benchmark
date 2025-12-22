@@ -329,9 +329,9 @@ def _render_pareto_scatter(
     ax.set_xlim(*data["xlim"])
     ax.set_ylim(*data["ylim"])
     if show_xlabel:
-        ax.set_xlabel("99th-percentile Δdex")
+        ax.set_xlabel(r"LAE$_{99}$ [dex]")
     if show_ylabel:
-        ax.set_ylabel("inference time (s)")
+        ax.set_ylabel("Inference Time [s]")
     if title:
         ax.set_title(title)
     ax.tick_params(labelbottom=not hide_xticklabels)
@@ -389,6 +389,7 @@ def save_pareto_front_grid(datasets: list[dict], out_dir: str):
         loc="lower center",
         ncol=2,
         bbox_to_anchor=(0.53, 0.0),
+        fontsize=10,
     )
     os.makedirs(out_dir, exist_ok=True)
     fig.savefig(os.path.join(out_dir, "pareto_front_grid.png"), dpi=300)
@@ -420,7 +421,7 @@ def save_relative_hv_grid(datasets: list[dict], out_dir: str):
         if show_xlabel:
             ax.set_xlabel("Completed Trials")
         if show_ylabel:
-            ax.set_ylabel("Fraction of Final HV")
+            ax.set_ylabel("Normalized Hypervolume")
         else:
             ax.tick_params(labelleft=False)
         ax.grid(True, linestyle="--", alpha=0.3)
@@ -431,11 +432,11 @@ def save_relative_hv_grid(datasets: list[dict], out_dir: str):
 
     fig.tight_layout(rect=(0.01, 0.01, 0.99, 0.99))
     os.makedirs(out_dir, exist_ok=True)
-    fig.savefig(os.path.join(out_dir, "hypervolume_relative_grid.png"), dpi=300)
+    fig.savefig(os.path.join(out_dir, "hypervolume_normalized_grid.png"), dpi=300)
     plt.close(fig)
     print(
-        f"Saved combined relative-hypervolume grid with {len(datasets)} subplot(s) "
-        f"to {os.path.join(out_dir, 'hypervolume_relative_grid.png')}."
+        f"Saved combined normalized-hypervolume grid with {len(datasets)} subplot(s) "
+        f"to {os.path.join(out_dir, 'hypervolume_normalized_grid.png')}."
     )
 
 
@@ -479,17 +480,17 @@ def save_relative_hv_combined(datasets: list[dict], out_dir: str):
     ax.set_xlim(0, max(max(d["x"]) for d in datasets if len(d["x"])) if datasets else 1)
     ax.set_ylim(0.6, 1.02)
     ax.set_xlabel("Completed Trials")
-    ax.set_ylabel("Fraction of Final HV")
-    ax.set_title("Relative Hypervolume")
+    ax.set_ylabel("Normalized Hypervolume")
+    # ax.set_title("Normalized Hypervolume")
     ax.grid(True, linestyle="--", alpha=0.3)
     ax.legend(ncol=2, loc="lower right")
     fig.tight_layout()
     os.makedirs(out_dir, exist_ok=True)
-    fig.savefig(os.path.join(out_dir, "hypervolume_relative_combined.png"), dpi=300)
+    fig.savefig(os.path.join(out_dir, "hypervolume_normalized_combined.png"), dpi=300)
     plt.close(fig)
     print(
-        "Saved combined relative-hypervolume line plot to "
-        f"{os.path.join(out_dir, 'hypervolume_relative_combined.png')}."
+        "Saved combined normalized-hypervolume line plot to "
+        f"{os.path.join(out_dir, 'hypervolume_normalized_combined.png')}."
     )
 
 
@@ -771,11 +772,11 @@ def evaluate_tuning(
                 plt.plot(
                     np.arange(1, len(rel_hvs) + 1),
                     rel_hvs,
-                    label="Relative Hypervolume",
+                    label="Normalized Hypervolume",
                 )
                 plt.xlabel("Completed Trials")
-                plt.ylabel("Fraction of Final HV")
-                plt.title(f"{suffix} Relative Hypervolume")
+                plt.ylabel("Normalized Hypervolume")
+                plt.title(f"{suffix} Normalized Hypervolume")
                 plt.grid(True)
                 plt.tight_layout()
                 plt.savefig(
@@ -884,13 +885,13 @@ def parse_args():
     p.add_argument(
         "--study_name",
         type=str,
-        default="primordial_parametric_final",
+        default="primordial_final",
         help="Main study prefix (e.g. lvparams5)",
     )
     p.add_argument(
         "--storage_name",
         type=str,
-        default="primordial_parametric_final",
+        default="primordial_final",
         help="Main study prefix (e.g. lvparams5)",
     )
     p.add_argument(
@@ -912,8 +913,8 @@ def parse_args():
         type=str,
         # default="171,114,135,237",  # cloud_final
         # default="27,61,13,299",  # cloud_parametric_final
-        default="18,1,16,234",  # primordial_parametric_final
-        # default="196,107,31,243",  # primordial_final
+        # default="18,1,16,234",  # primordial_parametric_final
+        default="196,107,31,243",  # primordial_final
         help=(
             "Comma-separated list of Optuna trial numbers chosen per study (order "
             "matches sorted study names)."
