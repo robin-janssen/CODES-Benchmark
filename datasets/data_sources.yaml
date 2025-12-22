@@ -10,3 +10,8 @@ branca_large_myr: "https://zenodo.org/records/14243267/files/data.hdf5?download=
 coupled_oscillators: "https://zenodo.org/records/14717175/files/data.hdf5?download=1"
 lv_parametric: https://zenodo.org/records/15412214/files/data.hdf5?download=1
 lv_parametric_no_params: https://zenodo.org/records/15412297/files/data.hdf5?download=1
+cloud: https://zenodo.org/records/18018572/files/codes_cloud_data.hdf5?download=1
+cloud_parametric: https://zenodo.org/records/18018572/files/codes_cloud_parametric_data.hdf5?download=1
+primordial: https://zenodo.org/records/18018572/files/codes_primordial_data.hdf5?download=1
+primordial_parametric: https://zenodo.org/records/18018572/files/codes_primordial_parametric_data.hdf5?download=1
+
