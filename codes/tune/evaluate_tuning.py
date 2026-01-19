@@ -157,7 +157,7 @@ def _pareto_legend_handles() -> list[Line2D]:
         Line2D(
             [0],
             [0],
-            marker="o",
+            marker="v",
             color="none",
             markerfacecolor=BEST_F1_COLOR,
             markeredgecolor=EDGE_COLOR,
@@ -167,7 +167,7 @@ def _pareto_legend_handles() -> list[Line2D]:
         Line2D(
             [0],
             [0],
-            marker="o",
+            marker="^",
             color="none",
             markerfacecolor=CHOSEN_COLOR,
             markeredgecolor=EDGE_COLOR,
@@ -297,10 +297,29 @@ def _render_pareto_scatter(
     best_point = data["best_point"]
     chosen_point = data["chosen_point"]
 
+    # Remove best point and chosen point from pareto points to avoid double-plotting
+    if mask.sum() > 0:
+        pareto_pts = pts[mask]
+        pareto_pts = pareto_pts[
+            ~np.all(pareto_pts == best_point, axis=1)
+        ]  # remove best point
+        if chosen_point is not None:
+            pareto_pts = pareto_pts[
+                ~np.all(pareto_pts == chosen_point, axis=1)
+            ]  # remove chosen point
+        # Recompute mask
+        new_mask = np.array(
+            [any(np.all(p == pp) for pp in pareto_pts) for p in pts], dtype=bool
+        )
+        mask = new_mask
+    else:
+        mask = np.array([False] * pts.shape[0], dtype=bool)
+
     ax.scatter(pts[:, 0], pts[:, 1], color=TRIAL_COLOR, alpha=0.7, label=None)
     ax.scatter(
         pts[mask, 0],
         pts[mask, 1],
+        marker="o",
         color=PARETO_COLOR,
         edgecolor=EDGE_COLOR,
         linewidth=0.5,
@@ -309,6 +328,7 @@ def _render_pareto_scatter(
     ax.scatter(
         best_point[0],
         best_point[1],
+        marker="v",
         color=BEST_F1_COLOR,
         edgecolor=EDGE_COLOR,
         linewidth=0.6,
@@ -319,6 +339,7 @@ def _render_pareto_scatter(
         ax.scatter(
             chosen_point[0],
             chosen_point[1],
+            marker="^",
             color=CHOSEN_COLOR,
             edgecolor=EDGE_COLOR,
             linewidth=0.6,
