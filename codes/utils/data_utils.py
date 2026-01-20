@@ -651,6 +651,9 @@ class DownloadProgressBar(tqdm):
 def download_data(dataset_name: str, path: str | None = None, verbose: bool = True):
     """
     Download the specified dataset if it is not present, with a progress bar.
+    The downloaded file is always renamed to 'data.hdf5', regardless of the
+    filename served by the remote source.
+
     Args:
         dataset_name (str): The name of the dataset.
         path (str, optional): The path to save the dataset. If None, the default data directory is used.
@@ -661,6 +664,7 @@ def download_data(dataset_name: str, path: str | None = None, verbose: bool = Tr
         if path is None
         else os.path.abspath(path)
     )
+
     if os.path.isfile(data_path):
         if verbose:
             print(f"Dataset '{dataset_name}' already exists at {data_path}.")
@@ -679,11 +683,16 @@ def download_data(dataset_name: str, path: str | None = None, verbose: bool = Tr
 
     os.makedirs(os.path.dirname(data_path), exist_ok=True)
 
+    tmp_path = data_path + ".tmp"
+
     print(f"Downloading dataset '{dataset_name}'...")
     with DownloadProgressBar(
         unit="B", unit_scale=True, miniters=1, desc=f"Downloading {dataset_name}"
     ) as t:
-        urllib.request.urlretrieve(url, data_path, reporthook=t.update_to)
+        urllib.request.urlretrieve(url, tmp_path, reporthook=t.update_to)
+
+    os.replace(tmp_path, data_path)
+
     print(f"Dataset '{dataset_name}' downloaded successfully.")
     if verbose:
         print_data_info(data_path)
