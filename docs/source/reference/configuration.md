@@ -1,46 +1,104 @@
 # Configuration Reference
 
-All orchestration happens through YAML configuration files. The schema is purposely flat so it can be edited by hand or generated programmatically. Use this page as a lookup table while editing `config.yaml` or building custom variants.
+All orchestration happens through YAML configuration files. This page documents every configuration option used by `run_training.py` and `run_eval.py`, including which keys are required and which ones have defaults.
+
+## How defaults work
+
+- Missing keys fall back to the defaults listed below via `.get(...)`.
+- Modality blocks (`interpolation`, `extrapolation`, `sparse`, `batch_scaling`, `uncertainty`) are **disabled** if the entire block is omitted.
+- Evaluation switches (`losses`, `iterative`, `gradients`, `timing`, `compute`, `compare`) default to **False** if omitted.
+- Required keys must be provided or the run will fail.
 
 ## Top-level keys
 
-| Key | Description |
-| --- | --- |
-| `training_id` | Folder name under `trained/`, `results/`, and `plots/`. Choose a unique value per experiment. |
-| `surrogates` | Ordered list of surrogate model names registered in `codes.surrogates`. |
-| `batch_size` | Either a single integer or a list aligned with `surrogates`. Controls the per-model training batch size. |
-| `epochs` | Int or list; maps to the number of epochs per surrogate. |
-| `devices` | List of device strings (`cpu`, `cuda:0`, …) used by the training workers. |
-| `seed` | Seed forwarded to PyTorch, NumPy, and Python for reproducibility. |
-| `verbose` | Enables additional console logs during data loading and preprocessing. |
+| Key | Required | Default | Used by | Notes |
+| --- | --- | --- | --- | --- |
+| `training_id` | Yes | None | Training, Eval | Folder name under `trained/`, `results/`, and `plots/`. |
+| `surrogates` | Yes | None | Training, Eval | Ordered list of surrogate class names. |
+| `batch_size` | Yes | None | Training, Eval | Int or list aligned with `surrogates`. |
+| `epochs` | Yes | None | Training, Eval | Int or list aligned with `surrogates`. |
+| `devices` | Yes | None | Training, Eval | List of device strings (`cpu`, `cuda:0`, `mps`, ...). |
+| `seed` | No | `42` | Training | Random seed for training. |
+| `verbose` | No | `false` | Training, Eval | Extra data-loading logs. |
+| `checkpoint` | No | `false` | Training | Enables best-checkpoint saving per model. |
 
 ## Dataset block
 
+| Key | Required | Default | Used by | Notes |
+| --- | --- | --- | --- | --- |
+| `dataset.name` | Yes | None | Training, Eval | Folder inside `datasets/`. |
+| `dataset.log10_transform` | No | `true` | Training, Eval | Log10 transform the data. |
+| `dataset.log10_transform_params` | No | `true` | Training, Eval | Log10 transform the parameters (if present). |
+| `dataset.normalise` | No | `"minmax"` | Training, Eval | `"minmax"`, `"standardise"`, or `"disable"`. |
+| `dataset.normalise_per_species` | No | `false` | Training, Eval | Normalize each species independently. |
+| `dataset.tolerance` | No | `1e-25` | Training, Eval | Lower bound before log transform. |
+| `dataset.subset_factor` | No | `1` | Training | Down-samples data (smoke tests). |
+| `dataset.log_timesteps` | No | `false` | Eval | Used for plotting/log-time axes. |
+| `dataset.use_optimal_params` | No | `true` | Training, Eval | Load surrogate-specific defaults from dataset configs. |
+
+## Modality blocks (optional)
+
+All modality blocks are disabled if omitted. If `enabled: true`, the corresponding list/value is required.
+
+| Block | Required | Default | Keys when enabled |
+| --- | --- | --- | --- |
+| `interpolation` | No | disabled | `intervals` (list of ints) |
+| `extrapolation` | No | disabled | `cutoffs` (list of ints) |
+| `sparse` | No | disabled | `factors` (list of ints) |
+| `batch_scaling` | No | disabled | `sizes` (list of factors, e.g. `["1/2", "1/4"]`) |
+| `uncertainty` | No | disabled | `ensemble_size` (int) |
+
+## Evaluation switches
+
+All switches default to `false` if omitted.
+
+| Key | Default | Notes |
+| --- | --- | --- |
+| `losses` | `false` | Plots training and test losses. |
+| `iterative` | `false` | Iterative roll-out evaluation. |
+| `gradients` | `false` | Gradient vs error analysis. |
+| `timing` | `false` | Inference timing benchmarks. |
+| `compute` | `false` | Memory/parameter count benchmarks. |
+| `compare` | `false` | Cross-surrogate comparison plots/tables. |
+
+## Metric options
+
+| Key | Default | Notes |
+| --- | --- | --- |
+| `relative_error_threshold` | `0.0` | Denominator floor for relative error. |
+| `error_percentile` | `99` | Percentile used in error summaries. |
+
+## Full example config (defaults)
+
+This example includes every key with the default behavior applied. Required values are filled with common placeholders.
+
 ```yaml
+# Required
+training_id: "example_run"
+surrogates: ["MultiONet"]
+batch_size: [65536]
+epochs: [200]
+devices: ["cpu"]
+
+# Optional (defaults)
+seed: 42
+verbose: false
+checkpoint: false
+
 dataset:
   name: "osu2008"
   log10_transform: true
-  log10_transform_params: false
-  normalise: "minmax"    # or "standardise" / "disable"
+  log10_transform_params: true
+  normalise: "minmax"
   normalise_per_species: false
   tolerance: 1e-25
   subset_factor: 1
-  log_timesteps: true
+  log_timesteps: false
   use_optimal_params: true
-```
 
-- `name`: folder inside `datasets/`.
-- `normalise`: choose `"disable"` if the dataset is already scaled.
-- `subset_factor`: down-samples the dataset for quick smoke tests.
-- `log_timesteps`: indicates whether timesteps are logarithmically spaced, which is used when plotting or interpolating.
-
-## Benchmark toggles
-
-Each study type follows the same pattern: an `enabled` flag and the list/scalar that parameterizes the sweep.
-
-```yaml
+# Modalities (disabled unless enabled)
 interpolation:
-  enabled: true
+  enabled: false
   intervals: [2, 3, 4]
 extrapolation:
   enabled: false
@@ -50,44 +108,20 @@ sparse:
   factors: [2, 4, 8]
 batch_scaling:
   enabled: false
-  sizes: [0.125, 0.25, 0.5]
+  sizes: ["1/16", "1/8", "1/4", "1/2"]
 uncertainty:
   enabled: false
   ensemble_size: 5
-iterative:
-  enabled: false
+
+# Evaluation switches (default false)
+losses: false
+iterative: false
+gradients: false
+timing: false
+compute: false
+compare: false
+
+# Metric options
+relative_error_threshold: 0.0
+error_percentile: 99
 ```
-
-- `interpolation` / `extrapolation`: Train additional checkpoints on partial timesteps and compare roll-outs.
-- `sparse`: Reduce available training samples by the listed factors.
-- `batch_scaling`: Sweeps over different minibatch sizes to study throughput.
-- `uncertainty`: Uses deep ensembles; expect `ensemble_size` copies per surrogate.
-- `iterative`: Re-feeds predictions as inputs during evaluation to expose long-horizon drift.
-
-## Evaluation switches
-
-```
-losses: true
-gradients: true
-timing: true
-compute: true
-compare: true
-```
-
-Turn these off to speed up `run_eval.py` when you only need a subset of analyses.
-
-## Surrogate-specific configuration
-
-Each surrogate can declare additional hyperparameters inside a `surrogate_configs` block:
-
-```yaml
-surrogate_configs:
-  MultiONet:
-    hidden_layers: [512, 512]
-    activation: gelu
-  LatentNeuralODE:
-    latent_dim: 64
-    solver: dopri5
-```
-
-Refer to the docstrings of the surrogate classes for the accepted keys. Any dict provided here will be forwarded to the class constructor via `config=model_config`.

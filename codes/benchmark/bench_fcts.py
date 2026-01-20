@@ -88,6 +88,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
         batch_size = conf["batch_size"]
 
     # Load full data and parameters
+    dataset_conf = conf.get("dataset", {})
     (
         (train_data, test_data, val_data),
         (train_params, test_params, val_params),
@@ -96,13 +97,13 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
         _,
         labels,
     ) = check_and_load_data(
-        conf["dataset"]["name"],
+        dataset_conf["name"],
         verbose=conf.get("verbose", False),
-        log=conf["dataset"]["log10_transform"],
-        log_params=conf.get("log10_transform_params", False),
-        normalisation_mode=conf["dataset"]["normalise"],
-        tolerance=conf["dataset"]["tolerance"],
-        per_species=conf["dataset"].get("normalise_per_species", False),
+        log=dataset_conf.get("log10_transform", True),
+        log_params=dataset_conf.get("log10_transform_params", True),
+        normalisation_mode=dataset_conf.get("normalise", "minmax"),
+        tolerance=dataset_conf.get("tolerance", 1e-25),
+        per_species=dataset_conf.get("normalise_per_species", False),
     )
 
     model_config = get_model_config(surr_name, conf)
@@ -138,7 +139,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
     )
 
     # Plot training losses
-    if conf["losses"]:
+    if conf.get("losses", False):
         print("Loss plots...")
         plot_surr_losses(model, surr_name, conf, timesteps, show_title=TITLE)
 
@@ -148,7 +149,7 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
         model, surr_name, timesteps, val_loader, conf, labels
     )
 
-    if conf["iterative"]:
+    if conf.get("iterative", False):
         # Iterative training benchmark
         print("Running iterative training benchmark...")
         metrics["iterative"] = evaluate_iterative_predictions(
@@ -156,53 +157,53 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
         )
 
     # Gradients benchmark
-    if conf["gradients"]:
+    if conf.get("gradients", False):
         print("Running gradients benchmark...")
         # For this benchmark, we can also use the main model
         metrics["gradients"] = evaluate_gradients(model, surr_name, val_loader, conf)
 
     # Timing benchmark
-    if conf["timing"]:
+    if conf.get("timing", False):
         print("Running timing benchmark...")
         metrics["timing"] = time_inference(
             model, surr_name, val_loader, conf, n_test_samples
         )
 
     # Compute (resources) benchmark
-    if conf["compute"]:
+    if conf.get("compute", False):
         print("Running compute benchmark...")
         metrics["compute"] = evaluate_compute(model, surr_name, val_loader, conf)
 
     # Interpolation benchmark
-    if conf["interpolation"]["enabled"]:
+    if conf.get("interpolation", {}).get("enabled", False):
         print("Running interpolation benchmark...")
         metrics["interpolation"] = evaluate_interpolation(
             model, surr_name, val_loader, timesteps, conf, labels
         )
 
     # Extrapolation benchmark
-    if conf["extrapolation"]["enabled"]:
+    if conf.get("extrapolation", {}).get("enabled", False):
         print("Running extrapolation benchmark...")
         metrics["extrapolation"] = evaluate_extrapolation(
             model, surr_name, val_loader, timesteps, conf, labels
         )
 
     # Sparse data benchmark
-    if conf["sparse"]["enabled"]:
+    if conf.get("sparse", {}).get("enabled", False):
         print("Running sparse benchmark...")
         metrics["sparse"] = evaluate_sparse(
             model, surr_name, val_loader, timesteps, n_train_samples, conf
         )
 
     # Batch size benchmark
-    if conf["batch_scaling"]["enabled"]:
+    if conf.get("batch_scaling", {}).get("enabled", False):
         print("Running batch size benchmark...")
         metrics["batch_size"] = evaluate_batchsize(
             model, surr_name, val_loader, timesteps, conf
         )
 
     # Uncertainty Quantification (UQ) benchmark
-    if conf["uncertainty"]["enabled"]:
+    if conf.get("uncertainty", {}).get("enabled", False):
         print("Running UQ benchmark...")
         metrics["UQ"] = evaluate_UQ(
             model, surr_name, val_loader, timesteps, conf, labels
@@ -1182,44 +1183,44 @@ def compare_models(metrics: dict, config: dict):
 
     # Compare errors
     compare_errors(metrics, config)
-    if config["losses"]:
+    if config.get("losses", False):
         compare_main_losses(metrics, config)
 
-    if config["iterative"]:
+    if config.get("iterative", False):
         compare_iterative(metrics, config)
 
-    if config["gradients"]:
+    if config.get("gradients", False):
         compare_gradients(metrics, config)
 
     # Compare inference time
-    if config["timing"]:
+    if config.get("timing", False):
         compare_inference_time(metrics, config)
 
     # Compare interpolation errors
-    if config["interpolation"]["enabled"]:
+    if config.get("interpolation", {}).get("enabled", False):
         compare_interpolation(metrics, config)
 
     # Compare extrapolation errors
-    if config["extrapolation"]["enabled"]:
+    if config.get("extrapolation", {}).get("enabled", False):
         compare_extrapolation(metrics, config)
 
     # Compare sparse training errors
-    if config["sparse"]["enabled"]:
+    if config.get("sparse", {}).get("enabled", False):
         compare_sparse(metrics, config)
 
     if (
-        config["interpolation"]["enabled"]
-        and config["extrapolation"]["enabled"]
-        and config["sparse"]["enabled"]
+        config.get("interpolation", {}).get("enabled", False)
+        and config.get("extrapolation", {}).get("enabled", False)
+        and config.get("sparse", {}).get("enabled", False)
     ):
         plot_all_generalization_errors(metrics, config, show_title=TITLE)
 
     # Compare batch size training errors
-    if config["batch_scaling"]["enabled"]:
+    if config.get("batch_scaling", {}).get("enabled", False):
         compare_batchsize(metrics, config)
 
     # Compare UQ metrics
-    if config["uncertainty"]["enabled"]:
+    if config.get("uncertainty", {}).get("enabled", False):
         compare_UQ(metrics, config)
         # rel_errors_and_uq(metrics, config)
 

@@ -213,7 +213,7 @@ def plot_error_percentiles_over_time(
 
     plt.xlabel("Time")
     plt.xlim(timesteps[0], timesteps[-1])
-    if conf.get("dataset", {}).get("log_timesteps"):
+    if conf.get("dataset", {}).get("log_timesteps", False):
         plt.xscale("log")
     if show_title:
         plt.title(title)
@@ -386,7 +386,7 @@ def plot_average_errors_over_time(
     plt.xlim(timesteps[0], timesteps[-1])
     plt.ylabel(r"Mean $\Delta dex$")
     plt.yscale("log")
-    if conf["dataset"]["log_timesteps"]:
+    if conf.get("dataset", {}).get("log_timesteps", False):
         plt.xscale("log")
     title = f"Mean Δdex Errors over Time ({mode.capitalize()}, {surr_name})"
     filename = f"errors_over_time_{mode}.png"
@@ -485,7 +485,7 @@ def plot_example_mode_predictions(
 
         ax.set_ylabel("log(Abundance)")
         ax.set_xlim(timesteps.min(), timesteps.max())
-        if conf["dataset"]["log_timesteps"]:
+        if conf.get("dataset", {}).get("log_timesteps", False):
             ax.set_xscale("log")
 
         if labels is not None:
@@ -578,7 +578,7 @@ def plot_example_iterative_predictions(
         # retrigger lines
         for t in timesteps[::iter_interval]:
             ax.axvline(x=t, linestyle=":", linewidth=0.8, alpha=0.7)
-        if conf.get("dataset", {}).get("log10_transform", False):
+        if conf.get("dataset", {}).get("log10_transform", True):
             ax.set_yscale("log")
         ax.set_xlim(timesteps.min(), timesteps.max())
         if conf["dataset"].get("log_timesteps", False):
@@ -702,7 +702,7 @@ def plot_example_predictions_with_uncertainty(
             )
 
         ax.set_xlim(timesteps.min(), timesteps.max())
-        if conf["dataset"]["log_timesteps"]:
+        if conf.get("dataset", {}).get("log_timesteps", False):
             ax.set_xscale("log")
 
     fig.text(0.5, 0.04, "Time", ha="center", va="center", fontsize=12)
@@ -776,7 +776,7 @@ def plot_average_uncertainty_over_time(
     plt.xlabel("Time")
     plt.ylabel(r"$\Delta dex$ / Log-Space Uncertainty")
     plt.xlim(timesteps[0], timesteps[-1])
-    if conf["dataset"]["log_timesteps"]:
+    if conf.get("dataset", {}).get("log_timesteps", False):
         plt.xscale("log")
     if show_title:
         plt.title(r"Average Log-Space Uncertainty and Error ($\Delta dex$) Over Time")
@@ -863,7 +863,7 @@ def plot_surr_losses(
     )
 
     # Interpolation losses
-    if conf["interpolation"]["enabled"]:
+    if conf.get("interpolation", {}).get("enabled", False):
         intervals = conf["interpolation"]["intervals"]
         interp_train_losses = [main_train_loss]
         interp_test_losses = [main_test_loss]
@@ -886,7 +886,7 @@ def plot_surr_losses(
         )
 
     # Extrapolation losses
-    if conf["extrapolation"]["enabled"]:
+    if conf.get("extrapolation", {}).get("enabled", False):
         cutoffs = conf["extrapolation"]["cutoffs"]
         extra_train_losses = [main_train_loss]
         extra_test_losses = [main_test_loss]
@@ -909,7 +909,7 @@ def plot_surr_losses(
         )
 
     # Sparse losses
-    if conf["sparse"]["enabled"]:
+    if conf.get("sparse", {}).get("enabled", False):
         factors = conf["sparse"]["factors"]
         sparse_train_losses = [main_train_loss]
         sparse_test_losses = [main_test_loss]
@@ -932,7 +932,7 @@ def plot_surr_losses(
         )
 
     # UQ losses
-    if conf["uncertainty"]["enabled"]:
+    if conf.get("uncertainty", {}).get("enabled", False):
         n_models = conf["uncertainty"]["ensemble_size"]
         uq_train_losses = [main_train_loss]
         uq_test_losses = [main_test_loss]
@@ -955,7 +955,7 @@ def plot_surr_losses(
         )
 
     # Batchsize losses
-    if conf["batch_scaling"]["enabled"]:
+    if conf.get("batch_scaling", {}).get("enabled", False):
         batch_factors = conf["batch_scaling"]["sizes"]
         batch_train_losses = []
         batch_test_losses = []
@@ -1578,7 +1578,7 @@ def plot_relative_errors(
     plt.yscale("log")
     if show_title:
         plt.title("Comparison of Relative Errors Over Time")
-    if config["dataset"]["log_timesteps"]:
+    if config.get("dataset", {}).get("log_timesteps", False):
         plt.xscale("log")
     plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
@@ -1672,7 +1672,7 @@ def plot_errors_over_time(
     else:
         raise ValueError(f"Unknown mode: {mode}")
 
-    if config["dataset"]["log_timesteps"]:
+    if config.get("dataset", {}).get("log_timesteps", False):
         plt.xscale("log")
     if show_title:
         plt.title(title)
@@ -1921,7 +1921,7 @@ def plot_mean_deltadex_over_time_main_vs_ensemble(
     plt.xlabel("Time")
     plt.ylabel(r"Log-MAE ($\Delta dex$)")
     plt.xlim(timesteps[0], timesteps[-1])
-    if config["dataset"]["log_timesteps"]:
+    if config.get("dataset", {}).get("log_timesteps", False):
         plt.xscale("log")
     if show_title:
         plt.title("Mean Δdex Over Time: Main vs Ensemble")
@@ -1978,7 +1978,7 @@ def plot_uncertainty_over_time_comparison(
     plt.xlabel("Time")
     plt.ylabel("Log-Space Uncertainty / Log-Space MAE")
     plt.xlim(timesteps[0], timesteps[-1])
-    if config["dataset"]["log_timesteps"]:
+    if config.get("dataset", {}).get("log_timesteps", False):
         plt.xscale("log")
     if show_title:
         plt.title("Comparison of Log-Space Uncertainty and Log-MAE Over Time")

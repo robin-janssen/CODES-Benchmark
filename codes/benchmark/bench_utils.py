@@ -192,10 +192,10 @@ def get_required_models_list(surrogate: str, conf: dict) -> list:
     required_models.append(f"{surrogate.lower()}_main.pth")
 
     # Gradients does not require a separate model
-    if conf["gradients"]:
+    if conf.get("gradients", False):
         pass
 
-    if conf["interpolation"]["enabled"]:
+    if conf.get("interpolation", {}).get("enabled", False):
         intervals = conf["interpolation"]["intervals"]
         required_models.extend(
             [
@@ -204,19 +204,19 @@ def get_required_models_list(surrogate: str, conf: dict) -> list:
             ]
         )
 
-    if conf["extrapolation"]["enabled"]:
+    if conf.get("extrapolation", {}).get("enabled", False):
         cutoffs = conf["extrapolation"]["cutoffs"]
         required_models.extend(
             [f"{surrogate.lower()}_extrapolation_{cutoff}.pth" for cutoff in cutoffs]
         )
 
-    if conf["sparse"]["enabled"]:
+    if conf.get("sparse", {}).get("enabled", False):
         factors = conf["sparse"]["factors"]
         required_models.extend(
             [f"{surrogate.lower()}_sparse_{factor}.pth" for factor in factors]
         )
 
-    if conf["uncertainty"]["enabled"]:
+    if conf.get("uncertainty", {}).get("enabled", False):
         n_models = conf["uncertainty"]["ensemble_size"]
         required_models.extend(
             [f"{surrogate.lower()}_UQ_{i + 1}.pth" for i in range(n_models - 1)]
@@ -409,25 +409,25 @@ def clean_metrics(metrics: dict, conf: dict) -> dict:
     write_metrics["accuracy"].pop("relative_errors", None)
     write_metrics["accuracy"].pop("absolute_errors_log", None)
 
-    if conf["iterative"]:
+    if conf.get("iterative", False):
         write_metrics["iterative"].pop("absolute_errors", None)
         write_metrics["iterative"].pop("absolute_errors_log", None)
-    if conf["gradients"]:
+    if conf.get("gradients", False):
         write_metrics["gradients"].pop("gradients", None)
         write_metrics["gradients"].pop("max_counts", None)
         write_metrics["gradients"].pop("max_gradient", None)
         write_metrics["gradients"].pop("max_error", None)
         write_metrics["gradients"].pop("errors_log", None)
-    if conf["interpolation"]["enabled"]:
+    if conf.get("interpolation", {}).get("enabled", False):
         write_metrics["interpolation"].pop("model_errors", None)
         write_metrics["interpolation"].pop("intervals", None)
-    if conf["extrapolation"]["enabled"]:
+    if conf.get("extrapolation", {}).get("enabled", False):
         write_metrics["extrapolation"].pop("model_errors", None)
         write_metrics["extrapolation"].pop("cutoffs", None)
-    if conf["sparse"]["enabled"]:
+    if conf.get("sparse", {}).get("enabled", False):
         write_metrics["sparse"].pop("model_errors", None)
         write_metrics["sparse"].pop("n_train_samples", None)
-    if conf["uncertainty"]["enabled"]:
+    if conf.get("uncertainty", {}).get("enabled", False):
         write_metrics["UQ"].pop("pred_uncertainty_log", None)
         write_metrics["UQ"].pop("max_counts", None)
         write_metrics["UQ"].pop("axis_max", None)
