@@ -263,20 +263,16 @@ def count_trainable_parameters(model: torch.nn.Module) -> int:
 
 def measure_memory_footprint(model: torch.nn.Module, inputs: tuple) -> dict:
     """
-    Measure the memory footprint of a model during forward and backward passes using
-    peak memory tracking and explicit synchronization.
+    Measure peak GPU memory usage for forward/backward passes.
 
     Args:
-        model (torch.nn.Module): The PyTorch model.
-        inputs (tuple): The input data for the model.
+        model (torch.nn.Module): Model to profile.
+        inputs (tuple): Sample batch used for the forward pass.
 
     Returns:
-        dict: A dictionary containing measured memory usages for:
-            - model_memory: Additional memory used when moving the model to GPU.
-            - forward_memory: Peak additional memory during the forward pass with gradients.
-            - backward_memory: Peak additional memory during the backward pass.
-            - forward_memory_nograd: Peak additional memory during the forward pass without gradients.
-        model: The model (possibly moved back to the original device).
+        tuple[dict, torch.nn.Module]: Dictionary with ``model_memory``, ``forward_memory``,
+        ``backward_memory``, and ``forward_memory_nograd`` plus the model (moved back to its
+        original device).
     """
     # Determine the target device
     device = model.device if hasattr(model, "device") else torch.device("cuda:0")

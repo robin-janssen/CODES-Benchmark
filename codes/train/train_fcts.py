@@ -249,6 +249,17 @@ def worker(
 
 
 def parallel_training(tasks, device_list, task_list_filepath: str):
+    """
+    Execute the queued training tasks across multiple devices using worker threads.
+
+    Args:
+        tasks (list[tuple]): Output of :func:`create_task_list_for_surrogate`.
+        device_list (list[str]): Devices allocated to training (e.g. ["cuda:0", "cuda:1"]).
+        task_list_filepath (str): Path to the persisted JSON task list that tracks progress.
+
+    Returns:
+        float: Elapsed wall-clock time reported by the shared progress bar.
+    """
     task_queue = Queue()
     for task in tasks:
         task_queue.put(task)
@@ -299,6 +310,17 @@ def parallel_training(tasks, device_list, task_list_filepath: str):
 
 
 def sequential_training(tasks, device_list, task_list_filepath: str):
+    """
+    Run all training tasks sequentially on a single device.
+
+    Args:
+        tasks (list[tuple]): Task specification tuples generated from the config.
+        device_list (list[str]): Contains exactly one element (typically \"cpu\" or a single CUDA id).
+        task_list_filepath (str): Path to the JSON file used to resume interrupted runs.
+
+    Returns:
+        float: Total elapsed time once all tasks finish.
+    """
     overall_progress_bar = get_progress_bar(tasks)
     errors_encountered = False
     device = device_list[0]

@@ -1,3 +1,11 @@
+"""
+Utility functions that execute the different benchmark suites (accuracy, gradients,
+timing, sparsity studies, etc.) for every surrogate model.
+
+The functions in this module are invoked by `run_eval.py` and populate the metrics
+dictionary that later feeds the comparative plots and CSV exports.
+"""
+
 import os
 from contextlib import redirect_stdout
 from typing import Any
@@ -349,10 +357,26 @@ def evaluate_iterative_predictions(
     labels: list | None = None,
 ) -> dict[str, Any]:
     """
-    Evaluate the iterative predictions of the surrogate model.
+    Measure how prediction errors accumulate when the surrogate is rolled forward in
+    an auto-regressive fashion.
 
-    Returns the same set of error metrics as evaluate_accuracy, but over the
-    full trajectory built by re-feeding the last prediction as the next initial state.
+    The model is fed with its own previous output (instead of ground truth) and
+    evaluated for each chunk of the trajectory. The same error metrics as
+    :func:`evaluate_accuracy` are reported so you can compare one-shot predictions
+    with long-horizon roll-outs.
+
+    Args:
+        model: Loaded surrogate instance.
+        surr_name (str): Surrogate identifier used to locate checkpoints.
+        timesteps (np.ndarray): Timeline associated with the validation data.
+        val_loader (DataLoader): Validation loader that provides initial states.
+        val_params (np.ndarray): Optional auxiliary parameters aligned with the data.
+        conf (dict): Benchmark configuration.
+        labels (list | None): Quantity names for labelling plots.
+
+    Returns:
+        dict[str, Any]: Error statistics for iterative predictions together with the
+        generated trajectories.
     """
     # load trained model
     training_id = conf["training_id"]
@@ -1142,6 +1166,17 @@ def evaluate_UQ(
 
 
 def compare_models(metrics: dict, config: dict):
+    """
+    Aggregate surrogate-level metrics into comparison plots and CSV summaries.
+
+    Args:
+        metrics (dict): Output of :func:`run_benchmark` for each surrogate.
+        config (dict): Benchmark configuration that determines which comparisons to run.
+
+    The function is intentionally side-effect heavy: it creates plots, writes tables,
+    and prints status messages. Nothing is returned; all artifacts are stored under
+    `plots/<training_id>` and `results/<training_id>`.
+    """
 
     print("Making comparative plots... \n")
 

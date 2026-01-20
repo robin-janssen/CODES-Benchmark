@@ -1149,18 +1149,19 @@ def plot_losses(
     show_title: bool = True,
 ) -> None:
     """
-    Plot the loss trajectories for the training of multiple models.
+    Plot the loss trajectories for multiple models on a single axis.
 
-    :param loss_histories: List of loss history arrays.
-    :param epochs: Number of epochs.
-    :param labels: List of labels for each loss history.
-    :param title: Title of the plot.
-    :param save: Whether to save the plot as an image file.
-    :param conf: The configuration dictionary.
-    :param surr_name: The name of the surrogate model.
-    :param mode: The mode of the training.
-    :param percentage: Percentage of initial values to exclude from min-max calculation.
-    show_title (bool): Whether to show the title on the plot.
+    Args:
+        loss_histories (tuple[np.ndarray, ...]): Loss arrays for each model.
+        epochs (int): Number of epochs in the associated training run.
+        labels (tuple[str, ...]): Labels matching ``loss_histories``.
+        title (str): Plot title.
+        save (bool): Whether to save the figure.
+        conf (dict | None): Configuration dictionary used for saving.
+        surr_name (str | None): Surrogate identifier used in filenames.
+        mode (str): Training mode name appended to the filename.
+        percentage (float): Portion of early iterations ignored when computing y-limits.
+        show_title (bool): Whether to draw the title.
     """
 
     # Determine start index based on percentage
@@ -1240,16 +1241,17 @@ def plot_losses_dual_axis(
     show_title: bool = True,
 ) -> None:
     """
-    Plot the training and test loss trajectories with dual y-axes.
+    Plot training and validation losses on dual y-axes.
 
-    :param train_loss: Training loss history array.
-    :param test_loss: Test loss history array.
-    :param labels: Labels for the losses (train and test).
-    :param title: Title of the plot.
-    :param save: Whether to save the plot as an image file.
-    :param conf: The configuration dictionary.
-    :param surr_name: The name of the surrogate model.
-    show_title (bool): Whether to show the title on the plot.
+    Args:
+        train_loss (np.ndarray): Training loss curve.
+        test_loss (np.ndarray): Validation loss curve.
+        labels (tuple[str, str]): Axis labels for train/test.
+        title (str): Plot title.
+        save (bool): Whether to save the figure.
+        conf (dict | None): Configuration dictionary used for saving.
+        surr_name (str | None): Surrogate identifier used in filenames.
+        show_title (bool): Whether to draw the title.
     """
 
     # Colormap
@@ -1597,21 +1599,18 @@ def plot_errors_over_time(
     iter_interval: int | None = None,
 ) -> None:
     """
-    Plot errors over time for different surrogate models (relative, Δdex, or iterative Δdex).
+    Plot error trajectories for each surrogate model.
 
     Args:
-        mean_errors (dict): Mean errors for each surrogate.
-        median_errors (dict): Median errors for each surrogate.
-        timesteps (np.ndarray): Array of timesteps.
-        config (dict): Configuration dictionary.
-                save (bool): Whether to save the figure.
-                show_title (bool): Whether to add a title.
-                mode (str):
-                        - "relative": percentage errors (y-axis log scale)
-                        - "deltadex": log-space absolute errors (Δdex)
-                        - "iterative": like "deltadex" but also draws dashed vertical lines at every
-                            n-th timestep to indicate the iterative retrigger interval.
-                iter_interval (int | None): Interval for vertical guide lines when mode == "iterative".
+        mean_errors (dict[str, np.ndarray]): Mean error curves keyed by surrogate name.
+        median_errors (dict[str, np.ndarray]): Median error curves keyed by surrogate name.
+        timesteps (np.ndarray): Timeline in the same shape as the error curves.
+        config (dict): Benchmark configuration used for saving.
+        save (bool): Whether to write the figure to disk.
+        show_title (bool): Whether to display the figure title.
+        mode (str): ``\"relative\"`` for percentage errors, ``\"deltadex\"`` for log-space errors,
+            or ``\"iterative\"`` for chained Δdex errors with guide lines every ``iter_interval`` steps.
+        iter_interval (int | None): Interval for the dashed guide lines when ``mode == "iterative"``.
     """
     plt.figure(figsize=(6, 4))
     colors = plt.cm.viridis(np.linspace(0, 0.95, len(mean_errors)))
@@ -1694,41 +1693,27 @@ def plot_uncertainty_confidence(
     show_title: bool = True,
 ) -> dict[str, float]:
     """
-    Plot a comparative grouped bar chart of catastrophic confidence measures and return a metric
-    quantifying the net skew of over- versus underconfidence.
+    Plot overconfidence/underconfidence statistics for each surrogate.
 
-    For each surrogate model, the target-weighted difference is computed as:
-        weighted_diff = (predicted uncertainty - |prediction - target|) / target.
-    Negative values indicate overconfidence (i.e. the model's uncertainty is too low relative to its error),
-    while positive values indicate underconfidence.
+    Each ``weighted_diff`` array stores ``(predicted_uncertainty - abs(prediction - target)) / target``.
+    Negative values indicate overconfidence (uncertainty too small), whereas positive values indicate
+    underconfidence. The function:
 
-    Catastrophic events are defined as those samples in the lowest `percentile` (e.g. 2nd percentile)
-    for overconfidence and in the highest `percentile` (i.e. 100 - percentile) for underconfidence.
-
-    For each surrogate, this function computes the mean and standard deviation of the weighted
-    differences in both tails, then plots them as grouped bars (overconfidence bars on the left,
-    underconfidence bars on the right) with standard error bars (thin, with capsize=3). The bar heights
-    are expressed in percentages.
-
-    The text labels for the bars are placed on the opposite side of the x-axis: for negative (overconfident)
-    values the annotation is shown a few pixels above the x-axis, and for positive (underconfident) values
-    it is shown a few pixels below the x-axis.
-
-    The plot title includes the metric (mean ± std) and the number of samples (per tail).
-
-    Additionally, if the range between the smallest and largest bar is more than two orders of magnitude,
-    the y-axis is set to a symmetric log scale.
+    1. Selects catastrophic events in the lower ``percentile`` tail (overconfidence) and upper tail
+       (underconfidence).
+    2. Computes the mean and standard deviation of each tail.
+    3. Draws grouped bars with error caps so the tails are easy to compare visually.
 
     Args:
-        weighted_diffs (dict[str, np.ndarray]): Dictionary of weighted_diff arrays for each surrogate model.
-        conf (dict): The configuration dictionary.
-        save (bool, optional): Whether to save the plot.
-        percentile (float, optional): Percentile threshold for defining catastrophic events (default is 2).
-        summary_stat (str, optional): Currently only "mean" is implemented.
-        show_title (bool): Whether to show the title on the plot.
+        weighted_diffs (dict[str, np.ndarray]): Weighted-difference arrays keyed by surrogate name.
+        conf (dict): Configuration dictionary used for saving.
+        save (bool): Whether to save the figure.
+        percentile (float): Tail percentile for defining catastrophic events.
+        summary_stat (str): Currently unused hook for other aggregations (defaults to ``\"mean\"``).
+        show_title (bool): Whether to draw the title.
 
     Returns:
-        dict[str, float]: A dictionary mapping surrogate names to the net difference (over_summary + under_summary).
+        dict[str, float]: Net overconfidence/underconfidence score for each surrogate.
     """
     surrogate_names = list(weighted_diffs.keys())
     num_surrogates = len(surrogate_names)
@@ -2451,31 +2436,27 @@ def plot_catastrophic_detection_curves(
     show_title: bool = True,
 ) -> dict[str, dict[float, dict[str, float]]]:
     """
-    Plot catastrophic error recall (Δdex) vs fraction flagged by uncertainty,
-    across multiple catastrophic percentiles, plus performance improvement curves.
+    Plot recall vs. flagged fraction curves for catastrophic errors.
 
-    Catastrophic errors are those with Δdex >= P_cat (e.g. 99th percentile).
-    For each flag fraction f, the uncertainty threshold is the (1 - f) quantile of std.
-    We then flag samples with std >= threshold and measure recall among catastrophic samples.
+    For each surrogate and percentile threshold ``p`` we:
 
-    Additionally, computes the effective log-space MAE if flagged samples are replaced
-    by solver outputs (0 error). This measures how much UQ-guided deferral improves performance.
+    - Treat samples with ``Δdex >= percentile(p)`` as catastrophic.
+    - Sweep the requested ``flag_fractions`` to determine which proportion of points would be
+      deferred based on predictive uncertainty.
+    - Report both the catastrophic recall and the hypothetical MAE if flagged samples were replaced
+      by exact solver outputs.
 
     Args:
-        errors_log (dict): Δdex arrays [N, T, Q] per surrogate.
-        std_log (dict): Log-space std arrays [N, T, Q] per surrogate.
+        errors_log (dict[str, np.ndarray]): Log-space errors per surrogate.
+        std_log (dict[str, np.ndarray]): Log-space predictive standard deviations.
         conf (dict): Configuration dictionary.
-        percentiles (tuple): Catastrophic percentiles to evaluate (default: (90, 95, 99)).
-        flag_fractions (tuple): Fractions of predictions to flag (includes 0 for baseline).
-        save (bool): Save figure.
-        show_title (bool): Add title.
+        percentiles (tuple[float, ...]): Catastrophic thresholds to evaluate.
+        flag_fractions (tuple[float, ...]): Fractions of samples to flag at each step.
+        save (bool): Whether to save the figure.
+        show_title (bool): Whether to draw the title.
 
     Returns:
-        dict: Nested dict of results:
-              summary[surrogate][percentile] = {
-                  'flag_fraction': f, 'recall': r, 'cat_threshold': thr,
-                  'mae_curve': [(f, mae), ...]
-              }
+        dict[str, dict[float, dict[str, float]]]: Recall/threshold summary per surrogate.
     """
     n_rows = len(percentiles) + 1  # +1 for MAE improvement curves
     fig, axes = plt.subplots(n_rows, 1, figsize=(7, 4 * n_rows), sharex=True)
