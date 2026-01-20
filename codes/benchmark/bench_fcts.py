@@ -1,3 +1,4 @@
+import os
 from contextlib import redirect_stdout
 from typing import Any
 
@@ -378,7 +379,6 @@ def evaluate_iterative_predictions(
     # container for the piecewise predictions; seed t=0 with ground truth so errors
     # are computed only on actual predictions for t>=1 while keeping shape intact
     iterative_preds = np.zeros_like(targets)
-    iterative_preds[:, 0, :] = targets[:, 0, :]
 
     # number of chunks
     n_chunks = (n_timesteps + iter_interval - 1) // iter_interval
@@ -433,14 +433,17 @@ def evaluate_iterative_predictions(
         )
         # We predict steps 1..(chunk_len-1) relative to the provided init state (index 0).
         # Map these to global indices [start+1 .. end] inclusively.
+        if i == 0:
+            iterative_preds[:, start : end + 1, :] = preds_chunk[:, : model.n_timesteps, :].detach().cpu().numpy()
         iterative_preds[:, start + 1 : end + 1, :] = (
             preds_chunk[:, 1 : model.n_timesteps, :].detach().cpu().numpy()
         )
 
     iterative_preds_log = model.denormalize(iterative_preds, leave_log=True)
+    full_preds_log = model.denormalize(full_preds, leave_log=True)
     targets_log = model.denormalize(targets, leave_log=True)
     iterative_preds = model.denormalize(iterative_preds)
-    full_preds = model.denormalize(full_preds.detach().cpu().numpy())
+    full_preds_real = model.denormalize(full_preds.detach().cpu().numpy())
     targets = model.denormalize(targets)
 
     # compute error metrics
@@ -466,7 +469,7 @@ def evaluate_iterative_predictions(
         surr_name,
         conf,
         iterative_preds,
-        full_preds,
+        full_preds_real,
         targets,
         timesteps,
         iter_interval=iter_interval,
@@ -1583,7 +1586,7 @@ def compare_UQ(all_metrics: dict, config: dict) -> None:
         ensemble_errors,
         ensemble_std,
         config,
-        flag_fractions=(0.01, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50),
+        flag_fractions=(0, 0.025, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50),
         save=True,
         show_title=True,
     )

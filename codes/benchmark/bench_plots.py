@@ -1661,6 +1661,7 @@ def plot_errors_over_time(
     elif mode == "iterative":
         # Single backslash inside raw string to render the LaTeX Delta properly
         plt.ylabel(r"Log-MAE ($\Delta dex$)")
+        plt.ylim(bottom=0, top=min(np.max(list(mean_errors.values())) * 1.1, 5))
         fname = "iterative_delta_dex_time.png"
         title = "Comparison of Δdex Errors Over Time for Iterative Predictions"
         # Add subtle dashed vertical lines at every n-th timestep if provided and valid
@@ -2035,8 +2036,6 @@ def inference_time_bar_plot(
     # Calculate the upper y-limit to provide space for text
     max_bar = max(means[i] + stds[i] for i in range(len(means)))
     # min_bar = min(means[i] - stds[i] for i in range(len(means)))
-    # Temp!
-    # ax.set_ylim(min_bar * 0.3, max_bar * 2)  # Set limits with some padding
     ax.set_ylim(0, max_bar * 1.2)  # Set limits with some padding
 
     # Add inference time as text to the bars using the format_time function
@@ -2053,8 +2052,6 @@ def inference_time_bar_plot(
 
     ax.set_xlabel("Surrogate Model")
     ax.set_ylabel("Mean Inference Time per Run")
-    # Temp!
-    # ax.set_yscale("log")
     if show_title:
         ax.set_title("Surrogate Mean Inference Time Comparison")
 
@@ -2507,11 +2504,16 @@ def plot_catastrophic_detection_curves(
 
             xs, ys = [], []
             for f in flag_fractions:
-                unc_thr = np.percentile(u, 100.0 * (1.0 - float(f)))
-                flagged = u >= unc_thr
-                recall = (flagged & is_cat).sum() / n_cat if n_cat > 0 else 0.0
-                xs.append(100.0 * flagged.mean())
-                ys.append(100.0 * recall)
+                if f <= 0.0:
+                    xs.append(0.0)
+                    ys.append(0.0)
+                    recall = 0.0
+                else:
+                    unc_thr = np.percentile(u, 100.0 * (1.0 - float(f)))
+                    flagged = u >= unc_thr
+                    recall = (flagged & is_cat).sum() / n_cat if n_cat > 0 else 0.0
+                    xs.append(100.0 * flagged.mean())
+                    ys.append(100.0 * recall)
 
             ax.plot(
                 xs,
@@ -2988,8 +2990,6 @@ def rel_errors_and_uq(
 
     ax1.set_xlabel("Time")
     ax1.set_xlim(timesteps[0], timesteps[-1])
-    # Temp!
-    # ax1.set_ylim(3e-4, 1)
     ax1.set_ylabel("Relative Error")
     ax1.set_yscale("log")
     ax1.set_title("Comparison of Relative Errors Over Time")
@@ -3020,8 +3020,6 @@ def rel_errors_and_uq(
 
     ax2.set_xlabel("Time")
     ax2.set_xlim(timesteps[0], timesteps[-1])
-    # Temp!
-    # ax2.set_ylim(0, 0.04)
     ax2.set_ylabel("Uncertainty/Absolute Error")
     if show_title:
         ax2.set_title("Comparison of Predictive Uncertainty Over Time")
