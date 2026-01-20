@@ -378,14 +378,22 @@ document.write(`
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.evaluate_tuning">codes.tune.evaluate_tuning module</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.compute_hypervolume_over_time"><code class="docutils literal notranslate"><span class="pre">compute_hypervolume_over_time()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.compute_pareto_plot_data"><code class="docutils literal notranslate"><span class="pre">compute_pareto_plot_data()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.evaluate_tuning"><code class="docutils literal notranslate"><span class="pre">evaluate_tuning()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.format_surrogate_title"><code class="docutils literal notranslate"><span class="pre">format_surrogate_title()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.get_best_trials"><code class="docutils literal notranslate"><span class="pre">get_best_trials()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.hypervolume_2d"><code class="docutils literal notranslate"><span class="pre">hypervolume_2d()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.load_loss_history"><code class="docutils literal notranslate"><span class="pre">load_loss_history()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.pareto_front"><code class="docutils literal notranslate"><span class="pre">pareto_front()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.pareto_front_mask"><code class="docutils literal notranslate"><span class="pre">pareto_front_mask()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.plot_losses"><code class="docutils literal notranslate"><span class="pre">plot_losses()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.save_individual_pareto_plot"><code class="docutils literal notranslate"><span class="pre">save_individual_pareto_plot()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.save_pareto_front_grid"><code class="docutils literal notranslate"><span class="pre">save_pareto_front_grid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.save_relative_hv_combined"><code class="docutils literal notranslate"><span class="pre">save_relative_hv_combined()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.save_relative_hv_grid"><code class="docutils literal notranslate"><span class="pre">save_relative_hv_grid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.summarize_pareto_tradeoff"><code class="docutils literal notranslate"><span class="pre">summarize_pareto_tradeoff()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.optuna_fcts">codes.tune.optuna_fcts module</a><ul class="nav section-nav flex-column">
@@ -544,13 +552,28 @@ late-trial improvements (e.g., inference time) from appearing on the Pareto fron
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.evaluate_tuning.compute_pareto_plot_data">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">compute_pareto_plot_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">study</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_last_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chosen_trial_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.compute_pareto_plot_data" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.evaluate_tuning.evaluate_tuning">
-<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">evaluate_tuning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">study_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'optuna_db'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_last_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.evaluate_tuning" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">evaluate_tuning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">study_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'optuna_db'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_last_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chosen_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.evaluate_tuning" title="Link to this definition">#</a></dt>
 <dd><p>For all surrogate studies named ‘&lt;study_prefix&gt;_&lt;surrogate&gt;’,
 plot the top_n test-loss trajectories.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.evaluate_tuning.format_surrogate_title">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">format_surrogate_title</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.format_surrogate_title" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -581,8 +604,9 @@ Multi-objective: Pareto front; if fewer than top_n, pad with closest-to-origin a
 <dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.evaluate_tuning.load_loss_history">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">load_loss_history</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.load_loss_history" title="Link to this definition">#</a></dt>
-<dd><p>Load loss histories from a saved model file (.pth).
-Returns (train_loss, test_loss, n_epochs).</p>
+<dd><p>Load loss histories from a saved .pth.
+If the checkpoint contains pickled Optuna storage (which may try to connect
+to a remote DB during unpickle), bound the timeout and fall back to skipping.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span></p>
@@ -606,6 +630,16 @@ Returns (train_loss, test_loss, n_epochs).</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.evaluate_tuning.pareto_front_mask">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">pareto_front_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.pareto_front_mask" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="codes.tune.evaluate_tuning.parse_args">
 <span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.parse_args" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
@@ -615,6 +649,31 @@ Returns (train_loss, test_loss, n_epochs).</p>
 <span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">plot_losses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loss_histories</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Losses'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.plot_losses" title="Link to this definition">#</a></dt>
 <dd><p>Plot multiple loss trajectories on a log scale.</p>
 </dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.evaluate_tuning.save_individual_pareto_plot">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">save_individual_pareto_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.save_individual_pareto_plot" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.evaluate_tuning.save_pareto_front_grid">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">save_pareto_front_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datasets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.save_pareto_front_grid" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.evaluate_tuning.save_relative_hv_combined">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">save_relative_hv_combined</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datasets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.save_relative_hv_combined" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.evaluate_tuning.save_relative_hv_grid">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">save_relative_hv_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datasets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.save_relative_hv_grid" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="codes.tune.evaluate_tuning.summarize_pareto_tradeoff">
+<span class="sig-prename descclassname"><span class="pre">codes.tune.evaluate_tuning.</span></span><span class="sig-name descname"><span class="pre">summarize_pareto_tradeoff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#codes.tune.evaluate_tuning.summarize_pareto_tradeoff" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
 
 </section>
 <section id="module-codes.tune.optuna_fcts">
@@ -1052,14 +1111,22 @@ tuple[float, float]: (loss, mean_inference_time) in multi objective mode.</p>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.evaluate_tuning">codes.tune.evaluate_tuning module</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.compute_hypervolume_over_time"><code class="docutils literal notranslate"><span class="pre">compute_hypervolume_over_time()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.compute_pareto_plot_data"><code class="docutils literal notranslate"><span class="pre">compute_pareto_plot_data()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.evaluate_tuning"><code class="docutils literal notranslate"><span class="pre">evaluate_tuning()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.format_surrogate_title"><code class="docutils literal notranslate"><span class="pre">format_surrogate_title()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.get_best_trials"><code class="docutils literal notranslate"><span class="pre">get_best_trials()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.hypervolume_2d"><code class="docutils literal notranslate"><span class="pre">hypervolume_2d()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.load_loss_history"><code class="docutils literal notranslate"><span class="pre">load_loss_history()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.pareto_front"><code class="docutils literal notranslate"><span class="pre">pareto_front()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.pareto_front_mask"><code class="docutils literal notranslate"><span class="pre">pareto_front_mask()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.plot_losses"><code class="docutils literal notranslate"><span class="pre">plot_losses()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.save_individual_pareto_plot"><code class="docutils literal notranslate"><span class="pre">save_individual_pareto_plot()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.save_pareto_front_grid"><code class="docutils literal notranslate"><span class="pre">save_pareto_front_grid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.save_relative_hv_combined"><code class="docutils literal notranslate"><span class="pre">save_relative_hv_combined()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.save_relative_hv_grid"><code class="docutils literal notranslate"><span class="pre">save_relative_hv_grid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#codes.tune.evaluate_tuning.summarize_pareto_tradeoff"><code class="docutils literal notranslate"><span class="pre">summarize_pareto_tradeoff()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-codes.tune.optuna_fcts">codes.tune.optuna_fcts module</a><ul class="nav section-nav flex-column">
