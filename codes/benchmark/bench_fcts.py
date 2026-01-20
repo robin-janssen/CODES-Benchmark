@@ -96,8 +96,6 @@ def run_benchmark(surr_name: str, surrogate_class, conf: dict) -> dict[str, Any]
         tolerance=conf["dataset"]["tolerance"],
         per_species=conf["dataset"].get("normalise_per_species", False),
     )
-    # TEMP
-    print(conf["dataset"]["name"], train_data.shape, val_data.shape, test_data.shape)
 
     model_config = get_model_config(surr_name, conf)
     n_timesteps = train_data.shape[1]
@@ -1282,10 +1280,6 @@ def compare_errors(metrics: dict[str, dict], config: dict) -> None:
     if log_errors:
         plot_errors_over_time(mean_log, median_log, timesteps, config, mode="deltadex")
         plot_error_distribution_comparative(log_errors, config, mode="deltadex")
-        # TEMP
-        dataset = config["dataset"]["name"]
-        os.makedirs(f"scripts/pp/{dataset}", exist_ok=True)
-        np.savez(f"scripts/pp/{dataset}/all_log_errors.npz", log_errors)
 
 
 def compare_iterative(metrics: dict[str, dict], config: dict) -> None:
@@ -1314,11 +1308,6 @@ def compare_iterative(metrics: dict[str, dict], config: dict) -> None:
             median_iterative_errors[surrogate] = np.median(
                 iterative_errors[surrogate], axis=(0, 2)
             )
-
-    # TEMP
-    dataset = config["dataset"]["name"]
-    os.makedirs(f"scripts/pp/{dataset}", exist_ok=True)
-    np.savez(f"scripts/pp/{dataset}/all_iterative_errors.npz", iterative_errors)
 
     plot_errors_over_time(
         mean_iterative_errors,
@@ -1601,12 +1590,6 @@ def compare_UQ(all_metrics: dict, config: dict) -> None:
         save=True,
         show_title=True,
     )
-
-    # TEMP
-    dataset = config["dataset"]["name"]
-    os.makedirs(f"scripts/pp/{dataset}", exist_ok=True)
-    np.savez(f"scripts/pp/{dataset}/all_uq_errors.npz", ensemble_errors)
-    np.savez(f"scripts/pp/{dataset}/all_uq_std.npz", ensemble_std)
 
 
 def tabular_comparison(all_metrics: dict, config: dict) -> None:

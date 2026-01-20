@@ -2036,8 +2036,6 @@ def inference_time_bar_plot(
     # Calculate the upper y-limit to provide space for text
     max_bar = max(means[i] + stds[i] for i in range(len(means)))
     # min_bar = min(means[i] - stds[i] for i in range(len(means)))
-    # Temp!
-    # ax.set_ylim(min_bar * 0.3, max_bar * 2)  # Set limits with some padding
     ax.set_ylim(0, max_bar * 1.2)  # Set limits with some padding
 
     # Add inference time as text to the bars using the format_time function
@@ -2054,8 +2052,6 @@ def inference_time_bar_plot(
 
     ax.set_xlabel("Surrogate Model")
     ax.set_ylabel("Mean Inference Time per Run")
-    # Temp!
-    # ax.set_yscale("log")
     if show_title:
         ax.set_title("Surrogate Mean Inference Time Comparison")
 
@@ -2490,10 +2486,6 @@ def plot_catastrophic_detection_curves(
     names = list(errors_log.keys())
     colors = plt.cm.viridis(np.linspace(0, 0.95, len(names)))
     summary: dict[str, dict[float, dict[str, float]]] = {}
-    # TEMP
-    recall_99 = np.zeros((len(names), len(flag_fractions)))
-    recall_90 = np.zeros((len(names), len(flag_fractions)))
-    dataset_name = conf["dataset"]["name"]
 
     # --- Recall vs fraction flagged (per catastrophic percentile) ---
     for ax, perc in zip(axes[:-1], percentiles):
@@ -2522,11 +2514,6 @@ def plot_catastrophic_detection_curves(
                     recall = (flagged & is_cat).sum() / n_cat if n_cat > 0 else 0.0
                     xs.append(100.0 * flagged.mean())
                     ys.append(100.0 * recall)
-                # TEMP
-                if perc == 99.0:
-                    recall_99[i, flag_fractions.index(f)] = recall
-                if perc == 90.0:
-                    recall_90[i, flag_fractions.index(f)] = recall
 
             ax.plot(
                 xs,
@@ -2552,9 +2539,6 @@ def plot_catastrophic_detection_curves(
             ax.set_title(
                 f"Detection @ {perc}th percentile (Top {100 - perc:.0f}% Δdex)"
             )
-
-    np.savez(f"scripts/pp/{dataset_name}/catastrophic_recall_99.npz", recall_99)
-    np.savez(f"scripts/pp/{dataset_name}/catastrophic_recall_90.npz", recall_90)
 
     # MAE improvement plot
     ax_mae = axes[-1]
@@ -3006,8 +2990,6 @@ def rel_errors_and_uq(
 
     ax1.set_xlabel("Time")
     ax1.set_xlim(timesteps[0], timesteps[-1])
-    # Temp!
-    # ax1.set_ylim(3e-4, 1)
     ax1.set_ylabel("Relative Error")
     ax1.set_yscale("log")
     ax1.set_title("Comparison of Relative Errors Over Time")
@@ -3038,8 +3020,6 @@ def rel_errors_and_uq(
 
     ax2.set_xlabel("Time")
     ax2.set_xlim(timesteps[0], timesteps[-1])
-    # Temp!
-    # ax2.set_ylim(0, 0.04)
     ax2.set_ylabel("Uncertainty/Absolute Error")
     if show_title:
         ax2.set_title("Comparison of Predictive Uncertainty Over Time")
