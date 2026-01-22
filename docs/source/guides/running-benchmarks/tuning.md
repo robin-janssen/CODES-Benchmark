@@ -1,47 +1,126 @@
 # Hyperparameter Tuning
 
-Tuning gives each surrogate a fair shot before you invest cycles in full training runs. The entry point is `run_tuning.py`, which wraps [Optuna](https://optuna.org/) studies and stores everything under `tuned/<training_id>`.
+Optuna powers the tuning stage. Each study runs inside `run_tuning.py`, which manages device pools, Optuna storage, and all surrogate-specific settings.
 
-## Define a study
+## Workspace layout
+
+1. Create a folder under `tuned/<tuning_id>/`.
+2. Save an `optuna_config.yaml` inside that folder.
+3. Point `run_tuning.py` to the file:
+   ```bash
+   python run_tuning.py --config tuned/primordial/optuna_config.yaml
+   ```
+
+`tuning_id` becomes the prefix for all Optuna studies (e.g., `primordial_MultiONet`). The script also creates `tuned/<tuning_id>/models/` to store intermediate checkpoints when you enable pruning.
+
+## Config anatomy
+
+Below is a condensed version of `tuned/primordial/optuna_config.yaml` using SQLite storage for zero setup. Adjust datasets/surrogates as needed.
 
 ```yaml
-training_id: "demo"
-study:
-  enable: true
-  n_trials: 25
-  sampler: "tpe"
-  timeout_minutes: 60
-surrogates:
-  - "MultiONet"
+seed: 42
+tuning_id: "primordial"
 dataset:
-  name: "osu2008"
+  name: primordial
+  log10_transform: true
+  normalise: minmax
+devices: ["cuda:0"]
+prune: true
+multi_objective: true
+population_size: 50
+
+storage:
+  backend: "sqlite"
+  path: "tuned/primordial/primordial.db"
+
+surrogates:
+  - name: MultiONet
+    batch_size: 4096
+    epochs: 8192
+    trials: 120
+    optuna_params:
+      activation:
+        type: categorical
+        choices: ["ReLU", "LeakyReLU", "Tanh", "GELU", "Softplus"]
+      hidden_size:
+        type: int
+        low: 10
+        high: 500
+      learning_rate:
+        type: float
+        low: 1.0e-6
+        high: 1.0e-3
+        log: true
+      output_factor:
+        type: int
+        low: 1
+        high: 200
 ```
 
-- Set a unique `training_id` so each study gets its own folder and SQLite database.
-- Constrain `n_trials`/`timeout_minutes` to match your hardware budget. You can always resume a study to accumulate more evidence later.
-- Most surrogates expose a dedicated `*_config.py` with Optuna search spaces—extend those to tune new parameters.
+### Key sections
 
-## Run the tuner
+- **dataset** — mirrors the training config and ensures Optuna downloads/configures the same data pipeline.
+- **devices** — every entry becomes a worker slot. `run_tuning.py` keeps a queue (`queue.Queue`) of device tokens and runs Optuna with `n_jobs = len(devices)`. SQLite storage warns about concurrent writers; you can list multiple devices, but heavy parallelism works best with Postgres.
+- **storage** — choose between `sqlite` (single-file DB, no external services) and `postgres` (scales to many workers). If omitted, CODES defaults to Postgres for backward compatibility and expects `postgres_config` to be present.
+- **postgres_config** — only required when `storage.backend: "postgres"`. Supports
+  - `mode: local`: launches/validates a local PostgreSQL instance (binaries in `database_folder`).
+  - `mode: remote`: connects to an existing server (set `host`, `port`, `user`, and optionally `password` or rely on `PGPASSWORD`).
+- **surrogates** — per-architecture specs. Each entry sets:
+  - `batch_size` / `epochs`: used to build the objective.
+  - `trials`: maximum valid trials for that surrogate.
+  - `optuna_params`: the search space. The keys correspond to attributes on the surrogate’s config dataclass; Optuna writes the sampled values into that config before training.
 
-```bash
-python run_tuning.py --config configs/demo.yaml --devices cuda:0
+You can add `global_optuna_params` for common parameters, enable `fine: true` for automatic “around-the-best” refinement, or toggle between single-objective (`direction="minimize"`) and dual-objective (`directions=["minimize","minimize"]`) mode. In multi-objective runs we typically optimize log-space accuracy (LAE$_{99}$) and inference time, but you can choose any pair of metrics.
+
+## What `run_tuning.py` does
+
+1. Loads the YAML and copies it into `tuned/<tuning_id>/` (via `prepare_workspace`).
+2. Initializes the Optuna database (SQLite file or Postgres).
+3. Downloads the dataset once per run.
+    4. Iterates over the `surrogates` list. For each surrogate it:
+       - Builds a study name (`<tuning_id>_<surrogate>`).
+       - Selects the sampler/pruner (`TPESampler` + Hyperband or NSGA-II with no pruning).
+       - Creates a device queue and `objective_fn = create_objective(...)`.
+   - Calls `study.optimize()` with `n_jobs=len(devices)`. Each Optuna worker pulls a device token, trains a model with the sampled hyperparameters, and returns the objective(s).
+   - Tracks ETA via `tqdm`. The helper `MaxValidTrialsCallback` stops once enough successful trials finished (OOM and time-pruned trials are ignored).
+
+You can resume a study by rerunning the same command; Optuna reuses the storage and continues sampling until `n_trials` valid runs exist. Trial budgets are usually sized heuristically (e.g., `~15 ×` the number of tuned hyperparameters), but you can override per surrogate via the `trials` field.
+
+## Capturing the best hyperparameters
+
+CODES does not auto-promote trial settings. Use Optuna’s tooling to inspect studies:
+
+- Python REPL / script:
+  ```python
+  import optuna
+  study = optuna.create_study(
+      study_name="primordial_MultiONet",
+      storage="postgresql+psycopg2://optuna_user@localhost:5432/primordial",
+      direction="minimize",
+      load_if_exists=True,
+  )
+  print(study.best_trial.params)
+  ```
+- [Optuna Dashboard](https://optuna.github.io/optuna-dashboard/) or `optuna.visualization`.
+
+Dual-objective runs produce Pareto fronts like the ones shown in the paper excerpt. You can manually pick a “knee point” trade-off (accuracy vs. latency) or script your own selection rule. Whatever you choose, feed the accepted settings back into `config.yaml` under `surrogate_configs` or store dataset-specific defaults in `datasets/<name>/surrogates_config.py` (dataclasses). Those defaults load automatically when `dataset.use_optimal_params` is `true`; setting `use_optimal_params: false` switches back to plain config-defined hyperparameters.
+
+## Advanced: Postgres storage
+
+For large-scale or multi-GPU sweeps, switch the storage block to Postgres:
+
+```yaml
+storage:
+  backend: "postgres"
+
+postgres_config:
+  mode: "local"         # or "remote"
+  host: "localhost"
+  port: 5432
+  user: "optuna_user"
+  database_folder: "/path/to/postgres/"
 ```
 
-Key behaviours:
+If the `storage` section is omitted entirely, CODES assumes `backend: "postgres"` to remain backward compatible. Postgres handles concurrent writers gracefully, so `devices` can list many GPUs without hitting `database is locked` errors.
 
-- One worker per listed device; pass `cpu` for debugging the search logic.
-- Checkpoints for the best trial land in `tuned/<training_id>/<surrogate>/best`. Additional trial metadata stays inside the Optuna database.
-- You can resume a study by re-running the same command—Optuna skips finished trials and continues sampling.
-
-## Promote tuned configs
-
-Use `scripts/promote_tuning.py` (or copy the reported hyperparameters manually) to update your training config:
-
-```bash
-python scripts/promote_tuning.py \\
-  --training-id demo \\
-  --surrogate MultiONet \\
-  --output configs/demo_trained.yaml
-```
-
-The emitted YAML mirrors the `surrogates.<name>.config` section consumed by `run_training.py`, so you can drop it straight into the training phase.
+Remember that tuning explores unconstrained space—double-check the resulting configs before launching expensive training sweeps.

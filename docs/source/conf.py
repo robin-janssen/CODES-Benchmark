@@ -70,6 +70,9 @@ html_logo = "_static/logo.png"
 
 # Adjusted HTML theme options
 html_theme_options = {
+    "home_page_in_toc": True,
+    "show_navbar_depth": 2,
+    "show_toc_level": 2,
     "icon_links": [
         {
             "name": "CODES GitHub",

@@ -1,25 +1,38 @@
 # Evaluation & Reporting
 
-Once training finishes, `run_eval.py` reloads the checkpoints, runs accuracy/timing/uncertainty studies, and writes consolidated artifacts under `results/` and `plots/`.
+`run_eval.py` replays your configuration against the saved checkpoints, executes whichever evaluation suites you enabled, and collates the results under `results/<training_id>/` and `plots/<training_id>/`. All accuracy metrics are reported in log-space (see :doc:`accuracy-metrics`) so the evaluations align with how models were trained and tuned.
 
-## Kick off evaluations
+## Launching evaluations
 
 ```bash
-python run_eval.py --config configs/demo_trained.yaml --modes accuracy timing compute
+python run_eval.py --config config.yaml
 ```
 
-- Pass the same config that drove training so dataset transforms, scaling, and study toggles stay in sync.
-- `--modes` filters which benchmark suites run; omit it to execute everything.
-- Evaluations can run on a mix of CPU/GPU depending on the surrogate—set `CUDA_VISIBLE_DEVICES` or the config’s `devices` list to control placement.
+- **Config fidelity** — `check_benchmark` compares the provided config to `trained/<training_id>/config.yaml`. Dataset settings, modalities, and surrogate names must match those used during training so that required checkpoints exist. You may disable modalities (e.g., skip an interpolation analysis even if it was trained) by toggling the evaluation switches, but you cannot evaluate a modality that lacks trained checkpoints.
+- **Devices** — the same `devices` list is reused for evaluation. Override `CUDA_VISIBLE_DEVICES` if you want to force CPU/GPU placement without editing the config.
+- **Per-surrogate loop** — for every entry in `surrogates`, `run_eval.py` loads the registered class, rehydrates the checkpoints, and calls `run_benchmark`. Missing classes or checkpoints are flagged early via `check_surrogate`.
 
-## Outputs
+## What gets produced
 
-- `results/<training_id>/<surrogate>/` stores YAML + CSV metrics (error percentiles, runtime stats, parameter counts, etc.).
-- `plots/<training_id>/` includes comparison charts (loss curves, catastrophic-detection curves, error heatmaps).
-- Aggregated CSVs from `make_comparison_csv` make it easy to sweep across surrogates or datasets in a spreadsheet.
+- `results/<training_id>/<surrogate>/` — YAML and CSV files capturing numerical metrics (log-space MAE, LAE99, inference time, compute footprint, etc.).
+- `plots/<training_id>/` — visual artifacts: error heatmaps, loss curves, catastrophic detection plots, uncertainty charts, and more depending on the enabled evaluation switches.
+- `results/<training_id>/all_metrics.csv` + `metrics_table.csv` — flattened tables for spreadsheet analysis and the optional `compare: true` stage.
 
-## Inspecting failures
+## Evaluation switches recap
 
-- `run_eval.py` calls `check_benchmark` to verify that configuration, checkpoints, and dataset metadata match. Resolve those mismatches before re-running the evaluation.
-- Missing checkpoints or corrupt HDF5 files are surfaced with actionable tracebacks—fix the root cause and rerun; completed surrogates are cached so you pay only for the failed slices.
-- For notebook-driven debugging, open `tutorials/benchmark_quickstart.ipynb` and load the generated CSVs/plots inline.
+| Switch | Effect |
+| --- | --- |
+| `losses` | Saves epoch-wise train/test loss plots. |
+| `iterative` | Runs multi-step rollouts to measure drift over time. |
+| `gradients` | Correlates gradient norms with prediction errors. |
+| `timing` | Measures inference latency (multiple passes). |
+| `compute` | Records parameter counts and memory usage. |
+| `compare` | Builds cross-surrogate comparison tables/plots (requires ≥2 surrogates). |
+
+Leave switches off to skip expensive analyses; turn them on when the required checkpoints exist.
+
+## Troubleshooting
+
+- **Config mismatch** — `check_benchmark` errors usually mean `training_id` or modality toggles differ between training and evaluation. Point the evaluator at the stored config (`trained/<training_id>/config.yaml`) or reconcile the differences manually.
+- **Missing checkpoints** — make sure the corresponding modality ran successfully. The evaluator cannot invent models that were never trained.
+- **Large runs** — evaluations are read-heavy. Run them on fast storage and keep the dataset cached locally (handled automatically by `download_data`).

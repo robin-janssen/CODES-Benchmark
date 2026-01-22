@@ -1,12 +1,12 @@
 # Global settings for the benchmark
 training_id: "docs_test2"
-surrogates: ["FullyConnected"]
+surrogates: ["MultiONet"]
 batch_size: [65536]
 epochs: [2000]
 dataset:
   name: "osu2008"
   log10_transform: True
-devices: ["mps"]
+devices: ["cuda:3"]
 
 # # Models to train
 # interpolation:
