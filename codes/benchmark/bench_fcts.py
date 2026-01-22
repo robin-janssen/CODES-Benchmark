@@ -11,6 +11,7 @@ from contextlib import redirect_stdout
 from typing import Any
 
 import numpy as np
+import torch
 from scipy.stats import pearsonr
 from tabulate import tabulate
 from torch.utils.data import DataLoader
@@ -653,10 +654,16 @@ def evaluate_compute(
     training_id = conf["training_id"]
     model.load(training_id, surr_name, model_identifier=f"{surr_name.lower()}_main")
 
-    # Get a sample input tensor from the test_loader
-    inputs = next(iter(test_loader))
-    # Measure the memory footprint during forward and backward pass
-    memory_footprint, model = measure_memory_footprint(model, inputs)
+    device = getattr(model, "device", torch.device("cpu"))
+    memory_footprint = {}
+    if torch.cuda.is_available() and torch.device(device).type == "cuda":
+        inputs = next(iter(test_loader))
+        memory_footprint, model = measure_memory_footprint(model, inputs, device)
+    else:
+        print(
+            "Skipping GPU memory profiling for compute evaluation "
+            "(requested device is not CUDA)."
+        )
 
     # Count the number of trainable parameters
     num_params = count_trainable_parameters(model)

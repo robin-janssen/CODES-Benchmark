@@ -1,12 +1,12 @@
 # Global settings for the benchmark
-training_id: "docs_test2"
-surrogates: ["MultiONet"]
-batch_size: [65536]
-epochs: [2000]
+training_id: "example_config_minimal"
+surrogates: ["FullyConnected", "LatentPoly"]
+batch_size: [65536, 512]
+epochs: [20, 20]
 dataset:
-  name: "osu2008"
-  log10_transform: True
-devices: ["cuda:3"]
+  name: "lotka_volterra"
+  tolerance: 1e-15
+devices: ["cpu"]
 
 # # Models to train
 # interpolation:
@@ -26,8 +26,9 @@ devices: ["cuda:3"]
 #   ensemble_size: 5 # Number of models for deep ensemble
 
 # # Evaluations during benchmark
-# losses: True
-# gradients: True
-# timing: True
-# compute: True
-# compare: True # Whether to compare the surrogates
+losses: True
+gradients: True
+timing: True
+compute: True
+compare: True # Whether to compare the surrogates
+iterative: True

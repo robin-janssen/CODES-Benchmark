@@ -46,6 +46,8 @@ def main(args):
             nice_print("Comparing models")
             compare_models(all_metrics, config)
 
+    nice_print("Evaluation completed.")
+
 
 if __name__ == "__main__":
     parser = ArgumentParser()

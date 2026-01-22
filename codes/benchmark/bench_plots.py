@@ -54,7 +54,7 @@ def save_plot(
     # Call save_plot_counter with increase_count option
     filepath = save_plot_counter(filename, plot_dir, increase_count=increase_count)
     plt.savefig(filepath, dpi=dpi, bbox_inches="tight")
-    if conf["verbose"]:
+    if conf.get("verbose", False):
         print(f"Plot saved as: {filepath}")
 
 

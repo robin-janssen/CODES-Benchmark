@@ -261,7 +261,7 @@ def count_trainable_parameters(model: torch.nn.Module) -> int:
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def measure_memory_footprint(model: torch.nn.Module, inputs: tuple) -> dict:
+def measure_memory_footprint(model: torch.nn.Module, inputs: tuple, device: torch.device) -> dict:
     """
     Measure peak GPU memory usage for forward/backward passes.
 
@@ -275,12 +275,11 @@ def measure_memory_footprint(model: torch.nn.Module, inputs: tuple) -> dict:
         original device).
     """
     # Determine the target device
-    device = model.device if hasattr(model, "device") else torch.device("cuda:0")
+    if not torch.cuda.is_available() or device.type != "cuda":
+        raise RuntimeError("CUDA device required for memory profiling.")
 
-    # Move the model to CPU first (simulate baseline)
     model.to("cpu")
 
-    # --- Model loading measurement ---
     torch.cuda.synchronize(device)
     torch.cuda.reset_peak_memory_stats(device)
     before_load = torch.cuda.memory_allocated(device)
@@ -647,7 +646,7 @@ def make_comparison_csv(metrics: dict, config: dict) -> None:
                 row.append(value)
             writer.writerow(row)
 
-    if config["verbose"]:
+    if config.get("verbose", False):
         print(f"Comparison CSV file saved at {csv_file_path}")
 
 
