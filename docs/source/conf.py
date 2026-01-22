@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 from urllib.parse import urlparse
 
 import yaml
+from sphinx.deprecation import RemovedInSphinx10Warning
 
 # Configuration file for the Sphinx documentation builder.
 
@@ -81,33 +83,24 @@ html_theme_options = {
             "type": "fontawesome",
         },
         {
-            "name": "CODES Docs",
-            "url": "https://codes-docs.web.app",
-            "icon": "_static/favicon-96x96.png", 
-            "type": "local",
-        },
-        {
             "name": "CODES Paper",
             "url": "https://arxiv.org/abs/2410.20886",
             "icon": "fa-solid fa-file-alt",
             "type": "fontawesome",
         },
-        # {
-        #     "name": "Exemplary Badge",
-        #     "url": "https://img.shields.io/badge/Exemplary-Yes-brightgreen",
-        #     "icon": "https://img.shields.io/badge/Exemplary-Yes-brightgreen",
-        #     "type": "url",
-        # },
-        # { # Link to the CODES paper once its on arxiv!
-        #     "name": "CODES paper",
-        #     "url": "https://arxiv.org/abs/2106.04420",
-        #     "icon": "fa-file-pdf",
-        #     "type": "fontawesome",
-        # }
     ],
     "icon_links_label": "Quick Links",
 }
 
+# Keep the default sidebar stack from sphinx-book-theme (empty dict -> theme defaults)
+html_sidebars = {}
+
+# Suppress noisy myst-nb warnings about Sphinx 10 API changes until upstream updates
+warnings.filterwarnings(
+    "ignore",
+    message=".*myst_nb\\.sphinx_\\.Parser\\.env.*",
+    category=RemovedInSphinx10Warning,
+)
 
 # -- Helpers ------------------------------------------------------------------
 

@@ -18,20 +18,20 @@ Looking for a bird’s-eye view first? Start with the **User Guide**. Already co
    :maxdepth: 2
    :caption: User Guide
 
-   getting-started
-   guides/running-benchmarks/index
-   guides/extending-benchmark
-   reference/configuration
-   reference/datasets
-   tutorials/index
+   Getting Started <getting-started>
+   Running Benchmarks <guides/running-benchmarks/index>
+   Extending The Benchmark <guides/extending-benchmark>
+   Configuration Reference <reference/configuration>
+   Dataset Catalog <reference/datasets>
+   Tutorials <tutorials/index>
 
 .. toctree::
    :maxdepth: 1
    :caption: API Reference
 
-   api-reference
-   codes.benchmark
-   codes.surrogates
-   codes.train
-   codes.tune
-   codes.utils
+   API Reference Overview <api-reference>
+   codes.benchmark package <codes.benchmark>
+   codes.surrogates package <codes.surrogates>
+   codes.train package <codes.train>
+   codes.tune package <codes.tune>
+   codes.utils package <codes.utils>

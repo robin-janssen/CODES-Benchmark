@@ -15,17 +15,30 @@ Benchmark coupled ODE surrogate models on curated datasets with reproducible tra
 
 ## Two-minute quickstart
 
+**uv (recommended)**
+
 ```bash
 git clone https://github.com/robin-janssen/CODES-Benchmark.git
 cd CODES-Benchmark
-python -m venv .venv && source .venv/bin/activate  # optional
-pip install -e .
-pip install -r requirements.txt
-python run_training.py --config config.yaml
-python run_eval.py --config config.yaml
+uv sync                       # creates .venv from pyproject/uv.lock
+source .venv/bin/activate
+uv run python run_training.py --config configs/train_eval/config_minimal.yaml
+uv run python run_eval.py --config configs/train_eval/config_minimal.yaml
 ```
 
-Outputs land in `trained/<training_id>`, `results/<training_id>`, and `plots/<training_id>`. Copy `config.yaml` to a new file to customize datasets, surrogates, and benchmark modes.
+**pip alternative**
+
+```bash
+git clone https://github.com/robin-janssen/CODES-Benchmark.git
+cd CODES-Benchmark
+python -m venv .venv && source .venv/bin/activate
+pip install -e .
+pip install -r requirements.txt
+python run_training.py --config configs/train_eval/config_minimal.yaml
+python run_eval.py --config configs/train_eval/config_minimal.yaml
+```
+
+Outputs land in `trained/<training_id>`, `results/<training_id>`, and `plots/<training_id>`. The `configs/` folder contains ready-to-use templates (`train_eval/config_minimal.yaml`, `config_full.yaml`, etc.). Copy a file there and adjust datasets/surrogates/modalities before running the CLIs.
 
 ## Documentation
 
@@ -39,12 +52,12 @@ The GitHub Pages site now hosts the narrative guides, configuration reference, a
 
 | Path | Purpose |
 | --- | --- |
-| `config.yaml`, `config_full.yaml` | Ready-to-edit benchmark configurations |
+| `configs/` | Ready-to-edit benchmark configs (`train_eval/`, `tuning/`, etc.) |
 | `datasets/` | Bundled datasets + download helper (`data_sources.yaml`) |
 | `codes/` | Python package with surrogates, training, tuning, and benchmarking utilities |
 | `run_training.py`, `run_eval.py`, `run_tuning.py` | CLI entry points for the main workflows |
-| `docs/` | Sphinx project powering the GitHub Pages site (guides + API reference) |
-| `scripts/` | Convenience tooling (dataset downloads, experiment utilities) |
+| `docs/` | Sphinx project powering the GitHub Pages site (guides, tutorials, API reference) |
+| `scripts/` | Convenience tooling (dataset downloads, analysis utilities) |
 
 ## Contributing
 

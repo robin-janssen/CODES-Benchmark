@@ -29,3 +29,4 @@ Module contents
    :members:
    :show-inheritance:
    :undoc-members:
+   :exclude-members: AbstractSurrogate, DeepONet, FCNN, LatentNeuralODE, LatentPolynomial
