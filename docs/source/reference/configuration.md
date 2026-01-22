@@ -31,7 +31,7 @@ All orchestration happens through YAML configuration files. This page documents 
 | `dataset.log10_transform_params` | No | `true` | Training, Eval | Log10 transform the parameters (if present). |
 | `dataset.normalise` | No | `"minmax"` | Training, Eval | `"minmax"`, `"standardise"`, or `"disable"`. |
 | `dataset.normalise_per_species` | No | `false` | Training, Eval | Normalize each species independently. |
-| `dataset.tolerance` | No | `1e-25` | Training, Eval | Lower bound before log transform. |
+| `dataset.tolerance` | No | `None` | Training, Eval | Lower bound before log transform (`None` means no lower bound). |
 | `dataset.subset_factor` | No | `1` | Training | Down-samples data (smoke tests). |
 | `dataset.log_timesteps` | No | `false` | Eval | Used for plotting/log-time axes. |
 | `dataset.use_optimal_params` | No | `true` | Training, Eval | Load surrogate-specific defaults from dataset configs. |

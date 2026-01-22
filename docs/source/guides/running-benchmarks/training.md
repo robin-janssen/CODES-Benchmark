@@ -1,6 +1,6 @@
 # Training Surrogates
 
-`run_training.py` converts your benchmark config into a concrete list of training jobs, executes them sequentially or in parallel, and saves everything under `trained/<training_id>/`. All surrogates share the same pipeline: trajectories are sampled at logarithmically spaced timesteps, but the models learn to predict the state at any continuous time within the training horizon given an initial condition (and optional physical parameters).
+`run_training.py` converts your benchmark config into a concrete list of training jobs, executes them sequentially or in parallel, and saves everything under `trained/<training_id>/`. All surrogates share the same pipeline: they learn trajectories represented at fixed timesteps, but the models learn to predict the state at any continuous time within the training horizon given an initial condition (and optional physical parameters).
 
 ## From config to task list
 
@@ -23,7 +23,7 @@ python run_training.py --config config.yaml
 
 ## Modalities vs. evaluation switches
 
-Modalities directly increase the number of models to train. Evaluation switches (`losses`, `gradients`, `timing`, `compute`, `compare`, `iterative`) do **not** create extra training tasks—they only control which analyses run later. Plan your training duration around the modalities you enable.
+Modalities directly increase the number of models to train. See :doc:`modalities` for the available studies and their impact. Evaluation switches (`losses`, `gradients`, `timing`, `compute`, `compare`, `iterative`) do **not** create extra training tasks—they only control which analyses run later (details in :doc:`evaluation`). Plan your training duration around the modalities you enable.
 
 ## Practical tips
 

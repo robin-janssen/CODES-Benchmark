@@ -23,16 +23,16 @@ python run_eval.py --config config.yaml
 | Switch | Effect |
 | --- | --- |
 | `losses` | Saves epoch-wise train/test loss plots. |
-| `iterative` | Runs multi-step rollouts to measure drift over time. |
+| `iterative` | Runs multi-step rollouts to measure drift over time, defaulting to brackets of 10 steps. |
 | `gradients` | Correlates gradient norms with prediction errors. |
 | `timing` | Measures inference latency (multiple passes). |
 | `compute` | Records parameter counts and memory usage. |
 | `compare` | Builds cross-surrogate comparison tables/plots (requires ≥2 surrogates). |
 
-Leave switches off to skip expensive analyses; turn them on when the required checkpoints exist.
+Leave switches off to skip expensive analyses and plotting functions. But compared to the training, eval is very lightweight: it only loads models and runs inference on the test set, and hence usually takes a few minutes at most. 
 
 ## Troubleshooting
 
 - **Config mismatch** — `check_benchmark` errors usually mean `training_id` or modality toggles differ between training and evaluation. Point the evaluator at the stored config (`trained/<training_id>/config.yaml`) or reconcile the differences manually.
-- **Missing checkpoints** — make sure the corresponding modality ran successfully. The evaluator cannot invent models that were never trained.
-- **Large runs** — evaluations are read-heavy. Run them on fast storage and keep the dataset cached locally (handled automatically by `download_data`).
+- **Missing checkpoints** — make sure the corresponding modality ran successfully. The evaluator cannot invent models that were never trained. You want to check the folder with the models at `trained/<training_id>/`. If the training was complete, you will find a `completed.txt` file there, otherwise inspect `task_list.json` for failed or pending tasks.
+- **Large runs** — evaluations are read-heavy. Run them on fast storage and keep the dataset cached locally if possible.

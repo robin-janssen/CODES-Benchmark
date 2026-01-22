@@ -23,4 +23,28 @@ Surrogates occasionally make large errors even on familiar datasets. CODES provi
 - Enable the `uncertainty` modality plus `losses`/`compare` evaluation switches to generate catastrophic-detection plots, uncertainty-vs-error correlations, and ensemble statistics.
 - Use the outputs to design thresholds (e.g., “re-run the numerical solver when predicted uncertainty exceeds X dex”).
 
+```{figure} ../../_static/UQ.jpg
+---
+align: center
+alt: Catastrophic detection curves
+---
+Deep Ensembles can flag catastrophic errors: the higher the percentile of the predicted uncertainty you filter out, the lower the residual MAE.
+```
+
+```{figure} ../../_static/UQHeat.jpg
+---
+align: center
+alt: Uncertainty vs error heat map
+---
+Heatmaps show how predicted uncertainty correlates with true error, giving you confidence that the ensemble is well calibrated.
+```
+
+```{figure} ../../_static/UQExample.jpg
+---
+align: center
+alt: Ensemble prediction spread
+---
+Ensemble members provide a distribution over trajectories; the mean prediction (solid) and spread (shaded) highlight regions where the solver may need to fall back to ground truth.
+```
+
 Deep ensembles are currently the default UQ mechanism, but the interface leaves room for future methods (e.g., MC Dropout, SWAG). Whatever approach you adopt, test it in the evaluation stage to ensure uncertainty signals align with actual errors.

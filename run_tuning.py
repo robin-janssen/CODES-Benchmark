@@ -14,6 +14,7 @@ from codes.benchmark import get_model_config
 from codes.tune import (
     MaxValidTrialsCallback,
     _count_valid_trials,
+    apply_tuning_defaults,
     build_fine_optuna_params,
     create_objective,
     initialize_optuna_database,
@@ -51,13 +52,11 @@ def resolve_storage_backend(config: dict, tuning_id: str) -> tuple[str, bool]:
     )
 
 
-def run_single_study(
-    config: dict, study_name: str, db_url: str, sqlite_backend: bool
-):
+def run_single_study(config: dict, study_name: str, db_url: str, sqlite_backend: bool):
     if not config.get("optuna_logging", False):
         optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-    if config["multi_objective"]:
+    if config.get("multi_objective", False):
         sampler = optuna.samplers.NSGAIISampler(
             seed=config["seed"], population_size=config["population_size"]
         )
@@ -98,18 +97,19 @@ def run_single_study(
         return
 
     device_queue = queue.Queue()
-    if sqlite_backend and len(config["devices"]) > 1:
+    devices = config.get("devices", ["cpu"])
+    if sqlite_backend and len(devices) > 1:
         print(
             "⚠️ SQLite storage does not handle concurrent writers well. "
             "Continuing with multiple devices may trigger 'database is locked' errors."
         )
 
-    for slot_id, dev in enumerate(config["devices"]):
+    for slot_id, dev in enumerate(devices):
         device_queue.put((dev, slot_id))
 
     objective_fn = create_objective(config, study_name, device_queue)
     n_trials = config["n_trials"]
-    n_jobs = len(config["devices"])
+    n_jobs = len(devices)
     warmup_target = max(10, int(n_trials * 0.10))
 
     all_durations: list[float] = []
@@ -135,9 +135,11 @@ def run_single_study(
             )
 
         # try to set threshold (no-op if not enough data or already set)
-        maybe_set_runtime_threshold(study_, warmup_target, include_pruned=True)
+        if config.get("time_pruning", True):
+            maybe_set_runtime_threshold(study_, warmup_target, include_pruned=True)
 
-    download_data(config["dataset"]["name"])
+    dataset_cfg = config["dataset"]
+    download_data(dataset_cfg["name"])
 
     with tqdm(
         total=n_trials,
@@ -169,6 +171,7 @@ def run_all_studies(
     config: dict, main_study_name: str, db_url: str, sqlite_backend: bool
 ):
     surrogates = config["surrogates"]
+    dataset_cfg = config["dataset"]
     global_params = (
         {} if config.get("fine", False) else config.get("global_optuna_params", {})
     )
@@ -186,6 +189,7 @@ def run_all_studies(
 
         for surr in surrogates:
             arch_name = surr["name"]
+            n_trials_override = None
             if config.get("fine", False):
                 # ignore manual search spaces
                 surr["optuna_params"] = {}
@@ -231,25 +235,32 @@ def run_all_studies(
             study_name = f"{main_study_name}_{arch_name.lower()}"
             arch_pbar.set_postfix({"study": study_name})
 
-            trials = surr.get("trials", config.get("trials", None))
+            trials = surr.get("trials", config.get("trials"))
             sub_config = {
                 "batch_size": surr["batch_size"],
-                "dataset": config["dataset"],
-                "devices": config["devices"],
+                "dataset": dataset_cfg.copy(),
+                "devices": list(config.get("devices", ["cpu"])),
                 "epochs": surr["epochs"],
                 "n_trials": trials if not n_trials_override else n_trials_override,
-                "seed": config["seed"],
+                "seed": config.get("seed", 42),
                 "surrogate": {"name": arch_name},
                 "optuna_params": surr.get("optuna_params", {}),
                 "prune": config.get("prune", True),
                 "optuna_logging": config.get("optuna_logging", False),
-                "use_optimal_params": config.get("use_optimal_params", False),
+                "use_optimal_params": config.get("use_optimal_params", True),
                 "multi_objective": config.get("multi_objective", False),
                 "population_size": config.get("population_size", 50),
-                "target_percentile": config.get("target_percentile", 0.95),
+                "target_percentile": config.get("target_percentile", 0.99),
                 "fine": config.get("fine", False),  # pass through
                 "loss_cap": config.get("loss_cap", 20),
+                "time_pruning": config.get("time_pruning", True),
             }
+
+            if sub_config["n_trials"] is None:
+                raise ValueError(
+                    f"No trial count specified for surrogate '{arch_name}'. "
+                    "Add 'trials' either globally or per surrogate."
+                )
 
             if config.get("fine", False):
                 sub_config["fine_space"] = fine_space
@@ -273,8 +284,8 @@ def parse_arguments():
     parser.add_argument(
         "--config",
         type=str,
-        default="codes/tune/optuna_config.yaml",
-        help="Path to master optuna_config.yaml",
+        default="configs/tuning/sqlite_quickstart.yaml",
+        help="Path to tuning config YAML.",
     )
     return parser.parse_args()
 
@@ -289,14 +300,12 @@ def main():
         sys.exit(1)
 
     config = load_yaml_config(str(master_cfg_path))
-    prepare_workspace(master_cfg_path, config)
+    config = prepare_workspace(master_cfg_path, config)
+    config = apply_tuning_defaults(config)
     tuning_id = config["tuning_id"]
 
     # Initialize DB (remote/local)
     db_url, sqlite_backend = resolve_storage_backend(config, tuning_id)
-
-    # # If overwriting, delete Optuna studies
-    # delete_studies_if_requested(config, tuning_id, db_url)
 
     # Run
     if "surrogates" in config:

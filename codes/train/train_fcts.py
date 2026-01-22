@@ -76,7 +76,7 @@ def train_and_save_model(
         log=config["dataset"].get("log10_transform", True),
         log_params=config["dataset"].get("log10_transform_params", True),
         normalisation_mode=config["dataset"].get("normalise", "minmax"),
-        tolerance=config["dataset"].get("tolerance", 1e-25),
+        tolerance=config["dataset"].get("tolerance", None),
         per_species=config["dataset"].get("normalise_per_species", False),
     )
 

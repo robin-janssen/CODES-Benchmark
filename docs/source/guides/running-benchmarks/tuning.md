@@ -4,18 +4,18 @@ Optuna powers the tuning stage. Each study runs inside `run_tuning.py`, which ma
 
 ## Workspace layout
 
-1. Create a folder under `tuned/<tuning_id>/`.
-2. Save an `optuna_config.yaml` inside that folder.
-3. Point `run_tuning.py` to the file:
+1. Create a config file under `configs/tuning/` (for example `configs/tuning/sqlite_quickstart.yaml`). Each config must contain a unique `tuning_id`.
+2. Launch the tuner and pass the config path:
    ```bash
-   python run_tuning.py --config tuned/primordial/optuna_config.yaml
+   python run_tuning.py --config configs/tuning/sqlite_quickstart.yaml
    ```
+3. CODES copies the config into `tuned/<tuning_id>/optuna_config.yaml` for reproducibility. On subsequent runs it compares the stored copy against the newly provided file and asks whether you want to reuse the stored config, overwrite it (the old one is backed up), or abort.
 
 `tuning_id` becomes the prefix for all Optuna studies (e.g., `primordial_MultiONet`). The script also creates `tuned/<tuning_id>/models/` to store intermediate checkpoints when you enable pruning.
 
 ## Config anatomy
 
-Below is a condensed version of `tuned/primordial/optuna_config.yaml` using SQLite storage for zero setup. Adjust datasets/surrogates as needed.
+Below is a condensed version of `configs/tuning/sqlite_quickstart.yaml` using SQLite storage for zero setup. Adjust datasets/surrogates as needed.
 
 ```yaml
 seed: 42
@@ -75,7 +75,7 @@ You can add `global_optuna_params` for common parameters, enable `fine: true` fo
 ## What `run_tuning.py` does
 
 1. Loads the YAML and copies it into `tuned/<tuning_id>/` (via `prepare_workspace`).
-2. Initializes the Optuna database (SQLite file or Postgres).
+2. Initializes the Optuna database (SQLite file or Postgres), prompting if a study with the same `tuning_id` already exists.
 3. Downloads the dataset once per run.
     4. Iterates over the `surrogates` list. For each surrogate it:
        - Builds a study name (`<tuning_id>_<surrogate>`).
@@ -105,7 +105,9 @@ CODES does not auto-promote trial settings. Use Optuna’s tooling to inspect st
 
 Dual-objective runs produce Pareto fronts like the ones shown in the paper excerpt. You can manually pick a “knee point” trade-off (accuracy vs. latency) or script your own selection rule. Whatever you choose, feed the accepted settings back into `config.yaml` under `surrogate_configs` or store dataset-specific defaults in `datasets/<name>/surrogates_config.py` (dataclasses). Those defaults load automatically when `dataset.use_optimal_params` is `true`; setting `use_optimal_params: false` switches back to plain config-defined hyperparameters.
 
-## Advanced: Postgres storage
+## Advanced options
+
+### Postgres storage
 
 For large-scale or multi-GPU sweeps, switch the storage block to Postgres:
 
@@ -122,5 +124,37 @@ postgres_config:
 ```
 
 If the `storage` section is omitted entirely, CODES assumes `backend: "postgres"` to remain backward compatible. Postgres handles concurrent writers gracefully, so `devices` can list many GPUs without hitting `database is locked` errors.
+
+### Fine-tuning stage
+
+Setting `fine: true` tells CODES to derive a narrow search space around the best-known configuration for each surrogate (taken from previous runs or dataset defaults):
+
+```yaml
+fine: true
+```
+
+The first run (with `fine: false`) explores the full search space and establishes a good baseline. The optional fine stage then:
+
+1. Builds tight bounds around every tunable scalar (log-space ±factor) using `build_fine_optuna_params`.
+2. Overrides the trial budget to `max(10 × N, 10)` where `N` is the number of fine-tunable parameters.
+3. Prints the refined ranges per surrogate and stores them in `tuned/<tuning_id>/fine_summary.yaml`.
+
+This two-step process saves compute by spending most trials in promising regions rather than re-sampling the entire space.
+
+### Conditional parameter sampling
+
+Some hyperparameters only matter when a parent switch takes a specific value (e.g., `momentum` is relevant only for SGD, `poly_power` only for the polynomial scheduler). The tuner encodes these relationships in `make_optuna_params`: it samples parent switches first and then conditionally samples child parameters. This prevents Optuna from proposing incompatible combinations (such as a momentum value while using Adam) that would otherwise waste trials or require manual filtering. You can still expose child parameters directly if desired; the helper samples them once the relevant switch is active.
+
+### Time-based pruning
+
+To avoid exceptionally slow trials hogging resources, CODES automatically sets a runtime threshold after the initial warm-up period. Once enough successful trials complete, it computes `mean + std` of their durations and prunes future trials whose wall-clock time exceeds that threshold. In multi-objective mode, this applies to both accuracy/time objectives—the accuracy value is capped while the runtime objective records the observed duration.
+
+Disable this behaviour by adding:
+
+```yaml
+time_pruning: false
+```
+
+to your tuning config. When disabled, all trials run to completion unless Optuna’s other pruners intervene.
 
 Remember that tuning explores unconstrained space—double-check the resulting configs before launching expensive training sweeps.

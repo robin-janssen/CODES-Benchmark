@@ -10,12 +10,12 @@ CODES Benchmark
 * **Guided Quickstart** — :doc:`getting-started` walks you through cloning, installing, and running a smoke-test benchmark.
 * **Benchmark Workflow** — :doc:`guides/running-benchmarks/index` explains how tuning feeds training and how evaluations consolidate metrics.
 * **Extend the Stack** — :doc:`guides/extending-benchmark` shows how to add datasets or surrogates without rewriting orchestration glue.
-* **API Reference** — jump straight to :doc:`codes.benchmark` when you need function signatures, dataclass fields, or helper utilities.
+* **API Reference** — :doc:`api-reference` explains how the generated package docs are organized and links to each module.
 
 Looking for a bird’s-eye view first? Start with the **User Guide**. Already configuring experiments or integrating your own model? Skip ahead to the **API Reference**. Either way, the sidebar mirrors the sections below so you are one click away from the next step.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: User Guide
 
    getting-started
@@ -26,9 +26,10 @@ Looking for a bird’s-eye view first? Start with the **User Guide**. Already co
    tutorials/index
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: API Reference
 
+   api-reference
    codes.benchmark
    codes.surrogates
    codes.train
