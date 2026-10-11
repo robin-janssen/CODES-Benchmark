@@ -403,6 +403,32 @@ class MultiONet(OperatorNetwork):
         )
         return loader
 
+    def forward_from_state(
+        self,
+        state: torch.Tensor,
+        times: torch.Tensor,
+        params: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        """
+        Predict the states at several time inputs from one initial state.
+
+        Packs the branch and trunk inputs as create_dataloader does, with the
+        parameters on the side set by params_branch. See
+        AbstractSurrogateModel.forward_from_state.
+        """
+        B, N = state.shape
+        T = times.shape[0]
+        branch = state.unsqueeze(1).expand(B, T, N).reshape(B * T, N)
+        trunk = times.view(1, T, 1).expand(B, T, 1).reshape(B * T, 1)
+        if params is not None:
+            p = params.unsqueeze(1).expand(B, T, params.shape[1]).reshape(B * T, -1)
+            if self.config.params_branch:
+                branch = torch.cat([branch, p], dim=1)
+            else:
+                trunk = torch.cat([trunk, p], dim=1)
+        out, _ = self((branch, trunk, None))
+        return out.reshape(B, T, N)
+
     def prepare_data(
         self,
         dataset_train: np.ndarray,

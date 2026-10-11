@@ -161,6 +161,30 @@ class FullyConnected(AbstractSurrogateModel):
         x, targets = inputs
         return self.model(x), targets
 
+    def forward_from_state(
+        self,
+        state: torch.Tensor,
+        times: torch.Tensor,
+        params: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        """
+        Predict the states at several time inputs from one initial state.
+
+        Packs [state, time, params] as create_dataloader does. See
+        AbstractSurrogateModel.forward_from_state.
+        """
+        B, N = state.shape
+        T = times.shape[0]
+        x = [
+            state.unsqueeze(1).expand(B, T, N),
+            times.view(1, T, 1).expand(B, T, 1),
+        ]
+        if params is not None:
+            x.append(params.unsqueeze(1).expand(B, T, params.shape[1]))
+        x = torch.cat(x, dim=2).reshape(B * T, -1)
+        out, _ = self((x, None))
+        return out.reshape(B, T, N)
+
     def prepare_data(
         self,
         dataset_train: np.ndarray,
