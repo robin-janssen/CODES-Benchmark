@@ -349,6 +349,8 @@ class MultiONet(OperatorNetwork):
             outputs, targets = self((branch_input, trunk_input, targets))
             loss = criterion(outputs, targets)
             loss.backward()
+            if self.config.gradient_clip > 0:
+                nn.utils.clip_grad_norm_(self.parameters(), self.config.gradient_clip)
             optimizer.step()
 
     def create_dataloader(
@@ -461,3 +463,20 @@ class MultiONet(OperatorNetwork):
 
 
 AbstractSurrogateModel.register(MultiONet)
+
+
+class MultiONetResidual(MultiONet):
+    """
+    MultiONet variant that predicts the change from the initial state.
+
+    The branch input starts with the initial state, so adding its first N
+    columns back onto the output leaves the network to learn the deviation.
+    """
+
+    def forward(self, inputs) -> tuple[torch.Tensor, torch.Tensor]:
+        outputs, targets = super().forward(inputs)
+        branch_input = inputs[0].to(self.device, non_blocking=True)
+        return outputs + branch_input[:, : self.N], targets
+
+
+AbstractSurrogateModel.register(MultiONetResidual)

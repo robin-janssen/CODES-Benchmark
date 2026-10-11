@@ -413,6 +413,7 @@ def clean_metrics(metrics: dict, conf: dict) -> dict:
     if conf.get("iterative", False):
         write_metrics["iterative"].pop("absolute_errors", None)
         write_metrics["iterative"].pop("absolute_errors_log", None)
+        write_metrics["iterative"].pop("rollout_timesteps", None)
     if conf.get("gradients", False):
         write_metrics["gradients"].pop("gradients", None)
         write_metrics["gradients"].pop("max_counts", None)

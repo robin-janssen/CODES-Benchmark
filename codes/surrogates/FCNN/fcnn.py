@@ -291,6 +291,8 @@ class FullyConnected(AbstractSurrogateModel):
             outputs, targets = self((inputs, targets))
             loss = criterion(outputs, targets)
             loss.backward()
+            if self.config.gradient_clip > 0:
+                nn.utils.clip_grad_norm_(self.parameters(), self.config.gradient_clip)
             optimizer.step()
 
     def create_dataloader(
@@ -349,3 +351,20 @@ class FullyConnected(AbstractSurrogateModel):
 
 
 AbstractSurrogateModel.register(FullyConnected)
+
+
+class FullyConnectedResidual(FullyConnected):
+    """
+    FullyConnected variant that predicts the change from the initial state.
+
+    The network output is added to the initial state, so it only has to learn
+    the deviation from it. Everything downstream still sees absolute states.
+    """
+
+    def forward(self, inputs: tuple) -> torch.Tensor:
+        outputs, targets = super().forward(inputs)
+        x = inputs[0].to(self.device, non_blocking=True)
+        return outputs + x[:, : self.N], targets
+
+
+AbstractSurrogateModel.register(FullyConnectedResidual)
