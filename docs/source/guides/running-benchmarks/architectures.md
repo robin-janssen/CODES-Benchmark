@@ -37,7 +37,7 @@ FCNN consumes the initial state, desired time, and optional parameters with a si
 ## Residual variants
 
 - **Classes**: `MultiONetResidual` and `FullyConnectedResidual`, defined next to their parents in the same files.
-- **Idea**: The network output is added to the initial state, so the model learns the change from it rather than the state itself: `x(t) = x(0) + f(x(0), t)`. Architecture and hyperparameters are those of the parent.
+- **Idea**: The network output is added to the initial state, so the model learns only the change from the input: `x(t) = x(0) + f(x(0), t)`. Architecture and hyperparameters are those of the parent.
 - **Configs**: Without a dataclass of their own in `surrogates_config.py`, they use the parent's (`MultiONetConfig`, `FullyConnectedConfig`).
 - **When to use**: Datasets where states change little over a step, and autoregressive use, where the model is fed its own predictions (see :doc:`finetuning`).
 

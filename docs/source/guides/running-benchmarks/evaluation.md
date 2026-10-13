@@ -33,7 +33,7 @@ Leave switches off to skip expensive analyses and plotting functions. But compar
 
 ## Iterative rollouts
 
-With `iterative` enabled, the model is fed its own predictions instead of the true states, as it would be when coupled to a solver. `iterative: true` uses the defaults; a block sets the options:
+With `iterative` enabled, the model is fed its own predictions instead of the true states, as it would be when coupled to a solver. `iterative: true` uses the defaults, options are set with:
 
 ```yaml
 iterative:

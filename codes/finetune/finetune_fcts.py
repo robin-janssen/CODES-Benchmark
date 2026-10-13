@@ -17,7 +17,7 @@ FINETUNE_DEFAULTS = {
     "training_id": None,
     "surrogates": None,
     "seed": None,
-    "epochs": 50,
+    "epochs": 75,
     "batch_size": 1024,
     "learning_rate": 1e-5,
     "gradient_clip": 1.0,

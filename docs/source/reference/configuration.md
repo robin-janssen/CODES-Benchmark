@@ -84,7 +84,7 @@ Read by `run_finetuning.py` only. Step sizes are in the units of the dataset tim
 | `finetune.training_id` | `<training_id>_finetune` | Run the finetuned models are saved as. |
 | `finetune.surrogates` | `surrogates` | Surrogates to finetune. |
 | `finetune.seed` | `seed` | Seed of the finetuning and of the search. |
-| `finetune.epochs` | `50` | Finetuning epochs. |
+| `finetune.epochs` | `75` | Finetuning epochs. |
 | `finetune.batch_size` | `1024` | Trajectories per batch. |
 | `finetune.learning_rate` | `1e-5` | Adam learning rate. |
 | `finetune.gradient_clip` | `1.0` | Maximum gradient norm, `0` disables clipping. |
