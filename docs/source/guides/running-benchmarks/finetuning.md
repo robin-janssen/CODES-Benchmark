@@ -16,7 +16,7 @@ python run_eval.py       --config trained/<training_id>_finetune/config.yaml
 
 Each batch optimises `(1 - rollout_weight) * data_loss + rollout_weight * rollout_loss`, with gradients clipped to `gradient_clip`.
 
-- **Data loss** — the ordinary one shot loss the model was trained with. It keeps the finetuned model accurate on single-step predictions and ensures training stability.
+- **Data loss** — the ordinary one shot loss the model was trained with. It keeps the finetuned model accurate on one-shot predictions and ensures training stability.
 - **Rollout loss** — built by rolling the model out:
   1. A target elapsed time is drawn as `0.9 * horizon * u ** start_bias`, with `u` uniform in [0, 1]. `start_bias > 1` moves it towards early times.
   2. The model steps from the true initial state until it has covered that time, **without gradients** (at most `max_warmup_steps` steps). The graded part of the rollout therefore starts from a state the model reached itself, which is where rollout errors arise.
@@ -57,7 +57,7 @@ The `finetune` block sits in the same config as training. Only `dt_range` is req
 | `eval_dt_range` | `dt_range` | Step sizes the score is taken over. |
 | `eval_n_dt` | `4` | Number of step sizes in the score. |
 | `eval_samples` | `2000` | Test trajectories used for the score. |
-| `dynamic_span` | `None` | Score only trajectories that change by at least this much, in error units. |
+| `dynamic_span` | `None` | Score only trajectories that change by at least this much, in the units of the `*_log` metrics (log10 when `dataset.log10_transform` is on). |
 | `optuna` | `None` | Hyperparameter search, see below. |
 
 ## Hyperparameter search
