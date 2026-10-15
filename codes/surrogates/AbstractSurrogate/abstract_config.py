@@ -24,6 +24,7 @@ class AbstractSurrogateBaseConfig:
         activation (nn.Module | None): Activation module used in the model.
         loss_function (nn.Module | None): Loss function used for training.
         beta (float): Beta parameter forwarded to SmoothL1Loss.
+        gradient_clip (float): Maximum gradient norm. Set to 0 to disable clipping.
     """
 
     learning_rate: float = 3e-4
@@ -36,6 +37,7 @@ class AbstractSurrogateBaseConfig:
     activation: nn.Module | None = None
     loss_function: nn.Module | None = None  # Options: nn.MSELoss(), nn.SmoothL1Loss()
     beta: float = 0.0  # Used only if loss_function == nn.SmoothL1Loss()
+    gradient_clip: float = 0.0  # Max gradient norm, 0 disables clipping
 
     def __post_init__(self) -> None:
         if self.activation is None:

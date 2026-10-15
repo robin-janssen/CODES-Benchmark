@@ -58,6 +58,7 @@ The GitHub Pages site now hosts the narrative guides, configuration reference, a
 | `datasets/`                                       | Bundled datasets + download helper (`data_sources.yaml`)                         |
 | `codes/`                                          | Python package with surrogates, training, tuning, and benchmarking utilities     |
 | `run_training.py`, `run_eval.py`, `run_tuning.py` | CLI entry points for the main workflows                                          |
+| `run_finetuning.py`                               | Optional: finetune trained surrogates for autoregressive rollout                 |
 | `docs/`                                           | Sphinx project powering the GitHub Pages site (guides, tutorials, API reference) |
 | `test/`                                           | Unit and integration tests                                                        |
 
