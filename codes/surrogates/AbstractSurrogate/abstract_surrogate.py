@@ -466,9 +466,12 @@ class AbstractSurrogateModel(ABC, nn.Module):
 
                     # data = data.to("cpu")
                     data = (data + 1) * (dmax - dmin) / 2 + dmin
-                elif self.normalisation["mode"] == "standardize":
+                elif self.normalisation["mode"] in ("standardise", "standardize"):
+                    # The data pipeline writes "standardise"; accept both spellings.
                     mean = self.normalisation["mean"]
                     std = self.normalisation["std"]
+                    mean = np.array(mean) if isinstance(mean, list) else mean
+                    std = np.array(std) if isinstance(std, list) else std
                     if isinstance(data, Tensor) and isinstance(mean, np.ndarray):
                         mean = Tensor(mean).to(data.device)
                         std = Tensor(std).to(data.device)

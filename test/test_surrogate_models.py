@@ -7,6 +7,7 @@ import torch
 import yaml
 
 from codes.surrogates import AbstractSurrogateModel, surrogate_classes
+from codes.utils.data_utils import normalize_data
 
 
 @pytest.fixture(params=surrogate_classes)
@@ -612,6 +613,22 @@ class TestDenormalization:
         result = surrogate_model.denormalize(test_data)
         assert torch.allclose(result, test_data)
 
+    @pytest.mark.parametrize("mode", ["minmax", "standardise"])
+    @pytest.mark.parametrize("per_species", [False, True])
+    def test_denormalize_inverts_normalisation(
+        self, surrogate_model, mode, per_species
+    ):
+        """denormalize must undo each normalisation the data pipeline applies."""
+        data = np.random.default_rng(0).normal(size=(4, 5, 3)).astype(np.float32)
+        data_info, data_norm, _, _ = normalize_data(
+            data, mode=mode, per_species=per_species
+        )
+        surrogate_model.normalisation = {**data_info, "log10_transform": False}
+
+        result = surrogate_model.denormalize(torch.from_numpy(data_norm))
+
+        np.testing.assert_allclose(result.numpy(), data, rtol=1e-5, atol=1e-5)
+
 
 class TestOptimizer:
     """Test optimizer and scheduler setup."""
@@ -703,3 +720,26 @@ class TestProgressBar:
         assert hasattr(pbar, "close")
 
         pbar.close()
+
+
+def test_latent_neural_ode_v1_trains(sample_data, test_constants, device):
+    """The original LatentNeuralODE architecture (model_version v1) must run."""
+    from codes.surrogates.LatentNeuralODE.latent_neural_ode import LatentNeuralODE
+
+    model = LatentNeuralODE(
+        device=device,
+        n_quantities=test_constants["n_chemicals"],
+        n_timesteps=test_constants["n_timesteps"],
+        n_parameters=0,
+        config={"model_version": "v1", "layers_factor": 2},
+    )
+    data_train, data_test, data_val, timesteps = sample_data
+    train_loader, test_loader, _ = model.prepare_data(
+        data_train, data_test, data_val, timesteps, test_constants["batch_size"]
+    )
+
+    model.fit(train_loader, test_loader, epochs=1, description="t")
+    preds, targets = model.predict(test_loader)
+
+    assert preds.shape == targets.shape
+    assert torch.isfinite(preds).all()

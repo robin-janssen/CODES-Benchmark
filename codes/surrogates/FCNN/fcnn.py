@@ -246,7 +246,9 @@ class FullyConnected(AbstractSurrogateModel):
         Returns:
             None. The training loss, test loss, and MAE are stored in the model.
         """
-        self.n_train_samples = int(len(train_loader.dataset) / self.n_timesteps)
+        # Flat datasets hold one row per (sample, timestep); their length counts batches.
+        n_rows = getattr(train_loader.dataset, "N", None)
+        self.n_train_samples = None if n_rows is None else n_rows // self.n_timesteps
         # criterion = nn.MSELoss(reduction="sum")
         criterion = self.config.loss
         optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
