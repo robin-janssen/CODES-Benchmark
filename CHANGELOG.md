@@ -50,6 +50,10 @@ optimizer and seeding fixes below; the conclusions of the paper are unchanged.
   git commit that produced them.
 - End-to-end and golden-value tests.
 
+### Security
+
+- Updated dependencies with known vulnerabilities, including PyTorch (now 2.14).
+
 ## [0.1.0] - 2026-02-12
 
 The version used for the A&A paper, tagged retroactively.

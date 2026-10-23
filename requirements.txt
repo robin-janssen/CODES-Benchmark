@@ -21,10 +21,10 @@ babel==2.18.0
     #   sphinx
 beautifulsoup4==4.14.3
     # via pydata-sphinx-theme
-black==26.3.1
+black==26.10.1
 bottle==0.13.4
     # via optuna-dashboard
-certifi==2026.2.25
+certifi==2026.10.23
     # via requests
 cffi==2.0.0 ; implementation_name == 'pypy'
     # via pyzmq
@@ -54,11 +54,11 @@ contourpy==1.3.3 ; python_full_version >= '3.11'
     # via matplotlib
 coverage==7.13.5
     # via pytest-cov
-cuda-bindings==13.2.0 ; sys_platform == 'linux'
+cuda-bindings==13.2.0 ; python_full_version < '3.15' and sys_platform == 'linux'
     # via torch
-cuda-pathfinder==1.5.0 ; sys_platform == 'linux'
+cuda-pathfinder==1.5.0 ; python_full_version < '3.15' and sys_platform == 'linux'
     # via cuda-bindings
-cuda-toolkit==13.0.2 ; sys_platform == 'linux'
+cuda-toolkit==13.0.3.0 ; sys_platform == 'linux'
     # via torch
 cycler==0.12.1
     # via matplotlib
@@ -66,7 +66,9 @@ debugpy==1.8.20
     # via ipykernel
 decorator==5.2.1
     # via ipython
-distlib==0.4.0
+distlib==0.4.0 ; python_full_version < '3.11'
+    # via virtualenv
+distlib==0.4.4 ; python_full_version >= '3.11'
     # via virtualenv
 docutils==0.21.2 ; python_full_version < '3.11'
     # via
@@ -93,7 +95,7 @@ filelock==3.25.2
     #   virtualenv
 fonttools==4.62.1
     # via matplotlib
-fsspec==2026.3.0
+fsspec==2026.9.0
     # via torch
 greenlet==3.3.2 ; platform_machine == 'AMD64' or platform_machine == 'WIN32' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'ppc64le' or platform_machine == 'win32' or platform_machine == 'x86_64'
     # via sqlalchemy
@@ -101,7 +103,7 @@ h5py==3.16.0
     # via codes
 identify==2.6.18
     # via pre-commit
-idna==3.11
+idna==3.20
     # via requests
 imagesize==2.0.0
     # via sphinx
@@ -154,7 +156,7 @@ jupyter-core==5.9.1
 kiwisolver==1.5.0
     # via matplotlib
 linkify-it-py==2.1.0
-mako==1.3.10
+mako==1.4.3
     # via alembic
 markdown-it-py==3.0.0 ; python_full_version < '3.11'
     # via
@@ -220,36 +222,38 @@ numpy==2.4.3 ; python_full_version >= '3.11'
     #   matplotlib
     #   optuna
     #   scipy
-nvidia-cublas==13.1.0.3 ; sys_platform == 'linux'
+nvidia-cublas==13.1.1.3 ; sys_platform == 'linux'
     # via
     #   cuda-toolkit
     #   nvidia-cudnn-cu13
     #   nvidia-cusolver
-nvidia-cuda-cupti==13.0.85 ; sys_platform == 'linux'
+nvidia-cuda-cupti==13.0.85 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
     # via cuda-toolkit
 nvidia-cuda-nvrtc==13.0.88 ; sys_platform == 'linux'
+    # via
+    #   cuda-toolkit
+    #   nvidia-cublas
+nvidia-cuda-runtime==13.0.96 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
     # via cuda-toolkit
-nvidia-cuda-runtime==13.0.96 ; sys_platform == 'linux'
-    # via cuda-toolkit
-nvidia-cudnn-cu13==9.19.0.56 ; sys_platform == 'linux'
+nvidia-cudnn-cu13==9.24.0.43 ; sys_platform == 'linux'
     # via torch
-nvidia-cufft==12.0.0.61 ; sys_platform == 'linux'
+nvidia-cufft==12.0.0.61 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
     # via cuda-toolkit
-nvidia-cufile==1.15.1.6 ; sys_platform == 'linux'
+nvidia-cufile==1.15.1.6 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
     # via cuda-toolkit
-nvidia-curand==10.4.0.35 ; sys_platform == 'linux'
+nvidia-curand==10.4.0.35 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
     # via cuda-toolkit
-nvidia-cusolver==12.0.4.66 ; sys_platform == 'linux'
+nvidia-cusolver==12.0.4.66 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
     # via cuda-toolkit
-nvidia-cusparse==12.6.3.3 ; sys_platform == 'linux'
+nvidia-cusparse==12.6.3.3 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
     # via
     #   cuda-toolkit
     #   nvidia-cusolver
-nvidia-cusparselt-cu13==0.8.0 ; sys_platform == 'linux'
+nvidia-cusparselt-cu13==0.8.1 ; sys_platform == 'linux'
     # via torch
-nvidia-nccl-cu13==2.28.9 ; sys_platform == 'linux'
+nvidia-nccl-cu13==2.30.7 ; sys_platform == 'linux'
     # via torch
-nvidia-nvjitlink==13.0.88 ; sys_platform == 'linux'
+nvidia-nvjitlink==13.0.88 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
     # via
     #   cuda-toolkit
     #   nvidia-cufft
@@ -257,7 +261,7 @@ nvidia-nvjitlink==13.0.88 ; sys_platform == 'linux'
     #   nvidia-cusparse
 nvidia-nvshmem-cu13==3.4.5 ; sys_platform == 'linux'
     # via torch
-nvidia-nvtx==13.0.85 ; sys_platform == 'linux'
+nvidia-nvtx==13.0.85 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
     # via cuda-toolkit
 optuna==4.8.0
     # via
@@ -265,7 +269,7 @@ optuna==4.8.0
     #   optuna-dashboard
 optuna-dashboard==0.20.0
     # via codes
-packaging==26.0
+packaging==26.0 ; python_full_version < '3.11'
     # via
     #   black
     #   ipykernel
@@ -274,19 +278,30 @@ packaging==26.0
     #   pydata-sphinx-theme
     #   pytest
     #   sphinx
+    #   virtualenv
+packaging==26.3 ; python_full_version >= '3.11'
+    # via
+    #   black
+    #   ipykernel
+    #   matplotlib
+    #   optuna
+    #   pytest
+    #   sphinx
+    #   virtualenv
 parso==0.8.6
     # via jedi
 pathspec==1.0.4
     # via black
 pexpect==4.9.0 ; sys_platform != 'emscripten' and sys_platform != 'win32'
     # via ipython
-pillow==12.1.1
+pillow==12.3.0 ; python_full_version < '3.11'
+    # via matplotlib
+pillow==13.0.0 ; python_full_version >= '3.11'
     # via matplotlib
 platformdirs==4.9.4
     # via
     #   black
     #   jupyter-core
-    #   python-discovery
     #   virtualenv
 pluggy==1.6.0
     # via
@@ -311,7 +326,7 @@ pydata-sphinx-theme==0.15.4 ; python_full_version < '3.11'
     # via sphinx-book-theme
 pydata-sphinx-theme==0.16.1 ; python_full_version >= '3.11'
     # via sphinx-book-theme
-pygments==2.19.2
+pygments==2.21.0
     # via
     #   accessible-pygments
     #   ipython
@@ -321,14 +336,14 @@ pygments==2.19.2
     #   sphinx
 pyparsing==3.3.2
     # via matplotlib
-pytest==9.0.2
+pytest==9.1.1
     # via pytest-cov
 pytest-cov==7.1.0
 python-dateutil==2.9.0.post0
     # via
     #   jupyter-client
     #   matplotlib
-python-discovery==1.2.1
+python-discovery==1.6.4
     # via virtualenv
 pytokens==0.4.1
     # via black
@@ -362,7 +377,7 @@ scipy==1.15.3 ; python_full_version < '3.11'
     # via codes
 scipy==1.17.1 ; python_full_version >= '3.11'
     # via codes
-setuptools==81.0.0
+setuptools==84.2.1
     # via torch
 six==1.17.0
     # via
@@ -371,7 +386,9 @@ six==1.17.0
     #   sphinxcontrib-napoleon
 snowballstemmer==3.0.1
     # via sphinx
-soupsieve==2.8.3
+soupsieve==2.10 ; python_full_version < '3.11.5'
+    # via beautifulsoup4
+soupsieve==3.0.4 ; python_full_version >= '3.11.5'
     # via beautifulsoup4
 sphinx==8.1.3 ; python_full_version < '3.11'
     # via
@@ -436,7 +453,7 @@ tomli==2.4.1 ; python_full_version <= '3.11'
     #   optuna-dashboard
     #   pytest
     #   sphinx
-torch==2.11.0
+torch==2.14.1
     # via
     #   codes
     #   schedulefree
@@ -446,7 +463,11 @@ torchode==1.0.1
     # via codes
 torchtyping==0.1.5
     # via torchode
-tornado==6.5.5
+tornado==6.5.10 ; python_full_version < '3.11'
+    # via
+    #   ipykernel
+    #   jupyter-client
+tornado==6.6 ; python_full_version >= '3.11'
     # via
     #   ipykernel
     #   jupyter-client
@@ -463,7 +484,7 @@ traitlets==5.14.3
     #   matplotlib-inline
     #   nbclient
     #   nbformat
-triton==3.6.0 ; sys_platform == 'linux'
+triton==3.8.0 ; python_full_version < '3.15' and sys_platform == 'linux'
     # via torch
 typeguard==2.13.3
     # via torchtyping
@@ -483,9 +504,11 @@ typing-extensions==4.15.0
     #   virtualenv
 uc-micro-py==2.0.0
     # via linkify-it-py
-urllib3==2.6.3
+urllib3==2.8.0
     # via requests
-virtualenv==21.2.0
+virtualenv==21.14.5 ; python_full_version < '3.11'
+    # via pre-commit
+virtualenv==21.14.13 ; python_full_version >= '3.11'
     # via pre-commit
 wcwidth==0.6.0
     # via prompt-toolkit
