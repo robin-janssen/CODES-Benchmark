@@ -52,8 +52,8 @@ dev = [
 [tool.pytest.ini_options]
 pythonpath = ["."]
 
-[tool.setuptools]
-packages = ["codes"]
+[tool.setuptools.packages.find]
+include = ["codes*"]
 
 [tool.black]
 line-length = 88

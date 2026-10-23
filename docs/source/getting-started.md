@@ -15,7 +15,7 @@ We recommend [`uv`](https://docs.astral.sh/uv/) because the repository already s
 **uv workflow (recommended)**
 
 ```bash
-git clone https://github.com/robin-janssen/CODES-Benchmark.git
+git clone https://github.com/AstroAI-Lab/CODES-Benchmark.git
 cd CODES-Benchmark
 uv sync            # creates .venv using uv.lock
 uv run python -c "import codes; print('CODES ready!')"  # optional smoke test
@@ -26,7 +26,7 @@ After this, you can prefix any command with `uv run` (for example `uv run python
 **pip / virtualenv fallback**
 
 ```bash
-git clone https://github.com/robin-janssen/CODES-Benchmark.git
+git clone https://github.com/AstroAI-Lab/CODES-Benchmark.git
 cd CODES-Benchmark
 python -m venv .venv && source .venv/bin/activate
 pip install -e .
