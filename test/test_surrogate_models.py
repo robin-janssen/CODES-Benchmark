@@ -535,6 +535,8 @@ class TestSaveLoad:
             model_dir = Path(tmp_dir) / training_id / surrogate_model.__class__.__name__
             assert (model_dir / f"{model_name}.pth").exists()
             assert (model_dir / f"{model_name}.yaml").exists()
+            with open(model_dir / f"{model_name}.yaml", encoding="utf-8") as f:
+                assert "codes_version" in yaml.safe_load(f)
 
             # Create new instance and load
             new_model = surrogate_model.__class__(

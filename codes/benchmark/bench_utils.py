@@ -13,7 +13,7 @@ import yaml
 from torch.utils.data import DataLoader
 
 from codes.surrogates import SurrogateModel, surrogate_classes
-from codes.utils import determine_batch_size, read_yaml_config
+from codes.utils import determine_batch_size, get_version_info, read_yaml_config
 
 
 def check_surrogate(surrogate: str, conf: dict) -> None:
@@ -454,6 +454,7 @@ def write_metrics_to_yaml(surr_name: str, conf: dict, metrics: dict) -> None:
 
     # Convert metrics to standard types
     write_metrics = convert_to_standard_types(write_metrics)
+    write_metrics["version_info"] = get_version_info()
 
     # Make results directory
     os.makedirs(f"results/{conf['training_id']}", exist_ok=True)

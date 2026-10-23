@@ -13,7 +13,7 @@ from torch import Tensor, nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from codes.utils import create_model_dir, parse_hyperparameters
+from codes.utils import create_model_dir, get_version_info, parse_hyperparameters
 
 
 class AbstractSurrogateModel(ABC, nn.Module):
@@ -333,6 +333,7 @@ class AbstractSurrogateModel(ABC, nn.Module):
                 f"{devinfo.name} ({devinfo.total_memory / 1e9:.2f}GB), CUDA {devinfo.major}.{devinfo.minor}"
             )
         hyperparameters["date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        hyperparameters.update(get_version_info())
 
         # Recursively parse hyperparameters to make them yaml-serializable
         clean_hyperparameters = parse_hyperparameters(hyperparameters.copy())

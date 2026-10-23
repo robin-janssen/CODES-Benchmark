@@ -3,9 +3,11 @@ import json
 import os
 import random
 import shutil
+import subprocess
 import sys
 import time
 from fractions import Fraction
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -21,6 +23,42 @@ def read_yaml_config(config_path):
     # Parse for "None" strings
     config = parse_for_none(config)
     return config
+
+
+def get_version_info() -> dict:
+    """
+    The CODES version and, in a git checkout, the commit and whether the checkout has
+    uncommitted changes. Stored with trained models and results, so that they can be
+    traced back to the code that produced them.
+
+    Returns:
+        dict: "codes_version", "git_commit" and "git_dirty" (None outside a checkout).
+    """
+    from codes import __version__
+
+    info = {"codes_version": __version__, "git_commit": None, "git_dirty": None}
+    repo = Path(__file__).resolve().parents[2]
+    if not (repo / ".git").exists():
+        return info
+    try:
+        info["git_commit"] = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=repo,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+        status = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            cwd=repo,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+        info["git_dirty"] = bool(status.strip())
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    return info
 
 
 def time_execution(func):
