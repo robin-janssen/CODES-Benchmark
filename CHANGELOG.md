@@ -6,7 +6,7 @@ All notable changes to CODES are documented in this file. The format follows
 breaking changes. Changes that alter benchmark results are listed under "Changes
 affecting results".
 
-## [0.2.0] - Unreleased
+## [0.2.0] - 2026-10-23
 
 This release fixes bugs that affect benchmark results, including those of the A&A paper
 (Janssen, Branca & Buck 2026), which was produced with 0.1.0. Retrain models before
@@ -61,7 +61,7 @@ optimizer and seeding fixes below; the conclusions of the paper are unchanged.
 
 ## [0.1.0] - 2026-02-12
 
-The version used for the A&A paper, tagged retroactively.
+The version used for the A&A paper.
 
 [0.2.0]: https://github.com/AstroAI-Lab/CODES-Benchmark/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/AstroAI-Lab/CODES-Benchmark/releases/tag/v0.1.0
