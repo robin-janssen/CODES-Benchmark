@@ -709,7 +709,8 @@ class AbstractSurrogateModel(ABC, nn.Module):
         Patches ScheduleFree optimizers to have a no-op scheduler.step().
         For ScheduleFree optimizers, use lr warmup for the first 1% of epochs.
         For Poly scheduler, use a power decay based on self.config.poly_power.
-        For Cosine scheduler, use a minimum learning rate defined by self.config.eta_min.
+        For Cosine scheduler, anneal to the minimum learning rate
+        self.config.eta_min * self.config.learning_rate.
 
         Args:
             epochs (int): The number of epochs the training will run for.
@@ -796,11 +797,10 @@ class AbstractSurrogateModel(ABC, nn.Module):
         elif scheduler_name == "cosine":
             from torch.optim.lr_scheduler import CosineAnnealingLR
 
-            eta_min = self.config.eta_min
             scheduler = CosineAnnealingLR(
                 optimizer,
                 T_max=epochs,
-                eta_min=eta_min,
+                eta_min=self.config.eta_min * self.config.learning_rate,
             )
         elif scheduler_name == "poly":
             from torch.optim.lr_scheduler import LambdaLR

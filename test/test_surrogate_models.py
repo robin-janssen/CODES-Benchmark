@@ -644,6 +644,45 @@ class TestOptimizer:
             # Some models might not support all configurations
             pytest.skip("Model doesn't support this optimizer configuration")
 
+    @pytest.mark.parametrize("eta_min, expected", [(None, 1e-4), (0.01, 1e-5)])
+    def test_cosine_eta_min(self, surrogate_model, eta_min, expected):
+        """eta_min is a fraction of the learning rate and defaults to 0.1."""
+        surrogate_model.config.scheduler = "cosine"
+        surrogate_model.config.learning_rate = 1e-3
+        if eta_min is not None:
+            surrogate_model.config.eta_min = eta_min
+
+        _, scheduler = surrogate_model.setup_optimizer_and_scheduler(epochs=10)
+
+        assert scheduler.eta_min == pytest.approx(expected)
+
+    def test_fit_applies_configured_beta(
+        self, surrogate_model, sample_data, test_constants, monkeypatch
+    ):
+        """A configured SmoothL1Loss beta must reach the loss used in training."""
+        model = type(surrogate_model)(
+            device=surrogate_model.device,
+            n_quantities=test_constants["n_chemicals"],
+            n_timesteps=test_constants["n_timesteps"],
+            n_parameters=0,
+            config={"loss_function": torch.nn.SmoothL1Loss(), "beta": 2.5},
+        )
+        data_train, data_test, data_val, timesteps = sample_data
+        train_loader, test_loader, _ = model.prepare_data(
+            data_train, data_test, data_val, timesteps, test_constants["batch_size"]
+        )
+        betas = set()
+        original_forward = torch.nn.SmoothL1Loss.forward
+
+        def spy(loss, *args, **kwargs):
+            betas.add(loss.beta)
+            return original_forward(loss, *args, **kwargs)
+
+        monkeypatch.setattr(torch.nn.SmoothL1Loss, "forward", spy)
+        model.fit(train_loader, test_loader, epochs=1, description="t")
+
+        assert betas == {2.5}
+
 
 class TestProgressBar:
     """Test progress bar setup functionality."""

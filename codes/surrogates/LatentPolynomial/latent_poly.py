@@ -202,7 +202,7 @@ class LatentPoly(AbstractSurrogateModel):
         self.train_loss, self.test_loss, self.MAE = [
             np.zeros(loss_length) for _ in range(3)
         ]
-        criterion = nn.MSELoss()
+        criterion = self.config.loss
 
         progress_bar = self.setup_progress_bar(epochs, position, description)
 
@@ -216,7 +216,7 @@ class LatentPoly(AbstractSurrogateModel):
                 x_true, _, params = batch
                 optimizer.zero_grad()
                 x_pred, x_true = self(batch)
-                loss = self.model.total_loss(x_true, x_pred, params)
+                loss = self.model.total_loss(x_true, x_pred, params, criterion)
                 loss.backward()
                 optimizer.step()
 

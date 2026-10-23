@@ -186,7 +186,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
                                     If True, trial.report is not used (not supported by Optuna).
         """
         optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
-        criterion = self.config.loss_function
+        criterion = self.config.loss
 
         loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
         self.train_loss, self.test_loss, self.MAE = [
@@ -252,7 +252,7 @@ class LatentNeuralODE(AbstractSurrogateModel):
         from torch.profiler import ProfilerActivity, profile, record_function
 
         optimizer, scheduler = self.setup_optimizer_and_scheduler(epochs)
-        criterion = self.config.loss_function
+        criterion = self.config.loss
 
         loss_length = (epochs + self.update_epochs - 1) // self.update_epochs
         self.train_loss, self.test_loss, self.MAE = [
