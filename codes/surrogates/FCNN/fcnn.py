@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset, IterableDataset
 
 from codes.surrogates.AbstractSurrogate import AbstractSurrogateModel
-from codes.utils import time_execution
+from codes.utils import make_shuffle_generator, time_execution
 
 from .fcnn_config import FCNNBaseConfig
 
@@ -24,9 +24,14 @@ class FCFlatBatchIterable(IterableDataset):
         self.N = inputs_t.size(0)
         self.bs = batch_size
         self.shuffle = shuffle
+        self.generator = make_shuffle_generator() if shuffle else None
 
     def __iter__(self):
-        perm = torch.randperm(self.N) if self.shuffle else torch.arange(self.N)
+        perm = (
+            torch.randperm(self.N, generator=self.generator)
+            if self.shuffle
+            else torch.arange(self.N)
+        )
         for start in range(0, self.N, self.bs):
             idx = perm[start : start + self.bs]
             yield self.inputs[idx], self.targets[idx]
@@ -274,6 +279,8 @@ class FullyConnected(AbstractSurrogateModel):
 
         progress_bar.close()
         self.n_epochs = epoch + 1
+        # Schedule-free optimizers hold the weights to evaluate and save in eval mode.
+        optimizer.eval()
         self.get_checkpoint(test_loader, criterion)
 
     def epoch(
@@ -345,6 +352,8 @@ class FullyConnected(AbstractSurrogateModel):
             num_workers=num_workers,
             pin_memory=pin_memory,
             persistent_workers=False,
+            # Own generator, so iterating never draws from the shared global RNG.
+            generator=torch.Generator(),
         )
 
 

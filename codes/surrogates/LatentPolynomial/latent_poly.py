@@ -115,6 +115,8 @@ class LatentPoly(AbstractSurrogateModel):
             num_workers=num_workers,  # 0 usually fine
             pin_memory=pin_memory,
             persistent_workers=False,
+            # Own generator, so iterating never draws from the shared global RNG.
+            generator=torch.Generator(),
         )
 
     def prepare_data(
@@ -232,6 +234,8 @@ class LatentPoly(AbstractSurrogateModel):
 
         progress_bar.close()
         self.n_epochs = epoch + 1
+        # Schedule-free optimizers hold the weights to evaluate and save in eval mode.
+        optimizer.eval()
         self.get_checkpoint(test_loader, criterion)
 
 

@@ -284,6 +284,161 @@ class TestTraining:
         except Exception as e:
             pytest.skip(f"Model-specific training failed: {e}")
 
+    def test_train_duration_is_per_model(
+        self, surrogate_model, sample_dataloaders, test_constants, tmp_path
+    ):
+        """A model's saved training time must not be taken from a model trained later."""
+        train_loader, test_loader, _ = sample_dataloaders
+        other = type(surrogate_model)(
+            device=surrogate_model.device,
+            n_quantities=test_constants["n_chemicals"],
+            n_timesteps=test_constants["n_timesteps"],
+            n_parameters=0,
+            config=None,
+        )
+        surrogate_model.fit(train_loader, test_loader, epochs=1, description="t")
+        own_duration = surrogate_model.fit_duration
+        other.fit(train_loader, test_loader, epochs=3, description="t")
+
+        surrogate_model.save(model_name="m", base_dir=str(tmp_path), training_id="t")
+
+        assert surrogate_model.train_duration == own_duration
+        assert other.fit_duration != own_duration
+
+
+def _state_copy(model):
+    return {k: v.detach().clone().cpu() for k, v in model.state_dict().items()}
+
+
+def _states_equal(model, state):
+    return all(
+        torch.equal(v.detach().cpu(), state[k]) for k, v in model.state_dict().items()
+    )
+
+
+def _shift_parameters(model, offset):
+    with torch.no_grad():
+        for p in model.parameters():
+            p.add_(offset)
+
+
+class TestCheckpointing:
+    """Test that best-checkpoint handling is per model and compares like for like."""
+
+    def _make_twin(self, surrogate_model, test_constants):
+        return type(surrogate_model)(
+            device=surrogate_model.device,
+            n_quantities=test_constants["n_chemicals"],
+            n_timesteps=test_constants["n_timesteps"],
+            n_parameters=0,
+            config=None,
+        )
+
+    def test_concurrent_models_restore_their_own_weights(
+        self, surrogate_model, sample_dataloaders, test_constants, tmp_path, monkeypatch
+    ):
+        """Two models checkpointing in turn must not see each other's weights."""
+        monkeypatch.chdir(tmp_path)
+        _, test_loader, _ = sample_dataloaders
+        other = self._make_twin(surrogate_model, test_constants)
+        for model in (surrogate_model, other):
+            model.checkpointing = True
+            model.n_epochs = 10
+            model.setup_checkpoint()
+
+        surrogate_model.checkpoint(test_loss=0.0, epoch=3)
+        own_best = _state_copy(surrogate_model)
+        other.checkpoint(test_loss=0.0, epoch=5)
+
+        # Final weights are worse than the stored best (loss 0.0), so restore it.
+        _shift_parameters(surrogate_model, 1.0)
+        surrogate_model.get_checkpoint(test_loader)
+
+        assert _states_equal(surrogate_model, own_best)
+        assert surrogate_model.best_epoch == 3
+        assert not any(tmp_path.rglob("*.pth")), "checkpoints must not touch the disk"
+
+    def test_final_weights_kept_when_better(
+        self, surrogate_model, sample_dataloaders, tmp_path, monkeypatch
+    ):
+        """Final weights win if their log-space L1 beats the best logged test loss."""
+        monkeypatch.chdir(tmp_path)
+        _, test_loader, _ = sample_dataloaders
+        surrogate_model.checkpointing = True
+        surrogate_model.n_epochs = 10
+        surrogate_model.setup_checkpoint()
+        surrogate_model.checkpoint(test_loss=1e9, epoch=3)
+
+        _shift_parameters(surrogate_model, 0.01)
+        final = _state_copy(surrogate_model)
+        surrogate_model.get_checkpoint(test_loader)
+
+        preds, targets = surrogate_model.predict(test_loader, leave_log=True)
+        assert _states_equal(surrogate_model, final)
+        assert surrogate_model.best_epoch == 9
+        assert surrogate_model.best_test_loss == pytest.approx(
+            surrogate_model.L1(preds, targets).item()
+        )
+
+    def test_fit_ends_with_schedulefree_eval_weights(
+        self, surrogate_model, sample_data, test_constants, monkeypatch
+    ):
+        """Schedule-free optimizers must be in eval mode when training ends."""
+        model = type(surrogate_model)(
+            device=surrogate_model.device,
+            n_quantities=test_constants["n_chemicals"],
+            n_timesteps=test_constants["n_timesteps"],
+            n_parameters=0,
+            config={"scheduler": "schedulefree"},
+        )
+        data_train, data_test, data_val, timesteps = sample_data
+        train_loader, test_loader, _ = model.prepare_data(
+            data_train, data_test, data_val, timesteps, test_constants["batch_size"]
+        )
+        created = []
+        original = model.setup_optimizer_and_scheduler
+
+        def capture(epochs):
+            optimizer, scheduler = original(epochs)
+            created.append(optimizer)
+            return optimizer, scheduler
+
+        monkeypatch.setattr(model, "setup_optimizer_and_scheduler", capture)
+        model.fit(train_loader, test_loader, epochs=2, position=0, description="t")
+
+        assert created and created[0].param_groups[0]["train_mode"] is False
+
+
+class TestShuffling:
+    """Test that the shuffling order depends only on the seed set before loading."""
+
+    def _first_epoch_targets(self, surrogate_model, sample_data, batch_size, spin):
+        data_train, data_test, data_val, timesteps = sample_data
+        torch.manual_seed(123)
+        train_loader, _, _ = surrogate_model.prepare_data(
+            data_train, data_test, data_val, timesteps, batch_size, shuffle=True
+        )
+        # Other threads training in parallel draw from the global RNG in between.
+        torch.rand(spin)
+        return torch.cat([batch[0].flatten() for batch in train_loader])
+
+    def test_order_independent_of_global_rng(
+        self, surrogate_model, sample_data, test_constants
+    ):
+        bs = test_constants["batch_size"]
+        first = self._first_epoch_targets(surrogate_model, sample_data, bs, spin=0)
+        second = self._first_epoch_targets(surrogate_model, sample_data, bs, spin=17)
+        assert torch.equal(first, second)
+
+    def test_fit_does_not_touch_global_rng(self, surrogate_model, sample_dataloaders):
+        """Training threads must not advance the global RNG, which other threads
+        rely on while they initialise models under the thread lock."""
+        train_loader, test_loader, _ = sample_dataloaders
+        before = torch.get_rng_state()
+        surrogate_model.fit(train_loader, test_loader, epochs=2, description="t")
+        surrogate_model.predict(test_loader)
+        assert torch.equal(before, torch.get_rng_state())
+
 
 class TestPrediction:
     """Test model prediction functionality."""

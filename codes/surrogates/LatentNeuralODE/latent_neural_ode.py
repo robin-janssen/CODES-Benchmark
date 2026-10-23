@@ -159,6 +159,8 @@ class LatentNeuralODE(AbstractSurrogateModel):
             num_workers=num_workers,
             pin_memory=pin_memory,
             persistent_workers=False,
+            # Own generator, so iterating never draws from the shared global RNG.
+            generator=torch.Generator(),
         )
 
     @time_execution
@@ -233,6 +235,8 @@ class LatentNeuralODE(AbstractSurrogateModel):
 
         progress_bar.close()
         self.n_epochs = epoch + 1
+        # Schedule-free optimizers hold the weights to evaluate and save in eval mode.
+        optimizer.eval()
         self.get_checkpoint(test_loader, criterion)
 
     @time_execution
@@ -345,6 +349,8 @@ class LatentNeuralODE(AbstractSurrogateModel):
 
         progress_bar.close()
         self.n_epochs = epoch + 1
+        # Schedule-free optimizers hold the weights to evaluate and save in eval mode.
+        optimizer.eval()
         self.get_checkpoint(test_loader, criterion)
 
 
