@@ -4,7 +4,7 @@ CODES Benchmark helps you compare surrogate models for coupled ODE systems by ru
 
 ## Prerequisites
 
-- Python 3.10 with `pip` (we recommend `uv` for faster installs, but plain pip works)
+- Python 3.11 or newer with `pip` (we recommend `uv` for faster installs, but plain pip works)
 - (Optional) CUDA-capable GPU if you want to reproduce the default configurations
 - Enough disk space to store downloaded datasets and the checkpoints created under `trained/` and `results/`
 

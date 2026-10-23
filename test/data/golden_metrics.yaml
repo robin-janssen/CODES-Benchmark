@@ -24,6 +24,6 @@ MultiONet:
   UQ.average_uncertainty_log: 0.0219227597117424
   accuracy.mean_absolute_error_log: 0.0397990420460701
   accuracy.mean_relative_error: 0.08321408927440643
-  accuracy.percentile_absolute_error_log: 0.20038948953151703
+  accuracy.percentile_absolute_error_log: 0.20038947463035583
   extrapolation.cutoff_10: 0.055359698832035065
   interpolation.interval_2: 0.06204628199338913

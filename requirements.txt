@@ -48,9 +48,7 @@ colorlog==6.10.1
     # via optuna
 comm==0.2.3
     # via ipykernel
-contourpy==1.3.2 ; python_full_version < '3.11'
-    # via matplotlib
-contourpy==1.3.3 ; python_full_version >= '3.11'
+contourpy==1.3.3
     # via matplotlib
 coverage==7.13.5
     # via pytest-cov
@@ -66,24 +64,13 @@ debugpy==1.8.20
     # via ipykernel
 decorator==5.2.1
     # via ipython
-distlib==0.4.0 ; python_full_version < '3.11'
+distlib==0.4.4
     # via virtualenv
-distlib==0.4.4 ; python_full_version >= '3.11'
-    # via virtualenv
-docutils==0.21.2 ; python_full_version < '3.11'
+docutils==0.22.4
     # via
     #   myst-parser
     #   pydata-sphinx-theme
     #   sphinx
-docutils==0.22.4 ; python_full_version >= '3.11'
-    # via
-    #   myst-parser
-    #   pydata-sphinx-theme
-    #   sphinx
-exceptiongroup==1.3.1 ; python_full_version < '3.11'
-    # via
-    #   ipython
-    #   pytest
 executing==2.2.1
     # via stack-data
 fastjsonschema==2.21.2
@@ -115,11 +102,7 @@ iniconfig==2.3.0
     # via pytest
 ipykernel==7.2.0
     # via myst-nb
-ipython==8.39.0 ; python_full_version < '3.11'
-    # via
-    #   ipykernel
-    #   myst-nb
-ipython==9.10.1 ; python_full_version == '3.11.*'
+ipython==9.10.1 ; python_full_version < '3.12'
     # via
     #   ipykernel
     #   myst-nb
@@ -127,7 +110,7 @@ ipython==9.12.0 ; python_full_version >= '3.12'
     # via
     #   ipykernel
     #   myst-nb
-ipython-pygments-lexers==1.1.1 ; python_full_version >= '3.11'
+ipython-pygments-lexers==1.1.1
     # via ipython
 isort==8.0.1
 jedi==0.19.2
@@ -158,11 +141,7 @@ kiwisolver==1.5.0
 linkify-it-py==2.1.0
 mako==1.4.3
     # via alembic
-markdown-it-py==3.0.0 ; python_full_version < '3.11'
-    # via
-    #   mdit-py-plugins
-    #   myst-parser
-markdown-it-py==4.0.0 ; python_full_version >= '3.11'
+markdown-it-py==4.0.0
     # via
     #   mdit-py-plugins
     #   myst-parser
@@ -185,9 +164,7 @@ mpmath==1.3.0
 mypy-extensions==1.1.0
     # via black
 myst-nb==1.4.0
-myst-parser==4.0.1 ; python_full_version < '3.11'
-    # via myst-nb
-myst-parser==5.0.0 ; python_full_version >= '3.11'
+myst-parser==5.0.0
     # via myst-nb
 nbclient==0.10.4
     # via
@@ -200,21 +177,11 @@ nbformat==5.10.4
     #   nbclient
 nest-asyncio==1.6.0
     # via ipykernel
-networkx==3.4.2 ; python_full_version < '3.11'
-    # via torch
-networkx==3.6.1 ; python_full_version >= '3.11'
+networkx==3.6.1
     # via torch
 nodeenv==1.10.0
     # via pre-commit
-numpy==2.2.6 ; python_full_version < '3.11'
-    # via
-    #   codes
-    #   contourpy
-    #   h5py
-    #   matplotlib
-    #   optuna
-    #   scipy
-numpy==2.4.3 ; python_full_version >= '3.11'
+numpy==2.4.3
     # via
     #   codes
     #   contourpy
@@ -269,17 +236,7 @@ optuna==4.8.0
     #   optuna-dashboard
 optuna-dashboard==0.20.0
     # via codes
-packaging==26.0 ; python_full_version < '3.11'
-    # via
-    #   black
-    #   ipykernel
-    #   matplotlib
-    #   optuna
-    #   pydata-sphinx-theme
-    #   pytest
-    #   sphinx
-    #   virtualenv
-packaging==26.3 ; python_full_version >= '3.11'
+packaging==26.3
     # via
     #   black
     #   ipykernel
@@ -294,9 +251,7 @@ pathspec==1.0.4
     # via black
 pexpect==4.9.0 ; sys_platform != 'emscripten' and sys_platform != 'win32'
     # via ipython
-pillow==12.3.0 ; python_full_version < '3.11'
-    # via matplotlib
-pillow==13.0.0 ; python_full_version >= '3.11'
+pillow==13.0.0
     # via matplotlib
 platformdirs==4.9.4
     # via
@@ -322,9 +277,7 @@ pure-eval==0.2.3
     # via stack-data
 pycparser==3.0 ; implementation_name == 'pypy'
     # via cffi
-pydata-sphinx-theme==0.15.4 ; python_full_version < '3.11'
-    # via sphinx-book-theme
-pydata-sphinx-theme==0.16.1 ; python_full_version >= '3.11'
+pydata-sphinx-theme==0.16.1
     # via sphinx-book-theme
 pygments==2.21.0
     # via
@@ -365,7 +318,7 @@ referencing==0.37.0
     #   jsonschema-specifications
 requests==2.33.0
     # via sphinx
-roman-numerals==4.1.0 ; python_full_version >= '3.11'
+roman-numerals==4.1.0
     # via sphinx
 rpds-py==0.30.0
     # via
@@ -373,9 +326,7 @@ rpds-py==0.30.0
     #   referencing
 schedulefree==1.4.1
     # via codes
-scipy==1.15.3 ; python_full_version < '3.11'
-    # via codes
-scipy==1.17.1 ; python_full_version >= '3.11'
+scipy==1.17.1
     # via codes
 setuptools==84.2.1
     # via torch
@@ -390,14 +341,7 @@ soupsieve==2.10 ; python_full_version < '3.11.5'
     # via beautifulsoup4
 soupsieve==3.0.4 ; python_full_version >= '3.11.5'
     # via beautifulsoup4
-sphinx==8.1.3 ; python_full_version < '3.11'
-    # via
-    #   myst-nb
-    #   myst-parser
-    #   pydata-sphinx-theme
-    #   sphinx-autodoc-typehints
-    #   sphinx-book-theme
-sphinx==9.0.4 ; python_full_version == '3.11.*'
+sphinx==9.0.4 ; python_full_version < '3.12'
     # via
     #   myst-nb
     #   myst-parser
@@ -411,11 +355,9 @@ sphinx==9.1.0 ; python_full_version >= '3.12'
     #   pydata-sphinx-theme
     #   sphinx-autodoc-typehints
     #   sphinx-book-theme
-sphinx-autodoc-typehints==3.0.1 ; python_full_version < '3.11'
-sphinx-autodoc-typehints==3.6.1 ; python_full_version == '3.11.*'
+sphinx-autodoc-typehints==3.6.1 ; python_full_version < '3.12'
 sphinx-autodoc-typehints==3.9.11 ; python_full_version >= '3.12'
-sphinx-book-theme==1.1.4 ; python_full_version < '3.11'
-sphinx-book-theme==1.2.0 ; python_full_version >= '3.11'
+sphinx-book-theme==1.2.0
 sphinxcontrib-applehelp==2.0.0
     # via sphinx
 sphinxcontrib-devhelp==2.0.0
@@ -446,13 +388,7 @@ tabulate==0.10.0
     #   codes
     #   jupyter-cache
 tomli==2.4.1 ; python_full_version <= '3.11'
-    # via
-    #   alembic
-    #   black
-    #   coverage
-    #   optuna-dashboard
-    #   pytest
-    #   sphinx
+    # via coverage
 torch==2.14.1
     # via
     #   codes
@@ -463,11 +399,7 @@ torchode==1.0.1
     # via codes
 torchtyping==0.1.5
     # via torchode
-tornado==6.5.10 ; python_full_version < '3.11'
-    # via
-    #   ipykernel
-    #   jupyter-client
-tornado==6.6 ; python_full_version >= '3.11'
+tornado==6.6
     # via
     #   ipykernel
     #   jupyter-client
@@ -492,8 +424,6 @@ typing-extensions==4.15.0
     # via
     #   alembic
     #   beautifulsoup4
-    #   black
-    #   exceptiongroup
     #   ipython
     #   myst-nb
     #   pydata-sphinx-theme
@@ -501,14 +431,11 @@ typing-extensions==4.15.0
     #   schedulefree
     #   sqlalchemy
     #   torch
-    #   virtualenv
 uc-micro-py==2.0.0
     # via linkify-it-py
 urllib3==2.8.0
     # via requests
-virtualenv==21.14.5 ; python_full_version < '3.11'
-    # via pre-commit
-virtualenv==21.14.13 ; python_full_version >= '3.11'
+virtualenv==21.14.13
     # via pre-commit
 wcwidth==0.6.0
     # via prompt-toolkit

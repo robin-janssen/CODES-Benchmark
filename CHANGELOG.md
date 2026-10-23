@@ -50,6 +50,11 @@ optimizer and seeding fixes below; the conclusions of the paper are unchanged.
   git commit that produced them.
 - End-to-end and golden-value tests.
 
+### Removed
+
+- Support for Python 3.10, which has reached its end of life. CODES now requires
+  Python 3.11 or newer.
+
 ### Security
 
 - Updated dependencies with known vulnerabilities, including PyTorch (now 2.14).
