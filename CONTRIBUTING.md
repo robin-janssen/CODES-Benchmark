@@ -83,6 +83,12 @@ sphinx-build -b html docs/source docs/_build/html
 
 If your change affects user-facing behavior, update the relevant docs in `docs/source/`.
 
+The end-to-end test (`test/test_end_to_end.py`) trains every surrogate on a tiny synthetic dataset, evaluates them, and compares the results with the golden values in `test/data/golden_metrics.yaml`. If it fails, your change alters benchmark results. If that is intended, regenerate the values, explain the change in the pull request, and add it under "Changes affecting results" in `CHANGELOG.md`:
+
+```bash
+CODES_UPDATE_GOLDEN=1 pytest test/test_end_to_end.py
+```
+
 ## Standard contribution workflow
 
 1. Create an issue (bug report, feature request, or extension proposal), or choose an open issue to work on.
